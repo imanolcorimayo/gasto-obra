@@ -1,0 +1,16 @@
+{
+  "name": "gasto-obra-server",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node --watch webhooks/wp_webhook.js",
+    "start": "node webhooks/wp_webhook.js",
+    "daily-summary": "node scripts/send-daily-summary.js"
+  },
+  "dependencies": {
+    "express": "^4.21.0",
+    "firebase-admin": "^12.0.0",
+    "dotenv": "^16.4.5"
+  }
+}
