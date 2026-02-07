@@ -9,6 +9,14 @@
           <NuxtLink to="/projects" class="nav-tab" :class="{ 'nav-tab-active': route.path.startsWith('/projects') }">
             Proyectos
           </NuxtLink>
+          <NuxtLink
+            v-if="hasClientProjects"
+            to="/client"
+            class="nav-tab"
+            :class="{ 'nav-tab-active': route.path.startsWith('/client') }"
+          >
+            Mis Obras (Cliente)
+          </NuxtLink>
           <NuxtLink to="/settings/whatsapp" class="nav-tab" :class="{ 'nav-tab-active': route.path.startsWith('/settings') }">
             Configuracion
           </NuxtLink>
@@ -31,9 +39,19 @@
 
 <script setup>
 import { getCurrentUserAsync } from '~/utils/firebase';
+import { useProjectStore } from '~/stores/project';
 
 const user = import.meta.server ? null : await getCurrentUserAsync();
 const route = useRoute();
+const projectStore = useProjectStore();
+
+const hasClientProjects = computed(() => projectStore.clientProjects.length > 0);
+
+onMounted(async () => {
+  if (user) {
+    await projectStore.fetchClientProjects(user.uid);
+  }
+});
 </script>
 
 <style scoped>

@@ -28,6 +28,7 @@ export default defineNuxtConfig({
     '/projects/**': { ssr: false },
     '/settings/**': { ssr: false },
     '/view/**': { ssr: false },
+    '/client/**': { ssr: false },
   },
 
   runtimeConfig: {

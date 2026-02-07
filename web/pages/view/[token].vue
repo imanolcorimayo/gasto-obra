@@ -75,6 +75,17 @@
       </template>
     </div>
 
+    <!-- Join as client button -->
+    <div v-if="project" class="mt-8 bg-surface rounded-xl border border-gray-700 p-5 text-center">
+      <p class="text-gray-300 mb-3">Sos el dueno de esta obra?</p>
+      <NuxtLink
+        :to="`/client/join?token=${route.params.token}`"
+        class="btn-primary inline-flex items-center gap-2"
+      >
+        Unirme como cliente
+      </NuxtLink>
+    </div>
+
     <!-- Footer -->
     <footer class="mt-12 py-6 text-center text-gray-600 text-sm">
       <p>Gasto Obra - WiseUtils</p>

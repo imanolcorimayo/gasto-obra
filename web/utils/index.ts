@@ -53,3 +53,9 @@ export const PROJECT_STATUSES = [
   { value: 'paused', label: 'Pausado' },
   { value: 'completed', label: 'Completado' }
 ];
+
+export const TRANSACTION_TYPES = [
+  { value: 'expense', label: 'Gasto', color: '#3498DB' },
+  { value: 'payment', label: 'Pago del cliente', color: '#27AE60' },
+  { value: 'provider_expense', label: 'Gasto propio', color: '#95A5A6' }
+];

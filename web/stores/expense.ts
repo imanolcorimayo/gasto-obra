@@ -38,6 +38,34 @@ export const useExpenseStore = defineStore('expense', {
         grouped[cat].count++;
       });
       return grouped;
+    },
+
+    clientExpenses: (state) => {
+      return state.expenses.filter(e => !e.type || e.type === 'expense');
+    },
+
+    payments: (state) => {
+      return state.expenses.filter(e => e.type === 'payment');
+    },
+
+    providerExpenses: (state) => {
+      return state.expenses.filter(e => e.type === 'provider_expense');
+    },
+
+    totalClientExpenses(): number {
+      return this.clientExpenses.reduce((sum: number, e: Expense) => sum + (e.amount || 0), 0);
+    },
+
+    totalPayments(): number {
+      return this.payments.reduce((sum: number, e: Expense) => sum + (e.amount || 0), 0);
+    },
+
+    totalProviderExpenses(): number {
+      return this.providerExpenses.reduce((sum: number, e: Expense) => sum + (e.amount || 0), 0);
+    },
+
+    clientBalance(): number {
+      return this.totalPayments - this.totalClientExpenses;
     }
   },
 
@@ -89,6 +117,7 @@ export const useExpenseStore = defineStore('expense', {
       try {
         const result = await getSchema().create({
           ...data,
+          type: data.type || 'expense',
           source: 'web',
           date: new Date()
         });
@@ -106,6 +135,29 @@ export const useExpenseStore = defineStore('expense', {
         return { success: false, error: this.error };
       } finally {
         this.isLoading = false;
+      }
+    },
+
+    async updateExpense(id: string, data: Partial<Expense>) {
+      this.error = null;
+
+      try {
+        const result = await getSchema().updateExpense(id, data);
+
+        if (result.success) {
+          const index = this.expenses.findIndex(e => e.id === id);
+          if (index !== -1) {
+            this.expenses[index] = { ...this.expenses[index], ...data };
+          }
+          return { success: true };
+        } else {
+          this.error = result.error || 'Error al actualizar el gasto';
+          return { success: false, error: this.error };
+        }
+      } catch (error) {
+        console.error('Error updating expense:', error);
+        this.error = 'Error al actualizar el gasto';
+        return { success: false, error: this.error };
       }
     },
 

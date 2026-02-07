@@ -124,7 +124,7 @@ async function sendDailySummaries() {
       continue;
     }
 
-    // Get today's expenses for this project
+    // Get today's expenses for this project (only client-facing: expense + payment)
     const expensesSnapshot = await db
       .collection('expenses')
       .where('projectId', '==', projectDoc.id)
@@ -132,45 +132,79 @@ async function sendDailySummaries() {
       .where('date', '<=', todayEndUTC)
       .get();
 
-    if (expensesSnapshot.empty) {
+    // Filter to client-relevant entries only
+    const todayEntries = expensesSnapshot.docs
+      .map(doc => doc.data())
+      .filter(e => !e.type || e.type === 'expense' || e.type === 'payment');
+
+    if (todayEntries.length === 0) {
       console.log(`No expenses today for project "${project.name}", skipping.`);
       continue;
     }
 
-    const expenses = expensesSnapshot.docs.map(doc => doc.data());
-    const todayTotal = expenses.reduce((sum, e) => sum + (e.amount || 0), 0);
+    const todayExpenses = todayEntries.filter(e => !e.type || e.type === 'expense');
+    const todayPayments = todayEntries.filter(e => e.type === 'payment');
+    const todayExpenseTotal = todayExpenses.reduce((sum, e) => sum + (e.amount || 0), 0);
+    const todayPaymentTotal = todayPayments.reduce((sum, e) => sum + (e.amount || 0), 0);
 
-    // Get accumulated total for the project
+    // Get accumulated totals for the project
     const allExpensesSnapshot = await db
       .collection('expenses')
       .where('projectId', '==', projectDoc.id)
       .get();
 
-    const accumulatedTotal = allExpensesSnapshot.docs.reduce(
-      (sum, doc) => sum + (doc.data().amount || 0), 0
-    );
+    const allEntries = allExpensesSnapshot.docs.map(doc => doc.data());
+    const accumulatedExpenses = allEntries
+      .filter(e => !e.type || e.type === 'expense')
+      .reduce((sum, e) => sum + (e.amount || 0), 0);
+    const accumulatedPayments = allEntries
+      .filter(e => e.type === 'payment')
+      .reduce((sum, e) => sum + (e.amount || 0), 0);
+    const balance = accumulatedPayments - accumulatedExpenses;
 
     // Build expense list
-    const expenseLines = expenses
-      .map(e => {
-        const cat = e.category ? ` (${capitalizeFirst(e.category)})` : '';
-        return `  ${formatAmount(e.amount)} - ${e.title}${cat}`;
-      })
-      .join('\n');
+    let expenseLines = '';
+    if (todayExpenses.length > 0) {
+      expenseLines += '*Gastos de hoy:*\n';
+      expenseLines += todayExpenses
+        .map(e => {
+          const cat = e.category ? ` (${capitalizeFirst(e.category)})` : '';
+          return `  ${formatAmount(e.amount)} - ${e.title}${cat}`;
+        })
+        .join('\n');
+    }
+
+    if (todayPayments.length > 0) {
+      if (expenseLines) expenseLines += '\n\n';
+      expenseLines += '*Pagos de hoy:*\n';
+      expenseLines += todayPayments
+        .map(e => `  ${formatAmount(e.amount)} - ${e.title}`)
+        .join('\n');
+    }
 
     // Build message
     const viewUrl = `${APP_URL}/view/${project.shareToken}`;
 
-    const message = `*Resumen del dia - ${project.name}*
+    let message = `*Resumen del dia - ${project.name}*
 Fecha: ${dateFormatted}
 
-*Gastos de hoy:*
-${expenseLines}
+${expenseLines}`;
 
-*Total del dia:* ${formatAmount(todayTotal)}
-*Total acumulado del proyecto:* ${formatAmount(accumulatedTotal)}
+    if (todayExpenseTotal > 0) {
+      message += `\n\n*Total gastos del dia:* ${formatAmount(todayExpenseTotal)}`;
+    }
+    if (todayPaymentTotal > 0) {
+      message += `\n*Pagos del dia:* ${formatAmount(todayPaymentTotal)}`;
+    }
 
-Ver detalle: ${viewUrl}`;
+    message += `\n\n*Total acumulado gastos:* ${formatAmount(accumulatedExpenses)}`;
+
+    if (accumulatedPayments > 0) {
+      message += `\n*Total pagos:* ${formatAmount(accumulatedPayments)}`;
+      message += `\n*Saldo:* ${formatAmount(balance)}`;
+    }
+
+    message += `\n\nVer detalle: ${viewUrl}`;
 
     await sendWhatsAppMessage(project.clientPhone, message);
   }

@@ -1,5 +1,5 @@
 import { Schema } from '../schema';
-import type { SchemaDefinition, CreateResult } from '../types';
+import type { SchemaDefinition, CreateResult, FetchResult } from '../types';
 import { serverTimestamp } from 'firebase/firestore';
 
 export class ProjectSchema extends Schema {
@@ -49,6 +49,18 @@ export class ProjectSchema extends Schema {
       type: 'string',
       required: true
     },
+    budget: {
+      type: 'number',
+      required: false
+    },
+    estimatedEndDate: {
+      type: 'date',
+      required: false
+    },
+    clientUserId: {
+      type: 'string',
+      required: false
+    },
     createdAt: {
       type: 'date',
       required: false
@@ -94,6 +106,13 @@ export class ProjectSchema extends Schema {
     return this.findPublic({
       where: [{ field: 'shareToken', operator: '==', value: token }],
       limit: 1
+    });
+  }
+
+  async findByClientUserId(clientUserId: string): Promise<FetchResult> {
+    return this.findPublic({
+      where: [{ field: 'clientUserId', operator: '==', value: clientUserId }],
+      orderBy: [{ field: 'createdAt', direction: 'desc' }]
     });
   }
 }

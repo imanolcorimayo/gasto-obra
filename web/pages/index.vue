@@ -65,6 +65,7 @@ import MdiCamera from '~icons/mdi/camera';
 import MdiLinkVariant from '~icons/mdi/link-variant';
 import MdiGoogle from '~icons/mdi/google';
 import { signInWithGoogle, getCurrentUserAsync } from '~/utils/firebase';
+import { useProjectStore } from '~/stores/project';
 
 definePageMeta({
   layout: 'landing'
@@ -76,11 +77,29 @@ useHead({
 
 const isLoading = ref(false);
 
+async function redirectUser(user) {
+  // Check if user has client projects
+  const projectStore = useProjectStore();
+  await projectStore.fetchClientProjects(user.uid);
+
+  if (projectStore.clientProjects.length > 0) {
+    // Check if they also have provider projects
+    await projectStore.fetchProjects();
+    if (projectStore.projects.length > 0) {
+      navigateTo('/projects');
+    } else {
+      navigateTo('/client');
+    }
+  } else {
+    navigateTo('/projects');
+  }
+}
+
 // Redirect if already logged in
 onMounted(async () => {
   const user = await getCurrentUserAsync();
   if (user) {
-    navigateTo('/projects');
+    await redirectUser(user);
   }
 });
 
@@ -89,7 +108,7 @@ async function handleLogin() {
   try {
     const user = await signInWithGoogle();
     if (user) {
-      navigateTo('/projects');
+      await redirectUser(user);
     }
   } catch (error) {
     console.error('Login error:', error);

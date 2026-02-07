@@ -45,6 +45,15 @@ export class ExpenseSchema extends Schema {
       type: 'string',
       required: false
     },
+    type: {
+      type: 'string',
+      required: false,
+      default: 'expense'
+    },
+    items: {
+      type: 'array',
+      required: false
+    },
     source: {
       type: 'string',
       required: true,
@@ -59,6 +68,10 @@ export class ExpenseSchema extends Schema {
       required: false
     }
   };
+
+  async updateExpense(id: string, data: any): Promise<any> {
+    return this.update(id, data);
+  }
 
   async findByProjectId(projectId: string): Promise<FetchResult> {
     return this.find({

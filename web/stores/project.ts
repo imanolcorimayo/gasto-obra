@@ -4,6 +4,7 @@ import type { Project } from '~/interfaces';
 
 interface ProjectState {
   projects: Project[];
+  clientProjects: Project[];
   currentProject: Project | null;
   isLoading: boolean;
   error: string | null;
@@ -21,6 +22,7 @@ const getSchema = () => {
 export const useProjectStore = defineStore('project', {
   state: (): ProjectState => ({
     projects: [],
+    clientProjects: [],
     currentProject: null,
     isLoading: false,
     error: null
@@ -177,8 +179,56 @@ export const useProjectStore = defineStore('project', {
       }
     },
 
+    async fetchClientProjects(clientUserId: string) {
+      this.isLoading = true;
+      this.error = null;
+
+      try {
+        const result = await getSchema().findByClientUserId(clientUserId);
+
+        if (result.success && result.data) {
+          this.clientProjects = result.data as Project[];
+        } else {
+          this.error = result.error || 'Error al obtener los proyectos';
+        }
+      } catch (error) {
+        console.error('Error fetching client projects:', error);
+        this.error = 'Error al obtener los proyectos';
+      } finally {
+        this.isLoading = false;
+      }
+    },
+
+    async joinAsClient(projectId: string, clientUserId: string) {
+      this.error = null;
+
+      try {
+        const result = await getSchema().update(projectId, { clientUserId });
+
+        if (result.success) {
+          if (this.currentProject?.id === projectId) {
+            this.currentProject = { ...this.currentProject, clientUserId };
+            // Add to clientProjects so the nav tab appears immediately
+            const alreadyIn = this.clientProjects.some(p => p.id === projectId);
+            if (!alreadyIn) {
+              this.clientProjects.push(this.currentProject as Project);
+            }
+          }
+          return { success: true };
+        } else {
+          this.error = result.error || 'Error al unirse como cliente';
+          return { success: false, error: this.error };
+        }
+      } catch (error) {
+        console.error('Error joining as client:', error);
+        this.error = 'Error al unirse como cliente';
+        return { success: false, error: this.error };
+      }
+    },
+
     clearState() {
       this.projects = [];
+      this.clientProjects = [];
       this.currentProject = null;
       this.isLoading = false;
       this.error = null;

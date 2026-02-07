@@ -70,6 +70,31 @@
       </div>
     </div>
 
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div>
+        <label class="block text-sm font-medium text-gray-300 mb-1">Presupuesto</label>
+        <input
+          v-model="form.budget"
+          type="number"
+          min="0"
+          step="1"
+          placeholder="Monto total estimado"
+          class="w-full bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-white placeholder-gray-500 focus:outline-none focus:border-primary"
+        />
+        <p class="text-gray-500 text-xs mt-1">Solo referencia</p>
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium text-gray-300 mb-1">Fecha estimada de fin</label>
+        <input
+          v-model="form.estimatedEndDate"
+          type="date"
+          class="w-full bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-white placeholder-gray-500 focus:outline-none focus:border-primary"
+        />
+        <p class="text-gray-500 text-xs mt-1">Solo referencia</p>
+      </div>
+    </div>
+
     <div class="flex gap-3 mt-2">
       <button
         type="submit"
@@ -105,7 +130,9 @@ const form = reactive({
   description: props.initialData.description || '',
   address: props.initialData.address || '',
   clientName: props.initialData.clientName || '',
-  clientPhone: props.initialData.clientPhone || ''
+  clientPhone: props.initialData.clientPhone || '',
+  budget: props.initialData.budget || '',
+  estimatedEndDate: props.initialData.estimatedEndDate || ''
 });
 
 function normalizeTag() {
@@ -113,6 +140,17 @@ function normalizeTag() {
 }
 
 function handleSubmit() {
-  emit('submit', { ...form });
+  const data = { ...form };
+  if (data.budget) {
+    data.budget = parseFloat(data.budget);
+  } else {
+    data.budget = null;
+  }
+  if (data.estimatedEndDate) {
+    data.estimatedEndDate = new Date(data.estimatedEndDate);
+  } else {
+    data.estimatedEndDate = null;
+  }
+  emit('submit', data);
 }
 </script>

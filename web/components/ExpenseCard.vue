@@ -1,13 +1,46 @@
 <template>
-  <div class="bg-surface rounded-lg border border-gray-700 p-4">
+  <div
+    class="bg-surface rounded-lg border p-4"
+    :class="cardBorderClass"
+  >
     <div class="flex items-start justify-between">
       <div class="flex-1">
-        <h4 class="font-medium">{{ expense.title }}</h4>
+        <div class="flex items-center gap-2">
+          <h4 class="font-medium">{{ expense.title }}</h4>
+          <span
+            v-if="expense.type === 'payment'"
+            class="text-xs px-2 py-0.5 rounded-full font-medium bg-green-500/20 text-green-400"
+          >
+            Pago
+          </span>
+          <span
+            v-else-if="expense.type === 'provider_expense'"
+            class="text-xs px-2 py-0.5 rounded-full font-medium bg-gray-500/20 text-gray-400"
+          >
+            Propio
+          </span>
+        </div>
         <p v-if="expense.description" class="text-gray-400 text-sm mt-1">{{ expense.description }}</p>
+        <p v-if="expense.items && expense.items.length" class="text-gray-500 text-xs mt-1">
+          {{ expense.items.length }} items
+        </p>
       </div>
-      <span class="text-primary font-semibold text-lg ml-4 whitespace-nowrap">
-        {{ formatPrice(expense.amount) }}
-      </span>
+      <div class="flex items-center gap-2 ml-4">
+        <span
+          class="font-semibold text-lg whitespace-nowrap"
+          :class="amountColorClass"
+        >
+          {{ expense.type === 'payment' ? '+' : '' }}{{ formatPrice(expense.amount) }}
+        </span>
+        <button
+          v-if="editable"
+          @click="$emit('edit', expense)"
+          class="text-gray-500 hover:text-white p-1 transition-colors"
+          title="Editar"
+        >
+          <MdiPencil class="text-base" />
+        </button>
+      </div>
     </div>
 
     <div class="flex items-center gap-3 mt-3 text-sm">
@@ -34,13 +67,27 @@
 </template>
 
 <script setup>
+import MdiPencil from '~icons/mdi/pencil';
 import { formatPrice, getCategoryStyles, getCategoryLabel } from '~/utils';
 
-defineProps({
-  expense: { type: Object, required: true }
+const props = defineProps({
+  expense: { type: Object, required: true },
+  editable: { type: Boolean, default: false }
 });
 
-defineEmits(['viewImage']);
+defineEmits(['viewImage', 'edit']);
+
+const cardBorderClass = computed(() => {
+  if (props.expense.type === 'payment') return 'border-green-700/50';
+  if (props.expense.type === 'provider_expense') return 'border-gray-600';
+  return 'border-gray-700';
+});
+
+const amountColorClass = computed(() => {
+  if (props.expense.type === 'payment') return 'text-green-400';
+  if (props.expense.type === 'provider_expense') return 'text-gray-400';
+  return 'text-primary';
+});
 
 function formatExpenseDate(timestamp) {
   if (!timestamp) return '';
