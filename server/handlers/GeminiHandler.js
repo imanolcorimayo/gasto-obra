@@ -76,7 +76,11 @@ Solo responde con el JSON, sin texto adicional.`;
     }
   }
 
-  async transcribeAudio(audioBase64, mimeType = 'audio/ogg') {
+  async transcribeAudio(audioBase64, mimeType = 'audio/ogg', activeProjects = []) {
+    const projectList = activeProjects.length > 0
+      ? `\n\nProyectos activos del usuario (nombre - tag):\n${activeProjects.map(p => `- ${p.name} (#${p.tag})`).join('\n')}`
+      : '';
+
     const prompt = `Transcribi este audio en español argentino. El audio describe un gasto de obra/refaccion.
 Extrae la informacion en formato JSON:
 {
@@ -84,9 +88,11 @@ Extrae la informacion en formato JSON:
   "title": "titulo corto del gasto",
   "amount": 1234.56,
   "description": "descripcion adicional si hay",
-  "category": "materiales|herramientas|transporte|mano de obra|comida|otros"
-}
+  "category": "materiales|herramientas|transporte|mano de obra|comida|otros",
+  "projectReference": "nombre o tag del proyecto si se menciona en el audio"
+}${projectList}
 
+Si el audio menciona un proyecto, obra, o lugar que coincida con alguno de los proyectos activos, incluilo en projectReference.
 Si no podes extraer algun campo, usa null. Solo responde con el JSON.`;
 
     const parts = [

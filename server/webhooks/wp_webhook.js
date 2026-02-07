@@ -57,6 +57,41 @@ const geminiHandler = process.env.GEMINI_API_KEY
   : null;
 
 // ============================================
+// Pending Expenses (audio without project tag)
+// ============================================
+const PENDING_EXPENSE_TTL = 10 * 60 * 1000; // 10 minutes
+const pendingExpenses = new Map(); // phoneNumber -> { data, userId, timestamp }
+
+function setPendingExpense(phoneNumber, userId, expenseData) {
+  pendingExpenses.set(phoneNumber, {
+    data: expenseData,
+    userId,
+    timestamp: Date.now()
+  });
+  // Auto-cleanup after TTL
+  setTimeout(() => {
+    const pending = pendingExpenses.get(phoneNumber);
+    if (pending && pending.timestamp === expenseData.timestamp) {
+      pendingExpenses.delete(phoneNumber);
+    }
+  }, PENDING_EXPENSE_TTL);
+}
+
+function getPendingExpense(phoneNumber) {
+  const pending = pendingExpenses.get(phoneNumber);
+  if (!pending) return null;
+  if (Date.now() - pending.timestamp > PENDING_EXPENSE_TTL) {
+    pendingExpenses.delete(phoneNumber);
+    return null;
+  }
+  return pending;
+}
+
+function clearPendingExpense(phoneNumber) {
+  pendingExpenses.delete(phoneNumber);
+}
+
+// ============================================
 // Middleware
 // ============================================
 app.use(express.json());
@@ -135,6 +170,16 @@ app.post('/webhook', async (req, res) => {
 
 async function processMessage(phoneNumber, text, contactName) {
   const normalizedText = text.trim().toLowerCase();
+
+  // Check if this is a project selection for a pending expense
+  const tagOnlyMatch = text.trim().match(/^#(\S+)$/);
+  if (tagOnlyMatch) {
+    const pending = getPendingExpense(phoneNumber);
+    if (pending) {
+      await completePendingExpense(phoneNumber, pending, tagOnlyMatch[1].toLowerCase());
+      return;
+    }
+  }
 
   // Check for VINCULAR command
   if (normalizedText.startsWith('vincular ')) {
@@ -285,34 +330,15 @@ async function processAudioMessage(phoneNumber, audioId, caption, contactName) {
     return;
   }
 
-  // Transcribe with Gemini
-  const transcription = await geminiHandler.transcribeAudio(audioData.base64, audioData.mimeType);
+  // Get active projects for this user (for Gemini context + matching)
+  const activeProjects = await getActiveProjects(userId);
+
+  // Transcribe with Gemini, passing active projects for context
+  const transcription = await geminiHandler.transcribeAudio(audioData.base64, audioData.mimeType, activeProjects);
 
   if (!transcription || (!transcription.amount && !transcription.title)) {
     await sendWhatsAppMessage(phoneNumber, 'No pude entender el audio. Intenta nuevamente o registra el gasto por texto.');
     return;
-  }
-
-  // Find project - from caption tag or from transcription context
-  let project = null;
-  if (tagMatch) {
-    project = await findProjectByTag(userId, tagMatch[1].toLowerCase());
-  }
-
-  if (!project) {
-    // Try to find the only active project
-    const projectsSnapshot = await db
-      .collection(COLLECTIONS.PROJECTS)
-      .where('providerId', '==', userId)
-      .where('status', '==', 'active')
-      .get();
-
-    if (projectsSnapshot.size === 1) {
-      project = { id: projectsSnapshot.docs[0].id, ...projectsSnapshot.docs[0].data() };
-    } else {
-      await sendWhatsAppMessage(phoneNumber, `No pude determinar el proyecto. Incluí el tag en el caption.\n\nEjemplo: audio + caption "#flores3b"\n\nEnvia PROYECTOS para ver tus tags.`);
-      return;
-    }
   }
 
   const title = transcription.title || 'Gasto por audio';
@@ -325,6 +351,56 @@ async function processAudioMessage(phoneNumber, audioId, caption, contactName) {
     return;
   }
 
+  // Find project: 1) caption tag, 2) AI-detected from audio, 3) only active project, 4) ask user
+  let project = null;
+
+  // 1. From caption tag
+  if (tagMatch) {
+    project = await findProjectByTag(userId, tagMatch[1].toLowerCase());
+  }
+
+  // 2. From AI-detected project reference in audio
+  if (!project && transcription.projectReference) {
+    project = matchProjectFromReference(activeProjects, transcription.projectReference);
+  }
+
+  // 3. If user has only one active project, use it
+  if (!project && activeProjects.length === 1) {
+    project = activeProjects[0];
+  }
+
+  // 4. Can't determine - save as pending and ask user to pick
+  if (!project) {
+    if (activeProjects.length === 0) {
+      await sendWhatsAppMessage(phoneNumber, 'No tenes proyectos activos. Crea uno desde la app web.');
+      return;
+    }
+
+    // Save pending expense
+    setPendingExpense(phoneNumber, userId, {
+      title,
+      amount,
+      description,
+      category,
+      transcription: transcription.transcription,
+      originalCaption: caption,
+      timestamp: Date.now()
+    });
+
+    let message = `Entendi el gasto:\n*${title}* - ${formatAmount(amount)}\n\n`;
+    message += `A que proyecto corresponde? Responde con el *#tag*:\n\n`;
+
+    for (const p of activeProjects) {
+      message += `*${p.name}* → #${p.tag}\n`;
+    }
+
+    message += `\n_Tenes 10 minutos para responder._`;
+
+    await sendWhatsAppMessage(phoneNumber, message);
+    return;
+  }
+
+  // Create expense directly
   const expenseData = {
     projectId: project.id,
     providerId: userId,
@@ -717,6 +793,81 @@ function parseExpenseMessage(text) {
     category,
     description
   };
+}
+
+async function getActiveProjects(userId) {
+  const snapshot = await db
+    .collection(COLLECTIONS.PROJECTS)
+    .where('providerId', '==', userId)
+    .where('status', '==', 'active')
+    .get();
+
+  return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+}
+
+function matchProjectFromReference(projects, reference) {
+  if (!reference) return null;
+  const ref = reference.toLowerCase().trim();
+
+  // Exact tag match
+  const byTag = projects.find(p => p.tag === ref);
+  if (byTag) return byTag;
+
+  // Tag contained in reference
+  const byTagPartial = projects.find(p => ref.includes(p.tag));
+  if (byTagPartial) return byTagPartial;
+
+  // Project name match (case-insensitive, partial)
+  const byName = projects.find(p => {
+    const name = p.name.toLowerCase();
+    return ref.includes(name) || name.includes(ref);
+  });
+  if (byName) return byName;
+
+  // Word overlap: match if any significant word from the reference matches project name words
+  const refWords = ref.split(/\s+/).filter(w => w.length > 2);
+  const byWord = projects.find(p => {
+    const nameWords = p.name.toLowerCase().split(/\s+/);
+    return refWords.some(rw => nameWords.some(nw => nw.includes(rw) || rw.includes(nw)));
+  });
+  if (byWord) return byWord;
+
+  return null;
+}
+
+async function completePendingExpense(phoneNumber, pending, tag) {
+  const project = await findProjectByTag(pending.userId, tag);
+
+  if (!project) {
+    await sendWhatsAppMessage(phoneNumber, `No se encontro el proyecto con tag #${tag}.\n\nEnvia PROYECTOS para ver tus tags.`);
+    return;
+  }
+
+  clearPendingExpense(phoneNumber);
+
+  const { data } = pending;
+  const expenseData = {
+    projectId: project.id,
+    providerId: pending.userId,
+    title: data.title,
+    description: data.description,
+    amount: data.amount,
+    category: data.category,
+    imageUrl: null,
+    audioTranscription: data.transcription || null,
+    originalMessage: `[Audio] ${data.originalCaption || ''}`,
+    source: 'whatsapp',
+    date: admin.firestore.FieldValue.serverTimestamp(),
+    createdAt: admin.firestore.FieldValue.serverTimestamp()
+  };
+
+  await db.collection(COLLECTIONS.EXPENSES).add(expenseData);
+
+  const formattedAmount = formatAmount(data.amount);
+  await sendWhatsAppMessage(
+    phoneNumber,
+    `Gasto registrado desde audio!\n\n*${data.title}*\n${formattedAmount}\n#${project.tag} - ${capitalizeFirst(data.category)}\n${data.description ? `_${data.description}_` : ''}`
+  );
 }
 
 async function findProjectByTag(userId, tag) {
