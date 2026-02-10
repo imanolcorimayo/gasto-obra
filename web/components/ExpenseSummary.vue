@@ -16,6 +16,10 @@
         <span class="text-gray-400">Gastos propios</span>
         <span class="text-lg font-bold text-gray-400">{{ formatPrice(totalProviderExpenses) }}</span>
       </div>
+      <div v-if="totalPending > 0" class="flex items-center justify-between">
+        <span class="text-gray-400">Pendiente de pago</span>
+        <span class="text-lg font-bold text-red-400">{{ formatPrice(totalPending) }}</span>
+      </div>
       <div v-if="totalPayments > 0" class="flex items-center justify-between pt-2 border-t border-gray-700">
         <span class="text-gray-300 font-medium">Saldo</span>
         <span
@@ -98,6 +102,12 @@ const totalPayments = computed(() =>
 
 const totalProviderExpenses = computed(() =>
   providerExpensesList.value.reduce((sum, e) => sum + (e.amount || 0), 0)
+);
+
+const totalPending = computed(() =>
+  props.expenses
+    .filter(e => e.paymentStatus === 'pending')
+    .reduce((sum, e) => sum + (e.amount || 0), 0)
 );
 
 const balance = computed(() => totalPayments.value - totalExpenses.value);

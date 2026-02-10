@@ -34,67 +34,86 @@
         </div>
 
         <!-- Summary -->
-        <ExpenseSummary :expenses="expenses" class="mb-6" />
+        <ExpenseSummary :expenses="allClientExpenses" :budget="project.budget" class="mb-6" />
 
-        <!-- Expenses -->
-        <h3 class="font-semibold mb-4">Detalle de gastos</h3>
-
-        <div v-if="expenses.length === 0" class="text-center text-gray-500 py-8">
-          No hay gastos registrados en este proyecto.
-        </div>
-
-        <div v-else class="flex flex-col gap-3">
-          <div
-            v-for="expense in expenses"
-            :key="expense.id"
-            class="bg-surface rounded-lg border border-gray-700 p-4"
-          >
-            <div class="flex items-start justify-between">
-              <div class="flex-1">
-                <h4 class="font-medium">{{ expense.title }}</h4>
-                <p v-if="expense.description" class="text-gray-400 text-sm mt-1">{{ expense.description }}</p>
-              </div>
-              <span class="text-primary font-semibold text-lg ml-4 whitespace-nowrap">
-                {{ formatPrice(expense.amount) }}
-              </span>
-            </div>
-
-            <div class="flex items-center gap-3 mt-3 text-sm">
-              <span
-                class="px-2 py-0.5 rounded-full text-xs font-medium"
-                :style="getCategoryStyles(expense.category)"
+        <!-- Expense history -->
+        <div class="mb-6">
+          <div class="flex items-center justify-between mb-3">
+            <h3 class="font-semibold">Detalle de gastos</h3>
+            <div class="flex items-center gap-2">
+              <span class="text-[10px] text-gray-500 uppercase tracking-wider">Tipo</span>
+              <select
+                v-model="selectedType"
+                class="bg-gray-800 border border-gray-600 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-primary cursor-pointer"
               >
-                {{ getCategoryLabel(expense.category) }}
-              </span>
-              <span class="text-gray-500">
-                {{ formatExpenseDate(expense.date || expense.createdAt) }}
-              </span>
+                <option value="">Todos</option>
+                <option value="expense">Gastos</option>
+                <option value="payment">Pagos</option>
+              </select>
             </div>
           </div>
+          <div class="flex rounded-lg border border-gray-600 overflow-hidden w-fit mb-4">
+            <button
+              @click="viewMode = 'cards'"
+              class="px-3 py-1.5 text-xs flex items-center gap-1.5 transition-colors"
+              :class="viewMode === 'cards' ? 'bg-gray-600 text-white' : 'text-gray-400 hover:text-white'"
+            >
+              <MdiViewAgenda class="text-sm" />
+              Tarjetas
+            </button>
+            <button
+              @click="viewMode = 'table'"
+              class="px-3 py-1.5 text-xs flex items-center gap-1.5 transition-colors"
+              :class="viewMode === 'table' ? 'bg-gray-600 text-white' : 'text-gray-400 hover:text-white'"
+            >
+              <MdiTable class="text-sm" />
+              Balance
+            </button>
+          </div>
+
+          <template v-if="viewMode === 'cards'">
+            <div v-if="filteredCards.length === 0" class="text-center text-gray-500 py-8">
+              No hay gastos registrados en este proyecto.
+            </div>
+            <div v-else class="flex flex-col gap-3">
+              <ClientExpenseCard
+                v-for="expense in filteredCards"
+                :key="expense.id"
+                :expense="expense"
+              />
+            </div>
+          </template>
+
+          <template v-else>
+            <ClientBalanceTable :expenses="filteredAll" />
+          </template>
         </div>
       </template>
     </div>
 
     <!-- Join as client button -->
-    <div v-if="project" class="mt-8 bg-surface rounded-xl border border-gray-700 p-5 text-center">
-      <p class="text-gray-300 mb-3">Sos el dueno de esta obra?</p>
-      <NuxtLink
-        :to="`/client/join?token=${route.params.token}`"
-        class="btn-primary inline-flex items-center gap-2"
-      >
-        Unirme como cliente
-      </NuxtLink>
+    <div v-if="project" class="max-w-3xl m-auto px-3 sm:px-6">
+      <div class="mt-2 mb-8 bg-surface rounded-xl border border-gray-700 p-5 text-center">
+        <p class="text-gray-300 mb-3">Sos el dueno de esta obra?</p>
+        <NuxtLink
+          :to="`/client/join?token=${route.params.token}`"
+          class="btn-primary inline-flex items-center gap-2"
+        >
+          Unirme como cliente
+        </NuxtLink>
+      </div>
     </div>
 
     <!-- Footer -->
-    <footer class="mt-12 py-6 text-center text-gray-600 text-sm">
+    <footer class="mt-4 py-6 text-center text-gray-600 text-sm">
       <p>Gasto Obra - WiseUtils</p>
     </footer>
   </div>
 </template>
 
 <script setup>
-import { formatPrice, getCategoryStyles, getCategoryLabel } from '~/utils';
+import MdiViewAgenda from '~icons/mdi/view-agenda';
+import MdiTable from '~icons/mdi/table';
 import { useProjectStore } from '~/stores/project';
 import { useExpenseStore } from '~/stores/expense';
 
@@ -109,19 +128,33 @@ const expenseStore = useExpenseStore();
 const isLoading = ref(true);
 const project = ref(null);
 const expenses = ref([]);
+const selectedType = ref('');
+const viewMode = ref('cards');
 
 useHead({
   title: computed(() => project.value?.name || 'Vista de Proyecto')
 });
 
-function formatExpenseDate(timestamp) {
-  if (!timestamp) return '';
-  const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
-  return date.toLocaleDateString('es-AR', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric'
-  });
+// All client-relevant expenses (for summary + table)
+const allClientExpenses = computed(() =>
+  expenses.value.filter(e => e.type !== 'provider_expense')
+);
+
+// Card view hides auto-linked payments (shown as "Pagado" on expense card)
+const cardExpenses = computed(() =>
+  allClientExpenses.value.filter(e => !e.linkedExpenseId)
+);
+
+// Apply type filter to each view
+const filteredCards = computed(() => applyTypeFilter(cardExpenses.value));
+const filteredAll = computed(() => applyTypeFilter(allClientExpenses.value));
+
+function applyTypeFilter(list) {
+  if (!selectedType.value) return list;
+  if (selectedType.value === 'expense') {
+    return list.filter(e => !e.type || e.type === 'expense');
+  }
+  return list.filter(e => e.type === selectedType.value);
 }
 
 onMounted(async () => {

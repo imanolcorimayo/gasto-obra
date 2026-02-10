@@ -33,6 +33,13 @@
           </div>
 
           <div class="flex gap-2">
+            <button
+              @click="showProjectEditModal = true"
+              class="btn-secondary text-sm flex items-center gap-1"
+            >
+              <MdiPencil class="text-base" />
+              Editar
+            </button>
             <select
               v-model="project.status"
               @change="updateStatus"
@@ -88,116 +95,41 @@
         </div>
       </div>
 
-      <!-- Add expense/payment form -->
-      <div class="bg-surface rounded-xl border border-gray-700 p-5 mb-6">
-        <!-- Type toggle tabs -->
-        <div class="flex gap-2 mb-4">
-          <button
-            v-for="t in formTypes"
-            :key="t.value"
-            @click="newExpense.type = t.value"
-            class="text-sm px-4 py-1.5 rounded-full border transition-colors"
-            :class="newExpense.type === t.value
-              ? 'border-primary bg-primary/20 text-primary font-medium'
-              : 'border-gray-600 text-gray-400 hover:border-gray-500'"
-          >
-            {{ t.label }}
-          </button>
-        </div>
-
-        <form @submit.prevent="addExpense" class="flex flex-col gap-3">
-          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <input
-              v-model="newExpense.title"
-              type="text"
-              required
-              :placeholder="newExpense.type === 'payment' ? 'Concepto del pago' : 'Titulo del gasto'"
-              class="bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-white placeholder-gray-500 focus:outline-none focus:border-primary sm:col-span-2"
-            />
-            <input
-              v-model="newExpense.amount"
-              type="number"
-              required
-              min="1"
-              step="0.01"
-              placeholder="Monto"
-              class="bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-white placeholder-gray-500 focus:outline-none focus:border-primary"
-            />
+      <!-- Add buttons -->
+      <div class="flex flex-wrap gap-3 mb-6">
+        <button
+          @click="openCreateModal('expense')"
+          class="btn-primary flex items-center gap-1.5 text-sm group relative"
+          title="Gasto de la obra que se cobra al cliente"
+        >
+          <MdiPlus class="text-base" />
+          <div class="text-left">
+            <span>Gasto</span>
+            <span class="block text-[10px] opacity-70 font-normal">Cobrable al cliente</span>
           </div>
-
-          <!-- Category + description (not for payments) -->
-          <div v-if="newExpense.type !== 'payment'" class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <select
-              v-model="newExpense.category"
-              class="bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-primary"
-            >
-              <option v-for="cat in EXPENSE_CATEGORIES" :key="cat.value" :value="cat.value">
-                {{ cat.label }}
-              </option>
-            </select>
-            <input
-              v-model="newExpense.description"
-              type="text"
-              placeholder="Descripcion (opcional)"
-              class="bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-white placeholder-gray-500 focus:outline-none focus:border-primary sm:col-span-2"
-            />
+        </button>
+        <button
+          @click="openCreateModal('payment')"
+          class="flex items-center gap-1.5 text-sm px-4 py-2 rounded-lg border border-green-600 text-green-400 hover:bg-green-500/10 transition-colors"
+          title="Dinero recibido del cliente"
+        >
+          <MdiPlus class="text-base text-green-400" />
+          <div class="text-left">
+            <span>Pago del cliente</span>
+            <span class="block text-[10px] opacity-70 font-normal">Ingreso recibido</span>
           </div>
-
-          <!-- Optional items section (collapsible) -->
-          <div v-if="newExpense.type !== 'payment'">
-            <button
-              type="button"
-              @click="showNewItems = !showNewItems"
-              class="text-sm text-gray-400 hover:text-white flex items-center gap-1"
-            >
-              <MdiChevronDown class="transition-transform" :class="{ 'rotate-180': showNewItems }" />
-              Agregar items
-            </button>
-
-            <div v-if="showNewItems" class="mt-2 flex flex-col gap-2">
-              <div
-                v-for="(item, idx) in newExpense.items"
-                :key="idx"
-                class="flex gap-2 items-center"
-              >
-                <input
-                  v-model="item.name"
-                  type="text"
-                  placeholder="Nombre"
-                  class="flex-1 bg-gray-800 border border-gray-600 rounded-lg px-3 py-1.5 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-primary"
-                />
-                <input
-                  v-model.number="item.amount"
-                  type="number"
-                  placeholder="Monto"
-                  min="0"
-                  step="0.01"
-                  class="w-28 bg-gray-800 border border-gray-600 rounded-lg px-3 py-1.5 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-primary"
-                />
-                <button type="button" @click="newExpense.items.splice(idx, 1)" class="text-gray-500 hover:text-red-400 p-1">
-                  <MdiClose class="text-base" />
-                </button>
-              </div>
-              <button
-                type="button"
-                @click="newExpense.items.push({ name: '', amount: 0 })"
-                class="text-sm text-primary hover:text-primary/80 self-start flex items-center gap-1"
-              >
-                <MdiPlus class="text-base" />
-                Agregar item
-              </button>
-            </div>
+        </button>
+        <button
+          @click="openCreateModal('provider_expense')"
+          class="btn-secondary flex items-center gap-1.5 text-sm"
+          title="Gasto personal del proveedor, no se cobra al cliente"
+        >
+          <MdiPlus class="text-base" />
+          <div class="text-left">
+            <span>Gasto propio</span>
+            <span class="block text-[10px] opacity-70 font-normal">No cobrable</span>
           </div>
-
-          <button
-            type="submit"
-            :disabled="isAddingExpense"
-            class="btn-primary self-start flex items-center gap-2"
-          >
-            <MdiPlus />
-            {{ newExpense.type === 'payment' ? 'Registrar Pago' : newExpense.type === 'provider_expense' ? 'Registrar Gasto Propio' : 'Agregar Gasto' }}
-          </button>
-        </form>
+        </button>
       </div>
 
       <!-- Summary + Expenses -->
@@ -213,17 +145,35 @@
             :expenses="expenseStore.expenses"
             :editable="true"
             @edit="openEditModal"
+            @mark-paid="handleMarkPaid"
+            @mark-pending="handleMarkPending"
           />
         </div>
       </div>
 
-      <!-- Edit modal -->
+      <!-- Create expense modal -->
+      <ExpenseCreateModal
+        :show="showCreateModal"
+        :type="createModalType"
+        @close="showCreateModal = false"
+        @submit="handleCreateSubmit"
+      />
+
+      <!-- Edit expense modal -->
       <ExpenseEditModal
         :show="showEditModal"
         :expense="editingExpense"
         :projects="projectStore.projects"
         @close="showEditModal = false"
         @save="handleEditSave"
+      />
+
+      <!-- Edit project modal -->
+      <ProjectEditModal
+        :show="showProjectEditModal"
+        :project="project"
+        @close="showProjectEditModal = false"
+        @save="handleProjectEditSave"
       />
     </template>
   </div>
@@ -234,11 +184,10 @@ import MdiArrowLeft from '~icons/mdi/arrow-left';
 import MdiContentCopy from '~icons/mdi/content-copy';
 import MdiCheck from '~icons/mdi/check';
 import MdiPlus from '~icons/mdi/plus';
-import MdiClose from '~icons/mdi/close';
-import MdiChevronDown from '~icons/mdi/chevron-down';
+import MdiPencil from '~icons/mdi/pencil';
 import { useProjectStore } from '~/stores/project';
 import { useExpenseStore } from '~/stores/expense';
-import { EXPENSE_CATEGORIES, formatPrice, formatDate } from '~/utils';
+import { formatPrice, formatDate } from '~/utils';
 
 definePageMeta({
   middleware: ['auth']
@@ -251,25 +200,11 @@ const expenseStore = useExpenseStore();
 const isLoading = ref(true);
 const project = ref(null);
 const copied = ref(false);
-const isAddingExpense = ref(false);
-const showNewItems = ref(false);
+const showCreateModal = ref(false);
+const createModalType = ref('expense');
 const showEditModal = ref(false);
 const editingExpense = ref(null);
-
-const formTypes = [
-  { value: 'expense', label: 'Gasto' },
-  { value: 'payment', label: 'Pago del cliente' },
-  { value: 'provider_expense', label: 'Gasto propio' }
-];
-
-const newExpense = reactive({
-  title: '',
-  amount: '',
-  category: 'materiales',
-  description: '',
-  type: 'expense',
-  items: []
-});
+const showProjectEditModal = ref(false);
 
 const statusLabel = computed(() => {
   switch (project.value?.status) {
@@ -288,16 +223,6 @@ const statusClasses = computed(() => {
     default: return '';
   }
 });
-
-// Auto-calculate total from items
-watch(() => newExpense.items, (items) => {
-  if (items.length > 0) {
-    const total = items.reduce((sum, item) => sum + (item.amount || 0), 0);
-    if (total > 0) {
-      newExpense.amount = total;
-    }
-  }
-}, { deep: true });
 
 useHead({
   title: computed(() => project.value?.name || 'Proyecto')
@@ -344,47 +269,81 @@ async function copyShareLink() {
   }
 }
 
-async function addExpense() {
-  if (!newExpense.title || !newExpense.amount) return;
+function openCreateModal(type) {
+  createModalType.value = type;
+  showCreateModal.value = true;
+}
 
-  isAddingExpense.value = true;
+async function handleCreateSubmit(formData) {
   try {
     const data = {
       projectId: project.value.id,
       providerId: project.value.providerId,
-      title: newExpense.title,
-      description: newExpense.description,
-      amount: parseFloat(newExpense.amount),
-      category: newExpense.type === 'payment' ? 'pago' : newExpense.category,
-      type: newExpense.type,
-      items: newExpense.items.length > 0 ? newExpense.items.filter(i => i.name) : null
+      title: formData.title,
+      description: formData.description,
+      amount: formData.amount,
+      category: formData.category,
+      type: formData.type,
+      paymentStatus: formData.paymentStatus,
+      paymentMethod: formData.paymentMethod,
+      items: formData.items
     };
 
     const result = await expenseStore.createExpense(data);
 
     if (result.success) {
-      const label = newExpense.type === 'payment' ? 'Pago registrado' : newExpense.type === 'provider_expense' ? 'Gasto propio registrado' : 'Gasto agregado';
+      // Auto-create linked payment if requested
+      if (formData.createLinkedPayment) {
+        const paymentData = {
+          projectId: project.value.id,
+          providerId: project.value.providerId,
+          title: `Pago: ${formData.title}`,
+          description: '',
+          amount: formData.amount,
+          category: 'pago',
+          type: 'payment',
+          paymentStatus: 'paid',
+          paymentMethod: formData.paymentMethod,
+          linkedExpenseId: result.data.id,
+          items: null
+        };
+
+        const paymentResult = await expenseStore.createExpense(paymentData);
+        if (paymentResult.success) {
+          await expenseStore.updateExpense(result.data.id, {
+            linkedPaymentId: paymentResult.data.id
+          });
+        }
+      }
+
+      const label = formData.type === 'payment' ? 'Pago registrado' : formData.type === 'provider_expense' ? 'Gasto propio registrado' : 'Gasto agregado';
       useToast('success', label);
-      newExpense.title = '';
-      newExpense.amount = '';
-      newExpense.description = '';
-      newExpense.category = 'materiales';
-      newExpense.items = [];
-      showNewItems.value = false;
+      showCreateModal.value = false;
     } else {
       useToast('error', result.error || 'Error al agregar');
     }
   } catch (error) {
     console.error('Error adding expense:', error);
     useToast('error', 'Error al agregar');
-  } finally {
-    isAddingExpense.value = false;
   }
 }
 
 function openEditModal(expense) {
   editingExpense.value = expense;
   showEditModal.value = true;
+}
+
+async function handleProjectEditSave(data) {
+  const result = await projectStore.updateProject(project.value.id, data);
+
+  if (result.success) {
+    useToast('success', 'Proyecto actualizado');
+    showProjectEditModal.value = false;
+    // Refresh project data locally
+    Object.assign(project.value, data);
+  } else {
+    useToast('error', result.error || 'Error al actualizar el proyecto');
+  }
 }
 
 async function handleEditSave({ id, data }) {
@@ -400,6 +359,74 @@ async function handleEditSave({ id, data }) {
     }
   } else {
     useToast('error', result.error || 'Error al actualizar');
+  }
+}
+
+async function handleMarkPaid(expense) {
+  try {
+    // 1. Create a linked payment record
+    const paymentData = {
+      projectId: expense.projectId,
+      providerId: expense.providerId,
+      title: `Pago: ${expense.title}`,
+      description: '',
+      amount: expense.amount,
+      category: 'pago',
+      type: 'payment',
+      paymentStatus: 'paid',
+      paymentMethod: expense.paymentMethod,
+      linkedExpenseId: expense.id,
+      items: null
+    };
+
+    const createResult = await expenseStore.createExpense(paymentData);
+    if (!createResult.success) {
+      useToast('error', 'Error al crear el pago');
+      return;
+    }
+
+    // 2. Update the expense with paymentStatus + linkedPaymentId
+    const updateResult = await expenseStore.updateExpense(expense.id, {
+      paymentStatus: 'paid',
+      linkedPaymentId: createResult.data.id
+    });
+
+    if (updateResult.success) {
+      useToast('success', 'Marcado como pagado');
+    } else {
+      useToast('error', 'Error al actualizar el gasto');
+    }
+  } catch (error) {
+    console.error('Error marking as paid:', error);
+    useToast('error', 'Error al marcar como pagado');
+  }
+}
+
+async function handleMarkPending(expense) {
+  try {
+    // 1. Delete the linked payment
+    if (expense.linkedPaymentId) {
+      const deleted = await expenseStore.deleteExpense(expense.linkedPaymentId);
+      if (!deleted) {
+        useToast('error', 'Error al eliminar el pago vinculado');
+        return;
+      }
+    }
+
+    // 2. Update the expense back to pending
+    const updateResult = await expenseStore.updateExpense(expense.id, {
+      paymentStatus: 'pending',
+      linkedPaymentId: null
+    });
+
+    if (updateResult.success) {
+      useToast('success', 'Marcado como pendiente');
+    } else {
+      useToast('error', 'Error al actualizar el gasto');
+    }
+  } catch (error) {
+    console.error('Error marking as pending:', error);
+    useToast('error', 'Error al marcar como pendiente');
   }
 }
 </script>

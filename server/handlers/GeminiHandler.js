@@ -41,11 +41,15 @@ class GeminiHandler {
 Extrae la siguiente informacion en formato JSON:
 {
   "storeName": "nombre del comercio",
-  "items": ["item1", "item2"],
+  "items": [
+    {"name": "nombre del item", "amount": 123.45},
+    {"name": "otro item", "amount": 67.89}
+  ],
   "totalAmount": 1234.56,
   "date": "DD/MM/YYYY"
 }
 
+Cada item debe tener "name" (descripcion corta) y "amount" (precio unitario o subtotal).
 Si no podes extraer algun campo, usa null.
 Solo responde con el JSON, sin texto adicional.`;
 
@@ -60,7 +64,7 @@ Solo responde con el JSON, sin texto adicional.`;
     ];
 
     const text = await this.generateContent(null, {
-      maxOutputTokens: 500,
+      maxOutputTokens: 1000,
       temperature: 0.3,
       parts
     });

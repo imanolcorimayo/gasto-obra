@@ -197,7 +197,16 @@ ${expenseLines}`;
       message += `\n*Pagos del dia:* ${formatAmount(todayPaymentTotal)}`;
     }
 
+    // Calculate pending amounts
+    const pendingTotal = allEntries
+      .filter(e => e.paymentStatus === 'pending')
+      .reduce((sum, e) => sum + (e.amount || 0), 0);
+
     message += `\n\n*Total acumulado gastos:* ${formatAmount(accumulatedExpenses)}`;
+
+    if (pendingTotal > 0) {
+      message += `\n*Pendiente de pago:* ${formatAmount(pendingTotal)}`;
+    }
 
     if (accumulatedPayments > 0) {
       message += `\n*Total pagos:* ${formatAmount(accumulatedPayments)}`;

@@ -1,32 +1,49 @@
 <template>
   <div class="flex flex-col gap-3">
-    <!-- Type filter tabs -->
-    <div class="flex flex-wrap items-center gap-2 mb-1">
-      <button
-        v-for="typeFilter in typeFilters"
-        :key="typeFilter.value"
-        @click="toggleType(typeFilter.value)"
-        class="text-xs px-3 py-1 rounded-full border transition-colors"
-        :class="selectedType === typeFilter.value
-          ? 'border-primary bg-primary/20 text-primary'
-          : 'border-gray-600 text-gray-400 hover:border-gray-500'"
-      >
-        {{ typeFilter.label }}
-      </button>
-    </div>
+    <!-- Filters -->
+    <div class="flex flex-wrap items-center gap-3 mb-1">
+      <div class="flex flex-col gap-0.5">
+        <span class="text-[10px] text-gray-500 uppercase tracking-wider">Tipo</span>
+        <select
+          v-model="selectedType"
+          class="bg-gray-800 border border-gray-600 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-primary cursor-pointer"
+        >
+          <option v-for="t in typeFilters" :key="t.value" :value="t.value">
+            {{ t.label }}
+          </option>
+        </select>
+      </div>
 
-    <!-- Category filters -->
-    <div class="flex flex-wrap items-center gap-2 mb-2">
+      <div class="flex flex-col gap-0.5">
+        <span class="text-[10px] text-gray-500 uppercase tracking-wider">Estado</span>
+        <select
+          v-model="selectedPaymentStatus"
+          class="bg-gray-800 border border-gray-600 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-primary cursor-pointer"
+        >
+          <option v-for="ps in paymentStatusFilters" :key="ps.value" :value="ps.value">
+            {{ ps.label }}
+          </option>
+        </select>
+      </div>
+
+      <div class="flex flex-col gap-0.5">
+        <span class="text-[10px] text-gray-500 uppercase tracking-wider">Categoria</span>
+        <select
+          v-model="selectedCategory"
+          class="bg-gray-800 border border-gray-600 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-primary cursor-pointer"
+        >
+          <option v-for="cat in allCategories" :key="cat.value" :value="cat.value">
+            {{ cat.label }}
+          </option>
+        </select>
+      </div>
+
       <button
-        v-for="cat in allCategories"
-        :key="cat.value"
-        @click="toggleCategory(cat.value)"
-        class="text-xs px-3 py-1 rounded-full border transition-colors"
-        :class="selectedCategory === cat.value
-          ? 'border-primary bg-primary/20 text-primary'
-          : 'border-gray-600 text-gray-400 hover:border-gray-500'"
+        v-if="hasActiveFilters"
+        @click="clearFilters"
+        class="text-[10px] text-gray-500 hover:text-white mt-3.5 transition-colors"
       >
-        {{ cat.label }}
+        Limpiar filtros
       </button>
     </div>
 
@@ -42,6 +59,8 @@
       :editable="editable"
       @view-image="$emit('viewImage', $event)"
       @edit="$emit('edit', $event)"
+      @mark-paid="$emit('markPaid', $event)"
+      @mark-pending="$emit('markPending', $event)"
     />
   </div>
 </template>
@@ -54,10 +73,11 @@ const props = defineProps({
   editable: { type: Boolean, default: false }
 });
 
-defineEmits(['viewImage', 'edit']);
+defineEmits(['viewImage', 'edit', 'markPaid', 'markPending']);
 
 const selectedCategory = ref('');
 const selectedType = ref('');
+const selectedPaymentStatus = ref('');
 
 const typeFilters = [
   { value: '', label: 'Todos' },
@@ -66,17 +86,25 @@ const typeFilters = [
   { value: 'provider_expense', label: 'Propios' }
 ];
 
+const paymentStatusFilters = [
+  { value: '', label: 'Todos' },
+  { value: 'paid', label: 'Pagados' },
+  { value: 'pending', label: 'Pendientes' }
+];
+
 const allCategories = computed(() => [
   { value: '', label: 'Todas' },
   ...EXPENSE_CATEGORIES
 ]);
 
-function toggleCategory(value) {
-  selectedCategory.value = selectedCategory.value === value ? '' : value;
-}
+const hasActiveFilters = computed(() =>
+  selectedType.value || selectedPaymentStatus.value || selectedCategory.value
+);
 
-function toggleType(value) {
-  selectedType.value = selectedType.value === value ? '' : value;
+function clearFilters() {
+  selectedType.value = '';
+  selectedPaymentStatus.value = '';
+  selectedCategory.value = '';
 }
 
 const filteredExpenses = computed(() => {
@@ -92,6 +120,14 @@ const filteredExpenses = computed(() => {
 
   if (selectedCategory.value) {
     result = result.filter(e => e.category === selectedCategory.value);
+  }
+
+  if (selectedPaymentStatus.value) {
+    if (selectedPaymentStatus.value === 'paid') {
+      result = result.filter(e => !e.paymentStatus || e.paymentStatus === 'paid');
+    } else {
+      result = result.filter(e => e.paymentStatus === selectedPaymentStatus.value);
+    }
   }
 
   return result;

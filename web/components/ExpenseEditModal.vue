@@ -71,6 +71,41 @@
           />
         </div>
 
+        <!-- Payment Status -->
+        <div>
+          <label class="block text-sm font-medium text-gray-300 mb-1">Estado de pago</label>
+          <div class="flex gap-2">
+            <button
+              v-for="s in PAYMENT_STATUSES"
+              :key="s.value"
+              type="button"
+              @click="form.paymentStatus = s.value"
+              class="text-xs px-3 py-1.5 rounded-full border transition-colors"
+              :class="form.paymentStatus === s.value
+                ? s.value === 'paid'
+                  ? 'border-green-500 bg-green-500/20 text-green-400'
+                  : 'border-red-500 bg-red-500/20 text-red-400'
+                : 'border-gray-600 text-gray-400 hover:border-gray-500'"
+            >
+              {{ s.label }}
+            </button>
+          </div>
+        </div>
+
+        <!-- Payment Method -->
+        <div>
+          <label class="block text-sm font-medium text-gray-300 mb-1">Medio de pago</label>
+          <select
+            v-model="form.paymentMethod"
+            class="w-full bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-primary text-sm"
+          >
+            <option :value="null">Sin especificar</option>
+            <option v-for="m in PAYMENT_METHODS" :key="m.value" :value="m.value">
+              {{ m.label }}
+            </option>
+          </select>
+        </div>
+
         <!-- Items (collapsible) -->
         <div>
           <button
@@ -159,7 +194,7 @@
 import MdiChevronDown from '~icons/mdi/chevron-down';
 import MdiPlus from '~icons/mdi/plus';
 import MdiClose from '~icons/mdi/close';
-import { EXPENSE_CATEGORIES } from '~/utils';
+import { EXPENSE_CATEGORIES, PAYMENT_METHODS, PAYMENT_STATUSES } from '~/utils';
 
 const props = defineProps({
   show: { type: Boolean, default: false },
@@ -185,6 +220,8 @@ const form = reactive({
   category: 'materiales',
   description: '',
   type: 'expense',
+  paymentStatus: 'paid',
+  paymentMethod: null,
   items: [],
   projectId: ''
 });
@@ -196,6 +233,8 @@ watch(() => props.expense, (expense) => {
     form.category = expense.category || 'materiales';
     form.description = expense.description || '';
     form.type = expense.type || 'expense';
+    form.paymentStatus = expense.paymentStatus || 'paid';
+    form.paymentMethod = expense.paymentMethod || null;
     form.items = expense.items ? expense.items.map(i => ({ ...i })) : [];
     form.projectId = expense.projectId || '';
     showItems.value = form.items.length > 0;
@@ -230,6 +269,8 @@ async function handleSave() {
       category: form.type === 'payment' ? 'pago' : form.category,
       description: form.description,
       type: form.type,
+      paymentStatus: form.paymentStatus,
+      paymentMethod: form.paymentMethod,
       items: form.items.length > 0 ? form.items.filter(i => i.name) : null,
       projectId: form.projectId
     };

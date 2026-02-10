@@ -54,6 +54,23 @@ export class ExpenseSchema extends Schema {
       type: 'array',
       required: false
     },
+    paymentStatus: {
+      type: 'string',
+      required: false,
+      default: 'paid'
+    },
+    paymentMethod: {
+      type: 'string',
+      required: false
+    },
+    linkedExpenseId: {
+      type: 'string',
+      required: false
+    },
+    linkedPaymentId: {
+      type: 'string',
+      required: false
+    },
     source: {
       type: 'string',
       required: true,

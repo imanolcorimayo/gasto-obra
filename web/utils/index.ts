@@ -59,3 +59,38 @@ export const TRANSACTION_TYPES = [
   { value: 'payment', label: 'Pago del cliente', color: '#27AE60' },
   { value: 'provider_expense', label: 'Gasto propio', color: '#95A5A6' }
 ];
+
+export const PAYMENT_STATUSES = [
+  { value: 'paid', label: 'Pagado', color: '#27AE60' },
+  { value: 'pending', label: 'Pendiente', color: '#E74C3C' }
+];
+
+export const PAYMENT_METHODS = [
+  { value: 'transferencia', label: 'Transferencia', color: '#3498DB' },
+  { value: 'efectivo', label: 'Efectivo', color: '#27AE60' },
+  { value: 'tarjeta', label: 'Tarjeta', color: '#9B59B6' },
+  { value: 'mercadopago', label: 'Mercado Pago', color: '#00B1EA' }
+];
+
+export const getPaymentStatusLabel = (value: string): string => {
+  const status = PAYMENT_STATUSES.find(s => s.value === value);
+  return status ? status.label : capitalizeFirst(value);
+};
+
+export const getPaymentStatusColor = (value: string): string => {
+  const status = PAYMENT_STATUSES.find(s => s.value === value);
+  return status ? status.color : '#95A5A6';
+};
+
+export const getPaymentStatusStyles = (value: string) => {
+  const color = getPaymentStatusColor(value);
+  return {
+    backgroundColor: `${color}26`,
+    color: color
+  };
+};
+
+export const getPaymentMethodLabel = (value: string): string => {
+  const method = PAYMENT_METHODS.find(m => m.value === value);
+  return method ? method.label : capitalizeFirst(value);
+};

@@ -313,13 +313,15 @@ async function processImageMessage(phoneNumber, imageId, caption, contactName) {
   }
 
   // Create expense data
-  const title = receiptData.storeName || receiptData.items?.[0] || 'Ticket';
-  const description = receiptData.items ? receiptData.items.join(', ') : '';
+  const title = receiptData.storeName || (receiptData.items?.[0]?.name) || 'Ticket';
+  const description = receiptData.items
+    ? receiptData.items.map(i => typeof i === 'string' ? i : i.name).join(', ')
+    : '';
   const category = await geminiHandler.categorizeExpense(title, description);
 
-  // Build line items if available
-  const items = receiptData.lineItems && receiptData.lineItems.length > 0
-    ? receiptData.lineItems.map(li => ({ name: li.name || li, amount: li.amount || 0 }))
+  // Build line items from Gemini's items array
+  const items = receiptData.items && receiptData.items.length > 0
+    ? receiptData.items.map(i => typeof i === 'string' ? { name: i, amount: 0 } : { name: i.name || '', amount: i.amount || 0 })
     : null;
 
   const expenseData = {
@@ -330,6 +332,10 @@ async function processImageMessage(phoneNumber, imageId, caption, contactName) {
     amount: receiptData.totalAmount,
     category,
     type: 'expense',
+    paymentStatus: 'paid',
+    paymentMethod: null,
+    linkedExpenseId: null,
+    linkedPaymentId: null,
     items,
     imageUrl: null,
     audioTranscription: null,
@@ -460,6 +466,10 @@ async function processAudioMessage(phoneNumber, audioId, caption, contactName) {
     amount,
     category,
     type: 'expense',
+    paymentStatus: 'paid',
+    paymentMethod: null,
+    linkedExpenseId: null,
+    linkedPaymentId: null,
     items: null,
     imageUrl: null,
     audioTranscription: transcription.transcription || null,
@@ -496,6 +506,10 @@ async function confirmPendingExpense(phoneNumber, pending) {
     amount: data.amount,
     category: data.category,
     type: data.type || 'expense',
+    paymentStatus: data.paymentStatus || 'paid',
+    paymentMethod: data.paymentMethod || null,
+    linkedExpenseId: data.linkedExpenseId || null,
+    linkedPaymentId: data.linkedPaymentId || null,
     items: data.items || null,
     imageUrl: data.imageUrl || null,
     audioTranscription: data.audioTranscription || null,
@@ -839,6 +853,10 @@ async function handlePagoCommand(phoneNumber, text) {
     amount,
     category: 'pago',
     type: 'payment',
+    paymentStatus: 'paid',
+    paymentMethod: null,
+    linkedExpenseId: null,
+    linkedPaymentId: null,
     items: null,
     imageUrl: null,
     audioTranscription: null,
@@ -925,6 +943,10 @@ async function handlePropioCommand(phoneNumber, text) {
     amount,
     category,
     type: 'provider_expense',
+    paymentStatus: 'paid',
+    paymentMethod: null,
+    linkedExpenseId: null,
+    linkedPaymentId: null,
     items: null,
     imageUrl: null,
     audioTranscription: null,
@@ -1010,6 +1032,8 @@ async function handleExpenseMessage(phoneNumber, text) {
       amount: parsed.amount,
       category,
       type: 'expense',
+      paymentStatus: 'paid',
+      paymentMethod: null,
       items: null,
       imageUrl: null,
       audioTranscription: null,
@@ -1164,6 +1188,10 @@ async function completePendingExpense(phoneNumber, pending, tag) {
     amount: data.amount,
     category: data.category,
     type: data.type || 'expense',
+    paymentStatus: data.paymentStatus || 'paid',
+    paymentMethod: data.paymentMethod || null,
+    linkedExpenseId: data.linkedExpenseId || null,
+    linkedPaymentId: data.linkedPaymentId || null,
     items: null,
     imageUrl: null,
     audioTranscription: data.transcription || null,

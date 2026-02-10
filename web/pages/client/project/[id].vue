@@ -41,7 +41,7 @@
         </div>
       </div>
 
-      <!-- Financial summary (aggregated, no individual details) -->
+      <!-- Financial summary -->
       <div class="bg-surface rounded-xl border border-gray-700 p-5 mb-6">
         <h3 class="font-semibold mb-4">Resumen financiero</h3>
 
@@ -54,6 +54,11 @@
           <div class="flex items-center justify-between">
             <span class="text-gray-400">Pagos realizados</span>
             <span class="text-xl font-bold text-green-400">{{ formatPrice(totalPayments) }}</span>
+          </div>
+
+          <div v-if="totalPending > 0" class="flex items-center justify-between">
+            <span class="text-gray-400">Pendiente de pago</span>
+            <span class="text-xl font-bold text-red-400">{{ formatPrice(totalPending) }}</span>
           </div>
 
           <div class="flex items-center justify-between pt-3 border-t border-gray-700">
@@ -109,12 +114,67 @@
           </div>
         </div>
       </div>
+
+      <!-- Expense & payment history -->
+      <div>
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="font-semibold">Historial</h3>
+          <div class="flex items-center gap-2">
+            <span class="text-[10px] text-gray-500 uppercase tracking-wider">Tipo</span>
+            <select
+              v-model="selectedType"
+              class="bg-gray-800 border border-gray-600 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-primary cursor-pointer"
+            >
+              <option value="">Todos</option>
+              <option value="expense">Gastos</option>
+              <option value="payment">Pagos</option>
+            </select>
+          </div>
+        </div>
+        <div class="flex rounded-lg border border-gray-600 overflow-hidden w-fit mb-4">
+          <button
+            @click="viewMode = 'cards'"
+            class="px-3 py-1.5 text-xs flex items-center gap-1.5 transition-colors"
+            :class="viewMode === 'cards' ? 'bg-gray-600 text-white' : 'text-gray-400 hover:text-white'"
+          >
+            <MdiViewAgenda class="text-sm" />
+            Tarjetas
+          </button>
+          <button
+            @click="viewMode = 'table'"
+            class="px-3 py-1.5 text-xs flex items-center gap-1.5 transition-colors"
+            :class="viewMode === 'table' ? 'bg-gray-600 text-white' : 'text-gray-400 hover:text-white'"
+          >
+            <MdiTable class="text-sm" />
+            Balance
+          </button>
+        </div>
+
+        <template v-if="viewMode === 'cards'">
+          <div v-if="filteredCards.length === 0" class="text-center text-gray-500 py-8">
+            No hay registros todavia.
+          </div>
+          <div v-else class="flex flex-col gap-3">
+            <ClientExpenseCard
+              v-for="expense in filteredCards"
+              :key="expense.id"
+              :expense="expense"
+            />
+          </div>
+        </template>
+
+        <template v-else>
+          <ClientBalanceTable :expenses="filteredAll" />
+        </template>
+      </div>
     </template>
   </div>
 </template>
 
 <script setup>
 import MdiArrowLeft from '~icons/mdi/arrow-left';
+import MdiViewAgenda from '~icons/mdi/view-agenda';
+import MdiTable from '~icons/mdi/table';
 import { useProjectStore } from '~/stores/project';
 import { useExpenseStore } from '~/stores/expense';
 import { formatPrice, formatDate, getCategoryColor, getCategoryLabel } from '~/utils';
@@ -130,20 +190,43 @@ const expenseStore = useExpenseStore();
 
 const isLoading = ref(true);
 const project = ref(null);
+const selectedType = ref('');
+const viewMode = ref('cards');
 
 useHead({
   title: computed(() => project.value?.name || 'Proyecto')
 });
 
+// All client-relevant expenses (for summary, table, and financial calculations)
+const allClientExpenses = computed(() =>
+  expenseStore.expenses.filter(e => e.type !== 'provider_expense')
+);
+
+// Card view hides auto-linked payments (shown as "Pagado" on expense card)
+const cardExpenses = computed(() =>
+  allClientExpenses.value.filter(e => !e.linkedExpenseId)
+);
+
+// Financial calculations use the full list
+const onlyExpenses = computed(() =>
+  allClientExpenses.value.filter(e => !e.type || e.type === 'expense')
+);
+
+const onlyPayments = computed(() =>
+  allClientExpenses.value.filter(e => e.type === 'payment')
+);
+
 const totalExpenses = computed(() =>
-  expenseStore.expenses
-    .filter(e => !e.type || e.type === 'expense')
-    .reduce((sum, e) => sum + (e.amount || 0), 0)
+  onlyExpenses.value.reduce((sum, e) => sum + (e.amount || 0), 0)
 );
 
 const totalPayments = computed(() =>
-  expenseStore.expenses
-    .filter(e => e.type === 'payment')
+  onlyPayments.value.reduce((sum, e) => sum + (e.amount || 0), 0)
+);
+
+const totalPending = computed(() =>
+  onlyExpenses.value
+    .filter(e => e.paymentStatus === 'pending')
     .reduce((sum, e) => sum + (e.amount || 0), 0)
 );
 
@@ -156,16 +239,14 @@ const budgetPercent = computed(() => {
 
 const categoryBreakdown = computed(() => {
   const grouped = {};
-  expenseStore.expenses
-    .filter(e => !e.type || e.type === 'expense')
-    .forEach(e => {
-      const cat = e.category || 'otros';
-      if (!grouped[cat]) {
-        grouped[cat] = { total: 0, count: 0 };
-      }
-      grouped[cat].total += e.amount || 0;
-      grouped[cat].count++;
-    });
+  onlyExpenses.value.forEach(e => {
+    const cat = e.category || 'otros';
+    if (!grouped[cat]) {
+      grouped[cat] = { total: 0, count: 0 };
+    }
+    grouped[cat].total += e.amount || 0;
+    grouped[cat].count++;
+  });
 
   return Object.entries(grouped)
     .map(([name, data]) => ({
@@ -178,6 +259,18 @@ const categoryBreakdown = computed(() => {
     .sort((a, b) => b.total - a.total);
 });
 
+// Apply type filter to each view
+const filteredCards = computed(() => applyTypeFilter(cardExpenses.value));
+const filteredAll = computed(() => applyTypeFilter(allClientExpenses.value));
+
+function applyTypeFilter(list) {
+  if (!selectedType.value) return list;
+  if (selectedType.value === 'expense') {
+    return list.filter(e => !e.type || e.type === 'expense');
+  }
+  return list.filter(e => e.type === selectedType.value);
+}
+
 onMounted(async () => {
   const id = route.params.id;
   const user = await getCurrentUserAsync();
@@ -187,10 +280,8 @@ onMounted(async () => {
     return;
   }
 
-  // Fetch project
   const result = await projectStore.fetchProject(id);
 
-  // Verify client access
   if (result && result.clientUserId === user.uid) {
     project.value = result;
     await expenseStore.fetchByProjectIdPublic(id);

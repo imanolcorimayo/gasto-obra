@@ -36,6 +36,10 @@ export interface Expense {
   imageUrl: string | null;
   audioTranscription: string | null;
   originalMessage: string;
+  paymentStatus: 'paid' | 'pending';
+  paymentMethod: string | null;
+  linkedExpenseId: string | null;
+  linkedPaymentId: string | null;
   source: 'whatsapp' | 'web';
   date: any;
   createdAt: any;
