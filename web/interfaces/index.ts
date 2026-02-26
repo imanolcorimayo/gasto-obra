@@ -45,6 +45,18 @@ export interface Expense {
   createdAt: any;
 }
 
+export interface ExpenseCategory {
+  value: string;
+  label: string;
+  color: string;
+}
+
+export interface CategoryDoc extends ExpenseCategory {
+  id: string;
+  userId: string;
+  projectId: string | null;
+}
+
 export interface WhatsappLink {
   id: string;
   status: 'pending' | 'linked';

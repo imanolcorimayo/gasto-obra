@@ -39,7 +39,7 @@
             v-model="form.category"
             class="w-full bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-primary"
           >
-            <option v-for="cat in EXPENSE_CATEGORIES" :key="cat.value" :value="cat.value">
+            <option v-for="cat in resolvedCategories" :key="cat.value" :value="cat.value">
               {{ cat.label }}
             </option>
           </select>
@@ -92,7 +92,7 @@
           >
             <label class="flex items-center justify-between cursor-pointer">
               <div>
-                <span class="text-sm font-medium text-white">Registrar pago del cliente</span>
+                <span class="text-sm font-medium text-white">Registrar cobro del cliente</span>
                 <p class="text-xs text-gray-500 mt-0.5">Crea automaticamente un ingreso vinculado a este gasto</p>
               </div>
               <button
@@ -189,12 +189,17 @@
 import MdiChevronDown from '~icons/mdi/chevron-down';
 import MdiPlus from '~icons/mdi/plus';
 import MdiClose from '~icons/mdi/close';
-import { EXPENSE_CATEGORIES, PAYMENT_METHODS } from '~/utils';
+import { DEFAULT_EXPENSE_CATEGORIES, PAYMENT_METHODS } from '~/utils';
 
 const props = defineProps({
   show: { type: Boolean, default: false },
-  type: { type: String, default: 'expense' }
+  type: { type: String, default: 'expense' },
+  categories: { type: Array, default: () => [] }
 });
+
+const resolvedCategories = computed(() =>
+  props.categories.length > 0 ? props.categories : DEFAULT_EXPENSE_CATEGORIES
+);
 
 const emit = defineEmits(['close', 'submit']);
 
@@ -214,7 +219,7 @@ const form = reactive({
 
 const modalTitle = computed(() => {
   switch (props.type) {
-    case 'payment': return 'Registrar pago del cliente';
+    case 'payment': return 'Registrar cobro';
     case 'provider_expense': return 'Registrar gasto propio';
     default: return 'Agregar gasto';
   }
@@ -222,7 +227,7 @@ const modalTitle = computed(() => {
 
 const modalDescription = computed(() => {
   switch (props.type) {
-    case 'payment': return 'Dinero recibido del cliente. Se registra como ingreso a favor del proyecto.';
+    case 'payment': return 'Cobro al cliente. Se registra como ingreso a favor del proyecto.';
     case 'provider_expense': return 'Gasto personal del proveedor. No se cobra al cliente.';
     default: return 'Gasto de la obra que se cobra al cliente.';
   }
@@ -230,7 +235,7 @@ const modalDescription = computed(() => {
 
 const submitLabel = computed(() => {
   switch (props.type) {
-    case 'payment': return 'Registrar Pago';
+    case 'payment': return 'Registrar Cobro';
     case 'provider_expense': return 'Registrar Gasto Propio';
     default: return 'Agregar Gasto';
   }

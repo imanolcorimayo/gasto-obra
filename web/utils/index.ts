@@ -21,7 +21,9 @@ export const capitalizeFirst = (str: string): string => {
   return str.charAt(0).toUpperCase() + str.slice(1);
 };
 
-export const EXPENSE_CATEGORIES = [
+import type { ExpenseCategory } from '~/interfaces';
+
+export const DEFAULT_EXPENSE_CATEGORIES: ExpenseCategory[] = [
   { value: 'materiales', label: 'Materiales', color: '#3498DB' },
   { value: 'herramientas', label: 'Herramientas', color: '#E67E22' },
   { value: 'transporte', label: 'Transporte', color: '#F1C40F' },
@@ -30,18 +32,50 @@ export const EXPENSE_CATEGORIES = [
   { value: 'otros', label: 'Otros', color: '#95A5A6' }
 ];
 
-export const getCategoryLabel = (value: string): string => {
-  const cat = EXPENSE_CATEGORIES.find(c => c.value === value);
+// Backward compat alias
+export const EXPENSE_CATEGORIES = DEFAULT_EXPENSE_CATEGORIES;
+
+export const resolveCategories = (
+  globalCats: ExpenseCategory[],
+  projectCats?: ExpenseCategory[]
+): ExpenseCategory[] => {
+  // If no custom categories at all, return defaults
+  if (globalCats.length === 0 && (!projectCats || projectCats.length === 0)) {
+    return DEFAULT_EXPENSE_CATEGORIES;
+  }
+
+  // Start with global categories
+  const merged = [...globalCats];
+
+  // Project categories override global ones with the same value
+  if (projectCats && projectCats.length > 0) {
+    for (const pc of projectCats) {
+      const idx = merged.findIndex(c => c.value === pc.value);
+      if (idx !== -1) {
+        merged[idx] = pc;
+      } else {
+        merged.push(pc);
+      }
+    }
+  }
+
+  return merged.length > 0 ? merged : DEFAULT_EXPENSE_CATEGORIES;
+};
+
+export const getCategoryLabel = (value: string, categories?: ExpenseCategory[]): string => {
+  const list = categories && categories.length > 0 ? categories : DEFAULT_EXPENSE_CATEGORIES;
+  const cat = list.find(c => c.value === value);
   return cat ? cat.label : capitalizeFirst(value);
 };
 
-export const getCategoryColor = (value: string): string => {
-  const cat = EXPENSE_CATEGORIES.find(c => c.value === value);
+export const getCategoryColor = (value: string, categories?: ExpenseCategory[]): string => {
+  const list = categories && categories.length > 0 ? categories : DEFAULT_EXPENSE_CATEGORIES;
+  const cat = list.find(c => c.value === value);
   return cat ? cat.color : '#95A5A6';
 };
 
-export const getCategoryStyles = (value: string) => {
-  const color = getCategoryColor(value);
+export const getCategoryStyles = (value: string, categories?: ExpenseCategory[]) => {
+  const color = getCategoryColor(value, categories);
   return {
     backgroundColor: `${color}26`,
     color: color
@@ -56,7 +90,7 @@ export const PROJECT_STATUSES = [
 
 export const TRANSACTION_TYPES = [
   { value: 'expense', label: 'Gasto', color: '#3498DB' },
-  { value: 'payment', label: 'Pago del cliente', color: '#27AE60' },
+  { value: 'payment', label: 'Cobro', color: '#27AE60' },
   { value: 'provider_expense', label: 'Gasto propio', color: '#95A5A6' }
 ];
 

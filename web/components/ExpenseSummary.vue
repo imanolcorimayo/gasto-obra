@@ -62,7 +62,7 @@
           <span class="text-gray-300">{{ cat.label }}</span>
           <span class="text-gray-600 text-xs">({{ cat.count }})</span>
         </div>
-        <span class="text-gray-300 font-medium">{{ formatPrice(cat.total) }}</span>
+        <span class="text-gray-300 font-medium">{{ formatPrice(cat.total) }} <span class="text-gray-500">({{ (cat.total / totalExpenses * 100).toFixed(0) }}%)</span></span>
       </div>
     </div>
 
@@ -77,7 +77,8 @@ import { formatPrice, getCategoryColor, getCategoryLabel } from '~/utils';
 
 const props = defineProps({
   expenses: { type: Array, default: () => [] },
-  budget: { type: Number, default: null }
+  budget: { type: Number, default: null },
+  categories: { type: Array, default: () => [] }
 });
 
 const clientExpenses = computed(() =>
@@ -133,8 +134,8 @@ const categoryBreakdown = computed(() => {
   return Object.entries(grouped)
     .map(([name, data]) => ({
       name,
-      label: getCategoryLabel(name),
-      color: getCategoryColor(name),
+      label: getCategoryLabel(name, props.categories),
+      color: getCategoryColor(name, props.categories),
       total: data.total,
       count: data.count
     }))

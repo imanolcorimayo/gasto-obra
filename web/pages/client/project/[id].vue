@@ -110,7 +110,7 @@
               <span class="text-gray-300">{{ cat.label }}</span>
               <span class="text-gray-600 text-xs">({{ cat.count }})</span>
             </div>
-            <span class="text-gray-300 font-medium">{{ formatPrice(cat.total) }}</span>
+            <span class="text-gray-300 font-medium">{{ formatPrice(cat.total) }} <span class="text-gray-500">({{ (cat.total / totalExpenses * 100).toFixed(0) }}%)</span></span>
           </div>
         </div>
       </div>
@@ -159,6 +159,7 @@
               v-for="expense in filteredCards"
               :key="expense.id"
               :expense="expense"
+              :categories="resolvedCategories"
             />
           </div>
         </template>
@@ -177,6 +178,7 @@ import MdiViewAgenda from '~icons/mdi/view-agenda';
 import MdiTable from '~icons/mdi/table';
 import { useProjectStore } from '~/stores/project';
 import { useExpenseStore } from '~/stores/expense';
+import { useCategoryStore } from '~/stores/category';
 import { formatPrice, formatDate, getCategoryColor, getCategoryLabel } from '~/utils';
 import { getCurrentUserAsync } from '~/utils/firebase';
 
@@ -187,11 +189,17 @@ definePageMeta({
 const route = useRoute();
 const projectStore = useProjectStore();
 const expenseStore = useExpenseStore();
+const categoryStore = useCategoryStore();
 
 const isLoading = ref(true);
 const project = ref(null);
 const selectedType = ref('');
 const viewMode = ref('cards');
+
+const resolvedCategories = computed(() => {
+  const id = route.params.id;
+  return categoryStore.getResolved(id);
+});
 
 useHead({
   title: computed(() => project.value?.name || 'Proyecto')
@@ -251,8 +259,8 @@ const categoryBreakdown = computed(() => {
   return Object.entries(grouped)
     .map(([name, data]) => ({
       name,
-      label: getCategoryLabel(name),
-      color: getCategoryColor(name),
+      label: getCategoryLabel(name, resolvedCategories.value),
+      color: getCategoryColor(name, resolvedCategories.value),
       total: data.total,
       count: data.count
     }))
@@ -284,7 +292,10 @@ onMounted(async () => {
 
   if (result && result.clientUserId === user.uid) {
     project.value = result;
-    await expenseStore.fetchByProjectIdPublic(id);
+    await Promise.all([
+      expenseStore.fetchByProjectIdPublic(id),
+      categoryStore.fetchForProviderPublic(result.providerId, id)
+    ]);
   }
 
   isLoading.value = false;

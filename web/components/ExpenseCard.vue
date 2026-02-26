@@ -52,9 +52,9 @@
     <div class="flex items-center gap-3 mt-3 text-sm">
       <span
         class="px-2 py-0.5 rounded-full text-xs font-medium"
-        :style="getCategoryStyles(expense.category)"
+        :style="getCategoryStyles(expense.category, categories)"
       >
-        {{ getCategoryLabel(expense.category) }}
+        {{ getCategoryLabel(expense.category, categories) }}
       </span>
 
       <span class="text-gray-500">
@@ -102,7 +102,8 @@ import { formatPrice, getCategoryStyles, getCategoryLabel, getPaymentMethodLabel
 
 const props = defineProps({
   expense: { type: Object, required: true },
-  editable: { type: Boolean, default: false }
+  editable: { type: Boolean, default: false },
+  categories: { type: Array, default: () => [] }
 });
 
 defineEmits(['viewImage', 'edit', 'markPaid', 'markPending']);

@@ -54,7 +54,7 @@
             v-model="form.category"
             class="w-full bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-primary"
           >
-            <option v-for="cat in EXPENSE_CATEGORIES" :key="cat.value" :value="cat.value">
+            <option v-for="cat in resolvedCategories" :key="cat.value" :value="cat.value">
               {{ cat.label }}
             </option>
           </select>
@@ -194,13 +194,18 @@
 import MdiChevronDown from '~icons/mdi/chevron-down';
 import MdiPlus from '~icons/mdi/plus';
 import MdiClose from '~icons/mdi/close';
-import { EXPENSE_CATEGORIES, PAYMENT_METHODS, PAYMENT_STATUSES } from '~/utils';
+import { DEFAULT_EXPENSE_CATEGORIES, PAYMENT_METHODS, PAYMENT_STATUSES } from '~/utils';
 
 const props = defineProps({
   show: { type: Boolean, default: false },
   expense: { type: Object, default: null },
-  projects: { type: Array, default: () => [] }
+  projects: { type: Array, default: () => [] },
+  categories: { type: Array, default: () => [] }
 });
+
+const resolvedCategories = computed(() =>
+  props.categories.length > 0 ? props.categories : DEFAULT_EXPENSE_CATEGORIES
+);
 
 const emit = defineEmits(['close', 'save']);
 
@@ -210,7 +215,7 @@ const isSaving = ref(false);
 
 const typeOptions = [
   { value: 'expense', label: 'Gasto' },
-  { value: 'payment', label: 'Pago del cliente' },
+  { value: 'payment', label: 'Cobro' },
   { value: 'provider_expense', label: 'Gasto propio' }
 ];
 

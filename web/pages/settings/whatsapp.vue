@@ -1,6 +1,16 @@
 <template>
   <div class="mb-8">
     <div class="flex flex-col gap-6">
+      <!-- Settings Sub-Nav -->
+      <div class="flex gap-2 border-b border-gray-700 pb-3">
+        <NuxtLink to="/settings/whatsapp" class="text-sm px-3 py-1.5 rounded-lg transition-colors" :class="'bg-gray-700 text-white'">
+          WhatsApp
+        </NuxtLink>
+        <NuxtLink to="/settings/categories" class="text-sm px-3 py-1.5 rounded-lg transition-colors text-gray-400 hover:text-white hover:bg-gray-700/50">
+          Categorias
+        </NuxtLink>
+      </div>
+
       <!-- Header -->
       <div>
         <h1 class="text-2xl font-bold">WhatsApp</h1>

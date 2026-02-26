@@ -40,9 +40,9 @@
     <div class="flex flex-wrap items-center gap-3 mt-3 text-sm">
       <span
         class="px-2 py-0.5 rounded-full text-xs font-medium"
-        :style="getCategoryStyles(expense.category)"
+        :style="getCategoryStyles(expense.category, categories)"
       >
-        {{ getCategoryLabel(expense.category) }}
+        {{ getCategoryLabel(expense.category, categories) }}
       </span>
 
       <span class="text-gray-500">
@@ -74,7 +74,8 @@
 import { formatPrice, getCategoryStyles, getCategoryLabel, getPaymentMethodLabel } from '~/utils';
 
 const props = defineProps({
-  expense: { type: Object, required: true }
+  expense: { type: Object, required: true },
+  categories: { type: Array, default: () => [] }
 });
 
 const isPayment = computed(() => props.expense.type === 'payment');

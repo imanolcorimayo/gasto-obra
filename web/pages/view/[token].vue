@@ -34,7 +34,7 @@
         </div>
 
         <!-- Summary -->
-        <ExpenseSummary :expenses="allClientExpenses" :budget="project.budget" class="mb-6" />
+        <ExpenseSummary :expenses="allClientExpenses" :budget="project.budget" :categories="resolvedCategories" class="mb-6" />
 
         <!-- Expense history -->
         <div class="mb-6">
@@ -80,6 +80,7 @@
                 v-for="expense in filteredCards"
                 :key="expense.id"
                 :expense="expense"
+                :categories="resolvedCategories"
               />
             </div>
           </template>
@@ -116,6 +117,7 @@ import MdiViewAgenda from '~icons/mdi/view-agenda';
 import MdiTable from '~icons/mdi/table';
 import { useProjectStore } from '~/stores/project';
 import { useExpenseStore } from '~/stores/expense';
+import { useCategoryStore } from '~/stores/category';
 
 definePageMeta({
   layout: 'landing'
@@ -124,12 +126,18 @@ definePageMeta({
 const route = useRoute();
 const projectStore = useProjectStore();
 const expenseStore = useExpenseStore();
+const categoryStore = useCategoryStore();
 
 const isLoading = ref(true);
 const project = ref(null);
 const expenses = ref([]);
 const selectedType = ref('');
 const viewMode = ref('cards');
+
+const resolvedCategories = computed(() => {
+  if (!project.value) return [];
+  return categoryStore.getResolved(project.value.id);
+});
 
 useHead({
   title: computed(() => project.value?.name || 'Vista de Proyecto')
@@ -164,7 +172,10 @@ onMounted(async () => {
   project.value = projectResult;
 
   if (projectResult) {
-    await expenseStore.fetchByProjectIdPublic(projectResult.id);
+    await Promise.all([
+      expenseStore.fetchByProjectIdPublic(projectResult.id),
+      categoryStore.fetchForProviderPublic(projectResult.providerId, projectResult.id)
+    ]);
     expenses.value = expenseStore.expenses;
   }
 

@@ -41,13 +41,57 @@ console.log('Firestore connection established');
 const COLLECTIONS = {
   WHATSAPP_LINKS: 'whatsappLinks',
   PROJECTS: 'projects',
-  EXPENSES: 'expenses'
+  EXPENSES: 'expenses',
+  CATEGORIES: 'categories'
 };
 
 // ============================================
 // Default expense categories
 // ============================================
-const EXPENSE_CATEGORIES = ['materiales', 'herramientas', 'transporte', 'mano de obra', 'comida', 'otros'];
+const DEFAULT_EXPENSE_CATEGORIES = ['materiales', 'herramientas', 'transporte', 'mano de obra', 'comida', 'otros'];
+
+// Fetch provider's custom categories (project-specific override global)
+async function getProviderCategories(providerId, projectId = null) {
+  try {
+    // 1. Fetch project-specific categories
+    let projectCats = [];
+    if (projectId) {
+      const projSnap = await db.collection('categories')
+        .where('userId', '==', providerId)
+        .where('projectId', '==', projectId)
+        .get();
+      projectCats = projSnap.docs.map(d => d.data());
+    }
+
+    // 2. Fetch global categories
+    const globalSnap = await db.collection('categories')
+      .where('userId', '==', providerId)
+      .where('projectId', '==', null)
+      .get();
+    const globalCats = globalSnap.docs.map(d => d.data());
+
+    // 3. If no custom categories at all, return defaults
+    if (globalCats.length === 0 && projectCats.length === 0) {
+      return DEFAULT_EXPENSE_CATEGORIES;
+    }
+
+    // 4. Merge: project overrides global by value
+    const merged = [...globalCats];
+    for (const pc of projectCats) {
+      const idx = merged.findIndex(c => c.value === pc.value);
+      if (idx !== -1) {
+        merged[idx] = pc;
+      } else {
+        merged.push(pc);
+      }
+    }
+
+    return merged.length > 0 ? merged.map(c => c.value) : DEFAULT_EXPENSE_CATEGORIES;
+  } catch (error) {
+    console.error('Error fetching provider categories:', error);
+    return DEFAULT_EXPENSE_CATEGORIES;
+  }
+}
 
 // ============================================
 // Transaction Type Helpers
@@ -74,7 +118,7 @@ function getTypeDefaults(type) {
 }
 
 function getTypeLabel(type) {
-  if (type === 'payment') return 'Pago del cliente';
+  if (type === 'payment') return 'Cobro';
   if (type === 'provider_expense') return 'Gasto propio';
   return 'Gasto';
 }
@@ -341,9 +385,8 @@ async function processImageMessage(phoneNumber, imageId, caption, contactName) {
   const description = receiptData.items
     ? receiptData.items.map(i => typeof i === 'string' ? i : i.name).join(', ')
     : '';
-  const category = transactionType === 'payment'
-    ? 'pago'
-    : await geminiHandler.categorizeExpense(title, description);
+  // Category will be resolved after project is known; use default for now
+  let category = transactionType === 'payment' ? 'pago' : null;
 
   // Build line items from Gemini's items array
   const items = receiptData.items && receiptData.items.length > 0
@@ -361,6 +404,11 @@ async function processImageMessage(phoneNumber, imageId, caption, contactName) {
     // If user has only one active project, use it directly
     if (activeProjects.length === 1) {
       const project = activeProjects[0];
+      // Resolve category with provider's custom categories
+      if (!category) {
+        const providerCats = await getProviderCategories(userId, project.id);
+        category = await geminiHandler.categorizeExpense(title, description, providerCats);
+      }
       const expenseData = {
         projectId: project.id,
         providerId: userId,
@@ -394,6 +442,11 @@ async function processImageMessage(phoneNumber, imageId, caption, contactName) {
       return;
     }
 
+    // Multiple projects - resolve category with defaults for now
+    if (!category) {
+      category = await geminiHandler.categorizeExpense(title, description);
+    }
+
     // Multiple projects - ask user to pick
     setPendingExpense(phoneNumber, userId, {
       title,
@@ -423,6 +476,12 @@ async function processImageMessage(phoneNumber, imageId, caption, contactName) {
   if (!project) {
     await sendWhatsAppMessage(phoneNumber, `No se encontro el proyecto con tag #${tag}.\n\nEnvia PROYECTOS para ver tus proyectos activos.`);
     return;
+  }
+
+  // Resolve category with provider's custom categories
+  if (!category) {
+    const providerCats = await getProviderCategories(userId, project.id);
+    category = await geminiHandler.categorizeExpense(title, description, providerCats);
   }
 
   const expenseData = {
@@ -513,9 +572,8 @@ async function processAudioMessage(phoneNumber, audioId, caption, contactName) {
     ? transcription.transactionType
     : 'expense';
   const typeDefaults = getTypeDefaults(transactionType);
-  const category = transactionType === 'payment'
-    ? 'pago'
-    : (transcription.category || await geminiHandler.categorizeExpense(title, description));
+  // Category will be resolved with provider's custom categories after project is known
+  let category = transactionType === 'payment' ? 'pago' : (transcription.category || null);
 
   if (amount <= 0) {
     await sendWhatsAppMessage(phoneNumber, `Transcripcion: "${transcription.transcription}"\n\nNo pude determinar el monto. Registra el gasto manualmente.`);
@@ -545,6 +603,11 @@ async function processAudioMessage(phoneNumber, audioId, caption, contactName) {
     if (activeProjects.length === 0) {
       await sendWhatsAppMessage(phoneNumber, 'No tenes proyectos activos. Crea uno desde la app web.');
       return;
+    }
+
+    // Resolve category with defaults for pending (no project known yet)
+    if (!category) {
+      category = await geminiHandler.categorizeExpense(title, description);
     }
 
     // Save pending expense (project selection, NOT confirmation)
@@ -577,6 +640,12 @@ async function processAudioMessage(phoneNumber, audioId, caption, contactName) {
 
     await sendWhatsAppMessage(phoneNumber, message);
     return;
+  }
+
+  // Resolve category with provider's custom categories for the known project
+  if (!category) {
+    const providerCats = await getProviderCategories(userId, project.id);
+    category = await geminiHandler.categorizeExpense(title, description, providerCats);
   }
 
   // Set as pending confirmation instead of saving directly
@@ -790,7 +859,7 @@ async function sendHelpMessage(phoneNumber) {
 - Si no mencionas el proyecto, te lo pregunta
 
 *Pagos y gastos propios (texto):*
-\`PAGO $5000 #flores3b\` - Registrar pago del cliente
+\`PAGO $5000 #flores3b\` - Registrar cobro del cliente
 \`PROPIO $500 Tornillos #flores3b\` - Registrar gasto propio
 
 _Los gastos quedan pendientes de pago. Los pagos y gastos propios se registran como pagados._
@@ -977,7 +1046,7 @@ async function handlePagoCommand(phoneNumber, text) {
 
   // Extract title (anything between amount and tag)
   let title = rest.replace(/#\S+/, '').trim();
-  if (!title) title = 'Pago del cliente';
+  if (!title) title = 'Cobro';
 
   const expenseData = {
     projectId: project.id,
@@ -1060,13 +1129,11 @@ async function handlePropioCommand(phoneNumber, text) {
   let title = rest.replace(/#\S+/, '').trim();
   if (!title) title = 'Gasto propio';
 
-  // Determine category
+  // Determine category using provider's custom categories
   let category = 'otros';
   if (geminiHandler) {
-    category = await geminiHandler.categorizeExpense(title, '');
-    const normalizedCategory = category.toLowerCase();
-    const matchedCategory = EXPENSE_CATEGORIES.find(c => c.includes(normalizedCategory) || normalizedCategory.includes(c));
-    category = matchedCategory || 'otros';
+    const providerCats = await getProviderCategories(userId, project.id);
+    category = await geminiHandler.categorizeExpense(title, '', providerCats);
   }
 
   const expenseData = {
@@ -1144,19 +1211,22 @@ async function handleExpenseMessage(phoneNumber, text) {
   }
 
   try {
+    // Fetch provider's custom categories for this project
+    const providerCats = await getProviderCategories(userId, project.id);
+
     // Determine category
     let category = parsed.category;
     if (!category && geminiHandler) {
-      category = await geminiHandler.categorizeExpense(parsed.title, parsed.description);
+      category = await geminiHandler.categorizeExpense(parsed.title, parsed.description, providerCats);
     }
     if (!category) {
       category = 'otros';
     }
 
-    // Validate category
+    // Validate category against provider's categories
     const normalizedCategory = category.toLowerCase();
-    const matchedCategory = EXPENSE_CATEGORIES.find(c => c.includes(normalizedCategory) || normalizedCategory.includes(c));
-    category = matchedCategory || 'otros';
+    const matchedCategory = providerCats.find(c => c.includes(normalizedCategory) || normalizedCategory.includes(c));
+    category = matchedCategory || (providerCats.includes('otros') ? 'otros' : providerCats[providerCats.length - 1]);
 
     const expenseData = {
       projectId: project.id,

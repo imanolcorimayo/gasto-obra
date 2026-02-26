@@ -57,6 +57,7 @@
       :key="expense.id"
       :expense="expense"
       :editable="editable"
+      :categories="resolvedCategories"
       @view-image="$emit('viewImage', $event)"
       @edit="$emit('edit', $event)"
       @mark-paid="$emit('markPaid', $event)"
@@ -66,12 +67,17 @@
 </template>
 
 <script setup>
-import { EXPENSE_CATEGORIES } from '~/utils';
+import { DEFAULT_EXPENSE_CATEGORIES } from '~/utils';
 
 const props = defineProps({
   expenses: { type: Array, default: () => [] },
-  editable: { type: Boolean, default: false }
+  editable: { type: Boolean, default: false },
+  categories: { type: Array, default: () => [] }
 });
+
+const resolvedCategories = computed(() =>
+  props.categories.length > 0 ? props.categories : DEFAULT_EXPENSE_CATEGORIES
+);
 
 defineEmits(['viewImage', 'edit', 'markPaid', 'markPending']);
 
@@ -94,7 +100,7 @@ const paymentStatusFilters = [
 
 const allCategories = computed(() => [
   { value: '', label: 'Todas' },
-  ...EXPENSE_CATEGORIES
+  ...resolvedCategories.value
 ]);
 
 const hasActiveFilters = computed(() =>

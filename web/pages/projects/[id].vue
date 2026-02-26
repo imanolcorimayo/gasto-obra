@@ -115,7 +115,7 @@
         >
           <MdiPlus class="text-base text-green-400" />
           <div class="text-left">
-            <span>Pago del cliente</span>
+            <span>Cobro</span>
             <span class="block text-[10px] opacity-70 font-normal">Ingreso recibido</span>
           </div>
         </button>
@@ -135,7 +135,7 @@
       <!-- Summary + Expenses -->
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div class="lg:col-span-1">
-          <ExpenseSummary :expenses="expenseStore.expenses" :budget="project.budget" />
+          <ExpenseSummary :expenses="expenseStore.expenses" :budget="project.budget" :categories="resolvedCategories" />
         </div>
         <div class="lg:col-span-2">
           <h3 class="font-semibold mb-4">Historial</h3>
@@ -144,6 +144,7 @@
             v-else
             :expenses="expenseStore.expenses"
             :editable="true"
+            :categories="resolvedCategories"
             @edit="openEditModal"
             @mark-paid="handleMarkPaid"
             @mark-pending="handleMarkPending"
@@ -155,6 +156,7 @@
       <ExpenseCreateModal
         :show="showCreateModal"
         :type="createModalType"
+        :categories="resolvedCategories"
         @close="showCreateModal = false"
         @submit="handleCreateSubmit"
       />
@@ -164,6 +166,7 @@
         :show="showEditModal"
         :expense="editingExpense"
         :projects="projectStore.projects"
+        :categories="resolvedCategories"
         @close="showEditModal = false"
         @save="handleEditSave"
       />
@@ -187,6 +190,7 @@ import MdiPlus from '~icons/mdi/plus';
 import MdiPencil from '~icons/mdi/pencil';
 import { useProjectStore } from '~/stores/project';
 import { useExpenseStore } from '~/stores/expense';
+import { useCategoryStore } from '~/stores/category';
 import { formatPrice, formatDate } from '~/utils';
 
 definePageMeta({
@@ -196,6 +200,7 @@ definePageMeta({
 const route = useRoute();
 const projectStore = useProjectStore();
 const expenseStore = useExpenseStore();
+const categoryStore = useCategoryStore();
 
 const isLoading = ref(true);
 const project = ref(null);
@@ -205,6 +210,11 @@ const createModalType = ref('expense');
 const showEditModal = ref(false);
 const editingExpense = ref(null);
 const showProjectEditModal = ref(false);
+
+const resolvedCategories = computed(() => {
+  const id = route.params.id;
+  return categoryStore.getResolved(id);
+});
 
 const statusLabel = computed(() => {
   switch (project.value?.status) {
@@ -235,7 +245,11 @@ onMounted(async () => {
   isLoading.value = false;
 
   if (result) {
-    await expenseStore.fetchByProjectId(id);
+    await Promise.all([
+      expenseStore.fetchByProjectId(id),
+      categoryStore.fetchGlobal(),
+      categoryStore.fetchForProject(id)
+    ]);
     // Load all projects for the edit modal's "move" feature
     if (projectStore.projects.length === 0) {
       await projectStore.fetchProjects();
@@ -316,7 +330,7 @@ async function handleCreateSubmit(formData) {
         }
       }
 
-      const label = formData.type === 'payment' ? 'Pago registrado' : formData.type === 'provider_expense' ? 'Gasto propio registrado' : 'Gasto agregado';
+      const label = formData.type === 'payment' ? 'Cobro registrado' : formData.type === 'provider_expense' ? 'Gasto propio registrado' : 'Gasto agregado';
       useToast('success', label);
       showCreateModal.value = false;
     } else {

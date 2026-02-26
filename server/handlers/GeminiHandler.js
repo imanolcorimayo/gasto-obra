@@ -85,7 +85,7 @@ Solo responde con el JSON, sin texto adicional.`;
     }
   }
 
-  async transcribeAudio(audioBase64, mimeType = 'audio/ogg', activeProjects = []) {
+  async transcribeAudio(audioBase64, mimeType = 'audio/ogg', activeProjects = [], categories = null) {
     const projectList = activeProjects.length > 0
       ? `\n\nProyectos activos del usuario (nombre - tag):\n${activeProjects.map(p => `- ${p.name} (#${p.tag})`).join('\n')}`
       : '';
@@ -102,7 +102,7 @@ Extrae la informacion en formato JSON:
   ],
   "totalAmount": 191.34,
   "description": "descripcion adicional si hay",
-  "category": "materiales|herramientas|transporte|mano de obra|comida|otros",
+  "category": "${categories ? categories.join('|') : 'materiales|herramientas|transporte|mano de obra|comida|otros'}",
   "projectReference": "nombre o tag del proyecto si se menciona en el audio"
 }${projectList}
 
@@ -146,14 +146,12 @@ Si no podes extraer algun campo, usa null. Solo responde con el JSON.`;
     }
   }
 
-  async categorizeExpense(title, description = '') {
+  async categorizeExpense(title, description = '', categories = null) {
+    const validCategories = categories || ['materiales', 'herramientas', 'transporte', 'mano de obra', 'comida', 'otros'];
+    const categoryList = validCategories.map(c => `- ${c}`).join('\n');
+
     const prompt = `Clasifica el siguiente gasto de obra/refaccion de departamento en una de estas categorias:
-- materiales (clavos, tornillos, cemento, pintura, cables, canos, etc.)
-- herramientas (taladro, sierra, amoladora, etc.)
-- transporte (viaje, flete, envio, uber, etc.)
-- mano de obra (oficial, ayudante, electricista, plomero, etc.)
-- comida (almuerzo, merienda, agua, bebida para los obreros)
-- otros (cualquier cosa que no entre en las anteriores)
+${categoryList}
 
 Gasto: "${title}"${description ? `\nDescripcion: "${description}"` : ''}
 
@@ -161,12 +159,11 @@ Responde SOLO con el nombre de la categoria en minusculas, sin texto adicional.`
 
     const text = await this.generateContent(prompt, { maxOutputTokens: 50, temperature: 0.2 });
 
-    if (!text) return 'otros';
+    if (!text) return validCategories.includes('otros') ? 'otros' : validCategories[validCategories.length - 1];
 
     const normalized = text.trim().toLowerCase();
-    const validCategories = ['materiales', 'herramientas', 'transporte', 'mano de obra', 'comida', 'otros'];
 
-    return validCategories.find(c => normalized.includes(c)) || 'otros';
+    return validCategories.find(c => normalized.includes(c)) || (validCategories.includes('otros') ? 'otros' : validCategories[validCategories.length - 1]);
   }
 }
 
