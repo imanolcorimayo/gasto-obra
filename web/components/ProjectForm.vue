@@ -70,18 +70,27 @@
       </div>
     </div>
 
+    <div>
+      <label class="block text-sm font-medium text-gray-300 mb-1">Presupuesto</label>
+      <input
+        v-model="form.budget"
+        type="number"
+        min="0"
+        step="1"
+        placeholder="Monto total estimado"
+        class="w-full bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-white placeholder-gray-500 focus:outline-none focus:border-primary"
+      />
+      <p class="text-gray-500 text-xs mt-1">Solo referencia</p>
+    </div>
+
     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
       <div>
-        <label class="block text-sm font-medium text-gray-300 mb-1">Presupuesto</label>
+        <label class="block text-sm font-medium text-gray-300 mb-1">Fecha de inicio</label>
         <input
-          v-model="form.budget"
-          type="number"
-          min="0"
-          step="1"
-          placeholder="Monto total estimado"
+          v-model="form.startDate"
+          type="date"
           class="w-full bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-white placeholder-gray-500 focus:outline-none focus:border-primary"
         />
-        <p class="text-gray-500 text-xs mt-1">Solo referencia</p>
       </div>
 
       <div>
@@ -91,7 +100,6 @@
           type="date"
           class="w-full bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-white placeholder-gray-500 focus:outline-none focus:border-primary"
         />
-        <p class="text-gray-500 text-xs mt-1">Solo referencia</p>
       </div>
     </div>
 
@@ -132,6 +140,7 @@ const form = reactive({
   clientName: props.initialData.clientName || '',
   clientPhone: props.initialData.clientPhone || '',
   budget: props.initialData.budget || '',
+  startDate: props.initialData.startDate || '',
   estimatedEndDate: props.initialData.estimatedEndDate || ''
 });
 
@@ -145,6 +154,11 @@ function handleSubmit() {
     data.budget = parseFloat(data.budget);
   } else {
     data.budget = null;
+  }
+  if (data.startDate) {
+    data.startDate = new Date(data.startDate);
+  } else {
+    data.startDate = null;
   }
   if (data.estimatedEndDate) {
     data.estimatedEndDate = new Date(data.estimatedEndDate);

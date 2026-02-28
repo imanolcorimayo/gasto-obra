@@ -124,6 +124,32 @@
           </select>
         </div>
 
+        <!-- Recipient (expense + payment only) -->
+        <div v-if="type !== 'provider_expense'">
+          <label class="block text-sm font-medium text-gray-300 mb-1">Destinatario</label>
+          <template v-if="recipientStore.recipients.length > 0">
+            <select
+              v-model="selectedRecipientIdx"
+              class="w-full bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-primary text-sm"
+            >
+              <option :value="-1">Sin destinatario</option>
+              <option v-for="(r, idx) in recipientStore.recipients" :key="idx" :value="idx">
+                {{ r.name }}{{ r.platform ? ` (${r.platform})` : '' }}
+              </option>
+            </select>
+            <p v-if="selectedRecipientIdx >= 0 && recipientStore.recipients[selectedRecipientIdx]" class="text-xs text-gray-500 mt-1">
+              {{ recipientStore.recipients[selectedRecipientIdx].bankInfo }}
+              <template v-if="recipientStore.recipients[selectedRecipientIdx].cuit">
+                · CUIT: {{ recipientStore.recipients[selectedRecipientIdx].cuit }}
+              </template>
+            </p>
+          </template>
+          <p v-else class="text-sm text-gray-500">
+            No hay destinatarios configurados.
+            <NuxtLink to="/settings/recipients" class="text-primary hover:text-primary/80">Configurar destinatarios</NuxtLink>
+          </p>
+        </div>
+
         <!-- Items (expense + provider_expense only) -->
         <div v-if="type !== 'payment'">
           <button
@@ -190,12 +216,15 @@ import MdiChevronDown from '~icons/mdi/chevron-down';
 import MdiPlus from '~icons/mdi/plus';
 import MdiClose from '~icons/mdi/close';
 import { DEFAULT_EXPENSE_CATEGORIES, PAYMENT_METHODS } from '~/utils';
+import { useRecipientStore } from '~/stores/recipient';
 
 const props = defineProps({
   show: { type: Boolean, default: false },
   type: { type: String, default: 'expense' },
   categories: { type: Array, default: () => [] }
 });
+
+const recipientStore = useRecipientStore();
 
 const resolvedCategories = computed(() =>
   props.categories.length > 0 ? props.categories : DEFAULT_EXPENSE_CATEGORIES
@@ -205,6 +234,7 @@ const emit = defineEmits(['close', 'submit']);
 
 const isSubmitting = ref(false);
 const showItems = ref(false);
+const selectedRecipientIdx = ref(-1);
 
 const form = reactive({
   title: '',
@@ -214,7 +244,28 @@ const form = reactive({
   paymentStatus: 'paid',
   paymentMethod: null,
   createLinkedPayment: true,
+  recipientName: '',
+  recipientBankInfo: '',
+  recipientPlatform: '',
+  recipientCuit: '',
   items: []
+});
+
+watch(selectedRecipientIdx, (idx) => {
+  if (idx >= 0) {
+    const r = recipientStore.recipients[idx];
+    if (r) {
+      form.recipientName = r.name || '';
+      form.recipientBankInfo = r.bankInfo || '';
+      form.recipientPlatform = r.platform || '';
+      form.recipientCuit = r.cuit || '';
+      return;
+    }
+  }
+  form.recipientName = '';
+  form.recipientBankInfo = '';
+  form.recipientPlatform = '';
+  form.recipientCuit = '';
 });
 
 const modalTitle = computed(() => {
@@ -266,22 +317,35 @@ watch(() => props.show, (show) => {
     form.paymentStatus = 'paid';
     form.paymentMethod = null;
     form.createLinkedPayment = true;
+    form.recipientName = '';
+    form.recipientBankInfo = '';
+    form.recipientPlatform = '';
+    form.recipientCuit = '';
     form.items = [];
     showItems.value = false;
+    selectedRecipientIdx.value = -1;
+    if (recipientStore.recipients.length === 0) {
+      recipientStore.fetchAll();
+    }
   }
 });
 
 async function handleSubmit() {
   isSubmitting.value = true;
   try {
+    const isProviderExpense = props.type === 'provider_expense';
     const data = {
       title: form.title,
       amount: parseFloat(form.amount),
       category: props.type === 'payment' ? 'pago' : form.category,
       description: form.description,
       type: props.type,
-      paymentStatus: props.type === 'provider_expense' ? 'paid' : form.paymentStatus,
-      paymentMethod: props.type === 'provider_expense' ? null : form.paymentMethod,
+      paymentStatus: isProviderExpense ? 'paid' : form.paymentStatus,
+      paymentMethod: isProviderExpense ? null : form.paymentMethod,
+      recipientName: isProviderExpense ? null : (form.recipientName || null),
+      recipientBankInfo: isProviderExpense ? null : (form.recipientBankInfo || null),
+      recipientPlatform: isProviderExpense ? null : (form.recipientPlatform || null),
+      recipientCuit: isProviderExpense ? null : (form.recipientCuit || null),
       createLinkedPayment: props.type === 'expense' && form.paymentStatus === 'paid' && form.createLinkedPayment,
       items: form.items.length > 0 ? form.items.filter(i => i.name) : null
     };

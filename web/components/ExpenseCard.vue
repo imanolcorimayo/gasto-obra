@@ -65,6 +65,10 @@
         {{ getPaymentMethodLabel(expense.paymentMethod) }}
       </span>
 
+      <span v-if="expense.recipientName" class="text-gray-400 text-xs">
+        → {{ expense.recipientName }}
+      </span>
+
       <span v-if="expense.source === 'whatsapp'" class="text-green-500 text-xs">
         WhatsApp
       </span>

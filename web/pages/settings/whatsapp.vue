@@ -9,6 +9,9 @@
         <NuxtLink to="/settings/categories" class="text-sm px-3 py-1.5 rounded-lg transition-colors text-gray-400 hover:text-white hover:bg-gray-700/50">
           Categorias
         </NuxtLink>
+        <NuxtLink to="/settings/recipients" class="text-sm px-3 py-1.5 rounded-lg transition-colors text-gray-400 hover:text-white hover:bg-gray-700/50">
+          Destinatarios
+        </NuxtLink>
       </div>
 
       <!-- Header -->

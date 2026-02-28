@@ -71,9 +71,13 @@
           <span class="text-gray-500">Presupuesto:</span>
           <span class="text-white ml-2">{{ formatPrice(project.budget) }}</span>
         </div>
-        <div v-if="project.estimatedEndDate" class="bg-surface rounded-lg border border-gray-700 p-3">
-          <span class="text-gray-500">Fecha estimada de fin:</span>
-          <span class="text-white ml-2">{{ formatDate(project.estimatedEndDate) }}</span>
+        <div v-if="project.startDate || project.estimatedEndDate" class="bg-surface rounded-lg border border-gray-700 p-3">
+          <span class="text-gray-500">Cronograma:</span>
+          <span class="text-white ml-2">
+            {{ project.startDate ? formatDate(project.startDate) : '—' }}
+            →
+            {{ project.estimatedEndDate ? formatDate(project.estimatedEndDate) : '—' }}
+          </span>
         </div>
       </div>
 
@@ -191,6 +195,7 @@ import MdiPencil from '~icons/mdi/pencil';
 import { useProjectStore } from '~/stores/project';
 import { useExpenseStore } from '~/stores/expense';
 import { useCategoryStore } from '~/stores/category';
+import { useRecipientStore } from '~/stores/recipient';
 import { formatPrice, formatDate } from '~/utils';
 
 definePageMeta({
@@ -201,6 +206,7 @@ const route = useRoute();
 const projectStore = useProjectStore();
 const expenseStore = useExpenseStore();
 const categoryStore = useCategoryStore();
+const recipientStore = useRecipientStore();
 
 const isLoading = ref(true);
 const project = ref(null);
@@ -248,7 +254,8 @@ onMounted(async () => {
     await Promise.all([
       expenseStore.fetchByProjectId(id),
       categoryStore.fetchGlobal(),
-      categoryStore.fetchForProject(id)
+      categoryStore.fetchForProject(id),
+      recipientStore.fetchAll()
     ]);
     // Load all projects for the edit modal's "move" feature
     if (projectStore.projects.length === 0) {
@@ -300,6 +307,10 @@ async function handleCreateSubmit(formData) {
       type: formData.type,
       paymentStatus: formData.paymentStatus,
       paymentMethod: formData.paymentMethod,
+      recipientName: formData.recipientName,
+      recipientBankInfo: formData.recipientBankInfo,
+      recipientPlatform: formData.recipientPlatform,
+      recipientCuit: formData.recipientCuit,
       items: formData.items
     };
 
@@ -318,6 +329,10 @@ async function handleCreateSubmit(formData) {
           type: 'payment',
           paymentStatus: 'paid',
           paymentMethod: formData.paymentMethod,
+          recipientName: formData.recipientName,
+          recipientBankInfo: formData.recipientBankInfo,
+          recipientPlatform: formData.recipientPlatform,
+          recipientCuit: formData.recipientCuit,
           linkedExpenseId: result.data.id,
           items: null
         };

@@ -82,6 +82,14 @@ const formData = computed(() => {
   if (!props.project) return {};
 
   // Convert Firestore timestamp or Date to YYYY-MM-DD string for date input
+  let startDate = '';
+  if (props.project.startDate) {
+    const date = props.project.startDate.toDate
+      ? props.project.startDate.toDate()
+      : new Date(props.project.startDate);
+    startDate = date.toISOString().split('T')[0];
+  }
+
   let estimatedEndDate = '';
   if (props.project.estimatedEndDate) {
     const date = props.project.estimatedEndDate.toDate
@@ -98,6 +106,7 @@ const formData = computed(() => {
     clientName: props.project.clientName || '',
     clientPhone: props.project.clientPhone || '',
     budget: props.project.budget || '',
+    startDate,
     estimatedEndDate
   };
 });

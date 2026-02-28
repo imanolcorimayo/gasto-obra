@@ -106,6 +106,32 @@
           </select>
         </div>
 
+        <!-- Recipient -->
+        <div>
+          <label class="block text-sm font-medium text-gray-300 mb-1">Destinatario</label>
+          <template v-if="recipientStore.recipients.length > 0">
+            <select
+              v-model="selectedRecipientIdx"
+              class="w-full bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-primary text-sm"
+            >
+              <option :value="-1">Sin destinatario</option>
+              <option v-for="(r, idx) in recipientStore.recipients" :key="idx" :value="idx">
+                {{ r.name }}{{ r.platform ? ` (${r.platform})` : '' }}
+              </option>
+            </select>
+            <p v-if="selectedRecipientIdx >= 0 && recipientStore.recipients[selectedRecipientIdx]" class="text-xs text-gray-500 mt-1">
+              {{ recipientStore.recipients[selectedRecipientIdx].bankInfo }}
+              <template v-if="recipientStore.recipients[selectedRecipientIdx].cuit">
+                · CUIT: {{ recipientStore.recipients[selectedRecipientIdx].cuit }}
+              </template>
+            </p>
+          </template>
+          <p v-else class="text-sm text-gray-500">
+            No hay destinatarios configurados.
+            <NuxtLink to="/settings/recipients" class="text-primary hover:text-primary/80">Configurar destinatarios</NuxtLink>
+          </p>
+        </div>
+
         <!-- Items (collapsible) -->
         <div>
           <button
@@ -195,6 +221,9 @@ import MdiChevronDown from '~icons/mdi/chevron-down';
 import MdiPlus from '~icons/mdi/plus';
 import MdiClose from '~icons/mdi/close';
 import { DEFAULT_EXPENSE_CATEGORIES, PAYMENT_METHODS, PAYMENT_STATUSES } from '~/utils';
+import { useRecipientStore } from '~/stores/recipient';
+
+const recipientStore = useRecipientStore();
 
 const props = defineProps({
   show: { type: Boolean, default: false },
@@ -210,6 +239,7 @@ const resolvedCategories = computed(() =>
 const emit = defineEmits(['close', 'save']);
 
 const showItems = ref(false);
+const selectedRecipientIdx = ref(-1);
 const showMoveProject = ref(false);
 const isSaving = ref(false);
 
@@ -227,6 +257,10 @@ const form = reactive({
   type: 'expense',
   paymentStatus: 'paid',
   paymentMethod: null,
+  recipientName: '',
+  recipientBankInfo: '',
+  recipientPlatform: '',
+  recipientCuit: '',
   items: [],
   projectId: ''
 });
@@ -240,12 +274,41 @@ watch(() => props.expense, (expense) => {
     form.type = expense.type || 'expense';
     form.paymentStatus = expense.paymentStatus || 'paid';
     form.paymentMethod = expense.paymentMethod || null;
+    form.recipientName = expense.recipientName || '';
+    form.recipientBankInfo = expense.recipientBankInfo || '';
+    form.recipientPlatform = expense.recipientPlatform || '';
+    form.recipientCuit = expense.recipientCuit || '';
     form.items = expense.items ? expense.items.map(i => ({ ...i })) : [];
     form.projectId = expense.projectId || '';
     showItems.value = form.items.length > 0;
     showMoveProject.value = false;
+
+    // Pre-select matching recipient
+    if (expense.recipientName) {
+      const idx = recipientStore.recipients.findIndex(r => r.name === expense.recipientName);
+      selectedRecipientIdx.value = idx >= 0 ? idx : -1;
+    } else {
+      selectedRecipientIdx.value = -1;
+    }
   }
 }, { immediate: true });
+
+watch(selectedRecipientIdx, (idx) => {
+  if (idx >= 0) {
+    const r = recipientStore.recipients[idx];
+    if (r) {
+      form.recipientName = r.name || '';
+      form.recipientBankInfo = r.bankInfo || '';
+      form.recipientPlatform = r.platform || '';
+      form.recipientCuit = r.cuit || '';
+      return;
+    }
+  }
+  form.recipientName = '';
+  form.recipientBankInfo = '';
+  form.recipientPlatform = '';
+  form.recipientCuit = '';
+});
 
 function addItem() {
   form.items.push({ name: '', amount: 0 });
@@ -276,6 +339,10 @@ async function handleSave() {
       type: form.type,
       paymentStatus: form.paymentStatus,
       paymentMethod: form.paymentMethod,
+      recipientName: form.recipientName || null,
+      recipientBankInfo: form.recipientBankInfo || null,
+      recipientPlatform: form.recipientPlatform || null,
+      recipientCuit: form.recipientCuit || null,
       items: form.items.length > 0 ? form.items.filter(i => i.name) : null,
       projectId: form.projectId
     };

@@ -63,6 +63,26 @@ export class ExpenseSchema extends Schema {
       type: 'string',
       required: false
     },
+    recipientName: {
+      type: 'string',
+      required: false,
+      maxLength: 100
+    },
+    recipientBankInfo: {
+      type: 'string',
+      required: false,
+      maxLength: 100
+    },
+    recipientPlatform: {
+      type: 'string',
+      required: false,
+      maxLength: 50
+    },
+    recipientCuit: {
+      type: 'string',
+      required: false,
+      maxLength: 20
+    },
     linkedExpenseId: {
       type: 'string',
       required: false

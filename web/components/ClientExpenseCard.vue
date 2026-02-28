@@ -53,6 +53,10 @@
         {{ getPaymentMethodLabel(expense.paymentMethod) }}
       </span>
 
+      <span v-if="expense.recipientName" class="text-gray-500 text-xs">
+        → {{ expense.recipientName }}{{ expense.recipientPlatform ? ` (${expense.recipientPlatform})` : '' }}
+      </span>
+
       <!-- Payment status for expenses (not for standalone payments) -->
       <span
         v-if="!isPayment && expense.linkedPaymentId"

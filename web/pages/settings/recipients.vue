@@ -6,28 +6,28 @@
         <NuxtLink to="/settings/whatsapp" class="text-sm px-3 py-1.5 rounded-lg transition-colors text-gray-400 hover:text-white hover:bg-gray-700/50">
           WhatsApp
         </NuxtLink>
-        <NuxtLink to="/settings/categories" class="text-sm px-3 py-1.5 rounded-lg transition-colors" :class="'bg-gray-700 text-white'">
+        <NuxtLink to="/settings/categories" class="text-sm px-3 py-1.5 rounded-lg transition-colors text-gray-400 hover:text-white hover:bg-gray-700/50">
           Categorias
         </NuxtLink>
-        <NuxtLink to="/settings/recipients" class="text-sm px-3 py-1.5 rounded-lg transition-colors text-gray-400 hover:text-white hover:bg-gray-700/50">
+        <NuxtLink to="/settings/recipients" class="text-sm px-3 py-1.5 rounded-lg transition-colors" :class="'bg-gray-700 text-white'">
           Destinatarios
         </NuxtLink>
       </div>
 
       <!-- Header -->
       <div>
-        <h1 class="text-2xl font-bold">Categorias de gastos</h1>
-        <p class="text-gray-400 text-sm mt-1">Estas categorias se aplican a todos tus proyectos. Podes agregar categorias especificas por proyecto desde la configuracion de cada proyecto.</p>
+        <h1 class="text-2xl font-bold">Destinatarios de pago</h1>
+        <p class="text-gray-400 text-sm mt-1">Configura los destinatarios frecuentes para tus pagos. Aparecen como opciones rapidas al registrar gastos y cobros.</p>
       </div>
 
       <!-- Loading State -->
-      <div v-if="categoryStore.isLoading && !hasLoaded" class="flex flex-col gap-4 skeleton-shimmer">
+      <div v-if="recipientStore.isLoading && !hasLoaded" class="flex flex-col gap-4 skeleton-shimmer">
         <div class="h-48 w-full bg-gray-700 rounded-xl"></div>
       </div>
 
-      <!-- Category Editor -->
+      <!-- Recipient Editor -->
       <div v-else class="bg-surface rounded-xl border border-gray-700 p-6">
-        <CategoryManager v-model="editingCategories" />
+        <RecipientManager v-model="editingRecipients" @delete="handleSave" />
 
         <button
           @click="handleSave"
@@ -46,10 +46,9 @@
           Como funciona
         </h3>
         <ul class="space-y-2 text-gray-400 text-sm">
-          <li>Las categorias globales se usan en todos tus proyectos.</li>
-          <li>Podes definir categorias especificas para un proyecto desde su configuracion.</li>
-          <li>Si no configuras ninguna categoria, se usan las 6 categorias por defecto.</li>
-          <li>Las categorias tambien se usan en WhatsApp con el prefijo <code class="bg-gray-800 px-1.5 py-0.5 rounded text-primary">c:nombre</code>.</li>
+          <li>Los destinatarios se muestran como opciones al crear o editar un gasto o cobro.</li>
+          <li>Al seleccionar un destinatario, se completan automaticamente los datos de pago.</li>
+          <li>Podes agregar tantos destinatarios como necesites.</li>
         </ul>
       </div>
     </div>
@@ -58,32 +57,34 @@
 
 <script setup>
 import MdiInformation from '~icons/mdi/information';
-import { useCategoryStore } from '~/stores/category';
+import { useRecipientStore } from '~/stores/recipient';
 
 definePageMeta({
   middleware: ['auth']
 });
 
 useHead({
-  title: 'Categorias de gastos'
+  title: 'Destinatarios de pago'
 });
 
-const categoryStore = useCategoryStore();
-const editingCategories = ref([]);
+const recipientStore = useRecipientStore();
+const editingRecipients = ref([]);
 const isSaving = ref(false);
 const hasLoaded = ref(false);
 
 const isValid = computed(() => {
-  return editingCategories.value.length > 0 &&
-    editingCategories.value.every(c => c.value && c.label && c.color);
+  return editingRecipients.value.length === 0 ||
+    editingRecipients.value.every(r => r.name.trim());
 });
 
 onMounted(async () => {
-  await categoryStore.fetchGlobal();
+  await recipientStore.fetchAll();
   hasLoaded.value = true;
 
-  if (categoryStore.globalCategories.length > 0) {
-    editingCategories.value = categoryStore.globalCategories.map(c => ({ ...c }));
+  if (recipientStore.recipients.length > 0) {
+    editingRecipients.value = recipientStore.recipients.map(r => ({ ...r }));
+  } else {
+    editingRecipients.value = [{ name: '', bankInfo: '', platform: '', cuit: '' }];
   }
 });
 
@@ -92,9 +93,11 @@ async function handleSave() {
 
   isSaving.value = true;
   try {
-    const result = await categoryStore.saveGlobal(editingCategories.value);
+    // Filter out empty (untouched) recipients before saving
+    const toSave = editingRecipients.value.filter(r => r.name.trim());
+    const result = await recipientStore.saveAll(toSave);
     if (result.success) {
-      useToast('success', 'Categorias guardadas');
+      useToast('success', toSave.length > 0 ? 'Destinatarios guardados' : 'Destinatarios eliminados');
     } else {
       useToast('error', result.error || 'Error al guardar');
     }

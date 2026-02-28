@@ -53,6 +53,10 @@ export class ProjectSchema extends Schema {
       type: 'number',
       required: false
     },
+    startDate: {
+      type: 'date',
+      required: false
+    },
     estimatedEndDate: {
       type: 'date',
       required: false

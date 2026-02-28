@@ -10,10 +10,23 @@ export interface Project {
   status: 'active' | 'completed' | 'paused';
   shareToken: string;
   budget: number | null;
+  startDate: any | null;
   estimatedEndDate: any | null;
   clientUserId: string | null;
   createdAt: any;
   updatedAt: any;
+}
+
+export interface Recipient {
+  name: string;
+  bankInfo: string;
+  platform: string;
+  cuit: string;
+}
+
+export interface RecipientDoc extends Recipient {
+  id: string;
+  userId: string;
 }
 
 export type ExpenseType = 'expense' | 'payment' | 'provider_expense';
@@ -38,6 +51,10 @@ export interface Expense {
   originalMessage: string;
   paymentStatus: 'paid' | 'pending';
   paymentMethod: string | null;
+  recipientName: string | null;
+  recipientBankInfo: string | null;
+  recipientPlatform: string | null;
+  recipientCuit: string | null;
   linkedExpenseId: string | null;
   linkedPaymentId: string | null;
   source: 'whatsapp' | 'web';

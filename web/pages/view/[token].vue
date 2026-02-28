@@ -33,6 +33,22 @@
           </div>
         </div>
 
+        <!-- Budget & timeline info -->
+        <div v-if="project.budget || project.startDate || project.estimatedEndDate" class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6 text-sm">
+          <div v-if="project.budget" class="bg-surface rounded-lg border border-gray-700 p-3">
+            <span class="text-gray-500">Presupuesto:</span>
+            <span class="text-white ml-2">{{ formatPrice(project.budget) }}</span>
+          </div>
+          <div v-if="project.startDate || project.estimatedEndDate" class="bg-surface rounded-lg border border-gray-700 p-3">
+            <span class="text-gray-500">Cronograma:</span>
+            <span class="text-white ml-2">
+              {{ project.startDate ? formatDate(project.startDate) : '—' }}
+              →
+              {{ project.estimatedEndDate ? formatDate(project.estimatedEndDate) : '—' }}
+            </span>
+          </div>
+        </div>
+
         <!-- Summary -->
         <ExpenseSummary :expenses="allClientExpenses" :budget="project.budget" :categories="resolvedCategories" class="mb-6" />
 
@@ -118,6 +134,7 @@ import MdiTable from '~icons/mdi/table';
 import { useProjectStore } from '~/stores/project';
 import { useExpenseStore } from '~/stores/expense';
 import { useCategoryStore } from '~/stores/category';
+import { formatPrice, formatDate } from '~/utils';
 
 definePageMeta({
   layout: 'landing'
