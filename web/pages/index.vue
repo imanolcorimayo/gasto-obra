@@ -1,39 +1,39 @@
 <template>
-  <div class="min-h-screen bg-base flex flex-col items-center justify-center px-4">
+  <div class="min-h-screen bg-go-bg flex flex-col items-center justify-center px-4">
     <div class="max-w-md w-full text-center">
       <!-- Logo / Brand -->
       <div class="mb-8">
-        <h1 class="text-4xl font-bold text-primary mb-2">Gasto Obra</h1>
-        <p class="text-gray-400 text-lg">Control de gastos de obra y refaccion</p>
+        <img src="/img/logo-vertical.svg" alt="Gasto Obra" class="h-40 mx-auto mb-4" />
+        <p class="text-go-text-secondary text-lg">Control de gastos de obra y refacción</p>
       </div>
 
       <!-- Description -->
-      <div class="mb-8 text-gray-300 text-sm space-y-3">
-        <p>Registra gastos de tu obra por WhatsApp.</p>
+      <div class="mb-8 text-go-text-secondary text-sm space-y-3">
+        <p>Registrá gastos de tu obra por WhatsApp.</p>
         <p>Tu cliente recibe un resumen diario y un link para ver todos los gastos en tiempo real.</p>
       </div>
 
       <!-- Features -->
       <div class="grid grid-cols-1 gap-3 mb-8 text-left">
-        <div class="flex items-start gap-3 bg-surface rounded-lg p-3">
-          <MdiWhatsapp class="text-green-500 text-xl mt-0.5 shrink-0" />
+        <div class="flex items-start gap-3 bg-go-surface border border-go-border rounded-go-md p-3">
+          <MdiWhatsapp class="text-go-success text-xl mt-0.5 shrink-0" />
           <div>
-            <p class="font-medium text-sm">WhatsApp</p>
-            <p class="text-gray-400 text-xs">Registra gastos enviando un mensaje</p>
+            <p class="font-medium text-sm text-go-text">WhatsApp</p>
+            <p class="text-go-text-tertiary text-xs">Registrá gastos enviando un mensaje</p>
           </div>
         </div>
-        <div class="flex items-start gap-3 bg-surface rounded-lg p-3">
-          <MdiCamera class="text-primary text-xl mt-0.5 shrink-0" />
+        <div class="flex items-start gap-3 bg-go-surface border border-go-border rounded-go-md p-3">
+          <MdiCamera class="text-go-primary text-xl mt-0.5 shrink-0" />
           <div>
-            <p class="font-medium text-sm">Fotos de tickets</p>
-            <p class="text-gray-400 text-xs">Envia una foto y la IA extrae los datos</p>
+            <p class="font-medium text-sm text-go-text">Fotos de tickets</p>
+            <p class="text-go-text-tertiary text-xs">Enviá una foto y la IA extrae los datos</p>
           </div>
         </div>
-        <div class="flex items-start gap-3 bg-surface rounded-lg p-3">
-          <MdiLinkVariant class="text-accent text-xl mt-0.5 shrink-0" />
+        <div class="flex items-start gap-3 bg-go-surface border border-go-border rounded-go-md p-3">
+          <MdiLinkVariant class="text-go-info text-xl mt-0.5 shrink-0" />
           <div>
-            <p class="font-medium text-sm">Link para el cliente</p>
-            <p class="text-gray-400 text-xs">Compartí un link de solo lectura con el dueno</p>
+            <p class="font-medium text-sm text-go-text">Link para el cliente</p>
+            <p class="text-go-text-tertiary text-xs">Compartí un link de solo lectura con el dueño</p>
           </div>
         </div>
       </div>
@@ -42,7 +42,7 @@
       <button
         @click="handleLogin"
         :disabled="isLoading"
-        class="w-full flex items-center justify-center gap-3 bg-white text-gray-800 font-medium py-3 px-6 rounded-lg hover:bg-gray-100 transition-colors"
+        class="w-full flex items-center justify-center gap-3 bg-white text-gray-800 font-medium py-3 px-6 rounded-go-md hover:bg-gray-100 transition-colors"
       >
         <MdiGoogle class="text-xl" />
         <span v-if="!isLoading">Ingresar con Google</span>
@@ -52,8 +52,8 @@
         </span>
       </button>
 
-      <p class="text-gray-600 text-xs mt-4">
-        Al ingresar, aceptas los terminos del servicio.
+      <p class="text-go-text-muted text-xs mt-4">
+        Al ingresar, aceptás los términos del servicio.
       </p>
     </div>
   </div>

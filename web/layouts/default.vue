@@ -1,9 +1,9 @@
 <template>
-  <div class="w-full min-h-screen">
+  <div class="w-full min-h-screen bg-go-bg">
     <AppHeader />
 
     <!-- Navigation -->
-    <div v-if="user" class="w-full bg-base border-b border-gray-700 mb-4">
+    <div v-if="user" class="w-full bg-go-bg-elevated border-b border-go-border mb-4">
       <div class="max-w-5xl m-auto px-0 sm:px-6">
         <nav class="flex overflow-x-auto" aria-label="Navegacion principal">
           <NuxtLink to="/projects" class="nav-tab" :class="{ 'nav-tab-active': route.path.startsWith('/projects') }">
@@ -31,7 +31,7 @@
     </div>
 
     <!-- Footer -->
-    <footer class="mt-12 py-6 text-center text-gray-600 text-sm">
+    <footer class="mt-12 py-6 text-center text-go-text-muted text-sm">
       <p>Gasto Obra - WiseUtils</p>
     </footer>
   </div>
@@ -56,15 +56,15 @@ onMounted(async () => {
 
 <style scoped>
 .nav-tab {
-  @apply py-4 px-4 text-gray-300 border-b-2 border-transparent font-medium text-sm whitespace-nowrap;
+  @apply py-4 px-4 text-go-text-secondary border-b-2 border-transparent font-medium text-sm whitespace-nowrap;
   transition: color 0.2s, border-color 0.2s;
 }
 
 .nav-tab:hover {
-  @apply text-white border-gray-500;
+  @apply text-go-text border-go-text-muted;
 }
 
 .nav-tab-active {
-  @apply text-primary border-primary font-semibold;
+  @apply text-go-primary border-go-primary font-semibold;
 }
 </style>

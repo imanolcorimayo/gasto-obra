@@ -111,7 +111,7 @@
     <!-- Join as client button -->
     <div v-if="project" class="max-w-3xl m-auto px-3 sm:px-6">
       <div class="mt-2 mb-8 bg-surface rounded-xl border border-gray-700 p-5 text-center">
-        <p class="text-gray-300 mb-3">Sos el dueno de esta obra?</p>
+        <p class="text-gray-300 mb-3">Sos el dueño de esta obra?</p>
         <NuxtLink
           :to="`/client/join?token=${route.params.token}`"
           class="btn-primary inline-flex items-center gap-2"

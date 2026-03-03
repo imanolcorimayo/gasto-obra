@@ -2,11 +2,116 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ─── Fonts ─── */
+
+@font-face {
+  font-family: 'Startup';
+  src: url('~/assets/fonts/Startup-Bold.otf') format('opentype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* ─── Design Tokens ─── */
+
+:root {
+  /* Brand seeds */
+  --go-brand-olive: #483923;
+  --go-brand-amber: #FFAB40;
+
+  /* Backgrounds */
+  --go-bg: #171A14;
+  --go-bg-elevated: #1D201A;
+  --go-surface: #24271F;
+  --go-surface-hover: #2E312A;
+  --go-surface-alt: #353830;
+  --go-border: #3D4036;
+  --go-border-subtle: #2E312A;
+
+  /* Primary (amber) */
+  --go-primary: #FFAB40;
+  --go-primary-hover: #FFBC62;
+  --go-primary-active: #E99A35;
+  --go-primary-muted: rgba(255, 171, 64, 0.12);
+  --go-primary-on: #1A1200;
+
+  /* Secondary (sage green) */
+  --go-secondary: #6B8F71;
+  --go-secondary-hover: #7DA383;
+  --go-secondary-muted: rgba(107, 143, 113, 0.12);
+
+  /* Semantic */
+  --go-success: #5CB870;
+  --go-success-muted: rgba(92, 184, 112, 0.12);
+  --go-danger: #D4544A;
+  --go-danger-muted: rgba(212, 84, 74, 0.12);
+  --go-warning: #E8B83A;
+  --go-warning-muted: rgba(232, 184, 58, 0.12);
+  --go-info: #5A9BBF;
+  --go-info-muted: rgba(90, 155, 191, 0.12);
+
+  /* Text */
+  --go-text: #F0EBE1;
+  --go-text-secondary: #B5B0A4;
+  --go-text-tertiary: #8A8579;
+  --go-text-muted: #5E594F;
+  --go-text-inverse: #171A14;
+
+  /* Category colors */
+  --go-cat-materiales: #5A8FB8;
+  --go-cat-herramientas: #D4793D;
+  --go-cat-transporte: #BFA63D;
+  --go-cat-mano-de-obra: #A86B5E;
+  --go-cat-comida: #6B9B6B;
+  --go-cat-otros: #8B847A;
+
+  /* Payment method colors */
+  --go-pay-transferencia: #5A8FB8;
+  --go-pay-efectivo: #6B9B6B;
+  --go-pay-tarjeta: #8B6BA3;
+  --go-pay-mercadopago: #00B1EA;
+
+  /* Radius */
+  --go-radius-sm: 6px;
+  --go-radius-md: 10px;
+  --go-radius-lg: 14px;
+  --go-radius-xl: 18px;
+  --go-radius-full: 9999px;
+
+  /* Shadows */
+  --go-shadow-sm: 0 1px 3px rgba(0,0,0,0.3);
+  --go-shadow-md: 0 4px 12px rgba(0,0,0,0.35);
+  --go-shadow-lg: 0 8px 28px rgba(0,0,0,0.4);
+}
+
+.light {
+  --go-bg: #F5F0E5;
+  --go-bg-elevated: #EDE8DB;
+  --go-surface: #E8E2D4;
+  --go-surface-hover: #DDD7C8;
+  --go-surface-alt: #D4CEBD;
+  --go-border: #C4BDA8;
+  --go-border-subtle: #D4CEBD;
+  --go-text: #1A1712;
+  --go-text-secondary: #4A4640;
+  --go-text-tertiary: #6B665C;
+  --go-text-muted: #9B968C;
+  --go-text-inverse: #F0EBE1;
+  --go-primary-on: #1A1200;
+  --go-shadow-sm: 0 1px 3px rgba(0,0,0,0.08);
+  --go-shadow-md: 0 4px 12px rgba(0,0,0,0.1);
+  --go-shadow-lg: 0 8px 28px rgba(0,0,0,0.12);
+}
+
+/* ─── Base ─── */
+
 @layer base {
   body {
-    @apply bg-base text-gray-100;
+    @apply bg-go-bg text-go-text font-ui;
   }
 }
+
+/* ─── Utilities ─── */
 
 @layer utilities {
   .no-scrollbar::-webkit-scrollbar {
@@ -20,7 +125,7 @@
 
   .dark-scrollbar {
     scrollbar-width: thin;
-    scrollbar-color: #4b5563 transparent;
+    scrollbar-color: var(--go-border) transparent;
   }
 
   .dark-scrollbar::-webkit-scrollbar {
@@ -33,28 +138,29 @@
   }
 
   .dark-scrollbar::-webkit-scrollbar-thumb {
-    background-color: #4b5563;
+    background-color: var(--go-border);
     border-radius: 4px;
   }
 
   .dark-scrollbar::-webkit-scrollbar-thumb:hover {
-    background-color: #6b7280;
+    background-color: var(--go-text-muted);
   }
 
+  /* Modal utilities */
   .modal-backdrop {
-    @apply fixed inset-0 flex items-end sm:items-center justify-center bg-black bg-opacity-40 z-50;
+    @apply fixed inset-0 flex items-end sm:items-center justify-center bg-black/40 z-50;
   }
 
   .modal-container {
-    @apply bg-base rounded-t-xl sm:rounded-xl shadow-xl w-full sm:max-w-xl max-h-[90vh] overflow-hidden flex flex-col;
+    @apply bg-go-bg-elevated rounded-t-go-xl sm:rounded-go-xl shadow-go-lg w-full sm:max-w-xl max-h-[90vh] overflow-hidden flex flex-col;
   }
 
   .modal-header {
-    @apply flex justify-between items-center p-4 border-b border-gray-700 shrink-0;
+    @apply flex justify-between items-center p-4 border-b border-go-border shrink-0;
   }
 
   .modal-close {
-    @apply text-gray-400 hover:text-gray-500 transition-colors;
+    @apply text-go-text-tertiary hover:text-go-text-secondary transition-colors;
   }
 
   .modal-body {
@@ -62,21 +168,27 @@
   }
 
   .modal-footer {
-    @apply p-4 border-t border-gray-700 flex justify-end shrink-0;
+    @apply p-4 border-t border-go-border flex justify-end shrink-0;
   }
 
+  /* Button utilities */
   .btn-primary {
-    @apply px-4 py-2 bg-primary hover:bg-primary/80 text-white rounded-lg font-medium transition-colors;
+    @apply px-5 py-2.5 bg-go-primary text-go-primary-on font-semibold rounded-go-md hover:bg-go-primary-hover transition-colors;
   }
 
   .btn-secondary {
-    @apply px-4 py-2 bg-gray-600 hover:bg-gray-500 text-white rounded-lg font-medium transition-colors;
+    @apply px-5 py-2.5 bg-go-surface text-go-text-secondary border border-go-border rounded-go-md font-medium hover:bg-go-surface-hover transition-colors;
   }
 
   .btn-danger {
-    @apply px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition-colors;
+    @apply px-5 py-2.5 bg-go-danger-muted text-go-danger rounded-go-md font-medium transition-colors;
+    border: 1px solid rgba(212, 84, 74, 0.2);
+  }
+  .btn-danger:hover {
+    background-color: rgba(212, 84, 74, 0.2);
   }
 
+  /* Skeleton loader */
   .skeleton-shimmer {
     background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.05) 50%, transparent 100%);
     background-size: 200% 100%;

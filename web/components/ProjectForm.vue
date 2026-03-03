@@ -53,7 +53,7 @@
         <input
           v-model="form.clientName"
           type="text"
-          placeholder="Nombre del dueno"
+          placeholder="Nombre del dueño"
           class="w-full bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-white placeholder-gray-500 focus:outline-none focus:border-primary"
         />
       </div>
