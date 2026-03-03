@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>gasto obra — Manual de Marca y Diseno v1.0</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;800;900&family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400&display=swap');
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { background: #FAF6F0; font-family: 'DM Sans', system-ui, -apple-system, sans-serif; color: #1A1714; -webkit-font-smoothing: antialiased; line-height: 1.6; }
+
+.page { max-width: 720px; margin: 0 auto; padding: 40px 32px 64px; }
+
+/* --- Header / Cover --- */
+.cover { text-align: center; padding: 80px 0 60px; border-bottom: 2px solid #E8DFD3; margin-bottom: 48px; }
+.cover-icon { margin-bottom: 24px; }
+.cover-title { font-family: 'Nunito', sans-serif; font-size: 36px; font-weight: 800; letter-spacing: -0.5px; color: #1A1714; margin-bottom: 8px; }
+.cover-subtitle { font-family: 'Nunito', sans-serif; font-size: 22px; font-weight: 700; color: #D97706; margin-bottom: 4px; }
+.cover-line { width: 80px; height: 3px; background: #D97706; margin: 16px auto 24px; border-radius: 2px; }
+.cover-desc { font-size: 14px; color: #6B5D4E; max-width: 460px; margin: 0 auto 8px; }
+.cover-meta { font-size: 12px; color: #9A8B78; margin-top: 32px; }
+.cover-meta em { font-style: italic; }
+
+/* --- Page header (running header) --- */
+.running-header { font-size: 11px; color: #9A8B78; text-align: right; margin-bottom: 32px; font-style: italic; }
+
+/* --- Section titles --- */
+h1 { font-family: 'Nunito', sans-serif; font-size: 28px; font-weight: 800; color: #1A1714; margin: 48px 0 8px; letter-spacing: -0.3px; }
+h2 { font-family: 'Nunito', sans-serif; font-size: 20px; font-weight: 700; color: #D97706; margin: 32px 0 12px; }
+h3 { font-family: 'Nunito', sans-serif; font-size: 16px; font-weight: 700; color: #1A1714; margin: 24px 0 8px; }
+
+p { font-size: 14px; color: #4A3E32; margin-bottom: 12px; line-height: 1.7; }
+
+/* --- Tables --- */
+table { width: 100%; border-collapse: collapse; margin: 16px 0 24px; font-size: 13px; }
+thead { background: #1A1714; color: #F0E6D8; }
+thead th { padding: 10px 14px; text-align: left; font-weight: 600; font-size: 12px; }
+tbody td { padding: 10px 14px; border-bottom: 1px solid #E8DFD3; color: #4A3E32; vertical-align: top; }
+tbody tr:last-child td { border-bottom: none; }
+tbody tr:nth-child(even) { background: #F5F0E8; }
+
+/* --- Callout boxes --- */
+.callout { border-radius: 12px; padding: 20px 24px; margin: 20px 0 24px; border-left: 4px solid; }
+.callout-title { font-size: 12px; font-weight: 700; letter-spacing: 1px; margin-bottom: 6px; }
+.callout-body { font-size: 13px; line-height: 1.6; }
+
+.callout-amber { background: #FEF3C7; border-color: #D97706; }
+.callout-amber .callout-title { color: #92400E; }
+.callout-amber .callout-body { color: #78350F; }
+
+.callout-blue { background: #DBEAFE; border-color: #3B82F6; }
+.callout-blue .callout-title { color: #1E40AF; }
+.callout-blue .callout-body { color: #1E3A5F; }
+
+.callout-green { background: #D1FAE5; border-color: #059669; }
+.callout-green .callout-title { color: #065F46; }
+.callout-green .callout-body { color: #064E3B; }
+
+.callout-red { background: #FEE2E2; border-color: #EF4444; }
+.callout-red .callout-title { color: #991B1B; }
+.callout-red .callout-body { color: #7F1D1D; }
+
+/* --- Swatches --- */
+.swatch { display: inline-block; width: 60px; height: 28px; border-radius: 4px; vertical-align: middle; border: 1px solid rgba(0,0,0,0.08); font-size: 10px; font-weight: 700; line-height: 28px; text-align: center; font-family: 'DM Mono', monospace; }
+
+/* --- Principles --- */
+.principle { background: #FFFFFF; border-radius: 12px; padding: 20px 24px; margin: 12px 0; border: 1px solid #E8DFD3; box-shadow: 0 1px 3px rgba(0,0,0,0.04); }
+.principle-title { font-size: 12px; font-weight: 700; letter-spacing: 1px; color: #D97706; margin-bottom: 6px; }
+.principle-body { font-size: 13px; color: #4A3E32; line-height: 1.6; }
+
+/* --- Logo showcase --- */
+.logo-showcase { text-align: center; padding: 40px 20px; margin: 20px 0; border-radius: 16px; }
+.logo-showcase.dark { background: #0D0B09; }
+.logo-showcase.light { background: #FFFFFF; border: 1px solid #E8DFD3; }
+
+/* --- We Say / Don't Say table --- */
+.voice-table td:first-child { color: #059669; font-weight: 500; }
+.voice-table td:last-child { color: #DC2626; font-weight: 400; }
+
+/* --- Bullet lists --- */
+ul { margin: 8px 0 16px 20px; }
+ul li { font-size: 14px; color: #4A3E32; margin-bottom: 6px; line-height: 1.6; }
+ul li strong { color: #1A1714; }
+
+/* --- Divider --- */
+hr { border: none; height: 1px; background: #E8DFD3; margin: 40px 0; }
+
+/* --- Footer --- */
+.page-footer { text-align: center; font-size: 11px; color: #9A8B78; padding-top: 20px; border-top: 1px solid #E8DFD3; margin-top: 48px; }
+
+/* --- Responsive --- */
+@media (max-width: 480px) {
+  .page { padding: 24px 16px 48px; }
+  .cover { padding: 48px 0 40px; }
+  .cover-title { font-size: 28px; }
+  h1 { font-size: 24px; }
+  table { font-size: 12px; }
+  thead th, tbody td { padding: 8px 10px; }
+}
+
+@media print {
+  body { background: #FFF; }
+  .page { max-width: 100%; padding: 20px; }
+  .cover { page-break-after: always; }
+  h1 { page-break-before: always; }
+}
+</style>
+</head>
+<body>
+
+<!-- SVG icons — gasto obra logo system v2 -->
+<svg xmlns="http://www.w3.org/2000/svg" style="display:none">
+  <!-- Main logo icon: helmet + ticket merged into one unified silhouette -->
+  <symbol id="casco" viewBox="0 0 160 180">
+    <g transform="rotate(-3, 80, 90)">
+      <path d="
+        M 18,72
+        C 18,68 24,64 32,64
+        C 32,34 50,12 80,10
+        C 110,8 128,34 128,64
+        C 136,64 142,68 142,72
+        C 142,78 136,80 128,80
+        L 128,158
+        l -8,7 -8,-7 -8,7 -8,-7 -8,7 -8,-7
+          -8,7 -8,-7 -8,7 -8,-7 -8,7 -8,-7
+        L 32,80
+        C 24,80 18,78 18,72
+        Z"
+        stroke="currentColor" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+      <line x1="32" y1="80" x2="128" y2="80" stroke="currentColor" stroke-width="4"/>
+    </g>
+  </symbol>
+  <!-- Character variant "Casquito": same shape + expressive dot eyes -->
+  <symbol id="casquito" viewBox="0 0 160 180">
+    <g transform="rotate(-3, 80, 90)">
+      <path d="
+        M 18,72
+        C 18,68 24,64 32,64
+        C 32,34 50,12 80,10
+        C 110,8 128,34 128,64
+        C 136,64 142,68 142,72
+        C 142,78 136,80 128,80
+        L 128,158
+        l -8,7 -8,-7 -8,7 -8,-7 -8,7 -8,-7
+          -8,7 -8,-7 -8,7 -8,-7 -8,7 -8,-7
+        L 32,80
+        C 24,80 18,78 18,72
+        Z"
+        stroke="currentColor" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+      <line x1="32" y1="80" x2="128" y2="80" stroke="currentColor" stroke-width="4"/>
+      <circle cx="62" cy="112" r="7" fill="currentColor"/>
+      <circle cx="100" cy="110" r="7" fill="currentColor"/>
+    </g>
+  </symbol>
+</svg>
+
+<div class="page">
+
+  <!-- ═══════════════════════════════ -->
+  <!-- COVER                          -->
+  <!-- ═══════════════════════════════ -->
+  <div class="cover">
+    <div class="cover-icon">
+      <svg width="90" height="90" style="color:#1A1714"><use href="#casco"/></svg>
+    </div>
+    <div class="cover-title" style="font-family:'Nunito',sans-serif; font-weight:800; letter-spacing:-1px;">gasto obra</div>
+    <div class="cover-subtitle">Manual de Marca y Diseno</div>
+    <div class="cover-line"></div>
+    <div class="cover-desc">El contrato visual para el ecosistema de seguimiento de gastos de obra.</div>
+    <div class="cover-desc">Una Marca · Modo Oscuro + Claro · Primero WhatsApp</div>
+    <div class="cover-meta">Marzo 2026 — v1.0<br><em>Andrea Lopez Palomeque & Imanol Corimayo</em></div>
+  </div>
+
+  <!-- ═══════════════════════════════ -->
+  <!-- 1. BRAND IDENTITY              -->
+  <!-- ═══════════════════════════════ -->
+  <div class="running-header">gasto obra — Manual de Marca y Diseno v1.0</div>
+
+  <h1>1. Identidad de Marca</h1>
+
+  <h2>1.1 Resumen de Marca</h2>
+  <table>
+    <thead><tr><th>Elemento</th><th>Definicion</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Nombre</strong></td><td>gasto obra</td></tr>
+      <tr><td><strong>Tagline (ES)</strong></td><td>Cada peso cuenta</td></tr>
+      <tr><td><strong>Tagline (EN)</strong></td><td>Every peso counts</td></tr>
+      <tr><td><strong>Idioma</strong></td><td>Espanol argentino (vos, lunfardo). Ingles para copy global.</td></tr>
+      <tr><td><strong>Personalidad</strong></td><td>Practica, clara, cercana. Un companero de obra, no un contador.</td></tr>
+    </tbody>
+  </table>
+
+  <h2>1.2 Personalidad de Marca</h2>
+  <ul>
+    <li><strong>Practica:</strong> Hablamos como un companero de laburo, no como una institucion financiera. Usamos "vos", lenguaje directo, y vamos al grano.</li>
+    <li><strong>Clara:</strong> La plata es sensible. Somos siempre transparentes, precisos y sin ambiguedades. Los numeros nunca confunden.</li>
+    <li><strong>Moderna:</strong> Se siente como un producto construido hoy, no hace 10 anos. UI limpia, modo oscuro, interacciones rapidas.</li>
+    <li><strong>Conversacional:</strong> Nuestra interfaz principal es un chat de WhatsApp. Todo tiene que sentirse como una conversacion natural.</li>
+    <li><strong>Local:</strong> Pensada para Argentina. Entendemos pesos, dolar blue, CBU, Mercado Pago y la jerga real de la obra.</li>
+  </ul>
+
+  <h2>1.3 Voz y Tono</h2>
+  <p>gasto obra habla como un companero de obra que sabe de numeros. No es un banco, no es un robot, no es una startup tratando de impresionar.</p>
+
+  <table class="voice-table">
+    <thead><tr><th>Decimos</th><th>No decimos</th></tr></thead>
+    <tbody>
+      <tr><td>"Listo, gasto registrado &#10004;"</td><td>"Su gasto ha sido procesado exitosamente."</td></tr>
+      <tr><td>"Te faltan $4.500 del presupuesto"</td><td>"El saldo disponible del presupuesto asciende a $4.500."</td></tr>
+      <tr><td>"Manda un mensaje con el monto y listo"</td><td>"Utilice nuestra plataforma para gestionar sus gastos de obra."</td></tr>
+      <tr><td>"Hoy se gastaron $32.000 en materiales"</td><td>"El reporte de egresos del dia indica un total de $32.000."</td></tr>
+    </tbody>
+  </table>
+
+  <hr>
+
+  <!-- ═══════════════════════════════ -->
+  <!-- 2. LOGO SYSTEM                 -->
+  <!-- ═══════════════════════════════ -->
+  <h1>2. Sistema de Logo</h1>
+
+  <h2>2.1 Logo Principal</h2>
+
+  <div class="logo-showcase dark">
+    <svg width="100" height="100" style="color:#F0E6D8"><use href="#casco"/></svg>
+    <div style="font-family:'Nunito',sans-serif; font-weight:800; font-size:28px; color:#F0E6D8; letter-spacing:-0.5px; margin-top:8px;">gasto obra</div>
+  </div>
+
+  <p>El logo principal consiste en dos elementos: el icono de casco-ticket (simbolo) y el wordmark "gasto obra" en tipografia redondeada minuscula. El icono fusiona un casco de obra con un ticket de gastos en una sola silueta continua. Ambos elementos pueden usarse juntos o por separado.</p>
+
+  <h2>2.2 Anatomia del Logo</h2>
+  <table>
+    <thead><tr><th>Elemento</th><th>Descripcion y Reglas</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Silueta unificada</strong></td><td>Casco y ticket fusionados en un solo trazo continuo. El domo del casco fluye hacia las orejas del reborde, se angosta al cuerpo del ticket y termina en zigzag. No son dos objetos separados — son una sola forma.</td></tr>
+      <tr><td><strong>Dientes del zigzag</strong></td><td>6 dientes gruesos en el borde inferior. Suficientes para decir "ticket/recibo" sin perder legibilidad a tamanos chicos. Mas abstracto que un recibo literal.</td></tr>
+      <tr><td><strong>Trazos gruesos</strong></td><td>Lineas de 5px (contorno) y 4px (banda del reborde). El grosor asegura legibilidad desde 80px hasta 24px.</td></tr>
+      <tr><td><strong>Rotacion -3&deg;</strong></td><td>El icono tiene una inclinacion sutil de -3 grados. Organico, no corporativo. Nunca enderezar ni aplanar.</td></tr>
+      <tr><td><strong>Variante "Casquito"</strong></td><td>El mismo icono con dos puntos como ojos. Personificacion minima para momentos de personalidad (WhatsApp, onboarding). NO es el logo principal.</td></tr>
+      <tr><td><strong>Wordmark</strong></td><td>Todo minuscula: "gasto obra". Tipografia redondeada sans-serif (familia Nunito). La minuscula es intencional — senala cercanía.</td></tr>
+      <tr><td><strong>Monocromo</strong></td><td>El logo funciona en un solo color sobre cualquier fondo. Default: gris oscuro (#1A1714) en claro, blanco calido (#F0E6D8) en oscuro. Puede renderizarse en ambar (#D97706) para uso con acento.</td></tr>
+    </tbody>
+  </table>
+
+  <h2>2.3 Reglas de Uso del Logo</h2>
+  <ul>
+    <li>Espacio libre minimo: la altura de la letra "g" del wordmark en los cuatro lados</li>
+    <li>Tamano minimo: 100px de ancho (digital), 25mm (impreso)</li>
+    <li>Nunca estirar, rotar, agregar efectos ni aplicar degradados al logo</li>
+    <li>Nunca cambiar las proporciones entre icono y wordmark</li>
+    <li>Nunca usar el logo sobre fondos ocupados/con patron sin contraste suficiente</li>
+    <li>Variaciones de color aceptadas: monocromo oscuro, monocromo blanco, ambar primario (#D97706)</li>
+  </ul>
+
+  <h2>2.4 Variantes del Logo</h2>
+  <table>
+    <thead><tr><th>Variante</th><th>Cuando Usar</th><th>Detalles</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Logo completo (icono + wordmark)</strong></td><td>Default. Landing page, headers, documentos.</td><td>Icono sobre wordmark, centrado. Tagline opcional debajo.</td></tr>
+      <tr><td><strong>Logo horizontal</strong></td><td>Barras de navegacion, headers compactos.</td><td>Icono a la izquierda, wordmark a la derecha, centrado vertical.</td></tr>
+      <tr><td><strong>Solo simbolo</strong></td><td>Icono de app, favicon, espacios chicos.</td><td>Icono casco-ticket sin ojos. Legible hasta 24px gracias a los trazos gruesos.</td></tr>
+      <tr><td><strong>Casquito (con ojos)</strong></td><td>Perfil de WhatsApp, onboarding, personalidad.</td><td>El icono principal + ojos de punto. Solo para momentos de marca con personalidad.</td></tr>
+      <tr><td><strong>Solo wordmark</strong></td><td>Cuando el icono ya esta presente.</td><td>"gasto obra" en la tipografia de marca. Se puede acentuar "obra" en primario.</td></tr>
+    </tbody>
+  </table>
+
+  <hr>
+
+  <!-- ═══════════════════════════════ -->
+  <!-- 3. COLOR SYSTEM                -->
+  <!-- ═══════════════════════════════ -->
+  <h1>3. Sistema de Color</h1>
+
+  <p>gasto obra usa un sistema de color dual: Modo Oscuro (primario) y Modo Claro (secundario). Ambos temas estan completamente definidos y deben implementarse. El modo oscuro es la experiencia por defecto.</p>
+
+  <div class="callout callout-amber">
+    <div class="callout-title">EL MODO OSCURO ES PRIMARIO</div>
+    <div class="callout-body">La interfaz por defecto y primaria es oscura. Es premium, moderna, reduce la fatiga visual y se alinea con las expectativas de los usuarios para apps de finanzas. El modo oscuro se disena primero; el claro se adapta de el.</div>
+  </div>
+
+  <h2>3.1 Paleta Modo Oscuro (Primaria)</h2>
+  <p>La paleta "Tierra Firme": base oscura calida con acento ambar. El ambar es mas calido que un azul corporativo — conecta con la construccion, los ladrillos y la tierra.</p>
+
+  <table>
+    <thead><tr><th>Token</th><th>Hex</th><th>Muestra</th><th>Uso</th></tr></thead>
+    <tbody>
+      <tr><td><strong>bg</strong></td><td>#0D0B09</td><td><span class="swatch" style="background:#0D0B09;color:#F0E6D8">#0D0B09</span></td><td>Fondo de pagina, contenedor raiz</td></tr>
+      <tr><td><strong>surface</strong></td><td>#171411</td><td><span class="swatch" style="background:#171411;color:#F0E6D8">#171411</span></td><td>Headers, barras de navegacion, superficies elevadas</td></tr>
+      <tr><td><strong>card</strong></td><td>#1F1B16</td><td><span class="swatch" style="background:#1F1B16;color:#F0E6D8">#1F1B16</span></td><td>Cards, items de lista, modales</td></tr>
+      <tr><td><strong>border</strong></td><td>#322B22</td><td><span class="swatch" style="background:#322B22;color:#F0E6D8">#322B22</span></td><td>Divisores, bordes de cards, separadores</td></tr>
+      <tr><td><strong>primary</strong></td><td>#D97706</td><td><span class="swatch" style="background:#D97706;color:#FFF">#D97706</span></td><td>Acento de marca, estados activos, botones, montos</td></tr>
+      <tr><td><strong>primary-light</strong></td><td>#F59E0B</td><td><span class="swatch" style="background:#F59E0B;color:#FFF">#F59E0B</span></td><td>Estados hover, links, acentos secundarios</td></tr>
+      <tr><td><strong>secondary</strong></td><td>#A8896C</td><td><span class="swatch" style="background:#A8896C;color:#FFF">#A8896C</span></td><td>Tags, badges, categorias secundarias</td></tr>
+      <tr><td><strong>accent</strong></td><td>#34D399</td><td><span class="swatch" style="background:#34D399;color:#FFF">#34D399</span></td><td>Montos positivos ("pagado"), estados de exito</td></tr>
+      <tr><td><strong>text</strong></td><td>#F0E6D8</td><td><span class="swatch" style="background:#F0E6D8;color:#1A1714">#F0E6D8</span></td><td>Texto principal, encabezados, etiquetas</td></tr>
+      <tr><td><strong>text-muted</strong></td><td>#9A8B78</td><td><span class="swatch" style="background:#9A8B78;color:#FFF">#9A8B78</span></td><td>Texto secundario, timestamps, texto auxiliar</td></tr>
+      <tr><td><strong>text-dim</strong></td><td>#6B5D4E</td><td><span class="swatch" style="background:#6B5D4E;color:#FFF">#6B5D4E</span></td><td>Placeholders, texto deshabilitado</td></tr>
+      <tr><td><strong>danger</strong></td><td>#EF4444</td><td><span class="swatch" style="background:#EF4444;color:#FFF">#EF4444</span></td><td>Montos negativos ("debes"), errores, fechas urgentes</td></tr>
+    </tbody>
+  </table>
+
+  <h2>3.2 Paleta Modo Claro (Secundaria)</h2>
+  <p>Adaptacion limpia de alto contraste para quienes prefieran interfaces claras. Mismos tokens semanticos, valores diferentes.</p>
+
+  <table>
+    <thead><tr><th>Token</th><th>Hex</th><th>Muestra</th><th>Uso</th></tr></thead>
+    <tbody>
+      <tr><td><strong>bg</strong></td><td>#FAF6F0</td><td><span class="swatch" style="background:#FAF6F0;color:#1A1714">#FAF6F0</span></td><td>Fondo de pagina</td></tr>
+      <tr><td><strong>surface</strong></td><td>#FFFFFF</td><td><span class="swatch" style="background:#FFFFFF;color:#1A1714;border:1px solid #E8DFD3">#FFFFFF</span></td><td>Headers, navegacion</td></tr>
+      <tr><td><strong>card</strong></td><td>#FFFFFF</td><td><span class="swatch" style="background:#FFFFFF;color:#1A1714;border:1px solid #E8DFD3">#FFFFFF</span></td><td>Cards (usar sombra en vez de color para elevacion)</td></tr>
+      <tr><td><strong>border</strong></td><td>#E8DFD3</td><td><span class="swatch" style="background:#E8DFD3;color:#1A1714">#E8DFD3</span></td><td>Divisores, bordes</td></tr>
+      <tr><td><strong>primary</strong></td><td>#B45309</td><td><span class="swatch" style="background:#B45309;color:#FFF">#B45309</span></td><td>Acento de marca (mas oscuro para contraste en blanco)</td></tr>
+      <tr><td><strong>accent</strong></td><td>#059669</td><td><span class="swatch" style="background:#059669;color:#FFF">#059669</span></td><td>Montos positivos (verde mas oscuro para legibilidad)</td></tr>
+      <tr><td><strong>text</strong></td><td>#1A1714</td><td><span class="swatch" style="background:#1A1714;color:#F0E6D8">#1A1714</span></td><td>Texto principal</td></tr>
+      <tr><td><strong>text-muted</strong></td><td>#6B5D4E</td><td><span class="swatch" style="background:#6B5D4E;color:#FFF">#6B5D4E</span></td><td>Texto secundario</td></tr>
+      <tr><td><strong>danger</strong></td><td>#DC2626</td><td><span class="swatch" style="background:#DC2626;color:#FFF">#DC2626</span></td><td>Montos negativos, errores (mas oscuro para contraste)</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout callout-red">
+    <div class="callout-title">NOTA DE IMPLEMENTACION</div>
+    <div class="callout-body">Usar CSS custom properties (--color-bg, --color-primary, etc.) o el prefijo dark: de Tailwind. Ambos temas deben usar los MISMOS nombres de token semanticos. Los componentes nunca referencian valores hex directamente — referencian tokens. Esto asegura que ambos temas funcionen desde el dia uno.</div>
+  </div>
+
+  <hr>
+
+  <!-- ═══════════════════════════════ -->
+  <!-- 4. TYPOGRAPHY                  -->
+  <!-- ═══════════════════════════════ -->
+  <h1>4. Tipografia</h1>
+
+  <h2>4.1 Combinacion de Fuentes</h2>
+  <table>
+    <thead><tr><th>Rol</th><th>Fuente</th><th>Uso y Notas</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Display</strong></td><td>Nunito (800 ExtraBold)</td><td>Encabezados, montos, nombres de grupos, etiquetas de modo. Las terminaciones redondeadas coinciden con la personalidad del logo. Usar peso 800 para headings, 700 para subheadings.</td></tr>
+      <tr><td><strong>Body</strong></td><td>DM Sans (400 Regular)</td><td>Texto de cuerpo, descripciones, timestamps, labels de formulario, botones. Limpia y legible sin robar atencion de los headings en Nunito. Usar 400 para body, 500 para labels, 700 para botones.</td></tr>
+      <tr><td><strong>Mono</strong></td><td>DM Mono (400)</td><td>Codigos de moneda, datos tecnicos, referencias de comandos de WhatsApp. Opcional — solo cuando se necesite monospace.</td></tr>
+    </tbody>
+  </table>
+
+  <p>Ambas fuentes son gratuitas en Google Fonts para uso comercial. Sin problemas de licencia.</p>
+
+  <div class="callout callout-blue">
+    <div class="callout-title">POR QUE ESTAS FUENTES?</div>
+    <div class="callout-body">Las terminaciones redondeadas de Nunito son la combinacion mas cercana a la tipografia del wordmark del logo — comparten el mismo ADN geometrico-pero-calido. Esto crea una cohesion visual perfecta entre el logo y todos los encabezados. DM Sans es limpia, moderna y altamente legible en tamanos chicos — esencial para datos financieros en pantallas de celular.</div>
+  </div>
+
+  <h2>4.2 Escala Tipografica</h2>
+  <p>Basada en una grilla de 4px. Todos los tamanos en rem (1rem = 16px base).</p>
+
+  <table>
+    <thead><tr><th>Nombre</th><th>Tamano</th><th>Peso</th><th>Fuente</th><th>Uso</th></tr></thead>
+    <tbody>
+      <tr><td><strong>hero</strong></td><td>2rem (32px)</td><td>800</td><td>Nunito</td><td>Hero de landing, saldos totales</td></tr>
+      <tr><td><strong>h1</strong></td><td>1.5rem (24px)</td><td>800</td><td>Nunito</td><td>Titulos de pagina: "Marzo 2026", "Resumen"</td></tr>
+      <tr><td><strong>h2</strong></td><td>1.25rem (20px)</td><td>700</td><td>Nunito</td><td>Titulos de seccion, headers de cards</td></tr>
+      <tr><td><strong>h3</strong></td><td>1rem (16px)</td><td>700</td><td>Nunito</td><td>Subtitulos, montos en listas</td></tr>
+      <tr><td><strong>body</strong></td><td>0.875rem (14px)</td><td>400</td><td>DM Sans</td><td>Texto principal, descripciones</td></tr>
+      <tr><td><strong>small</strong></td><td>0.75rem (12px)</td><td>400</td><td>DM Sans</td><td>Timestamps, labels secundarios, meta info</td></tr>
+      <tr><td><strong>caption</strong></td><td>0.6875rem (11px)</td><td>600</td><td>DM Sans</td><td>Divisores de seccion, labels all-caps (letter-spacing: 1px)</td></tr>
+      <tr><td><strong>tagline</strong></td><td>0.625rem (10px)</td><td>500</td><td>DM Sans</td><td>Debajo del logo: "CADA PESO CUENTA" (letter-spacing: 3px)</td></tr>
+    </tbody>
+  </table>
+
+  <hr>
+
+  <!-- ═══════════════════════════════ -->
+  <!-- 5. SPACING & LAYOUT            -->
+  <!-- ═══════════════════════════════ -->
+  <h1>5. Espaciado y Layout</h1>
+
+  <h2>5.1 Escala de Espaciado</h2>
+  <p>Grilla base de 4px. Usar la escala de espaciado default de Tailwind. Nunca "a ojo".</p>
+
+  <table>
+    <thead><tr><th>Token</th><th>Pixeles</th><th>Tailwind</th><th>Uso</th></tr></thead>
+    <tbody>
+      <tr><td><strong>xs</strong></td><td>4px</td><td>p-1, m-1</td><td>Espaciado compacto entre elementos inline</td></tr>
+      <tr><td><strong>sm</strong></td><td>8px</td><td>p-2, gap-2</td><td>Dentro de componentes compactos, entre icono y texto</td></tr>
+      <tr><td><strong>md</strong></td><td>12px</td><td>p-3, gap-3</td><td>Padding interno de cards (compacto), entre items de lista</td></tr>
+      <tr><td><strong>base</strong></td><td>16px</td><td>p-4, gap-4</td><td>Padding default de cards, padding de contenido de seccion</td></tr>
+      <tr><td><strong>lg</strong></td><td>20px</td><td>p-5, gap-5</td><td>Padding de pagina (mobile), padding generoso de cards</td></tr>
+      <tr><td><strong>xl</strong></td><td>24px</td><td>p-6, gap-6</td><td>Gaps de seccion, padding de pagina (tablet+)</td></tr>
+      <tr><td><strong>2xl</strong></td><td>32px</td><td>p-8, gap-8</td><td>Separadores de secciones principales</td></tr>
+    </tbody>
+  </table>
+
+  <h2>5.2 Border Radius</h2>
+  <p>Bordes redondeados para coincidir con la personalidad amigable y organica del logo. Nunca usar esquinas sharp.</p>
+
+  <table>
+    <thead><tr><th>Elemento</th><th>Radio</th><th>Clase Tailwind</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Botones</strong></td><td>8px</td><td>rounded-lg</td></tr>
+      <tr><td><strong>Cards, items de lista</strong></td><td>12px</td><td>rounded-xl</td></tr>
+      <tr><td><strong>Modales, secciones</strong></td><td>16px</td><td>rounded-2xl</td></tr>
+      <tr><td><strong>Avatares, badges</strong></td><td>50%</td><td>rounded-full</td></tr>
+      <tr><td><strong>Tags, pills</strong></td><td>6px</td><td>rounded-md</td></tr>
+      <tr><td><strong>Icono de app</strong></td><td>22% del tamano</td><td>rounded-[22%] (estandar iOS)</td></tr>
+    </tbody>
+  </table>
+
+  <hr>
+
+  <!-- ═══════════════════════════════ -->
+  <!-- 6. DESIGN PRINCIPLES           -->
+  <!-- ═══════════════════════════════ -->
+  <h1>6. Principios de Diseno</h1>
+
+  <p>Estos seis principios son el contrato entre los fundadores. Cada componente, pagina y decision de feature debe alinearse con ellos.</p>
+
+  <div class="principle">
+    <div class="principle-title">01 TU LOGO ES LA BASE</div>
+    <div class="principle-body">El icono de casco-ticket unificado con el wordmark redondeado en minusculas define la personalidad: practica, clara, moderna. Cada decision de diseno debe sentirse como si viviera en la misma familia. Si un componente se siente demasiado corporativo o demasiado jugueton comparado con el logo, esta mal.</div>
+  </div>
+
+  <div class="principle">
+    <div class="principle-title">02 LOS NUMEROS SON EL PROTAGONISTA</div>
+    <div class="principle-body">Montos, saldos y fechas deben ser los elementos mas visualmente prominentes. Usar Nunito (display font) en tamanos grandes con el color primario para datos financieros. Todo lo demas — descripciones, timestamps, labels — es contexto de soporte en tamanos menores y colores atenuados.</div>
+  </div>
+
+  <div class="principle">
+    <div class="principle-title">03 SENTILO COMO WHATSAPP</div>
+    <div class="principle-body">La app es una extension de una conversacion de WhatsApp. Bordes redondeados en cards (12-16px), copy conversacional, interacciones rapidas. Si algo se siente como un dashboard bancario en vez de un companero de chat, simplificalo.</div>
+  </div>
+
+  <div class="principle">
+    <div class="principle-title">04 MODO OSCURO PRIMERO, CLARO INCLUIDO</div>
+    <div class="principle-body">La interfaz primaria es oscura — premium, moderna, esperada por usuarios de fintech. El modo claro esta completamente soportado y debe sentirse intencional, no un pensamiento secundario. Ambos temas usan los mismos tokens semanticos.</div>
+  </div>
+
+  <div class="principle">
+    <div class="principle-title">05 CLARIDAD ANTES QUE DECORACION</div>
+    <div class="principle-body">Sin degradados, sin glassmorphism, sin ilustraciones decorativas. Cada pixel cumple un proposito. Los usuarios manejan plata — la confianza viene de la claridad. Una card limpia con numeros claros es mas poderosa que una animacion fancy.</div>
+  </div>
+
+  <div class="principle">
+    <div class="principle-title">06 UNA APP, UN DISENO</div>
+    <div class="principle-body">Todo tiene que sentirse como la misma app, no como dos productos pegados. Mismo espaciado, mismos estilos de cards, misma escala tipografica, misma biblioteca de componentes. La unica diferencia entre vistas es la data — nunca el diseno. Este es el contrato no negociable entre Andrea e Imanol.</div>
+  </div>
+
+  <!-- Footer -->
+  <div class="page-footer">
+    GASTO OBRA · MANUAL DE MARCA Y DISENO v1.0 · CONFIDENCIAL<br>
+    Andrea Lopez Palomeque & Imanol Corimayo · Marzo 2026
+  </div>
+
+</div>
+
+</body>
+</html>
