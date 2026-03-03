@@ -1,5 +1,5 @@
 <template>
-  <div class="w-full min-h-screen bg-go-bg">
+  <div class="w-full min-h-screen bg-go-bg flex flex-col">
     <AppHeader />
 
     <!-- Navigation -->
@@ -24,15 +24,15 @@
       </div>
     </div>
 
-    <div class="flex flex-col gap-12 max-w-5xl m-auto px-3 sm:px-6">
+    <div class="flex-1 flex flex-col gap-12 max-w-5xl w-full m-auto px-3 sm:px-6">
       <main>
         <slot />
       </main>
     </div>
 
     <!-- Footer -->
-    <footer class="mt-12 py-6 text-center text-go-text-muted text-sm">
-      <p>Gasto Obra - WiseUtils</p>
+    <footer class="mt-auto py-6 text-center text-go-text-muted text-sm">
+      <p>gasto obra</p>
     </footer>
   </div>
 </template>

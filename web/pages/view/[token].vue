@@ -122,8 +122,8 @@
     </div>
 
     <!-- Footer -->
-    <footer class="mt-4 py-6 text-center text-gray-600 text-sm">
-      <p>Gasto Obra - WiseUtils</p>
+    <footer class="mt-4 py-6 text-center text-go-text-muted text-sm">
+      <p>gasto obra</p>
     </footer>
   </div>
 </template>

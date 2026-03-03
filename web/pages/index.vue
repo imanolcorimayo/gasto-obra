@@ -1,6 +1,6 @@
 <template>
-  <div class="min-h-screen bg-go-bg flex flex-col items-center justify-center px-4">
-    <div class="max-w-md w-full text-center">
+  <div class="min-h-screen bg-go-bg flex flex-col items-center px-4">
+    <div class="max-w-md w-full text-center flex-1 flex flex-col justify-center">
       <!-- Logo / Brand -->
       <div class="mb-8">
         <img src="/img/logo-vertical.svg" alt="Gasto Obra" class="h-40 mx-auto mb-4" />
@@ -56,6 +56,11 @@
         Al ingresar, aceptás los términos del servicio.
       </p>
     </div>
+
+    <!-- Footer -->
+    <footer class="py-6 text-center text-go-text-muted text-sm">
+      <p>gasto obra</p>
+    </footer>
   </div>
 </template>
 
