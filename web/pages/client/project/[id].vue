@@ -192,13 +192,6 @@
           </template>
         </div>
       </div>
-
-      <!-- Powered by footer -->
-      <div class="mt-12 pt-6 border-t border-go-border-subtle flex items-center justify-center gap-2 text-go-text-muted text-xs">
-        <span class="font-display text-go-text-tertiary">gasto<span class="text-go-primary/50">obra</span></span>
-        <span>·</span>
-        <span>Powered by gastoobra</span>
-      </div>
     </template>
   </div>
 </template>
