@@ -28,11 +28,11 @@
           <!-- Left: Copy -->
           <div>
             <h1 class="font-display text-4xl sm:text-5xl lg:text-6xl text-go-text leading-[1.1] tracking-tight mb-6">
-              Cada peso de tu obra,
+              Cada gasto de tu obra,
               <span class="text-go-primary">bajo control.</span>
             </h1>
             <p class="text-go-text-secondary text-lg sm:text-xl leading-relaxed mb-8 max-w-lg">
-              Registrá gastos desde WhatsApp. Tu cliente los ve en tiempo real desde el navegador. Sin papel, sin Excel, sin olvidos.
+              Registralos desde WhatsApp. Tu cliente los ve en tiempo real desde el navegador. Sin papel, sin Excel, sin olvidos.
             </p>
 
             <button
