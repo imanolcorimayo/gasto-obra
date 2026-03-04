@@ -1,56 +1,67 @@
 <template>
-  <div v-if="show" class="fixed inset-0 bg-black/60 flex items-center justify-center z-50 px-4" @click.self="$emit('close')">
-    <div class="bg-go-surface rounded-go-xl border border-go-border p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto">
-      <h3 class="text-base font-semibold mb-4">Editar proyecto</h3>
+  <div v-if="show" class="modal-backdrop" @click.self="$emit('close')">
+    <div class="modal-container">
+      <!-- Header -->
+      <div class="modal-header">
+        <h3 class="font-display font-semibold text-base text-go-text">Editar proyecto</h3>
+        <button @click="$emit('close')" class="modal-close">
+          <MdiClose class="text-xl" />
+        </button>
+      </div>
 
-      <ProjectForm
-        :initial-data="formData"
-        submit-label="Guardar"
-        :is-submitting="isSaving"
-        @submit="handleSave"
-        @cancel="$emit('close')"
-      />
+      <!-- Body -->
+      <div class="modal-body">
+        <ProjectForm
+          :initial-data="formData"
+          submit-label="Guardar"
+          :is-submitting="isSaving"
+          @submit="handleSave"
+          @cancel="$emit('close')"
+        />
 
-      <!-- Project Categories Section -->
-      <div class="mt-6 pt-6 border-t border-go-border">
-        <h4 class="font-medium mb-3">Categorias del proyecto</h4>
+        <!-- Project Categories Section -->
+        <div class="mt-6 pt-6 border-t border-go-border">
+          <h4 class="text-[10px] font-semibold uppercase tracking-wider text-go-text-muted/60 mb-3">Categorias del proyecto</h4>
 
-        <label class="flex items-center justify-between cursor-pointer mb-4">
-          <div>
-            <span class="text-sm font-medium text-go-text">Usar categorias especificas para este proyecto</span>
-            <p class="text-xs text-go-text-muted mt-0.5">Si esta desactivado, se usan tus categorias globales</p>
+          <div class="flex items-center gap-3 p-3 bg-go-surface rounded-go-md border border-go-border mb-4">
+            <label class="flex items-center justify-between cursor-pointer flex-1">
+              <div>
+                <span class="text-sm text-go-text">Usar categorias especificas para este proyecto</span>
+                <p class="text-xs text-go-text-muted mt-0.5">Si esta desactivado, se usan tus categorias globales</p>
+              </div>
+              <button
+                type="button"
+                @click="useProjectCategories = !useProjectCategories"
+                class="relative inline-flex h-5 w-9 flex-shrink-0 rounded-full transition-colors duration-200 ease-in-out"
+                :class="useProjectCategories ? 'bg-go-primary' : 'bg-go-surface-alt'"
+              >
+                <span
+                  class="inline-block h-4 w-4 rounded-full bg-white shadow transform transition-transform duration-200 ease-in-out mt-0.5"
+                  :class="useProjectCategories ? 'translate-x-4 ml-0.5' : 'translate-x-0 ml-0.5'"
+                />
+              </button>
+            </label>
           </div>
-          <button
-            type="button"
-            @click="useProjectCategories = !useProjectCategories"
-            class="relative inline-flex h-5 w-9 flex-shrink-0 rounded-full transition-colors duration-200 ease-in-out"
-            :class="useProjectCategories ? 'bg-go-primary' : 'bg-go-surface-alt'"
-          >
-            <span
-              class="inline-block h-4 w-4 rounded-full bg-white shadow transform transition-transform duration-200 ease-in-out mt-0.5"
-              :class="useProjectCategories ? 'translate-x-4 ml-0.5' : 'translate-x-0 ml-0.5'"
-            />
-          </button>
-        </label>
 
-        <div v-if="!useProjectCategories" class="text-sm text-go-text-tertiary">
-          Se usan tus categorias globales.
-          <NuxtLink to="/settings/categories" class="text-go-primary hover:text-go-primary/80">
-            Configurar categorias globales
-          </NuxtLink>
-        </div>
+          <div v-if="!useProjectCategories" class="text-sm text-go-text-tertiary">
+            Se usan tus categorias globales.
+            <NuxtLink to="/settings/categories" class="text-go-primary hover:text-go-primary/80">
+              Configurar categorias globales
+            </NuxtLink>
+          </div>
 
-        <div v-else>
-          <CategoryManager v-model="projectCategories" />
-          <button
-            type="button"
-            @click="handleSaveCategories"
-            :disabled="isSavingCategories || !categoriesValid"
-            class="mt-4 btn-primary w-full text-sm flex items-center justify-center gap-2"
-          >
-            <span v-if="isSavingCategories" class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
-            Guardar categorias
-          </button>
+          <div v-else>
+            <CategoryManager v-model="projectCategories" />
+            <button
+              type="button"
+              @click="handleSaveCategories"
+              :disabled="isSavingCategories || !categoriesValid"
+              class="mt-4 btn-primary w-full text-sm flex items-center justify-center gap-2"
+            >
+              <span v-if="isSavingCategories" class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+              Guardar categorias
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -58,6 +69,7 @@
 </template>
 
 <script setup>
+import MdiClose from '~icons/mdi/close';
 import { useCategoryStore } from '~/stores/category';
 
 const props = defineProps({

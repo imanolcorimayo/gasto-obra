@@ -1,34 +1,34 @@
 <template>
-  <div class="flex flex-col gap-3">
+  <div class="flex flex-col gap-2">
     <!-- Category rows -->
     <div
       v-for="(cat, idx) in categories"
       :key="idx"
-      class="flex items-center gap-2"
+      class="flex items-center gap-3 p-2.5 bg-go-bg rounded-go-md border border-go-border-subtle"
     >
       <input
         type="color"
         v-model="cat.color"
-        class="w-8 h-8 rounded-go-sm cursor-pointer border border-go-border bg-transparent shrink-0"
+        class="w-6 h-6 rounded-go-sm cursor-pointer border border-go-border bg-transparent shrink-0"
       />
       <input
         v-model="cat.label"
         type="text"
         placeholder="Nombre"
-        class="flex-1 bg-go-surface border border-go-border rounded-go-md px-3 py-1.5 text-go-text text-sm placeholder-go-text-muted focus:outline-none focus:border-go-primary"
+        class="flex-1 bg-transparent border border-go-border rounded-go-md px-3 py-1.5 text-sm text-go-text placeholder-go-text-muted focus:outline-none focus:ring-2 focus:ring-go-primary/40 focus:border-go-primary transition-colors"
         @input="autoGenerateValue(idx)"
       />
       <input
         v-model="cat.value"
         type="text"
         placeholder="valor"
-        class="w-32 bg-go-surface border border-go-border rounded-go-md px-3 py-1.5 text-go-text text-sm placeholder-go-text-muted focus:outline-none focus:border-go-primary"
+        class="w-32 bg-transparent border border-go-border rounded-go-md px-3 py-1.5 text-sm text-go-text placeholder-go-text-muted focus:outline-none focus:ring-2 focus:ring-go-primary/40 focus:border-go-primary transition-colors"
       />
       <button
         type="button"
         @click="removeCategory(idx)"
         :disabled="categories.length <= 1"
-        class="text-go-text-muted hover:text-go-danger p-1 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+        class="text-go-text-muted hover:text-go-danger transition-colors p-1 disabled:opacity-30 disabled:cursor-not-allowed"
       >
         <MdiClose class="text-base" />
       </button>

@@ -1,214 +1,240 @@
 <template>
-  <div v-if="show" class="fixed inset-0 bg-black/60 flex items-center justify-center z-50 px-4" @click.self="$emit('close')">
-    <div class="bg-go-surface rounded-go-xl border border-go-border p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto">
-      <h3 class="text-base font-semibold mb-4">Editar registro</h3>
+  <div v-if="show" class="modal-backdrop" @click.self="$emit('close')">
+    <div class="modal-container">
+      <!-- Header -->
+      <div class="modal-header">
+        <h3 class="font-display font-semibold text-base text-go-text">Editar registro</h3>
+        <button @click="$emit('close')" class="modal-close">
+          <MdiClose class="text-xl" />
+        </button>
+      </div>
 
-      <form @submit.prevent="handleSave" class="flex flex-col gap-3">
-        <!-- Type -->
-        <div>
-          <label class="block text-sm font-medium text-go-text mb-1">Tipo</label>
-          <div class="flex gap-2">
-            <button
-              v-for="t in typeOptions"
-              :key="t.value"
-              type="button"
-              @click="form.type = t.value"
-              class="text-xs px-3 py-1.5 rounded-full border transition-colors"
-              :class="form.type === t.value
-                ? 'border-go-primary bg-go-primary/20 text-go-primary'
-                : 'border-go-border text-go-text-tertiary hover:border-go-border'"
-            >
-              {{ t.label }}
-            </button>
-          </div>
-        </div>
-
-        <!-- Title -->
-        <div>
-          <label class="block text-sm font-medium text-go-text mb-1">Titulo</label>
-          <input
-            v-model="form.title"
-            type="text"
-            required
-            class="w-full bg-go-surface border border-go-border rounded-go-md px-3 py-2 text-go-text placeholder-go-text-muted focus:outline-none focus:border-go-primary"
-          />
-        </div>
-
-        <!-- Amount -->
-        <div>
-          <label class="block text-sm font-medium text-go-text mb-1">Monto</label>
-          <input
-            v-model="form.amount"
-            type="number"
-            required
-            min="1"
-            step="0.01"
-            class="w-full bg-go-surface border border-go-border rounded-go-md px-3 py-2 text-go-text placeholder-go-text-muted focus:outline-none focus:border-go-primary"
-          />
-        </div>
-
-        <!-- Category (hidden for payments) -->
-        <div v-if="form.type !== 'payment'">
-          <label class="block text-sm font-medium text-go-text mb-1">Categoria</label>
-          <select
-            v-model="form.category"
-            class="w-full bg-go-surface border border-go-border rounded-go-md px-3 py-2 text-go-text focus:outline-none focus:border-go-primary"
-          >
-            <option v-for="cat in resolvedCategories" :key="cat.value" :value="cat.value">
-              {{ cat.label }}
-            </option>
-          </select>
-        </div>
-
-        <!-- Description -->
-        <div>
-          <label class="block text-sm font-medium text-go-text mb-1">Descripcion</label>
-          <input
-            v-model="form.description"
-            type="text"
-            placeholder="Opcional"
-            class="w-full bg-go-surface border border-go-border rounded-go-md px-3 py-2 text-go-text placeholder-go-text-muted focus:outline-none focus:border-go-primary"
-          />
-        </div>
-
-        <!-- Payment Status -->
-        <div>
-          <label class="block text-sm font-medium text-go-text mb-1">Estado de pago</label>
-          <div class="flex gap-2">
-            <button
-              v-for="s in PAYMENT_STATUSES"
-              :key="s.value"
-              type="button"
-              @click="form.paymentStatus = s.value"
-              class="text-xs px-3 py-1.5 rounded-full border transition-colors"
-              :class="form.paymentStatus === s.value
-                ? s.value === 'paid'
-                  ? 'border-go-success bg-go-success-muted text-go-success'
-                  : 'border-go-danger bg-go-danger-muted text-go-danger'
-                : 'border-go-border text-go-text-tertiary hover:border-go-border'"
-            >
-              {{ s.label }}
-            </button>
-          </div>
-        </div>
-
-        <!-- Payment Method -->
-        <div>
-          <label class="block text-sm font-medium text-go-text mb-1">Medio de pago</label>
-          <select
-            v-model="form.paymentMethod"
-            class="w-full bg-go-surface border border-go-border rounded-go-md px-3 py-2 text-go-text focus:outline-none focus:border-go-primary text-sm"
-          >
-            <option :value="null">Sin especificar</option>
-            <option v-for="m in PAYMENT_METHODS" :key="m.value" :value="m.value">
-              {{ m.label }}
-            </option>
-          </select>
-        </div>
-
-        <!-- Recipient -->
-        <div>
-          <label class="block text-sm font-medium text-go-text mb-1">Destinatario</label>
-          <template v-if="recipientStore.recipients.length > 0">
-            <select
-              v-model="selectedRecipientIdx"
-              class="w-full bg-go-surface border border-go-border rounded-go-md px-3 py-2 text-go-text focus:outline-none focus:border-go-primary text-sm"
-            >
-              <option :value="-1">Sin destinatario</option>
-              <option v-for="(r, idx) in recipientStore.recipients" :key="idx" :value="idx">
-                {{ r.name }}{{ r.platform ? ` (${r.platform})` : '' }}
-              </option>
-            </select>
-            <p v-if="selectedRecipientIdx >= 0 && recipientStore.recipients[selectedRecipientIdx]" class="text-xs text-go-text-muted mt-1">
-              {{ recipientStore.recipients[selectedRecipientIdx].bankInfo }}
-              <template v-if="recipientStore.recipients[selectedRecipientIdx].cuit">
-                · CUIT: {{ recipientStore.recipients[selectedRecipientIdx].cuit }}
-              </template>
-            </p>
-          </template>
-          <p v-else class="text-sm text-go-text-muted">
-            No hay destinatarios configurados.
-            <NuxtLink to="/settings/recipients" class="text-go-primary hover:text-go-primary/80">Configurar destinatarios</NuxtLink>
-          </p>
-        </div>
-
-        <!-- Items (collapsible) -->
-        <div>
-          <button
-            type="button"
-            @click="showItems = !showItems"
-            class="text-sm text-go-text-tertiary hover:text-go-text flex items-center gap-1"
-          >
-            <MdiChevronDown class="transition-transform" :class="{ 'rotate-180': showItems }" />
-            Items ({{ form.items.length }})
-          </button>
-
-          <div v-if="showItems" class="mt-2 flex flex-col gap-2">
-            <div
-              v-for="(item, idx) in form.items"
-              :key="idx"
-              class="flex gap-2 items-center"
-            >
-              <input
-                v-model="item.name"
-                type="text"
-                placeholder="Nombre"
-                class="flex-1 bg-go-surface border border-go-border rounded-go-md px-3 py-1.5 text-go-text text-sm placeholder-go-text-muted focus:outline-none focus:border-go-primary"
-              />
-              <input
-                v-model.number="item.amount"
-                type="number"
-                placeholder="Monto"
-                min="0"
-                step="0.01"
-                class="w-28 bg-go-surface border border-go-border rounded-go-md px-3 py-1.5 text-go-text text-sm placeholder-go-text-muted focus:outline-none focus:border-go-primary"
-              />
-              <button type="button" @click="removeItem(idx)" class="text-go-text-muted hover:text-go-danger p-1">
-                <MdiClose class="text-base" />
+      <!-- Body + Footer inside form for submit -->
+      <form @submit.prevent="handleSave">
+        <div class="modal-body space-y-4">
+          <!-- Type selector — segmented control -->
+          <div>
+            <label class="block text-[11px] font-semibold uppercase tracking-wider text-go-text-muted mb-1.5">Tipo</label>
+            <div class="flex bg-go-bg border border-go-border rounded-go-md p-0.5 gap-0.5">
+              <button
+                v-for="t in typeOptions"
+                :key="t.value"
+                type="button"
+                @click="form.type = t.value"
+                class="flex-1 text-xs font-medium py-1.5 px-2 rounded-[5px] transition-colors"
+                :class="form.type === t.value
+                  ? 'bg-go-surface text-go-text shadow-sm'
+                  : 'text-go-text-muted hover:text-go-text'"
+              >
+                {{ t.label }}
               </button>
             </div>
+          </div>
+
+          <!-- Title -->
+          <div>
+            <label class="block text-[11px] font-semibold uppercase tracking-wider text-go-text-muted mb-1.5">Titulo</label>
+            <input
+              v-model="form.title"
+              type="text"
+              required
+              class="w-full bg-go-bg border border-go-border rounded-go-md px-3 py-2.5 text-sm text-go-text placeholder-go-text-muted focus:outline-none focus:ring-2 focus:ring-go-primary/40 focus:border-go-primary transition-colors"
+            />
+          </div>
+
+          <!-- Amount -->
+          <div>
+            <label class="block text-[11px] font-semibold uppercase tracking-wider text-go-text-muted mb-1.5">Monto</label>
+            <div class="flex">
+              <span class="bg-go-surface border border-go-border border-r-0 rounded-l-go-md px-3 py-2.5 text-go-text-muted text-sm">$</span>
+              <input
+                v-model="form.amount"
+                type="number"
+                required
+                min="1"
+                step="0.01"
+                class="flex-1 bg-go-bg border border-go-border rounded-r-go-md rounded-l-none px-3 py-2.5 text-lg font-display font-semibold tabular-nums text-go-text placeholder-go-text-muted focus:outline-none focus:ring-2 focus:ring-go-primary/40 focus:border-go-primary transition-colors"
+              />
+            </div>
+          </div>
+
+          <!-- Category (hidden for payments) -->
+          <div v-if="form.type !== 'payment'">
+            <label class="block text-[11px] font-semibold uppercase tracking-wider text-go-text-muted mb-1.5">Categoria</label>
+            <div class="relative">
+              <select
+                v-model="form.category"
+                class="w-full bg-go-bg border border-go-border rounded-go-md px-3 py-2.5 text-sm text-go-text focus:outline-none focus:ring-2 focus:ring-go-primary/40 focus:border-go-primary transition-colors appearance-none"
+              >
+                <option v-for="cat in resolvedCategories" :key="cat.value" :value="cat.value">
+                  {{ cat.label }}
+                </option>
+              </select>
+              <svg class="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-go-text-muted" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+            </div>
+          </div>
+
+          <!-- Description -->
+          <div>
+            <label class="block text-[11px] font-semibold uppercase tracking-wider text-go-text-muted mb-1.5">Descripcion</label>
+            <input
+              v-model="form.description"
+              type="text"
+              placeholder="Opcional"
+              class="w-full bg-go-bg border border-go-border rounded-go-md px-3 py-2.5 text-sm text-go-text placeholder-go-text-muted focus:outline-none focus:ring-2 focus:ring-go-primary/40 focus:border-go-primary transition-colors"
+            />
+          </div>
+
+          <hr class="border-go-border-subtle" />
+
+          <!-- Payment Status -->
+          <div>
+            <label class="block text-[11px] font-semibold uppercase tracking-wider text-go-text-muted mb-1.5">Estado de pago</label>
+            <div class="flex gap-2">
+              <button
+                v-for="s in PAYMENT_STATUSES"
+                :key="s.value"
+                type="button"
+                @click="form.paymentStatus = s.value"
+                class="text-xs font-medium px-2.5 py-1 rounded-go-sm border transition-colors"
+                :class="form.paymentStatus === s.value
+                  ? s.value === 'paid'
+                    ? 'border-go-success bg-go-success-muted text-go-success'
+                    : 'border-go-danger bg-go-danger-muted text-go-danger'
+                  : 'border-go-border text-go-text-muted hover:border-go-text-muted'"
+              >
+                {{ s.label }}
+              </button>
+            </div>
+          </div>
+
+          <!-- Payment Method -->
+          <div>
+            <label class="block text-[11px] font-semibold uppercase tracking-wider text-go-text-muted mb-1.5">Medio de pago</label>
+            <div class="relative">
+              <select
+                v-model="form.paymentMethod"
+                class="w-full bg-go-bg border border-go-border rounded-go-md px-3 py-2.5 text-sm text-go-text focus:outline-none focus:ring-2 focus:ring-go-primary/40 focus:border-go-primary transition-colors appearance-none"
+              >
+                <option :value="null">Sin especificar</option>
+                <option v-for="m in PAYMENT_METHODS" :key="m.value" :value="m.value">
+                  {{ m.label }}
+                </option>
+              </select>
+              <svg class="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-go-text-muted" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+            </div>
+          </div>
+
+          <!-- Recipient -->
+          <div>
+            <label class="block text-[11px] font-semibold uppercase tracking-wider text-go-text-muted mb-1.5">Destinatario</label>
+            <template v-if="recipientStore.recipients.length > 0">
+              <div class="relative">
+                <select
+                  v-model="selectedRecipientIdx"
+                  class="w-full bg-go-bg border border-go-border rounded-go-md px-3 py-2.5 text-sm text-go-text focus:outline-none focus:ring-2 focus:ring-go-primary/40 focus:border-go-primary transition-colors appearance-none"
+                >
+                  <option :value="-1">Sin destinatario</option>
+                  <option v-for="(r, idx) in recipientStore.recipients" :key="idx" :value="idx">
+                    {{ r.name }}{{ r.platform ? ` (${r.platform})` : '' }}
+                  </option>
+                </select>
+                <svg class="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-go-text-muted" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+              </div>
+              <p v-if="selectedRecipientIdx >= 0 && recipientStore.recipients[selectedRecipientIdx]" class="text-xs text-go-text-muted mt-1">
+                {{ recipientStore.recipients[selectedRecipientIdx].bankInfo }}
+                <template v-if="recipientStore.recipients[selectedRecipientIdx].cuit">
+                  · CUIT: {{ recipientStore.recipients[selectedRecipientIdx].cuit }}
+                </template>
+              </p>
+            </template>
+            <p v-else class="text-sm text-go-text-muted">
+              No hay destinatarios configurados.
+              <NuxtLink to="/settings/recipients" class="text-go-primary hover:text-go-primary/80">Configurar destinatarios</NuxtLink>
+            </p>
+          </div>
+
+          <!-- Items (collapsible) -->
+          <div>
             <button
               type="button"
-              @click="addItem"
-              class="text-sm text-go-primary hover:text-go-primary/80 self-start flex items-center gap-1"
+              @click="showItems = !showItems"
+              class="text-sm text-go-text-tertiary hover:text-go-text flex items-center gap-1"
             >
-              <MdiPlus class="text-base" />
-              Agregar item
+              <MdiChevronDown class="transition-transform" :class="{ 'rotate-180': showItems }" />
+              Items ({{ form.items.length }})
             </button>
+
+            <div v-if="showItems" class="mt-2 flex flex-col gap-2">
+              <div
+                v-for="(item, idx) in form.items"
+                :key="idx"
+                class="flex items-center gap-2 p-2 bg-go-bg rounded-go-md border border-go-border-subtle"
+              >
+                <input
+                  v-model="item.name"
+                  type="text"
+                  placeholder="Nombre"
+                  class="flex-1 bg-transparent border border-go-border rounded-go-md px-3 py-1.5 text-sm text-go-text placeholder-go-text-muted focus:outline-none focus:ring-2 focus:ring-go-primary/40 focus:border-go-primary transition-colors"
+                />
+                <input
+                  v-model.number="item.amount"
+                  type="number"
+                  placeholder="Monto"
+                  min="0"
+                  step="0.01"
+                  class="w-28 bg-transparent border border-go-border rounded-go-md px-3 py-1.5 text-sm text-go-text placeholder-go-text-muted focus:outline-none focus:ring-2 focus:ring-go-primary/40 focus:border-go-primary transition-colors"
+                />
+                <button type="button" @click="removeItem(idx)" class="text-go-text-muted hover:text-go-danger transition-colors p-1">
+                  <MdiClose class="text-base" />
+                </button>
+              </div>
+              <button
+                type="button"
+                @click="addItem"
+                class="btn-secondary text-xs w-full mt-2 flex items-center justify-center gap-1"
+              >
+                <MdiPlus class="text-base" />
+                Agregar item
+              </button>
+            </div>
           </div>
-        </div>
 
-        <!-- Move to another project (collapsed) -->
-        <div>
-          <button
-            type="button"
-            @click="showMoveProject = !showMoveProject"
-            class="text-sm text-go-text-tertiary hover:text-go-text flex items-center gap-1"
-          >
-            <MdiChevronDown class="transition-transform" :class="{ 'rotate-180': showMoveProject }" />
-            Mover a otro proyecto
-          </button>
-
-          <div v-if="showMoveProject" class="mt-2">
-            <select
-              v-model="form.projectId"
-              class="w-full bg-go-surface border border-go-border rounded-go-md px-3 py-2 text-go-text focus:outline-none focus:border-go-primary text-sm"
+          <!-- Move to another project (collapsed) -->
+          <div>
+            <button
+              type="button"
+              @click="showMoveProject = !showMoveProject"
+              class="text-sm text-go-text-tertiary hover:text-go-text flex items-center gap-1"
             >
-              <option v-for="p in projects" :key="p.id" :value="p.id">
-                {{ p.name }} (#{{ p.tag }})
-              </option>
-            </select>
+              <MdiChevronDown class="transition-transform" :class="{ 'rotate-180': showMoveProject }" />
+              Mover a otro proyecto
+            </button>
+
+            <div v-if="showMoveProject" class="mt-2">
+              <div class="relative">
+                <select
+                  v-model="form.projectId"
+                  class="w-full bg-go-bg border border-go-border rounded-go-md px-3 py-2.5 text-sm text-go-text focus:outline-none focus:ring-2 focus:ring-go-primary/40 focus:border-go-primary transition-colors appearance-none"
+                >
+                  <option v-for="p in projects" :key="p.id" :value="p.id">
+                    {{ p.name }} (#{{ p.tag }})
+                  </option>
+                </select>
+                <svg class="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-go-text-muted" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+              </div>
+            </div>
           </div>
         </div>
 
-        <!-- Actions -->
-        <div class="flex gap-3 mt-3">
-          <button type="submit" :disabled="isSaving" class="btn-primary flex-1">
-            <span v-if="isSaving" class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin inline-block mr-2"></span>
-            Guardar
-          </button>
-          <button type="button" @click="$emit('close')" class="btn-secondary">
+        <!-- Footer -->
+        <div class="modal-footer flex-col sm:flex-row">
+          <button type="button" @click="$emit('close')" class="btn-secondary order-2 sm:order-1">
             Cancelar
+          </button>
+          <button type="submit" :disabled="isSaving" class="btn-primary flex-1 sm:flex-initial flex items-center justify-center gap-2 order-1 sm:order-2">
+            <span v-if="isSaving" class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+            Guardar
           </button>
         </div>
       </form>

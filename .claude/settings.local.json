@@ -3,7 +3,8 @@
     "allow": [
       "Bash(npx nuxi:*)",
       "Bash(npx tailwindcss:*)",
-      "Bash(cp:*)"
+      "Bash(cp:*)",
+      "Bash(npx vue-tsc:*)"
     ]
   }
 }
