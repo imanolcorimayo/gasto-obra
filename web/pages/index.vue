@@ -59,9 +59,9 @@
           </div>
 
           <!-- Right: Phone mockup -->
-          <div class="hidden lg:block">
+          <div>
             <!-- Phone frame -->
-            <div class="relative max-w-[300px] ml-auto">
+            <div class="relative max-w-[260px] lg:max-w-[300px] mx-auto lg:ml-auto lg:mr-0">
               <div class="bg-go-surface-alt rounded-[40px] p-[6px] shadow-go-lg border border-go-border">
                 <!-- Phone screen -->
                 <div class="bg-go-bg-elevated rounded-[34px] overflow-hidden relative">
