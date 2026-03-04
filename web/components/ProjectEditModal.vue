@@ -1,7 +1,7 @@
 <template>
   <div v-if="show" class="fixed inset-0 bg-black/60 flex items-center justify-center z-50 px-4" @click.self="$emit('close')">
-    <div class="bg-surface rounded-xl border border-gray-700 p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto">
-      <h3 class="font-semibold text-lg mb-4">Editar proyecto</h3>
+    <div class="bg-go-surface rounded-go-xl border border-go-border p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto">
+      <h3 class="text-base font-semibold mb-4">Editar proyecto</h3>
 
       <ProjectForm
         :initial-data="formData"
@@ -12,19 +12,19 @@
       />
 
       <!-- Project Categories Section -->
-      <div class="mt-6 pt-6 border-t border-gray-700">
+      <div class="mt-6 pt-6 border-t border-go-border">
         <h4 class="font-medium mb-3">Categorias del proyecto</h4>
 
         <label class="flex items-center justify-between cursor-pointer mb-4">
           <div>
-            <span class="text-sm font-medium text-white">Usar categorias especificas para este proyecto</span>
-            <p class="text-xs text-gray-500 mt-0.5">Si esta desactivado, se usan tus categorias globales</p>
+            <span class="text-sm font-medium text-go-text">Usar categorias especificas para este proyecto</span>
+            <p class="text-xs text-go-text-muted mt-0.5">Si esta desactivado, se usan tus categorias globales</p>
           </div>
           <button
             type="button"
             @click="useProjectCategories = !useProjectCategories"
             class="relative inline-flex h-5 w-9 flex-shrink-0 rounded-full transition-colors duration-200 ease-in-out"
-            :class="useProjectCategories ? 'bg-primary' : 'bg-gray-600'"
+            :class="useProjectCategories ? 'bg-go-primary' : 'bg-go-surface-alt'"
           >
             <span
               class="inline-block h-4 w-4 rounded-full bg-white shadow transform transition-transform duration-200 ease-in-out mt-0.5"
@@ -33,9 +33,9 @@
           </button>
         </label>
 
-        <div v-if="!useProjectCategories" class="text-sm text-gray-400">
+        <div v-if="!useProjectCategories" class="text-sm text-go-text-tertiary">
           Se usan tus categorias globales.
-          <NuxtLink to="/settings/categories" class="text-primary hover:text-primary/80">
+          <NuxtLink to="/settings/categories" class="text-go-primary hover:text-go-primary/80">
             Configurar categorias globales
           </NuxtLink>
         </div>

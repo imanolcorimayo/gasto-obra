@@ -1,29 +1,29 @@
 <template>
-  <NuxtLink :to="`/projects/${project.id}`" class="block bg-surface rounded-xl border border-gray-700 p-5 hover:border-primary/50 transition-colors">
+  <NuxtLink :to="`/projects/${project.id}`" class="block bg-go-surface rounded-go-xl border border-go-border p-5 hover:border-go-primary/50 transition-colors">
     <div class="flex items-start justify-between mb-3">
       <div>
-        <h3 class="font-semibold text-lg">{{ project.name }}</h3>
-        <p class="text-gray-400 text-sm mt-1">#{{ project.tag }}</p>
+        <h3 class="text-base font-semibold">{{ project.name }}</h3>
+        <p class="text-go-text-tertiary text-sm mt-1">#{{ project.tag }}</p>
       </div>
       <span
-        class="text-xs px-2 py-1 rounded-full font-medium"
+        class="text-xs px-2 py-1 rounded-full font-semibold"
         :class="statusClasses"
       >
         {{ statusLabel }}
       </span>
     </div>
 
-    <div v-if="project.clientName" class="text-gray-400 text-sm mb-2">
+    <div v-if="project.clientName" class="text-go-text-tertiary text-sm mb-2">
       <span>Cliente: {{ project.clientName }}</span>
     </div>
 
-    <div v-if="project.address" class="text-gray-500 text-sm mb-3">
+    <div v-if="project.address" class="text-go-text-muted text-sm mb-3">
       {{ project.address }}
     </div>
 
-    <div class="flex items-center justify-between pt-3 border-t border-gray-700">
-      <span class="text-primary font-semibold text-lg">{{ formatPrice(totalSpent) }}</span>
-      <span class="text-gray-500 text-sm">{{ expenseCount }} gastos</span>
+    <div class="flex items-center justify-between pt-3 border-t border-go-border">
+      <span class="text-go-primary font-semibold text-lg tabular-nums">{{ formatPrice(totalSpent) }}</span>
+      <span class="text-go-text-muted text-sm">{{ expenseCount }} gastos</span>
     </div>
   </NuxtLink>
 </template>
@@ -48,10 +48,10 @@ const statusLabel = computed(() => {
 
 const statusClasses = computed(() => {
   switch (props.project.status) {
-    case 'active': return 'bg-green-500/20 text-green-400';
-    case 'paused': return 'bg-yellow-500/20 text-yellow-400';
-    case 'completed': return 'bg-gray-500/20 text-gray-400';
-    default: return 'bg-gray-500/20 text-gray-400';
+    case 'active': return 'bg-go-success-muted text-go-success';
+    case 'paused': return 'bg-go-warning-muted text-go-warning';
+    case 'completed': return 'bg-go-surface-alt text-go-text-tertiary';
+    default: return 'bg-go-surface-alt text-go-text-tertiary';
   }
 });
 </script>

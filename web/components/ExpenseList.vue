@@ -3,10 +3,10 @@
     <!-- Filters -->
     <div class="flex flex-wrap items-center gap-3 mb-1">
       <div class="flex flex-col gap-0.5">
-        <span class="text-[10px] text-gray-500 uppercase tracking-wider">Tipo</span>
+        <span class="text-[11px] text-go-text-muted uppercase tracking-wider">Tipo</span>
         <select
           v-model="selectedType"
-          class="bg-gray-800 border border-gray-600 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-primary cursor-pointer"
+          class="bg-go-surface border border-go-border rounded-go-md px-2.5 py-1.5 text-xs text-go-text focus:outline-none focus:border-go-primary cursor-pointer"
         >
           <option v-for="t in typeFilters" :key="t.value" :value="t.value">
             {{ t.label }}
@@ -15,10 +15,10 @@
       </div>
 
       <div class="flex flex-col gap-0.5">
-        <span class="text-[10px] text-gray-500 uppercase tracking-wider">Estado</span>
+        <span class="text-[11px] text-go-text-muted uppercase tracking-wider">Estado</span>
         <select
           v-model="selectedPaymentStatus"
-          class="bg-gray-800 border border-gray-600 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-primary cursor-pointer"
+          class="bg-go-surface border border-go-border rounded-go-md px-2.5 py-1.5 text-xs text-go-text focus:outline-none focus:border-go-primary cursor-pointer"
         >
           <option v-for="ps in paymentStatusFilters" :key="ps.value" :value="ps.value">
             {{ ps.label }}
@@ -27,10 +27,10 @@
       </div>
 
       <div class="flex flex-col gap-0.5">
-        <span class="text-[10px] text-gray-500 uppercase tracking-wider">Categoria</span>
+        <span class="text-[11px] text-go-text-muted uppercase tracking-wider">Categoria</span>
         <select
           v-model="selectedCategory"
-          class="bg-gray-800 border border-gray-600 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-primary cursor-pointer"
+          class="bg-go-surface border border-go-border rounded-go-md px-2.5 py-1.5 text-xs text-go-text focus:outline-none focus:border-go-primary cursor-pointer"
         >
           <option v-for="cat in allCategories" :key="cat.value" :value="cat.value">
             {{ cat.label }}
@@ -41,14 +41,14 @@
       <button
         v-if="hasActiveFilters"
         @click="clearFilters"
-        class="text-[10px] text-gray-500 hover:text-white mt-3.5 transition-colors"
+        class="text-[11px] text-go-text-muted hover:text-go-text mt-3.5 transition-colors"
       >
         Limpiar filtros
       </button>
     </div>
 
     <!-- Expense list -->
-    <div v-if="filteredExpenses.length === 0" class="text-center text-gray-500 py-8">
+    <div v-if="filteredExpenses.length === 0" class="text-center text-go-text-muted py-8">
       No hay gastos registrados
     </div>
 

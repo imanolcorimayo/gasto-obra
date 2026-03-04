@@ -1,16 +1,16 @@
 <template>
   <div class="mb-8">
     <div class="mb-6">
-      <NuxtLink to="/projects" class="text-gray-400 hover:text-white text-sm mb-2 inline-flex items-center gap-1">
+      <NuxtLink to="/projects" class="text-go-text-tertiary hover:text-go-text text-sm mb-2 inline-flex items-center gap-1">
         <MdiArrowLeft class="text-lg" />
         Volver a proyectos
       </NuxtLink>
-      <h1 class="text-2xl font-bold mt-2">Nuevo Proyecto</h1>
-      <p class="text-gray-400 text-sm mt-1">Crea un nuevo proyecto de obra o refaccion</p>
+      <h1 class="text-[28px] font-bold tracking-tight mt-2">Nuevo Proyecto</h1>
+      <p class="text-go-text-tertiary text-sm mt-1">Crea un nuevo proyecto de obra o refaccion</p>
     </div>
 
     <div class="max-w-xl mx-auto">
-      <div class="bg-surface rounded-xl border border-gray-700 p-6">
+      <div class="bg-go-surface rounded-go-xl border border-go-border p-6">
         <ProjectForm
           submit-label="Crear Proyecto"
           :is-submitting="isSubmitting"

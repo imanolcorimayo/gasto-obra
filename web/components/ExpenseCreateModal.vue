@@ -1,26 +1,26 @@
 <template>
   <div v-if="show" class="fixed inset-0 bg-black/60 flex items-center justify-center z-50 px-4" @click.self="$emit('close')">
-    <div class="bg-surface rounded-xl border border-gray-700 p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto">
+    <div class="bg-go-surface rounded-go-xl border border-go-border p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto">
       <div class="mb-4">
-        <h3 class="font-semibold text-lg">{{ modalTitle }}</h3>
-        <p class="text-gray-500 text-sm mt-1">{{ modalDescription }}</p>
+        <h3 class="text-base font-semibold">{{ modalTitle }}</h3>
+        <p class="text-go-text-muted text-sm mt-1">{{ modalDescription }}</p>
       </div>
 
       <form @submit.prevent="handleSubmit" class="flex flex-col gap-4">
         <!-- Title + Amount -->
         <div>
-          <label class="block text-sm font-medium text-gray-300 mb-1">{{ type === 'payment' ? 'Concepto' : 'Titulo' }}</label>
+          <label class="block text-sm font-medium text-go-text mb-1">{{ type === 'payment' ? 'Concepto' : 'Titulo' }}</label>
           <input
             v-model="form.title"
             type="text"
             required
             :placeholder="type === 'payment' ? 'Concepto del pago' : 'Titulo del gasto'"
-            class="w-full bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-white placeholder-gray-500 focus:outline-none focus:border-primary"
+            class="w-full bg-go-surface border border-go-border rounded-go-md px-3 py-2 text-go-text placeholder-go-text-muted focus:outline-none focus:border-go-primary"
           />
         </div>
 
         <div>
-          <label class="block text-sm font-medium text-gray-300 mb-1">Monto</label>
+          <label class="block text-sm font-medium text-go-text mb-1">Monto</label>
           <input
             v-model="form.amount"
             type="number"
@@ -28,16 +28,16 @@
             min="1"
             step="0.01"
             placeholder="Monto"
-            class="w-full bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-white placeholder-gray-500 focus:outline-none focus:border-primary"
+            class="w-full bg-go-surface border border-go-border rounded-go-md px-3 py-2 text-go-text placeholder-go-text-muted focus:outline-none focus:border-go-primary"
           />
         </div>
 
         <!-- Category (expense + provider_expense only) -->
         <div v-if="type !== 'payment'">
-          <label class="block text-sm font-medium text-gray-300 mb-1">Categoria</label>
+          <label class="block text-sm font-medium text-go-text mb-1">Categoria</label>
           <select
             v-model="form.category"
-            class="w-full bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-primary"
+            class="w-full bg-go-surface border border-go-border rounded-go-md px-3 py-2 text-go-text focus:outline-none focus:border-go-primary"
           >
             <option v-for="cat in resolvedCategories" :key="cat.value" :value="cat.value">
               {{ cat.label }}
@@ -47,26 +47,26 @@
 
         <!-- Description (expense + provider_expense only) -->
         <div v-if="type !== 'payment'">
-          <label class="block text-sm font-medium text-gray-300 mb-1">Descripcion</label>
+          <label class="block text-sm font-medium text-go-text mb-1">Descripcion</label>
           <input
             v-model="form.description"
             type="text"
             placeholder="Opcional"
-            class="w-full bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-white placeholder-gray-500 focus:outline-none focus:border-primary"
+            class="w-full bg-go-surface border border-go-border rounded-go-md px-3 py-2 text-go-text placeholder-go-text-muted focus:outline-none focus:border-go-primary"
           />
         </div>
 
         <!-- Payment status (expense only, not provider_expense) -->
         <div v-if="type === 'expense'">
-          <label class="block text-sm font-medium text-gray-300 mb-1">Estado de pago</label>
+          <label class="block text-sm font-medium text-go-text mb-1">Estado de pago</label>
           <div class="flex gap-2">
             <button
               type="button"
               @click="form.paymentStatus = 'paid'"
               class="text-xs px-3 py-1.5 rounded-full border transition-colors"
               :class="form.paymentStatus === 'paid'
-                ? 'border-green-500 bg-green-500/20 text-green-400'
-                : 'border-gray-600 text-gray-400 hover:border-gray-500'"
+                ? 'border-go-success bg-go-success-muted text-go-success'
+                : 'border-go-border text-go-text-tertiary hover:border-go-border'"
             >
               Pagado
             </button>
@@ -75,8 +75,8 @@
               @click="form.paymentStatus = 'pending'"
               class="text-xs px-3 py-1.5 rounded-full border transition-colors"
               :class="form.paymentStatus === 'pending'
-                ? 'border-red-500 bg-red-500/20 text-red-400'
-                : 'border-gray-600 text-gray-400 hover:border-gray-500'"
+                ? 'border-go-danger bg-go-danger-muted text-go-danger'
+                : 'border-go-border text-go-text-tertiary hover:border-go-border'"
             >
               Pendiente
             </button>
@@ -85,21 +85,21 @@
           <!-- Auto-create payment toggle -->
           <div
             v-if="form.paymentStatus === 'paid'"
-            class="mt-3 p-3 rounded-lg border transition-colors"
+            class="mt-3 p-3 rounded-go-md border transition-colors"
             :class="form.createLinkedPayment
-              ? 'border-green-600/50 bg-green-500/10'
-              : 'border-gray-700 bg-gray-800/50'"
+              ? 'border-go-success/50 bg-go-success-muted'
+              : 'border-go-border bg-go-surface'"
           >
             <label class="flex items-center justify-between cursor-pointer">
               <div>
-                <span class="text-sm font-medium text-white">Registrar cobro del cliente</span>
-                <p class="text-xs text-gray-500 mt-0.5">Crea automaticamente un ingreso vinculado a este gasto</p>
+                <span class="text-sm font-medium text-go-text">Registrar cobro del cliente</span>
+                <p class="text-xs text-go-text-muted mt-0.5">Crea automaticamente un ingreso vinculado a este gasto</p>
               </div>
               <button
                 type="button"
                 @click="form.createLinkedPayment = !form.createLinkedPayment"
                 class="relative inline-flex h-5 w-9 flex-shrink-0 rounded-full transition-colors duration-200 ease-in-out"
-                :class="form.createLinkedPayment ? 'bg-green-500' : 'bg-gray-600'"
+                :class="form.createLinkedPayment ? 'bg-go-success' : 'bg-go-surface-alt'"
               >
                 <span
                   class="inline-block h-4 w-4 rounded-full bg-white shadow transform transition-transform duration-200 ease-in-out mt-0.5"
@@ -112,10 +112,10 @@
 
         <!-- Payment method (expense + payment only, not provider_expense) -->
         <div v-if="type !== 'provider_expense'">
-          <label class="block text-sm font-medium text-gray-300 mb-1">Medio de pago</label>
+          <label class="block text-sm font-medium text-go-text mb-1">Medio de pago</label>
           <select
             v-model="form.paymentMethod"
-            class="w-full bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-primary text-sm"
+            class="w-full bg-go-surface border border-go-border rounded-go-md px-3 py-2 text-go-text focus:outline-none focus:border-go-primary text-sm"
           >
             <option :value="null">Sin especificar</option>
             <option v-for="m in PAYMENT_METHODS" :key="m.value" :value="m.value">
@@ -126,27 +126,27 @@
 
         <!-- Recipient (expense + payment only) -->
         <div v-if="type !== 'provider_expense'">
-          <label class="block text-sm font-medium text-gray-300 mb-1">Destinatario</label>
+          <label class="block text-sm font-medium text-go-text mb-1">Destinatario</label>
           <template v-if="recipientStore.recipients.length > 0">
             <select
               v-model="selectedRecipientIdx"
-              class="w-full bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-primary text-sm"
+              class="w-full bg-go-surface border border-go-border rounded-go-md px-3 py-2 text-go-text focus:outline-none focus:border-go-primary text-sm"
             >
               <option :value="-1">Sin destinatario</option>
               <option v-for="(r, idx) in recipientStore.recipients" :key="idx" :value="idx">
                 {{ r.name }}{{ r.platform ? ` (${r.platform})` : '' }}
               </option>
             </select>
-            <p v-if="selectedRecipientIdx >= 0 && recipientStore.recipients[selectedRecipientIdx]" class="text-xs text-gray-500 mt-1">
+            <p v-if="selectedRecipientIdx >= 0 && recipientStore.recipients[selectedRecipientIdx]" class="text-xs text-go-text-muted mt-1">
               {{ recipientStore.recipients[selectedRecipientIdx].bankInfo }}
               <template v-if="recipientStore.recipients[selectedRecipientIdx].cuit">
                 · CUIT: {{ recipientStore.recipients[selectedRecipientIdx].cuit }}
               </template>
             </p>
           </template>
-          <p v-else class="text-sm text-gray-500">
+          <p v-else class="text-sm text-go-text-muted">
             No hay destinatarios configurados.
-            <NuxtLink to="/settings/recipients" class="text-primary hover:text-primary/80">Configurar destinatarios</NuxtLink>
+            <NuxtLink to="/settings/recipients" class="text-go-primary hover:text-go-primary/80">Configurar destinatarios</NuxtLink>
           </p>
         </div>
 
@@ -155,7 +155,7 @@
           <button
             type="button"
             @click="showItems = !showItems"
-            class="text-sm text-gray-400 hover:text-white flex items-center gap-1"
+            class="text-sm text-go-text-tertiary hover:text-go-text flex items-center gap-1"
           >
             <MdiChevronDown class="transition-transform" :class="{ 'rotate-180': showItems }" />
             Items ({{ form.items.length }})
@@ -171,7 +171,7 @@
                 v-model="item.name"
                 type="text"
                 placeholder="Nombre"
-                class="flex-1 bg-gray-800 border border-gray-600 rounded-lg px-3 py-1.5 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-primary"
+                class="flex-1 bg-go-surface border border-go-border rounded-go-md px-3 py-1.5 text-go-text text-sm placeholder-go-text-muted focus:outline-none focus:border-go-primary"
               />
               <input
                 v-model.number="item.amount"
@@ -179,16 +179,16 @@
                 placeholder="Monto"
                 min="0"
                 step="0.01"
-                class="w-28 bg-gray-800 border border-gray-600 rounded-lg px-3 py-1.5 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-primary"
+                class="w-28 bg-go-surface border border-go-border rounded-go-md px-3 py-1.5 text-go-text text-sm placeholder-go-text-muted focus:outline-none focus:border-go-primary"
               />
-              <button type="button" @click="form.items.splice(idx, 1)" class="text-gray-500 hover:text-red-400 p-1">
+              <button type="button" @click="form.items.splice(idx, 1)" class="text-go-text-muted hover:text-go-danger p-1">
                 <MdiClose class="text-base" />
               </button>
             </div>
             <button
               type="button"
               @click="form.items.push({ name: '', amount: 0 })"
-              class="text-sm text-primary hover:text-primary/80 self-start flex items-center gap-1"
+              class="text-sm text-go-primary hover:text-go-primary/80 self-start flex items-center gap-1"
             >
               <MdiPlus class="text-base" />
               Agregar item

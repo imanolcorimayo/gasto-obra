@@ -2,50 +2,50 @@
   <div class="mb-8">
     <div class="flex flex-col gap-6">
       <!-- Settings Sub-Nav -->
-      <div class="flex gap-2 border-b border-gray-700 pb-3">
-        <NuxtLink to="/settings/whatsapp" class="text-sm px-3 py-1.5 rounded-lg transition-colors" :class="'bg-gray-700 text-white'">
+      <div class="flex gap-2 border-b border-go-border pb-3">
+        <NuxtLink to="/settings/whatsapp" class="text-sm px-3 py-1.5 rounded-go-md transition-colors" :class="'bg-go-surface-alt text-go-text'">
           WhatsApp
         </NuxtLink>
-        <NuxtLink to="/settings/categories" class="text-sm px-3 py-1.5 rounded-lg transition-colors text-gray-400 hover:text-white hover:bg-gray-700/50">
+        <NuxtLink to="/settings/categories" class="text-sm px-3 py-1.5 rounded-go-md transition-colors text-go-text-tertiary hover:text-go-text hover:bg-go-surface-hover">
           Categorias
         </NuxtLink>
-        <NuxtLink to="/settings/recipients" class="text-sm px-3 py-1.5 rounded-lg transition-colors text-gray-400 hover:text-white hover:bg-gray-700/50">
+        <NuxtLink to="/settings/recipients" class="text-sm px-3 py-1.5 rounded-go-md transition-colors text-go-text-tertiary hover:text-go-text hover:bg-go-surface-hover">
           Destinatarios
         </NuxtLink>
       </div>
 
       <!-- Header -->
       <div>
-        <h1 class="text-2xl font-bold">WhatsApp</h1>
-        <p class="text-gray-400 text-sm mt-1">Vincula tu WhatsApp para registrar gastos por mensaje</p>
+        <h1 class="text-[28px] font-bold tracking-tight">WhatsApp</h1>
+        <p class="text-go-text-tertiary text-sm mt-1">Vincula tu WhatsApp para registrar gastos por mensaje</p>
       </div>
 
       <!-- Loading State -->
       <div v-if="isLoading" class="flex flex-col gap-4 skeleton-shimmer">
-        <div class="h-48 w-full bg-gray-700 rounded-xl"></div>
+        <div class="h-48 w-full bg-go-surface-alt rounded-go-xl"></div>
       </div>
 
       <!-- Linked Account -->
-      <div v-else-if="linkedAccount" class="bg-surface rounded-xl border border-gray-700 p-6">
+      <div v-else-if="linkedAccount" class="bg-go-surface rounded-go-xl border border-go-border p-6">
         <div class="flex items-start gap-4">
-          <div class="w-12 h-12 rounded-full bg-green-500/20 flex items-center justify-center shrink-0">
-            <MdiWhatsapp class="text-2xl text-green-500" />
+          <div class="w-12 h-12 rounded-full bg-go-success-muted flex items-center justify-center shrink-0">
+            <MdiWhatsapp class="text-2xl text-go-success" />
           </div>
           <div class="flex-1">
-            <h2 class="text-lg font-semibold text-green-400">Cuenta Vinculada</h2>
-            <p class="text-gray-400 mt-1">
-              Numero: <span class="text-white font-mono">+{{ formatPhoneNumber(linkedAccount.phoneNumber) }}</span>
+            <h2 class="text-base font-semibold text-go-success">Cuenta Vinculada</h2>
+            <p class="text-go-text-tertiary mt-1">
+              Numero: <span class="text-go-text font-mono">+{{ formatPhoneNumber(linkedAccount.phoneNumber) }}</span>
             </p>
           </div>
         </div>
 
-        <div class="mt-6 p-4 bg-gray-700/50 rounded-lg">
+        <div class="mt-6 p-4 bg-go-surface-hover rounded-go-md">
           <h3 class="font-medium mb-2">Como registrar gastos:</h3>
-          <p class="text-gray-400 text-sm">Envia un mensaje con el formato:</p>
+          <p class="text-go-text-tertiary text-sm">Envia un mensaje con el formato:</p>
           <div class="mt-3 space-y-2">
-            <code class="block bg-gray-800 px-3 py-2 rounded text-sm text-green-400">$500 Clavos #flores3b</code>
-            <code class="block bg-gray-800 px-3 py-2 rounded text-sm text-green-400">$1200 Viaje ferreteria #flores3b</code>
-            <code class="block bg-gray-800 px-3 py-2 rounded text-sm text-green-400">Foto de ticket + caption #flores3b</code>
+            <code class="block bg-go-surface px-3 py-2 rounded-go-sm text-sm text-go-success">$500 Clavos #flores3b</code>
+            <code class="block bg-go-surface px-3 py-2 rounded-go-sm text-sm text-go-success">$1200 Viaje ferreteria #flores3b</code>
+            <code class="block bg-go-surface px-3 py-2 rounded-go-sm text-sm text-go-success">Foto de ticket + caption #flores3b</code>
           </div>
         </div>
 
@@ -59,37 +59,37 @@
       </div>
 
       <!-- Not Linked -->
-      <div v-else class="bg-surface rounded-xl border border-gray-700 p-6">
+      <div v-else class="bg-go-surface rounded-go-xl border border-go-border p-6">
         <div class="flex items-start gap-4">
-          <div class="w-12 h-12 rounded-full bg-gray-600 flex items-center justify-center shrink-0">
-            <MdiWhatsapp class="text-2xl text-gray-400" />
+          <div class="w-12 h-12 rounded-full bg-go-surface-alt flex items-center justify-center shrink-0">
+            <MdiWhatsapp class="text-2xl text-go-text-tertiary" />
           </div>
           <div class="flex-1">
-            <h2 class="text-lg font-semibold">Vincular WhatsApp</h2>
-            <p class="text-gray-400 mt-1">Vincula tu numero para registrar gastos por WhatsApp.</p>
+            <h2 class="text-base font-semibold">Vincular WhatsApp</h2>
+            <p class="text-go-text-tertiary mt-1">Vincula tu numero para registrar gastos por WhatsApp.</p>
           </div>
         </div>
 
         <!-- Code Display -->
         <div v-if="pendingCode" class="mt-6">
-          <div class="p-4 bg-primary/10 border border-primary/30 rounded-lg">
-            <p class="text-sm text-gray-300 mb-3">
+          <div class="p-4 bg-go-primary/10 border border-go-primary/30 rounded-go-md">
+            <p class="text-sm text-go-text mb-3">
               Envia este mensaje al numero de WhatsApp de Gasto Obra:
             </p>
             <div class="flex items-center gap-3">
-              <code class="flex-1 bg-gray-800 px-4 py-3 rounded-lg text-xl font-mono text-primary tracking-wider">
+              <code class="flex-1 bg-go-surface px-4 py-3 rounded-go-md text-xl font-mono text-go-primary tracking-wider">
                 VINCULAR {{ pendingCode }}
               </code>
               <button
                 @click="copyCode"
-                class="p-3 rounded-lg bg-gray-700 hover:bg-gray-600 transition-colors"
+                class="p-3 rounded-go-md bg-go-surface-alt hover:bg-go-surface-hover transition-colors"
                 title="Copiar"
               >
                 <MdiContentCopy v-if="!copied" />
-                <MdiCheck v-else class="text-green-400" />
+                <MdiCheck v-else class="text-go-success" />
               </button>
             </div>
-            <p class="text-xs text-gray-500 mt-3">
+            <p class="text-xs text-go-text-muted mt-3">
               El codigo expira en {{ timeRemaining }}
             </p>
           </div>
@@ -118,28 +118,28 @@
       </div>
 
       <!-- Instructions -->
-      <div class="bg-surface rounded-xl border border-gray-700 p-6">
+      <div class="bg-go-surface rounded-go-xl border border-go-border p-6">
         <h3 class="font-semibold mb-4 flex items-center gap-2">
-          <MdiInformation class="text-primary" />
+          <MdiInformation class="text-go-primary" />
           Como funciona
         </h3>
-        <ol class="space-y-3 text-gray-400 text-sm">
+        <ol class="space-y-3 text-go-text-tertiary text-sm">
           <li class="flex gap-3">
-            <span class="w-6 h-6 rounded-full bg-primary/20 text-primary text-xs flex items-center justify-center shrink-0">1</span>
+            <span class="w-6 h-6 rounded-full bg-go-primary/20 text-go-primary text-xs flex items-center justify-center shrink-0">1</span>
             <span>Genera un codigo de vinculacion desde esta pagina</span>
           </li>
           <li class="flex gap-3">
-            <span class="w-6 h-6 rounded-full bg-primary/20 text-primary text-xs flex items-center justify-center shrink-0">2</span>
+            <span class="w-6 h-6 rounded-full bg-go-primary/20 text-go-primary text-xs flex items-center justify-center shrink-0">2</span>
             <span>Envia "VINCULAR codigo" al numero de WhatsApp de Gasto Obra</span>
           </li>
           <li class="flex gap-3">
-            <span class="w-6 h-6 rounded-full bg-primary/20 text-primary text-xs flex items-center justify-center shrink-0">3</span>
+            <span class="w-6 h-6 rounded-full bg-go-primary/20 text-go-primary text-xs flex items-center justify-center shrink-0">3</span>
             <span>Registra gastos enviando "$500 Clavos #tag" por WhatsApp</span>
           </li>
         </ol>
 
-        <div class="mt-4 p-3 bg-yellow-500/10 border border-yellow-500/30 rounded-lg">
-          <p class="text-yellow-400 text-sm flex items-start gap-2">
+        <div class="mt-4 p-3 bg-go-warning-muted border border-go-warning/30 rounded-go-md">
+          <p class="text-go-warning text-sm flex items-start gap-2">
             <MdiAlert class="shrink-0 mt-0.5" />
             <span>El codigo expira en 10 minutos. Si no lo usas a tiempo, genera uno nuevo.</span>
           </p>

@@ -1,6 +1,6 @@
 <template>
   <div
-    class="bg-surface rounded-lg border p-4"
+    class="bg-go-surface rounded-go-md border p-4"
     :class="cardBorderClass"
   >
     <div class="flex items-start justify-between">
@@ -9,25 +9,25 @@
           <h4 class="font-medium">{{ expense.title }}</h4>
           <span
             v-if="expense.type === 'payment'"
-            class="text-xs px-2 py-0.5 rounded-full font-medium bg-green-500/20 text-green-400"
+            class="text-xs px-2 py-0.5 rounded-full font-semibold bg-go-success-muted text-go-success"
           >
             Pago
           </span>
           <span
             v-else-if="expense.type === 'provider_expense'"
-            class="text-xs px-2 py-0.5 rounded-full font-medium bg-gray-500/20 text-gray-400"
+            class="text-xs px-2 py-0.5 rounded-full font-semibold bg-go-surface-alt text-go-text-tertiary"
           >
             Propio
           </span>
           <span
             v-if="expense.paymentStatus === 'pending'"
-            class="text-xs px-2 py-0.5 rounded-full font-medium bg-red-500/20 text-red-400"
+            class="text-xs px-2 py-0.5 rounded-full font-semibold bg-go-danger-muted text-go-danger"
           >
             Pendiente
           </span>
         </div>
-        <p v-if="expense.description" class="text-gray-400 text-sm mt-1">{{ expense.description }}</p>
-        <p v-if="expense.items && expense.items.length" class="text-gray-500 text-xs mt-1">
+        <p v-if="expense.description" class="text-go-text-tertiary text-sm mt-1">{{ expense.description }}</p>
+        <p v-if="expense.items && expense.items.length" class="text-go-text-muted text-xs mt-1">
           {{ expense.items.length }} items
         </p>
       </div>
@@ -41,7 +41,7 @@
         <button
           v-if="editable"
           @click="$emit('edit', expense)"
-          class="text-gray-500 hover:text-white p-1 transition-colors"
+          class="text-go-text-muted hover:text-go-text p-1 transition-colors"
           title="Editar"
         >
           <MdiPencil class="text-base" />
@@ -57,30 +57,30 @@
         {{ getCategoryLabel(expense.category, categories) }}
       </span>
 
-      <span class="text-gray-500">
+      <span class="text-go-text-muted">
         {{ formatExpenseDate(expense.date || expense.createdAt) }}
       </span>
 
-      <span v-if="expense.paymentMethod" class="text-gray-400 text-xs">
+      <span v-if="expense.paymentMethod" class="text-go-text-tertiary text-xs">
         {{ getPaymentMethodLabel(expense.paymentMethod) }}
       </span>
 
-      <span v-if="expense.recipientName" class="text-gray-400 text-xs">
+      <span v-if="expense.recipientName" class="text-go-text-tertiary text-xs">
         → {{ expense.recipientName }}
       </span>
 
-      <span v-if="expense.source === 'whatsapp'" class="text-green-500 text-xs">
+      <span v-if="expense.source === 'whatsapp'" class="text-go-success text-xs">
         WhatsApp
       </span>
 
-      <span v-if="expense.imageUrl" class="text-gray-500 text-xs cursor-pointer hover:text-white" @click="$emit('viewImage', expense.imageUrl)">
+      <span v-if="expense.imageUrl" class="text-go-text-muted text-xs cursor-pointer hover:text-go-text" @click="$emit('viewImage', expense.imageUrl)">
         Foto
       </span>
 
       <button
         v-if="canMarkPaid"
         @click="$emit('markPaid', expense)"
-        class="ml-auto text-xs px-2 py-0.5 rounded-full border border-green-600 text-green-400 hover:bg-green-500/20 transition-colors flex items-center gap-1"
+        class="ml-auto text-xs px-2 py-0.5 rounded-full border border-go-success text-go-success hover:bg-go-success-muted transition-colors flex items-center gap-1"
       >
         <MdiCheck class="text-sm" />
         Marcar pagado
@@ -89,7 +89,7 @@
       <button
         v-if="canMarkPending"
         @click="$emit('markPending', expense)"
-        class="ml-auto text-xs px-2 py-0.5 rounded-full border border-gray-600 text-gray-400 hover:bg-gray-500/20 transition-colors flex items-center gap-1"
+        class="ml-auto text-xs px-2 py-0.5 rounded-full border border-go-border text-go-text-tertiary hover:bg-go-surface-hover transition-colors flex items-center gap-1"
       >
         <MdiUndoVariant class="text-sm" />
         Marcar pendiente
@@ -126,15 +126,15 @@ const canMarkPending = computed(() =>
 );
 
 const cardBorderClass = computed(() => {
-  if (props.expense.type === 'payment') return 'border-green-700/50';
-  if (props.expense.type === 'provider_expense') return 'border-gray-600';
-  return 'border-gray-700';
+  if (props.expense.type === 'payment') return 'border-go-success/50';
+  if (props.expense.type === 'provider_expense') return 'border-go-border';
+  return 'border-go-border';
 });
 
 const amountColorClass = computed(() => {
-  if (props.expense.type === 'payment') return 'text-green-400';
-  if (props.expense.type === 'provider_expense') return 'text-gray-400';
-  return 'text-primary';
+  if (props.expense.type === 'payment') return 'text-go-success';
+  if (props.expense.type === 'provider_expense') return 'text-go-text-tertiary';
+  return 'text-go-primary';
 });
 
 function formatExpenseDate(timestamp) {

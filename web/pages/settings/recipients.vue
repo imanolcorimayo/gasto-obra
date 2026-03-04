@@ -2,31 +2,31 @@
   <div class="mb-8">
     <div class="flex flex-col gap-6">
       <!-- Settings Sub-Nav -->
-      <div class="flex gap-2 border-b border-gray-700 pb-3">
-        <NuxtLink to="/settings/whatsapp" class="text-sm px-3 py-1.5 rounded-lg transition-colors text-gray-400 hover:text-white hover:bg-gray-700/50">
+      <div class="flex gap-2 border-b border-go-border pb-3">
+        <NuxtLink to="/settings/whatsapp" class="text-sm px-3 py-1.5 rounded-go-md transition-colors text-go-text-tertiary hover:text-go-text hover:bg-go-surface-hover">
           WhatsApp
         </NuxtLink>
-        <NuxtLink to="/settings/categories" class="text-sm px-3 py-1.5 rounded-lg transition-colors text-gray-400 hover:text-white hover:bg-gray-700/50">
+        <NuxtLink to="/settings/categories" class="text-sm px-3 py-1.5 rounded-go-md transition-colors text-go-text-tertiary hover:text-go-text hover:bg-go-surface-hover">
           Categorias
         </NuxtLink>
-        <NuxtLink to="/settings/recipients" class="text-sm px-3 py-1.5 rounded-lg transition-colors" :class="'bg-gray-700 text-white'">
+        <NuxtLink to="/settings/recipients" class="text-sm px-3 py-1.5 rounded-go-md transition-colors" :class="'bg-go-surface-alt text-go-text'">
           Destinatarios
         </NuxtLink>
       </div>
 
       <!-- Header -->
       <div>
-        <h1 class="text-2xl font-bold">Destinatarios de pago</h1>
-        <p class="text-gray-400 text-sm mt-1">Configura los destinatarios frecuentes para tus pagos. Aparecen como opciones rapidas al registrar gastos y cobros.</p>
+        <h1 class="text-[28px] font-bold tracking-tight">Destinatarios de pago</h1>
+        <p class="text-go-text-tertiary text-sm mt-1">Configura los destinatarios frecuentes para tus pagos. Aparecen como opciones rapidas al registrar gastos y cobros.</p>
       </div>
 
       <!-- Loading State -->
       <div v-if="recipientStore.isLoading && !hasLoaded" class="flex flex-col gap-4 skeleton-shimmer">
-        <div class="h-48 w-full bg-gray-700 rounded-xl"></div>
+        <div class="h-48 w-full bg-go-surface-alt rounded-go-xl"></div>
       </div>
 
       <!-- Recipient Editor -->
-      <div v-else class="bg-surface rounded-xl border border-gray-700 p-6">
+      <div v-else class="bg-go-surface rounded-go-xl border border-go-border p-6">
         <RecipientManager v-model="editingRecipients" @delete="handleSave" />
 
         <button
@@ -40,12 +40,12 @@
       </div>
 
       <!-- Info -->
-      <div class="bg-surface rounded-xl border border-gray-700 p-6">
+      <div class="bg-go-surface rounded-go-xl border border-go-border p-6">
         <h3 class="font-semibold mb-4 flex items-center gap-2">
-          <MdiInformation class="text-primary" />
+          <MdiInformation class="text-go-primary" />
           Como funciona
         </h3>
-        <ul class="space-y-2 text-gray-400 text-sm">
+        <ul class="space-y-2 text-go-text-tertiary text-sm">
           <li>Los destinatarios se muestran como opciones al crear o editar un gasto o cobro.</li>
           <li>Al seleccionar un destinatario, se completan automaticamente los datos de pago.</li>
           <li>Podes agregar tantos destinatarios como necesites.</li>

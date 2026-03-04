@@ -5,24 +5,24 @@
 
     <!-- Not found / unauthorized -->
     <div v-else-if="!project" class="text-center py-16">
-      <h2 class="text-xl font-semibold text-gray-400">Proyecto no encontrado</h2>
-      <NuxtLink to="/client" class="text-primary mt-4 inline-block">Volver a mis obras</NuxtLink>
+      <h2 class="text-xl font-semibold text-go-text-tertiary">Proyecto no encontrado</h2>
+      <NuxtLink to="/client" class="text-go-primary mt-4 inline-block">Volver a mis obras</NuxtLink>
     </div>
 
     <!-- Project view -->
     <template v-else>
       <div class="mb-6">
-        <NuxtLink to="/client" class="text-gray-400 hover:text-white text-sm mb-2 inline-flex items-center gap-1">
+        <NuxtLink to="/client" class="text-go-text-tertiary hover:text-go-text text-sm mb-2 inline-flex items-center gap-1">
           <MdiArrowLeft class="text-lg" />
           Volver a mis obras
         </NuxtLink>
 
-        <h1 class="text-2xl font-bold mt-2">{{ project.name }}</h1>
-        <div class="flex flex-wrap items-center gap-3 mt-2 text-sm text-gray-400">
+        <h1 class="text-[28px] font-bold tracking-tight mt-2">{{ project.name }}</h1>
+        <div class="flex flex-wrap items-center gap-3 mt-2 text-sm text-go-text-tertiary">
           <span v-if="project.address">{{ project.address }}</span>
           <span
-            class="text-xs px-2 py-0.5 rounded-full font-medium"
-            :class="project.status === 'active' ? 'bg-green-500/20 text-green-400' : 'bg-gray-500/20 text-gray-400'"
+            class="text-xs px-2 py-0.5 rounded-full font-semibold"
+            :class="project.status === 'active' ? 'bg-go-success-muted text-go-success' : 'bg-go-surface-alt text-go-text-tertiary'"
           >
             {{ project.status === 'active' ? 'En curso' : project.status === 'completed' ? 'Finalizado' : 'Pausado' }}
           </span>
@@ -31,13 +31,13 @@
 
       <!-- Budget & timeline info -->
       <div v-if="project.budget || project.startDate || project.estimatedEndDate" class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6 text-sm">
-        <div v-if="project.budget" class="bg-surface rounded-lg border border-gray-700 p-3">
-          <span class="text-gray-500">Presupuesto:</span>
-          <span class="text-white ml-2">{{ formatPrice(project.budget) }}</span>
+        <div v-if="project.budget" class="bg-go-surface rounded-go-md border border-go-border p-3">
+          <span class="text-go-text-muted">Presupuesto:</span>
+          <span class="text-go-text ml-2">{{ formatPrice(project.budget) }}</span>
         </div>
-        <div v-if="project.startDate || project.estimatedEndDate" class="bg-surface rounded-lg border border-gray-700 p-3">
-          <span class="text-gray-500">Cronograma:</span>
-          <span class="text-white ml-2">
+        <div v-if="project.startDate || project.estimatedEndDate" class="bg-go-surface rounded-go-md border border-go-border p-3">
+          <span class="text-go-text-muted">Cronograma:</span>
+          <span class="text-go-text ml-2">
             {{ project.startDate ? formatDate(project.startDate) : '—' }}
             →
             {{ project.estimatedEndDate ? formatDate(project.estimatedEndDate) : '—' }}
@@ -46,30 +46,30 @@
       </div>
 
       <!-- Financial summary -->
-      <div class="bg-surface rounded-xl border border-gray-700 p-5 mb-6">
+      <div class="bg-go-surface rounded-go-xl border border-go-border p-5 mb-6">
         <h3 class="font-semibold mb-4">Resumen financiero</h3>
 
         <div class="flex flex-col gap-3">
           <div class="flex items-center justify-between">
-            <span class="text-gray-400">Total de gastos</span>
-            <span class="text-xl font-bold text-primary">{{ formatPrice(totalExpenses) }}</span>
+            <span class="text-go-text-tertiary">Total de gastos</span>
+            <span class="text-xl font-bold tabular-nums text-go-primary">{{ formatPrice(totalExpenses) }}</span>
           </div>
 
           <div class="flex items-center justify-between">
-            <span class="text-gray-400">Pagos realizados</span>
-            <span class="text-xl font-bold text-green-400">{{ formatPrice(totalPayments) }}</span>
+            <span class="text-go-text-tertiary">Pagos realizados</span>
+            <span class="text-xl font-bold tabular-nums text-go-success">{{ formatPrice(totalPayments) }}</span>
           </div>
 
           <div v-if="totalPending > 0" class="flex items-center justify-between">
-            <span class="text-gray-400">Pendiente de pago</span>
-            <span class="text-xl font-bold text-red-400">{{ formatPrice(totalPending) }}</span>
+            <span class="text-go-text-tertiary">Pendiente de pago</span>
+            <span class="text-xl font-bold tabular-nums text-go-danger">{{ formatPrice(totalPending) }}</span>
           </div>
 
-          <div class="flex items-center justify-between pt-3 border-t border-gray-700">
-            <span class="text-gray-300 font-medium">Saldo</span>
+          <div class="flex items-center justify-between pt-3 border-t border-go-border">
+            <span class="text-go-text font-medium">Saldo</span>
             <span
-              class="text-xl font-bold"
-              :class="balance >= 0 ? 'text-green-400' : 'text-red-400'"
+              class="text-xl font-bold tabular-nums"
+              :class="balance >= 0 ? 'text-go-success' : 'text-go-danger'"
             >
               {{ formatPrice(balance) }}
             </span>
@@ -77,15 +77,15 @@
         </div>
 
         <!-- Budget progress -->
-        <div v-if="project.budget" class="mt-4 pt-4 border-t border-gray-700">
+        <div v-if="project.budget" class="mt-4 pt-4 border-t border-go-border">
           <div class="flex items-center justify-between text-sm mb-2">
-            <span class="text-gray-400">Presupuesto</span>
-            <span class="text-gray-300">{{ budgetPercent.toFixed(0) }}% usado</span>
+            <span class="text-go-text-tertiary">Presupuesto</span>
+            <span class="text-go-text">{{ budgetPercent.toFixed(0) }}% usado</span>
           </div>
-          <div class="w-full bg-gray-700 rounded-full h-2">
+          <div class="w-full bg-go-surface-alt rounded-full h-2">
             <div
               class="h-2 rounded-full transition-all"
-              :class="budgetPercent > 100 ? 'bg-red-500' : budgetPercent > 80 ? 'bg-yellow-500' : 'bg-primary'"
+              :class="budgetPercent > 100 ? 'bg-go-danger' : budgetPercent > 80 ? 'bg-go-warning' : 'bg-go-primary'"
               :style="{ width: Math.min(budgetPercent, 100) + '%' }"
             ></div>
           </div>
@@ -93,10 +93,10 @@
       </div>
 
       <!-- Category breakdown -->
-      <div class="bg-surface rounded-xl border border-gray-700 p-5 mb-6">
+      <div class="bg-go-surface rounded-go-xl border border-go-border p-5 mb-6">
         <h3 class="font-semibold mb-4">Desglose por categoria</h3>
 
-        <div v-if="categoryBreakdown.length === 0" class="text-gray-500 text-sm">
+        <div v-if="categoryBreakdown.length === 0" class="text-go-text-muted text-sm">
           No hay gastos registrados todavia.
         </div>
 
@@ -111,10 +111,10 @@
                 class="w-3 h-3 rounded-full"
                 :style="{ backgroundColor: cat.color }"
               ></span>
-              <span class="text-gray-300">{{ cat.label }}</span>
-              <span class="text-gray-600 text-xs">({{ cat.count }})</span>
+              <span class="text-go-text">{{ cat.label }}</span>
+              <span class="text-go-text-muted text-xs">({{ cat.count }})</span>
             </div>
-            <span class="text-gray-300 font-medium">{{ formatPrice(cat.total) }} <span class="text-gray-500">({{ (cat.total / totalExpenses * 100).toFixed(0) }}%)</span></span>
+            <span class="text-go-text font-medium tabular-nums">{{ formatPrice(cat.total) }} <span class="text-go-text-muted">({{ (cat.total / totalExpenses * 100).toFixed(0) }}%)</span></span>
           </div>
         </div>
       </div>
@@ -124,10 +124,10 @@
         <div class="flex items-center justify-between mb-3">
           <h3 class="font-semibold">Historial</h3>
           <div class="flex items-center gap-2">
-            <span class="text-[10px] text-gray-500 uppercase tracking-wider">Tipo</span>
+            <span class="text-[11px] text-go-text-muted uppercase tracking-wider">Tipo</span>
             <select
               v-model="selectedType"
-              class="bg-gray-800 border border-gray-600 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-primary cursor-pointer"
+              class="bg-go-surface border border-go-border rounded-go-md px-2.5 py-1.5 text-xs text-go-text focus:outline-none focus:border-go-primary cursor-pointer"
             >
               <option value="">Todos</option>
               <option value="expense">Gastos</option>
@@ -135,11 +135,11 @@
             </select>
           </div>
         </div>
-        <div class="flex rounded-lg border border-gray-600 overflow-hidden w-fit mb-4">
+        <div class="flex rounded-go-md border border-go-border overflow-hidden w-fit mb-4">
           <button
             @click="viewMode = 'cards'"
             class="px-3 py-1.5 text-xs flex items-center gap-1.5 transition-colors"
-            :class="viewMode === 'cards' ? 'bg-gray-600 text-white' : 'text-gray-400 hover:text-white'"
+            :class="viewMode === 'cards' ? 'bg-go-surface-alt text-go-text' : 'text-go-text-tertiary hover:text-go-text'"
           >
             <MdiViewAgenda class="text-sm" />
             Tarjetas
@@ -147,7 +147,7 @@
           <button
             @click="viewMode = 'table'"
             class="px-3 py-1.5 text-xs flex items-center gap-1.5 transition-colors"
-            :class="viewMode === 'table' ? 'bg-gray-600 text-white' : 'text-gray-400 hover:text-white'"
+            :class="viewMode === 'table' ? 'bg-go-surface-alt text-go-text' : 'text-go-text-tertiary hover:text-go-text'"
           >
             <MdiTable class="text-sm" />
             Balance
@@ -155,7 +155,7 @@
         </div>
 
         <template v-if="viewMode === 'cards'">
-          <div v-if="filteredCards.length === 0" class="text-center text-gray-500 py-8">
+          <div v-if="filteredCards.length === 0" class="text-center text-go-text-muted py-8">
             No hay registros todavia.
           </div>
           <div v-else class="flex flex-col gap-3">

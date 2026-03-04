@@ -3,8 +3,8 @@
     <!-- Header -->
     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
       <div>
-        <h1 class="text-2xl font-bold">Mis Proyectos</h1>
-        <p class="text-gray-400 text-sm mt-1">Gestiona tus obras y refacciones</p>
+        <h1 class="text-[28px] font-bold tracking-tight">Mis Proyectos</h1>
+        <p class="text-go-text-tertiary text-sm mt-1">Gestiona tus obras y refacciones</p>
       </div>
       <NuxtLink to="/projects/new" class="btn-primary flex items-center gap-2">
         <MdiPlus />
@@ -17,9 +17,9 @@
 
     <!-- Empty state -->
     <div v-else-if="projectStore.projects.length === 0" class="text-center py-16">
-      <MdiHardHat class="text-6xl text-gray-600 mx-auto mb-4" />
-      <h2 class="text-xl font-semibold text-gray-400 mb-2">No tenes proyectos</h2>
-      <p class="text-gray-500 mb-6">Crea tu primer proyecto para empezar a registrar gastos</p>
+      <MdiHardHat class="text-6xl text-go-text-muted mx-auto mb-4" />
+      <h2 class="text-xl font-semibold text-go-text-tertiary mb-2">No tenes proyectos</h2>
+      <p class="text-go-text-muted mb-6">Crea tu primer proyecto para empezar a registrar gastos</p>
       <NuxtLink to="/projects/new" class="btn-primary inline-flex items-center gap-2">
         <MdiPlus />
         Crear Proyecto

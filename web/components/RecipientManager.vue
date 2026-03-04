@@ -4,19 +4,19 @@
     <div
       v-for="(r, idx) in recipients"
       :key="idx"
-      class="bg-gray-800 border border-gray-600 rounded-lg p-3 flex flex-col gap-2"
+      class="bg-go-surface border border-go-border rounded-go-md p-3 flex flex-col gap-2"
     >
       <div class="flex items-center gap-2">
         <input
           v-model="r.name"
           type="text"
           placeholder="Nombre / Titular"
-          class="flex-1 bg-gray-700 border border-gray-600 rounded px-2.5 py-1.5 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-primary"
+          class="flex-1 bg-go-surface border border-go-border rounded-go-sm px-2.5 py-1.5 text-go-text text-sm placeholder-go-text-muted focus:outline-none focus:border-go-primary"
         />
         <button
           type="button"
           @click="removeRecipient(idx)"
-          class="text-gray-500 hover:text-red-400 p-1 transition-colors shrink-0"
+          class="text-go-text-muted hover:text-go-danger p-1 transition-colors shrink-0"
         >
           <MdiDelete class="text-base" />
         </button>
@@ -25,20 +25,20 @@
         v-model="r.bankInfo"
         type="text"
         placeholder="CBU / CVU / Alias"
-        class="w-full bg-gray-700 border border-gray-600 rounded px-2.5 py-1.5 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-primary"
+        class="w-full bg-go-surface border border-go-border rounded-go-sm px-2.5 py-1.5 text-go-text text-sm placeholder-go-text-muted focus:outline-none focus:border-go-primary"
       />
       <div class="grid grid-cols-2 gap-2">
         <input
           v-model="r.platform"
           type="text"
           placeholder="Plataforma (ej: Mercado Pago)"
-          class="w-full bg-gray-700 border border-gray-600 rounded px-2.5 py-1.5 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-primary"
+          class="w-full bg-go-surface border border-go-border rounded-go-sm px-2.5 py-1.5 text-go-text text-sm placeholder-go-text-muted focus:outline-none focus:border-go-primary"
         />
         <input
           v-model="r.cuit"
           type="text"
           placeholder="CUIT/CUIL (opcional)"
-          class="w-full bg-gray-700 border border-gray-600 rounded px-2.5 py-1.5 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-primary"
+          class="w-full bg-go-surface border border-go-border rounded-go-sm px-2.5 py-1.5 text-go-text text-sm placeholder-go-text-muted focus:outline-none focus:border-go-primary"
         />
       </div>
     </div>
@@ -48,7 +48,7 @@
       <button
         type="button"
         @click="addRecipient"
-        class="text-sm text-primary hover:text-primary/80 flex items-center gap-1"
+        class="text-sm text-go-primary hover:text-go-primary/80 flex items-center gap-1"
       >
         <MdiPlus class="text-base" />
         Agregar destinatario

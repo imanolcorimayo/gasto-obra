@@ -24,12 +24,12 @@ export const capitalizeFirst = (str: string): string => {
 import type { ExpenseCategory } from '~/interfaces';
 
 export const DEFAULT_EXPENSE_CATEGORIES: ExpenseCategory[] = [
-  { value: 'materiales', label: 'Materiales', color: '#3498DB' },
-  { value: 'herramientas', label: 'Herramientas', color: '#E67E22' },
-  { value: 'transporte', label: 'Transporte', color: '#F1C40F' },
-  { value: 'mano de obra', label: 'Mano de obra', color: '#9B59B6' },
-  { value: 'comida', label: 'Comida', color: '#27AE60' },
-  { value: 'otros', label: 'Otros', color: '#95A5A6' }
+  { value: 'materiales', label: 'Materiales', color: '#5A8FB8' },
+  { value: 'herramientas', label: 'Herramientas', color: '#D4793D' },
+  { value: 'transporte', label: 'Transporte', color: '#BFA63D' },
+  { value: 'mano de obra', label: 'Mano de obra', color: '#A86B5E' },
+  { value: 'comida', label: 'Comida', color: '#6B9B6B' },
+  { value: 'otros', label: 'Otros', color: '#8B847A' }
 ];
 
 // Backward compat alias
@@ -71,7 +71,7 @@ export const getCategoryLabel = (value: string, categories?: ExpenseCategory[]):
 export const getCategoryColor = (value: string, categories?: ExpenseCategory[]): string => {
   const list = categories && categories.length > 0 ? categories : DEFAULT_EXPENSE_CATEGORIES;
   const cat = list.find(c => c.value === value);
-  return cat ? cat.color : '#95A5A6';
+  return cat ? cat.color : '#8B847A';
 };
 
 export const getCategoryStyles = (value: string, categories?: ExpenseCategory[]) => {
@@ -89,20 +89,20 @@ export const PROJECT_STATUSES = [
 ];
 
 export const TRANSACTION_TYPES = [
-  { value: 'expense', label: 'Gasto', color: '#3498DB' },
-  { value: 'payment', label: 'Cobro', color: '#27AE60' },
-  { value: 'provider_expense', label: 'Gasto propio', color: '#95A5A6' }
+  { value: 'expense', label: 'Gasto', color: '#FFAB40' },
+  { value: 'payment', label: 'Cobro', color: '#5CB870' },
+  { value: 'provider_expense', label: 'Gasto propio', color: '#8B847A' }
 ];
 
 export const PAYMENT_STATUSES = [
-  { value: 'paid', label: 'Pagado', color: '#27AE60' },
-  { value: 'pending', label: 'Pendiente', color: '#E74C3C' }
+  { value: 'paid', label: 'Pagado', color: '#5CB870' },
+  { value: 'pending', label: 'Pendiente', color: '#D4544A' }
 ];
 
 export const PAYMENT_METHODS = [
-  { value: 'transferencia', label: 'Transferencia', color: '#3498DB' },
-  { value: 'efectivo', label: 'Efectivo', color: '#27AE60' },
-  { value: 'tarjeta', label: 'Tarjeta', color: '#9B59B6' },
+  { value: 'transferencia', label: 'Transferencia', color: '#5A8FB8' },
+  { value: 'efectivo', label: 'Efectivo', color: '#6B9B6B' },
+  { value: 'tarjeta', label: 'Tarjeta', color: '#8B6BA3' },
   { value: 'mercadopago', label: 'Mercado Pago', color: '#00B1EA' }
 ];
 
@@ -113,7 +113,7 @@ export const getPaymentStatusLabel = (value: string): string => {
 
 export const getPaymentStatusColor = (value: string): string => {
   const status = PAYMENT_STATUSES.find(s => s.value === value);
-  return status ? status.color : '#95A5A6';
+  return status ? status.color : '#8B847A';
 };
 
 export const getPaymentStatusStyles = (value: string) => {

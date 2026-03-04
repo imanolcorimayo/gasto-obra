@@ -5,26 +5,26 @@
 
     <!-- Not found -->
     <div v-else-if="!project" class="text-center py-16">
-      <h2 class="text-xl font-semibold text-gray-400">Proyecto no encontrado</h2>
-      <NuxtLink to="/projects" class="text-primary mt-4 inline-block">Volver a proyectos</NuxtLink>
+      <h2 class="text-xl font-semibold text-go-text-tertiary">Proyecto no encontrado</h2>
+      <NuxtLink to="/projects" class="text-go-primary mt-4 inline-block">Volver a proyectos</NuxtLink>
     </div>
 
     <!-- Project detail -->
     <template v-else>
       <!-- Back link & header -->
       <div class="mb-6">
-        <NuxtLink to="/projects" class="text-gray-400 hover:text-white text-sm mb-2 inline-flex items-center gap-1">
+        <NuxtLink to="/projects" class="text-go-text-tertiary hover:text-go-text text-sm mb-2 inline-flex items-center gap-1">
           <MdiArrowLeft class="text-lg" />
           Volver a proyectos
         </NuxtLink>
 
         <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mt-2">
           <div>
-            <h1 class="text-2xl font-bold">{{ project.name }}</h1>
+            <h1 class="text-[28px] font-bold tracking-tight">{{ project.name }}</h1>
             <div class="flex items-center gap-3 mt-1">
-              <span class="text-gray-400 text-sm">#{{ project.tag }}</span>
+              <span class="text-go-text-tertiary text-sm">#{{ project.tag }}</span>
               <span
-                class="text-xs px-2 py-0.5 rounded-full font-medium"
+                class="text-xs px-2 py-0.5 rounded-full font-semibold"
                 :class="statusClasses"
               >
                 {{ statusLabel }}
@@ -43,7 +43,7 @@
             <select
               v-model="project.status"
               @change="updateStatus"
-              class="bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-primary"
+              class="bg-go-surface border border-go-border rounded-go-md px-3 py-2 text-sm text-go-text focus:outline-none focus:border-go-primary"
             >
               <option value="active">Activo</option>
               <option value="paused">Pausado</option>
@@ -55,25 +55,25 @@
 
       <!-- Project info -->
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6 text-sm">
-        <div v-if="project.clientName" class="bg-surface rounded-lg border border-gray-700 p-3">
-          <span class="text-gray-500">Cliente:</span>
-          <span class="text-white ml-2">{{ project.clientName }}</span>
+        <div v-if="project.clientName" class="bg-go-surface rounded-go-md border border-go-border p-3">
+          <span class="text-go-text-muted">Cliente:</span>
+          <span class="text-go-text ml-2">{{ project.clientName }}</span>
         </div>
-        <div v-if="project.address" class="bg-surface rounded-lg border border-gray-700 p-3">
-          <span class="text-gray-500">Direccion:</span>
-          <span class="text-white ml-2">{{ project.address }}</span>
+        <div v-if="project.address" class="bg-go-surface rounded-go-md border border-go-border p-3">
+          <span class="text-go-text-muted">Direccion:</span>
+          <span class="text-go-text ml-2">{{ project.address }}</span>
         </div>
-        <div v-if="project.description" class="bg-surface rounded-lg border border-gray-700 p-3 sm:col-span-2">
-          <span class="text-gray-500">Descripcion:</span>
-          <span class="text-white ml-2">{{ project.description }}</span>
+        <div v-if="project.description" class="bg-go-surface rounded-go-md border border-go-border p-3 sm:col-span-2">
+          <span class="text-go-text-muted">Descripcion:</span>
+          <span class="text-go-text ml-2">{{ project.description }}</span>
         </div>
-        <div v-if="project.budget" class="bg-surface rounded-lg border border-gray-700 p-3">
-          <span class="text-gray-500">Presupuesto:</span>
-          <span class="text-white ml-2">{{ formatPrice(project.budget) }}</span>
+        <div v-if="project.budget" class="bg-go-surface rounded-go-md border border-go-border p-3">
+          <span class="text-go-text-muted">Presupuesto:</span>
+          <span class="text-go-text ml-2">{{ formatPrice(project.budget) }}</span>
         </div>
-        <div v-if="project.startDate || project.estimatedEndDate" class="bg-surface rounded-lg border border-gray-700 p-3">
-          <span class="text-gray-500">Cronograma:</span>
-          <span class="text-white ml-2">
+        <div v-if="project.startDate || project.estimatedEndDate" class="bg-go-surface rounded-go-md border border-go-border p-3">
+          <span class="text-go-text-muted">Cronograma:</span>
+          <span class="text-go-text ml-2">
             {{ project.startDate ? formatDate(project.startDate) : '—' }}
             →
             {{ project.estimatedEndDate ? formatDate(project.estimatedEndDate) : '—' }}
@@ -82,18 +82,18 @@
       </div>
 
       <!-- Shareable link -->
-      <div class="bg-surface rounded-lg border border-gray-700 p-4 mb-6">
+      <div class="bg-go-surface rounded-go-md border border-go-border p-4 mb-6">
         <div class="flex items-center justify-between">
           <div>
             <h3 class="font-medium text-sm">Link para el cliente</h3>
-            <p class="text-gray-500 text-xs mt-1">Compartí este link para que tu cliente vea los gastos</p>
+            <p class="text-go-text-muted text-xs mt-1">Compartí este link para que tu cliente vea los gastos</p>
           </div>
           <button
             @click="copyShareLink"
             class="btn-secondary text-sm flex items-center gap-1"
           >
             <MdiContentCopy v-if="!copied" />
-            <MdiCheck v-else class="text-green-400" />
+            <MdiCheck v-else class="text-go-success" />
             {{ copied ? 'Copiado' : 'Copiar link' }}
           </button>
         </div>
@@ -109,18 +109,18 @@
           <MdiPlus class="text-base" />
           <div class="text-left">
             <span>Gasto</span>
-            <span class="block text-[10px] opacity-70 font-normal">Cobrable al cliente</span>
+            <span class="block text-[11px] opacity-70 font-normal">Cobrable al cliente</span>
           </div>
         </button>
         <button
           @click="openCreateModal('payment')"
-          class="flex items-center gap-1.5 text-sm px-4 py-2 rounded-lg border border-green-600 text-green-400 hover:bg-green-500/10 transition-colors"
+          class="btn-success flex items-center gap-1.5 text-sm"
           title="Dinero recibido del cliente"
         >
-          <MdiPlus class="text-base text-green-400" />
+          <MdiPlus class="text-base" />
           <div class="text-left">
             <span>Cobro</span>
-            <span class="block text-[10px] opacity-70 font-normal">Ingreso recibido</span>
+            <span class="block text-[11px] opacity-70 font-normal">Ingreso recibido</span>
           </div>
         </button>
         <button
@@ -131,7 +131,7 @@
           <MdiPlus class="text-base" />
           <div class="text-left">
             <span>Gasto propio</span>
-            <span class="block text-[10px] opacity-70 font-normal">No cobrable</span>
+            <span class="block text-[11px] opacity-70 font-normal">No cobrable</span>
           </div>
         </button>
       </div>
@@ -233,9 +233,9 @@ const statusLabel = computed(() => {
 
 const statusClasses = computed(() => {
   switch (project.value?.status) {
-    case 'active': return 'bg-green-500/20 text-green-400';
-    case 'paused': return 'bg-yellow-500/20 text-yellow-400';
-    case 'completed': return 'bg-gray-500/20 text-gray-400';
+    case 'active': return 'bg-go-success-muted text-go-success';
+    case 'paused': return 'bg-go-warning-muted text-go-warning';
+    case 'completed': return 'bg-go-surface-alt text-go-text-tertiary';
     default: return '';
   }
 });

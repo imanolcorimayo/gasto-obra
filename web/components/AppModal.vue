@@ -4,7 +4,7 @@
       <div v-if="isOpen" class="modal-backdrop" @click.self="close">
         <div class="modal-container">
           <div class="modal-header">
-            <h2 class="text-lg font-semibold">{{ title }}</h2>
+            <h2 class="text-base font-semibold">{{ title }}</h2>
             <button @click="close" class="modal-close">
               <MdiClose class="text-xl" />
             </button>

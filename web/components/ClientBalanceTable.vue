@@ -2,7 +2,7 @@
   <div class="overflow-x-auto">
     <table class="w-full text-sm">
       <thead>
-        <tr class="text-left text-gray-500 border-b border-gray-700">
+        <tr class="text-left text-go-text-muted border-b border-go-border">
           <th class="pb-2 pr-3 font-medium">Fecha</th>
           <th class="pb-2 pr-3 font-medium">Concepto</th>
           <th class="pb-2 pl-3 font-medium text-right">Gasto</th>
@@ -14,22 +14,22 @@
         <tr
           v-for="(row, idx) in rows"
           :key="idx"
-          class="border-b border-gray-800"
+          class="border-b border-go-border-subtle"
         >
-          <td class="py-2.5 pr-3 text-gray-500 whitespace-nowrap">{{ row.date }}</td>
-          <td class="py-2.5 pr-3 text-gray-300">
+          <td class="py-2.5 pr-3 text-go-text-muted whitespace-nowrap">{{ row.date }}</td>
+          <td class="py-2.5 pr-3 text-go-text">
             <span>{{ row.title }}</span>
-            <span v-if="row.items" class="text-gray-600 text-xs ml-1">({{ row.items }} items)</span>
+            <span v-if="row.items" class="text-go-text-muted text-xs ml-1">({{ row.items }} items)</span>
           </td>
           <td class="py-2.5 pl-3 text-right whitespace-nowrap">
-            <span v-if="row.expense" class="text-primary">{{ formatPrice(row.expense) }}</span>
+            <span v-if="row.expense" class="text-go-primary">{{ formatPrice(row.expense) }}</span>
           </td>
           <td class="py-2.5 pl-3 text-right whitespace-nowrap">
-            <span v-if="row.payment" class="text-green-400">{{ formatPrice(row.payment) }}</span>
+            <span v-if="row.payment" class="text-go-success">{{ formatPrice(row.payment) }}</span>
           </td>
           <td
             class="py-2.5 pl-3 text-right font-medium whitespace-nowrap"
-            :class="row.balance >= 0 ? 'text-green-400' : 'text-red-400'"
+            :class="row.balance >= 0 ? 'text-go-success' : 'text-go-danger'"
           >
             {{ formatPrice(row.balance) }}
           </td>
@@ -37,7 +37,7 @@
       </tbody>
     </table>
 
-    <div v-if="rows.length === 0" class="text-center text-gray-500 py-8">
+    <div v-if="rows.length === 0" class="text-center text-go-text-muted py-8">
       No hay registros todavia.
     </div>
   </div>

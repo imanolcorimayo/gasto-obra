@@ -215,10 +215,18 @@
 
   .btn-danger {
     @apply px-5 py-2.5 bg-go-danger-muted text-go-danger rounded-go-md font-medium transition-colors;
-    border: 1px solid rgba(212, 84, 74, 0.2);
+    border: 1px solid var(--go-danger-muted);
   }
   .btn-danger:hover {
-    background-color: rgba(212, 84, 74, 0.2);
+    background-color: var(--go-danger-muted);
+  }
+
+  .btn-success {
+    @apply px-5 py-2.5 bg-go-success-muted text-go-success rounded-go-md font-medium transition-colors;
+    border: 1px solid var(--go-success-muted);
+  }
+  .btn-success:hover {
+    background-color: rgba(92, 184, 112, 0.2);
   }
 
   /* Skeleton loader */
