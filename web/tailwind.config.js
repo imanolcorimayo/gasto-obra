@@ -53,7 +53,7 @@ export default {
         'go-pay-mercadopago':  'var(--go-pay-mercadopago)',
       },
       fontFamily: {
-        display: ['Startup', 'system-ui', 'sans-serif'],
+        display: ['Space Grotesk', 'system-ui', 'sans-serif'],
         ui:      ['Red Hat Display', 'system-ui', 'sans-serif'],
       },
       borderRadius: {

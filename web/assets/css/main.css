@@ -2,16 +2,6 @@
 @tailwind components;
 @tailwind utilities;
 
-/* ─── Fonts ─── */
-
-@font-face {
-  font-family: 'Startup';
-  src: url('~/assets/fonts/Startup-Bold.otf') format('opentype');
-  font-weight: 700;
-  font-style: normal;
-  font-display: swap;
-}
-
 /* ─── Design Tokens ─── */
 
 :root {

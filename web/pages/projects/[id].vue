@@ -1,7 +1,36 @@
 <template>
   <div class="mb-8">
-    <!-- Loading -->
-    <AppLoader v-if="isLoading" />
+    <!-- Loading skeleton -->
+    <div v-if="isLoading">
+      <!-- Back link skeleton -->
+      <div class="h-4 w-28 bg-go-surface rounded-go-md skeleton-shimmer"></div>
+      <!-- Title skeleton -->
+      <div class="mt-1">
+        <div class="h-9 w-72 bg-go-surface rounded-go-md skeleton-shimmer"></div>
+        <div class="h-4 w-40 bg-go-surface rounded-go-md skeleton-shimmer mt-2"></div>
+      </div>
+      <!-- Metadata strip skeleton -->
+      <div class="grid grid-cols-2 lg:flex lg:flex-wrap gap-2 mt-4">
+        <div v-for="n in 4" :key="n" class="bg-go-surface rounded-go-md skeleton-shimmer h-12 w-full lg:w-36"></div>
+      </div>
+      <!-- Share link skeleton -->
+      <div class="h-14 bg-go-surface rounded-go-xl skeleton-shimmer mt-3"></div>
+      <!-- Action bar skeleton -->
+      <div class="flex flex-col sm:flex-row gap-2 mt-4">
+        <div v-for="n in 3" :key="n" class="bg-go-surface rounded-go-md skeleton-shimmer h-10 w-full sm:w-28"></div>
+      </div>
+      <!-- Two-column skeleton -->
+      <div class="mt-8 pt-8 border-t border-go-border-subtle">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
+          <div class="order-2 lg:order-none">
+            <div v-for="n in 3" :key="n" class="bg-go-surface rounded-go-md skeleton-shimmer h-16 mb-3"></div>
+          </div>
+          <div class="lg:col-span-2 order-1 lg:order-none">
+            <div v-for="n in 5" :key="n" class="bg-go-surface rounded-go-md skeleton-shimmer h-20 mb-3"></div>
+          </div>
+        </div>
+      </div>
+    </div>
 
     <!-- Not found -->
     <div v-else-if="!project" class="text-center py-16">
@@ -11,100 +40,97 @@
 
     <!-- Project detail -->
     <template v-else>
-      <!-- Back link & header -->
-      <div class="mb-6">
-        <NuxtLink to="/projects" class="text-go-text-tertiary hover:text-go-text text-sm mb-2 inline-flex items-center gap-1">
-          <MdiArrowLeft class="text-lg" />
-          Volver a proyectos
-        </NuxtLink>
+      <!-- Back navigation -->
+      <NuxtLink to="/projects" class="text-go-text-muted text-sm hover:text-go-text transition-colors inline-flex items-center gap-1">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+        Proyectos
+      </NuxtLink>
 
-        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mt-2">
-          <div>
-            <h1 class="text-[28px] font-bold tracking-tight">{{ project.name }}</h1>
-            <div class="flex items-center gap-3 mt-1">
-              <span class="text-go-text-tertiary text-sm">#{{ project.tag }}</span>
-              <span
-                class="text-xs px-2 py-0.5 rounded-full font-semibold"
-                :class="statusClasses"
-              >
-                {{ statusLabel }}
-              </span>
-            </div>
-          </div>
+      <!-- Project title row -->
+      <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mt-1">
+        <div class="flex items-center gap-3 flex-wrap">
+          <h1 class="font-display font-bold text-3xl text-go-text">{{ project.name }}</h1>
+          <span class="font-mono text-sm text-go-text-muted">#{{ project.tag }}</span>
+          <span
+            class="text-xs px-2.5 py-0.5 rounded-full font-semibold"
+            :class="statusClasses"
+          >
+            {{ statusLabel }}
+          </span>
+        </div>
 
-          <div class="flex gap-2">
-            <button
-              @click="showProjectEditModal = true"
-              class="btn-secondary text-sm flex items-center gap-1"
-            >
-              <MdiPencil class="text-base" />
-              Editar
-            </button>
-            <select
-              v-model="project.status"
-              @change="updateStatus"
-              class="bg-go-surface border border-go-border rounded-go-md px-3 py-2 text-sm text-go-text focus:outline-none focus:border-go-primary"
-            >
-              <option value="active">Activo</option>
-              <option value="paused">Pausado</option>
-              <option value="completed">Completado</option>
-            </select>
-          </div>
+        <div class="flex gap-2">
+          <button
+            @click="showProjectEditModal = true"
+            class="btn-secondary text-sm flex items-center gap-1"
+          >
+            <MdiPencil class="text-base" />
+            Editar
+          </button>
+          <select
+            v-model="project.status"
+            @change="updateStatus"
+            class="bg-go-surface border border-go-border rounded-go-md px-3 py-2 text-sm text-go-text focus:outline-none focus:border-go-primary"
+          >
+            <option value="active">Activo</option>
+            <option value="paused">Pausado</option>
+            <option value="completed">Completado</option>
+          </select>
         </div>
       </div>
 
-      <!-- Project info -->
-      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6 text-sm">
-        <div v-if="project.clientName" class="bg-go-surface rounded-go-md border border-go-border p-3">
-          <span class="text-go-text-muted">Cliente:</span>
-          <span class="text-go-text ml-2">{{ project.clientName }}</span>
+      <!-- Metadata strip -->
+      <div class="grid grid-cols-2 lg:flex lg:flex-wrap gap-2 mt-4">
+        <div v-if="project.clientName" class="bg-go-surface border border-go-border rounded-go-md px-3 py-2">
+          <span class="text-[10px] uppercase tracking-wider text-go-text-muted block">Cliente</span>
+          <span class="text-sm font-medium text-go-text">{{ project.clientName }}</span>
         </div>
-        <div v-if="project.address" class="bg-go-surface rounded-go-md border border-go-border p-3">
-          <span class="text-go-text-muted">Direccion:</span>
-          <span class="text-go-text ml-2">{{ project.address }}</span>
+        <div v-if="project.address" class="bg-go-surface border border-go-border rounded-go-md px-3 py-2">
+          <span class="text-[10px] uppercase tracking-wider text-go-text-muted block">Dirección</span>
+          <span class="text-sm font-medium text-go-text">{{ project.address }}</span>
         </div>
-        <div v-if="project.description" class="bg-go-surface rounded-go-md border border-go-border p-3 sm:col-span-2">
-          <span class="text-go-text-muted">Descripcion:</span>
-          <span class="text-go-text ml-2">{{ project.description }}</span>
+        <div v-if="project.budget" class="bg-go-surface border border-go-border rounded-go-md px-3 py-2">
+          <span class="text-[10px] uppercase tracking-wider text-go-text-muted block">Presupuesto</span>
+          <span class="text-sm font-medium text-go-text">{{ formatPrice(project.budget) }}</span>
         </div>
-        <div v-if="project.budget" class="bg-go-surface rounded-go-md border border-go-border p-3">
-          <span class="text-go-text-muted">Presupuesto:</span>
-          <span class="text-go-text ml-2">{{ formatPrice(project.budget) }}</span>
-        </div>
-        <div v-if="project.startDate || project.estimatedEndDate" class="bg-go-surface rounded-go-md border border-go-border p-3">
-          <span class="text-go-text-muted">Cronograma:</span>
-          <span class="text-go-text ml-2">
+        <div v-if="project.startDate || project.estimatedEndDate" class="bg-go-surface border border-go-border rounded-go-md px-3 py-2">
+          <span class="text-[10px] uppercase tracking-wider text-go-text-muted block">Cronograma</span>
+          <span class="text-sm font-medium text-go-text">
             {{ project.startDate ? formatDate(project.startDate) : '—' }}
             →
             {{ project.estimatedEndDate ? formatDate(project.estimatedEndDate) : '—' }}
           </span>
         </div>
-      </div>
-
-      <!-- Shareable link -->
-      <div class="bg-go-surface rounded-go-md border border-go-border p-4 mb-6">
-        <div class="flex items-center justify-between">
-          <div>
-            <h3 class="font-medium text-sm">Link para el cliente</h3>
-            <p class="text-go-text-muted text-xs mt-1">Compartí este link para que tu cliente vea los gastos</p>
-          </div>
-          <button
-            @click="copyShareLink"
-            class="btn-secondary text-sm flex items-center gap-1"
-          >
-            <MdiContentCopy v-if="!copied" />
-            <MdiCheck v-else class="text-go-success" />
-            {{ copied ? 'Copiado' : 'Copiar link' }}
-          </button>
+        <div v-if="project.description" class="col-span-2 bg-go-surface border border-go-border rounded-go-md px-3 py-2">
+          <span class="text-[10px] uppercase tracking-wider text-go-text-muted block">Descripción</span>
+          <span class="text-sm font-medium text-go-text">{{ project.description }}</span>
         </div>
       </div>
 
-      <!-- Add buttons -->
-      <div class="flex flex-wrap gap-3 mb-6">
+      <!-- Client share link panel -->
+      <div class="bg-go-bg border border-go-border-subtle rounded-go-xl px-4 py-3 flex items-center gap-3 mt-3">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-go-text-muted flex-shrink-0">
+          <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+          <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+        </svg>
+        <div class="flex-1 min-w-0">
+          <span class="text-go-text-muted text-xs block">Link para el cliente</span>
+          <span class="font-mono text-xs text-go-text truncate block">/view/{{ project.shareToken }}</span>
+        </div>
+        <button
+          @click="copyShareLink"
+          class="text-go-text-muted hover:text-go-primary transition-colors flex-shrink-0 p-1"
+        >
+          <MdiContentCopy v-if="!copied" class="text-base" />
+          <MdiCheck v-else class="text-base text-go-success" />
+        </button>
+      </div>
+
+      <!-- Add expense action bar -->
+      <div class="flex flex-col sm:flex-row gap-2 mt-4">
         <button
           @click="openCreateModal('expense')"
-          class="btn-primary flex items-center gap-1.5 text-sm group relative"
-          title="Gasto de la obra que se cobra al cliente"
+          class="btn-primary flex items-center justify-center gap-1.5 text-sm w-full sm:w-auto"
         >
           <MdiPlus class="text-base" />
           <div class="text-left">
@@ -114,8 +140,7 @@
         </button>
         <button
           @click="openCreateModal('payment')"
-          class="btn-success flex items-center gap-1.5 text-sm"
-          title="Dinero recibido del cliente"
+          class="border border-go-secondary text-go-secondary hover:bg-go-secondary/10 rounded-go-md px-4 py-2 text-sm font-medium transition-colors flex items-center justify-center gap-1.5 w-full sm:w-auto active:scale-[0.97]"
         >
           <MdiPlus class="text-base" />
           <div class="text-left">
@@ -125,8 +150,7 @@
         </button>
         <button
           @click="openCreateModal('provider_expense')"
-          class="btn-secondary flex items-center gap-1.5 text-sm"
-          title="Gasto personal del proveedor, no se cobra al cliente"
+          class="btn-secondary text-sm flex items-center justify-center gap-1.5 w-full sm:w-auto"
         >
           <MdiPlus class="text-base" />
           <div class="text-left">
@@ -137,22 +161,33 @@
       </div>
 
       <!-- Summary + Expenses -->
-      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div class="lg:col-span-1">
-          <ExpenseSummary :expenses="expenseStore.expenses" :budget="project.budget" :categories="resolvedCategories" />
-        </div>
-        <div class="lg:col-span-2">
-          <h3 class="font-semibold mb-4">Historial</h3>
-          <AppLoader v-if="expenseStore.isLoading" text="Cargando gastos..." />
-          <ExpenseList
-            v-else
-            :expenses="expenseStore.expenses"
-            :editable="true"
-            :categories="resolvedCategories"
-            @edit="openEditModal"
-            @mark-paid="handleMarkPaid"
-            @mark-pending="handleMarkPending"
-          />
+      <div class="mt-8 pt-8 border-t border-go-border-subtle">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
+          <div class="order-2 lg:order-none lg:sticky lg:top-6 lg:self-start">
+            <ExpenseSummary :expenses="expenseStore.expenses" :budget="project.budget" :categories="resolvedCategories" />
+          </div>
+          <div class="lg:col-span-2 order-1 lg:order-none">
+            <h3 class="font-display font-semibold text-go-text mb-4">Historial</h3>
+            <AppLoader v-if="expenseStore.isLoading" text="Cargando gastos..." />
+            <template v-else>
+              <!-- Empty state callout -->
+              <div v-if="expenseStore.expenses.length === 0" class="bg-go-surface border border-go-border-subtle rounded-go-xl p-6 text-center mb-6">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="text-go-primary/50 mx-auto mb-3">
+                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                </svg>
+                <h4 class="font-display font-semibold text-go-text">Tu obra está lista.</h4>
+                <p class="text-go-text-muted text-sm mt-1">Mandá un gasto por WhatsApp para empezar, o usá el botón + Gasto acá arriba.</p>
+              </div>
+              <ExpenseList
+                :expenses="expenseStore.expenses"
+                :editable="true"
+                :categories="resolvedCategories"
+                @edit="openEditModal"
+                @mark-paid="handleMarkPaid"
+                @mark-pending="handleMarkPending"
+              />
+            </template>
+          </div>
         </div>
       </div>
 
