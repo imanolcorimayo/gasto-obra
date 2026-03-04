@@ -1,29 +1,35 @@
 <template>
   <div
-    class="bg-go-surface rounded-go-md border p-4"
-    :class="cardBorderClass"
+    class="bg-go-surface rounded-go-md border border-go-border p-4 transition-all duration-200"
+    :class="accentClass"
   >
     <div class="flex items-start justify-between">
       <div class="flex-1">
         <div class="flex items-center gap-2">
-          <h4 class="font-medium">{{ expense.title }}</h4>
+          <h4 class="font-medium text-go-text">{{ expense.title }}</h4>
           <span
             v-if="expense.type === 'payment'"
-            class="text-xs px-2 py-0.5 rounded-full font-semibold bg-go-success-muted text-go-success"
+            class="text-xs font-semibold px-2 py-0.5 rounded-go-sm bg-go-secondary/20 text-go-secondary"
           >
             Pago
           </span>
           <span
             v-else-if="expense.type === 'provider_expense'"
-            class="text-xs px-2 py-0.5 rounded-full font-semibold bg-go-surface-alt text-go-text-tertiary"
+            class="text-xs font-semibold px-2 py-0.5 rounded-go-sm bg-go-text-muted/20 text-go-text-muted"
           >
             Propio
           </span>
           <span
             v-if="expense.paymentStatus === 'pending'"
-            class="text-xs px-2 py-0.5 rounded-full font-semibold bg-go-danger-muted text-go-danger"
+            class="text-xs font-semibold px-2 py-0.5 rounded-go-sm bg-go-danger-muted text-go-danger"
           >
             Pendiente
+          </span>
+          <span
+            v-if="expense.paymentStatus === 'paid' && expense.type === 'expense'"
+            class="text-xs font-semibold px-2 py-0.5 rounded-go-sm bg-go-success-muted text-go-success"
+          >
+            Pagado
           </span>
         </div>
         <p v-if="expense.description" class="text-go-text-tertiary text-sm mt-1">{{ expense.description }}</p>
@@ -31,9 +37,9 @@
           {{ expense.items.length }} items
         </p>
       </div>
-      <div class="flex items-center gap-2 ml-4">
+      <div class="flex items-center gap-1 ml-4">
         <span
-          class="font-semibold text-lg whitespace-nowrap"
+          class="font-display font-bold text-lg whitespace-nowrap tabular-nums"
           :class="amountColorClass"
         >
           {{ expense.type === 'payment' ? '+' : '' }}{{ formatPrice(expense.amount) }}
@@ -41,7 +47,7 @@
         <button
           v-if="editable"
           @click="$emit('edit', expense)"
-          class="text-go-text-muted hover:text-go-text p-1 transition-colors"
+          class="text-go-text-muted hover:text-go-text transition-colors p-1 rounded-go-sm hover:bg-go-surface-alt"
           title="Editar"
         >
           <MdiPencil class="text-base" />
@@ -49,15 +55,15 @@
       </div>
     </div>
 
-    <div class="flex items-center gap-3 mt-3 text-sm">
+    <div class="flex items-center gap-3 mt-3 text-sm flex-wrap">
       <span
-        class="px-2 py-0.5 rounded-full text-xs font-medium"
+        class="text-[11px] font-medium px-2 py-0.5 rounded-go-sm"
         :style="getCategoryStyles(expense.category, categories)"
       >
         {{ getCategoryLabel(expense.category, categories) }}
       </span>
 
-      <span class="text-go-text-muted">
+      <span class="text-go-text-muted text-xs tabular-nums">
         {{ formatExpenseDate(expense.date || expense.createdAt) }}
       </span>
 
@@ -66,33 +72,33 @@
       </span>
 
       <span v-if="expense.recipientName" class="text-go-text-tertiary text-xs">
-        → {{ expense.recipientName }}
+        &rarr; {{ expense.recipientName }}
       </span>
 
       <span v-if="expense.source === 'whatsapp'" class="text-go-success text-xs">
         WhatsApp
       </span>
 
-      <span v-if="expense.imageUrl" class="text-go-text-muted text-xs cursor-pointer hover:text-go-text" @click="$emit('viewImage', expense.imageUrl)">
+      <span v-if="expense.imageUrl" class="text-go-text-muted text-xs cursor-pointer hover:text-go-text transition-colors" @click="$emit('viewImage', expense.imageUrl)">
         Foto
       </span>
 
       <button
         v-if="canMarkPaid"
         @click="$emit('markPaid', expense)"
-        class="ml-auto text-xs px-2 py-0.5 rounded-full border border-go-success text-go-success hover:bg-go-success-muted transition-colors flex items-center gap-1"
+        class="ml-auto text-go-text-muted hover:text-go-success transition-colors p-1 rounded-go-sm hover:bg-go-surface-alt flex items-center gap-1 text-xs"
       >
         <MdiCheck class="text-sm" />
-        Marcar pagado
+        <span class="hidden sm:inline">Marcar pagado</span>
       </button>
 
       <button
         v-if="canMarkPending"
         @click="$emit('markPending', expense)"
-        class="ml-auto text-xs px-2 py-0.5 rounded-full border border-go-border text-go-text-tertiary hover:bg-go-surface-hover transition-colors flex items-center gap-1"
+        class="ml-auto text-go-text-muted hover:text-go-text transition-colors p-1 rounded-go-sm hover:bg-go-surface-alt flex items-center gap-1 text-xs"
       >
         <MdiUndoVariant class="text-sm" />
-        Marcar pendiente
+        <span class="hidden sm:inline">Marcar pendiente</span>
       </button>
     </div>
   </div>
@@ -125,15 +131,15 @@ const canMarkPending = computed(() =>
   && props.expense.linkedPaymentId
 );
 
-const cardBorderClass = computed(() => {
-  if (props.expense.type === 'payment') return 'border-go-success/50';
-  if (props.expense.type === 'provider_expense') return 'border-go-border';
-  return 'border-go-border';
+const accentClass = computed(() => {
+  if (props.expense.type === 'payment') return 'border-l-[3px] border-l-go-secondary';
+  if (props.expense.type === 'provider_expense') return 'border-l-[3px] border-l-go-info';
+  return 'border-l-[3px] border-l-go-primary';
 });
 
 const amountColorClass = computed(() => {
-  if (props.expense.type === 'payment') return 'text-go-success';
-  if (props.expense.type === 'provider_expense') return 'text-go-text-tertiary';
+  if (props.expense.type === 'payment') return 'text-go-secondary';
+  if (props.expense.type === 'provider_expense') return 'text-go-info';
   return 'text-go-primary';
 });
 

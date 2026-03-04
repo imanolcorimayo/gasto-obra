@@ -3,7 +3,7 @@
     <!-- Header -->
     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
       <div>
-        <h1 class="text-[28px] font-bold tracking-tight">Mis Proyectos</h1>
+        <h1 class="text-[28px] font-display font-bold tracking-tight text-go-text">Mis Proyectos</h1>
         <p class="text-go-text-tertiary text-sm mt-1">Gestiona tus obras y refacciones</p>
       </div>
       <NuxtLink to="/projects/new" class="btn-primary flex items-center gap-2">
@@ -16,10 +16,10 @@
     <AppLoader v-if="projectStore.isLoading" />
 
     <!-- Empty state -->
-    <div v-else-if="projectStore.projects.length === 0" class="text-center py-16">
-      <MdiHardHat class="text-6xl text-go-text-muted mx-auto mb-4" />
-      <h2 class="text-xl font-semibold text-go-text-tertiary mb-2">No tenes proyectos</h2>
-      <p class="text-go-text-muted mb-6">Crea tu primer proyecto para empezar a registrar gastos</p>
+    <div v-else-if="projectStore.projects.length === 0" class="flex flex-col items-center justify-center text-center py-20">
+      <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="text-go-text-muted/40 mb-4"><path d="M2 18v3c0 .6.4 1 1 1h4v-3h3v-3h2l1.4-1.4a6.5 6.5 0 1 0-4-4Z"/><circle cx="16.5" cy="7.5" r=".5"/><path d="M10 2v4"/><path d="M14 6V2"/><path d="M18 2v4"/></svg>
+      <h2 class="font-display text-go-text-secondary text-lg mb-1">Todavia no tenes obras</h2>
+      <p class="text-go-text-muted text-sm mb-6 max-w-xs">Crea tu primera obra y empeza a registrar gastos desde WhatsApp.</p>
       <NuxtLink to="/projects/new" class="btn-primary inline-flex items-center gap-2">
         <MdiPlus />
         Crear Proyecto
@@ -41,7 +41,6 @@
 
 <script setup>
 import MdiPlus from '~icons/mdi/plus';
-import MdiHardHat from '~icons/mdi/hard-hat';
 import { useProjectStore } from '~/stores/project';
 import { useExpenseStore } from '~/stores/expense';
 import { collection, query, where, getDocs } from 'firebase/firestore';

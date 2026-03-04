@@ -47,11 +47,22 @@
       </button>
     </div>
 
-    <!-- Expense list -->
-    <div v-if="filteredExpenses.length === 0" class="text-center text-go-text-muted py-8">
-      No hay gastos registrados
+    <!-- Empty state: no expenses at all -->
+    <div v-if="filteredExpenses.length === 0 && !hasActiveFilters && expenses.length === 0" class="flex flex-col items-center justify-center text-center py-16">
+      <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="text-go-text-muted/40 mb-4"><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z"/><path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"/><path d="M12 17.5v.5"/><path d="M12 6v.5"/></svg>
+      <h3 class="font-display text-go-text-secondary text-base mb-1">Sin gastos todavia</h3>
+      <p class="text-go-text-muted text-sm max-w-xs">Manda un mensaje por WhatsApp o usa el boton + para cargar.</p>
     </div>
 
+    <!-- Empty state: filters active but no results -->
+    <div v-else-if="filteredExpenses.length === 0 && hasActiveFilters" class="flex flex-col items-center justify-center text-center py-16">
+      <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="text-go-text-muted/40 mb-4"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+      <h3 class="font-display text-go-text-secondary text-base mb-1">Sin resultados</h3>
+      <p class="text-go-text-muted text-sm mb-3">Proba cambiando los filtros.</p>
+      <button @click="clearFilters" class="text-go-primary text-sm hover:underline transition-colors">Limpiar filtros</button>
+    </div>
+
+    <!-- Expense list -->
     <ExpenseCard
       v-for="expense in filteredExpenses"
       :key="expense.id"

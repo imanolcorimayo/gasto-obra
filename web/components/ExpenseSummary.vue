@@ -1,29 +1,29 @@
 <template>
-  <div class="bg-go-surface rounded-go-xl border border-go-border p-5">
-    <h3 class="font-semibold mb-4">Resumen</h3>
+  <div class="bg-go-surface border border-go-border rounded-go-xl p-5">
+    <h3 class="font-display font-semibold text-go-text mb-4">Resumen</h3>
 
     <!-- Balance card -->
-    <div class="flex flex-col gap-2 mb-4 pb-4 border-b border-go-border">
-      <div class="flex items-center justify-between">
-        <span class="text-go-text-tertiary">Gastos</span>
-        <span class="text-lg font-bold tabular-nums text-go-primary">{{ formatPrice(totalExpenses) }}</span>
+    <div class="flex flex-col gap-3 mb-4 pb-4 border-b border-go-border">
+      <div>
+        <span class="text-[10px] font-semibold uppercase tracking-wider text-go-text-muted block mb-0.5">Gastos</span>
+        <span class="font-display font-bold text-2xl tabular-nums text-go-primary">{{ formatPrice(totalExpenses) }}</span>
       </div>
-      <div v-if="totalPayments > 0" class="flex items-center justify-between">
-        <span class="text-go-text-tertiary">Pagos recibidos</span>
-        <span class="text-lg font-bold tabular-nums text-go-success">{{ formatPrice(totalPayments) }}</span>
+      <div v-if="totalPayments > 0">
+        <span class="text-[10px] font-semibold uppercase tracking-wider text-go-text-muted block mb-0.5">Pagos recibidos</span>
+        <span class="font-display font-bold text-xl tabular-nums text-go-secondary">{{ formatPrice(totalPayments) }}</span>
       </div>
-      <div v-if="totalProviderExpenses > 0" class="flex items-center justify-between">
-        <span class="text-go-text-tertiary">Gastos propios</span>
-        <span class="text-lg font-bold tabular-nums text-go-text-tertiary">{{ formatPrice(totalProviderExpenses) }}</span>
+      <div v-if="totalProviderExpenses > 0">
+        <span class="text-[10px] font-semibold uppercase tracking-wider text-go-text-muted block mb-0.5">Gastos propios</span>
+        <span class="font-display font-bold text-xl tabular-nums text-go-text-tertiary">{{ formatPrice(totalProviderExpenses) }}</span>
       </div>
-      <div v-if="totalPending > 0" class="flex items-center justify-between">
-        <span class="text-go-text-tertiary">Pendiente de pago</span>
-        <span class="text-lg font-bold tabular-nums text-go-danger">{{ formatPrice(totalPending) }}</span>
+      <div v-if="totalPending > 0">
+        <span class="text-[10px] font-semibold uppercase tracking-wider text-go-text-muted block mb-0.5">Pendiente de pago</span>
+        <span class="font-display font-bold text-xl tabular-nums text-go-danger">{{ formatPrice(totalPending) }}</span>
       </div>
-      <div v-if="totalPayments > 0" class="flex items-center justify-between pt-2 border-t border-go-border">
-        <span class="text-go-text font-medium">Saldo</span>
+      <div v-if="totalPayments > 0" class="pt-3 border-t border-go-border">
+        <span class="text-[10px] font-semibold uppercase tracking-wider text-go-text-muted block mb-0.5">Saldo</span>
         <span
-          class="text-lg font-bold"
+          class="font-display font-bold text-xl tabular-nums"
           :class="balance >= 0 ? 'text-go-success' : 'text-go-danger'"
         >
           {{ formatPrice(balance) }}
@@ -34,17 +34,17 @@
     <!-- Budget progress -->
     <div v-if="budget" class="mb-4 pb-4 border-b border-go-border">
       <div class="flex items-center justify-between text-sm mb-2">
-        <span class="text-go-text-tertiary">Presupuesto</span>
-        <span class="text-go-text">{{ formatPrice(budget) }}</span>
+        <span class="text-[10px] font-semibold uppercase tracking-wider text-go-text-muted">Presupuesto</span>
+        <span class="text-go-text tabular-nums">{{ formatPrice(budget) }}</span>
       </div>
-      <div class="w-full bg-go-surface-alt rounded-full h-2">
+      <div class="w-full bg-go-surface-alt rounded-full h-1.5">
         <div
-          class="h-2 rounded-full transition-all"
+          class="h-1.5 rounded-full transition-all duration-500"
           :class="budgetPercent > 100 ? 'bg-go-danger' : budgetPercent > 80 ? 'bg-go-warning' : 'bg-go-primary'"
           :style="{ width: Math.min(budgetPercent, 100) + '%' }"
         ></div>
       </div>
-      <p class="text-xs text-go-text-muted mt-1">{{ budgetPercent.toFixed(0) }}% usado</p>
+      <p class="text-xs text-go-text-muted mt-1 tabular-nums">{{ budgetPercent.toFixed(0) }}% usado</p>
     </div>
 
     <!-- Category breakdown -->
@@ -56,13 +56,13 @@
       >
         <div class="flex items-center gap-2">
           <span
-            class="w-3 h-3 rounded-full"
+            class="w-2.5 h-2.5 rounded-full flex-shrink-0"
             :style="{ backgroundColor: cat.color }"
           ></span>
           <span class="text-go-text">{{ cat.label }}</span>
           <span class="text-go-text-muted text-xs">({{ cat.count }})</span>
         </div>
-        <span class="text-go-text font-medium">{{ formatPrice(cat.total) }} <span class="text-go-text-muted">({{ (cat.total / totalExpenses * 100).toFixed(0) }}%)</span></span>
+        <span class="tabular-nums text-go-text-secondary">{{ formatPrice(cat.total) }} <span class="text-go-text-muted">({{ (cat.total / totalExpenses * 100).toFixed(0) }}%)</span></span>
       </div>
     </div>
 

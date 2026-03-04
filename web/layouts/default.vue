@@ -31,7 +31,7 @@
     </div>
 
     <!-- Footer -->
-    <footer class="mt-auto py-6 text-center text-go-text-muted text-sm">
+    <footer class="mt-auto bg-go-bg border-t border-go-border-subtle py-4 text-center text-go-text-muted text-xs">
       <p>gasto obra</p>
     </footer>
   </div>
@@ -56,15 +56,14 @@ onMounted(async () => {
 
 <style scoped>
 .nav-tab {
-  @apply py-4 px-4 text-go-text-secondary border-b-2 border-transparent font-medium text-sm whitespace-nowrap;
-  transition: color 0.2s, border-color 0.2s;
+  @apply py-4 px-4 font-ui font-medium text-sm text-go-text-muted border-b-2 border-transparent whitespace-nowrap transition-colors duration-150;
 }
 
 .nav-tab:hover {
-  @apply text-go-text border-go-text-muted;
+  @apply text-go-text;
 }
 
 .nav-tab-active {
-  @apply text-go-primary border-go-primary font-semibold;
+  @apply text-go-primary border-go-primary;
 }
 </style>

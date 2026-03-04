@@ -206,15 +206,21 @@
 
   /* Button utilities */
   .btn-primary {
-    @apply px-5 py-2.5 bg-go-primary text-go-primary-on font-semibold rounded-go-md hover:bg-go-primary-hover transition-colors;
+    @apply px-5 py-2.5 bg-go-primary text-go-primary-on font-semibold rounded-go-md hover:bg-go-primary-hover transition-all duration-150 active:scale-[0.97] focus:outline-none focus:ring-2 focus:ring-offset-2;
+    --tw-ring-color: rgba(255, 171, 64, 0.5);
+    --tw-ring-offset-color: var(--go-bg);
   }
 
   .btn-secondary {
-    @apply px-5 py-2.5 bg-go-surface text-go-text-secondary border border-go-border rounded-go-md font-medium hover:bg-go-surface-hover transition-colors;
+    @apply px-5 py-2.5 bg-go-surface text-go-text-secondary border border-go-border rounded-go-md font-medium hover:bg-go-surface-hover transition-all duration-150 active:scale-[0.97] focus:outline-none focus:ring-2 focus:ring-offset-2;
+    --tw-ring-color: rgba(255, 171, 64, 0.5);
+    --tw-ring-offset-color: var(--go-bg);
   }
 
   .btn-danger {
-    @apply px-5 py-2.5 bg-go-danger-muted text-go-danger rounded-go-md font-medium transition-colors;
+    @apply px-5 py-2.5 bg-go-danger-muted text-go-danger rounded-go-md font-medium transition-all duration-150 active:scale-[0.97] focus:outline-none focus:ring-2 focus:ring-offset-2;
+    --tw-ring-color: rgba(255, 171, 64, 0.5);
+    --tw-ring-offset-color: var(--go-bg);
     border: 1px solid var(--go-danger-muted);
   }
   .btn-danger:hover {
@@ -222,7 +228,9 @@
   }
 
   .btn-success {
-    @apply px-5 py-2.5 bg-go-success-muted text-go-success rounded-go-md font-medium transition-colors;
+    @apply px-5 py-2.5 bg-go-success-muted text-go-success rounded-go-md font-medium transition-all duration-150 active:scale-[0.97] focus:outline-none focus:ring-2 focus:ring-offset-2;
+    --tw-ring-color: rgba(255, 171, 64, 0.5);
+    --tw-ring-offset-color: var(--go-bg);
     border: 1px solid var(--go-success-muted);
   }
   .btn-success:hover {
