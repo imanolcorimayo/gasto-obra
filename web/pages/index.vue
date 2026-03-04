@@ -26,7 +26,7 @@
       <div class="max-w-6xl mx-auto px-5 pt-24 pb-16 w-full">
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
           <!-- Left: Copy -->
-          <div>
+          <div ref="heroTextRef" class="landing-fade-up">
             <h1 class="font-display text-4xl sm:text-5xl lg:text-6xl text-go-text leading-[1.1] tracking-tight mb-6">
               Cada gasto de tu obra,
               <span class="text-go-primary">bajo control.</span>
@@ -38,7 +38,8 @@
             <button
               @click="handleLogin"
               :disabled="isLoading"
-              class="inline-flex items-center gap-3 btn-primary text-base px-8 py-3.5 rounded-go-lg shadow-go-md hover:shadow-go-lg transition-all"
+              class="inline-flex items-center gap-3 text-base px-8 py-3.5 rounded-go-lg shadow-go-md hover:shadow-go-lg transition-all font-semibold bg-go-primary-muted text-go-primary hover:bg-go-primary/20 active:scale-[0.97] focus:outline-none focus:ring-2 focus:ring-offset-2"
+              style="--tw-ring-color: rgba(255, 171, 64, 0.5); --tw-ring-offset-color: var(--go-bg);"
             >
               <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 01-2.2 3.32v2.77h3.57c2.08-1.92 3.27-4.74 3.27-8.1z" fill="#4285F4" />
@@ -59,9 +60,9 @@
           </div>
 
           <!-- Right: Phone mockup -->
-          <div>
+          <div ref="heroPhoneRef" class="landing-fade-up landing-delay-200">
             <!-- Phone frame -->
-            <div class="relative max-w-[260px] lg:max-w-[300px] mx-auto lg:ml-auto lg:mr-0">
+            <div class="relative max-w-[260px] lg:max-w-[300px] mx-auto lg:ml-auto lg:mr-0 landing-float">
               <div class="bg-go-surface-alt rounded-[40px] p-[6px] shadow-go-lg border border-go-border">
                 <!-- Phone screen -->
                 <div class="bg-go-bg-elevated rounded-[34px] overflow-hidden relative">
@@ -181,9 +182,9 @@
     <!-- ═══ FEATURES ═══ -->
     <section class="py-20 sm:py-28">
       <div class="max-w-6xl mx-auto px-5">
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+        <div ref="featuresRef" class="grid grid-cols-1 md:grid-cols-3 gap-5">
           <!-- Feature 1: WhatsApp -->
-          <div class="bg-go-surface border border-go-border rounded-go-xl p-6 hover:bg-go-surface-hover transition-colors">
+          <div class="bg-go-surface border border-go-border rounded-go-xl p-6 hover:bg-go-surface-hover transition-colors landing-fade-up">
             <div class="w-10 h-10 rounded-go-md bg-go-success/10 flex items-center justify-center mb-4">
               <svg class="w-5 h-5 text-go-success" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M8.625 12a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H8.25m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H12m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 0 1-2.555-.337A5.972 5.972 0 0 1 5.41 20.97a5.969 5.969 0 0 1-.474-.065 4.48 4.48 0 0 0 .978-2.025c.09-.457-.133-.901-.467-1.226C3.93 16.178 3 14.189 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25Z" />
@@ -196,7 +197,7 @@
           </div>
 
           <!-- Feature 2: Dashboard -->
-          <div class="bg-go-surface border border-go-border rounded-go-xl p-6 hover:bg-go-surface-hover transition-colors">
+          <div class="bg-go-surface border border-go-border rounded-go-xl p-6 hover:bg-go-surface-hover transition-colors landing-fade-up landing-delay-100">
             <div class="w-10 h-10 rounded-go-md bg-go-primary/10 flex items-center justify-center mb-4">
               <svg class="w-5 h-5 text-go-primary" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 0 1 3 19.875v-6.75ZM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V8.625ZM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V4.125Z" />
@@ -209,7 +210,7 @@
           </div>
 
           <!-- Feature 3: Client view -->
-          <div class="bg-go-surface border border-go-border rounded-go-xl p-6 hover:bg-go-surface-hover transition-colors">
+          <div class="bg-go-surface border border-go-border rounded-go-xl p-6 hover:bg-go-surface-hover transition-colors landing-fade-up landing-delay-200">
             <div class="w-10 h-10 rounded-go-md bg-go-info/10 flex items-center justify-center mb-4">
               <svg class="w-5 h-5 text-go-info" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M13.19 8.688a4.5 4.5 0 0 1 1.242 7.244l-4.5 4.5a4.5 4.5 0 0 1-6.364-6.364l1.757-1.757m13.35-.622 1.757-1.757a4.5 4.5 0 0 0-6.364-6.364l-4.5 4.5a4.5 4.5 0 0 0 1.242 7.244" />
@@ -227,13 +228,13 @@
     <!-- ═══ HOW IT WORKS ═══ -->
     <section class="py-20 sm:py-28 border-t border-go-border-subtle">
       <div class="max-w-6xl mx-auto px-5">
-        <h2 class="font-display text-2xl sm:text-3xl text-go-text text-center mb-14">
+        <h2 ref="howRef" class="font-display text-2xl sm:text-3xl text-go-text text-center mb-14 landing-fade-up">
           Cómo funciona
         </h2>
 
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-12">
+        <div ref="stepsRef" class="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-12">
           <!-- Step 1 -->
-          <div class="text-center">
+          <div class="text-center landing-fade-up">
             <div class="text-go-primary font-display text-4xl mb-3">1</div>
             <h3 class="text-go-text font-medium text-base mb-2">Vinculás tu WhatsApp</h3>
             <p class="text-go-text-tertiary text-sm leading-relaxed">
@@ -242,7 +243,7 @@
           </div>
 
           <!-- Step 2 -->
-          <div class="text-center">
+          <div class="text-center landing-fade-up landing-delay-100">
             <div class="text-go-primary font-display text-4xl mb-3">2</div>
             <h3 class="text-go-text font-medium text-base mb-2">Mandás los gastos por chat</h3>
             <p class="text-go-text-tertiary text-sm leading-relaxed">
@@ -251,7 +252,7 @@
           </div>
 
           <!-- Step 3 -->
-          <div class="text-center">
+          <div class="text-center landing-fade-up landing-delay-200">
             <div class="text-go-primary font-display text-4xl mb-3">3</div>
             <h3 class="text-go-text font-medium text-base mb-2">Revisás todo en el dashboard</h3>
             <p class="text-go-text-tertiary text-sm leading-relaxed">
@@ -291,6 +292,11 @@ useHead({
 const isLoading = ref(false);
 const scrolled = ref(false);
 const navRef = ref(null);
+const heroTextRef = ref(null);
+const heroPhoneRef = ref(null);
+const featuresRef = ref(null);
+const howRef = ref(null);
+const stepsRef = ref(null);
 
 onMounted(async () => {
   // Navbar scroll effect
@@ -299,6 +305,35 @@ onMounted(async () => {
   };
   window.addEventListener('scroll', onScroll, { passive: true });
   onUnmounted(() => window.removeEventListener('scroll', onScroll));
+
+  // Scroll-triggered animations
+  const observer = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          // Animate the target and all landing-fade-up children
+          const targets = entry.target.classList.contains('landing-fade-up')
+            ? [entry.target]
+            : entry.target.querySelectorAll('.landing-fade-up');
+          targets.forEach((el) => el.classList.add('is-visible'));
+          observer.unobserve(entry.target);
+        }
+      });
+    },
+    { threshold: 0.15 }
+  );
+
+  // Observe hero elements immediately (they appear on load with a small delay)
+  [heroTextRef, heroPhoneRef].forEach((ref) => {
+    if (ref.value) {
+      setTimeout(() => ref.value?.classList.add('is-visible'), 100);
+    }
+  });
+
+  // Observe scroll-triggered sections
+  [featuresRef, howRef, stepsRef].forEach((ref) => {
+    if (ref.value) observer.observe(ref.value);
+  });
 
   // Redirect if already logged in
   const user = await getCurrentUserAsync();
@@ -338,3 +373,44 @@ async function handleLogin() {
   }
 }
 </script>
+
+<style scoped>
+/* ─── Scroll-triggered fade-up ─── */
+.landing-fade-up {
+  opacity: 0;
+  transform: translateY(24px);
+  transition: opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1),
+              transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.landing-fade-up.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Stagger delays */
+.landing-delay-100 { transition-delay: 0.1s; }
+.landing-delay-200 { transition-delay: 0.2s; }
+
+/* ─── Phone float ─── */
+.landing-float {
+  animation: landing-float 4s ease-in-out infinite;
+}
+
+@keyframes landing-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+/* Respect reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .landing-fade-up {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+  .landing-float {
+    animation: none;
+  }
+}
+</style>
