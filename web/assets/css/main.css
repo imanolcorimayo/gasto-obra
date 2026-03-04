@@ -10,13 +10,13 @@
   --go-brand-amber: #FFAB40;
 
   /* Backgrounds */
-  --go-bg: #171A14;
-  --go-bg-elevated: #1D201A;
-  --go-surface: #24271F;
-  --go-surface-hover: #2E312A;
-  --go-surface-alt: #353830;
-  --go-border: #3D4036;
-  --go-border-subtle: #2E312A;
+  --go-bg: #26211A;
+  --go-bg-elevated: #2D271F;
+  --go-surface: #342D24;
+  --go-surface-hover: #3D362C;
+  --go-surface-alt: #4A4237;
+  --go-border: #574E42;
+  --go-border-subtle: #3D362C;
 
   /* Primary (amber) */
   --go-primary: #FFAB40;
@@ -45,7 +45,7 @@
   --go-text-secondary: #B5B0A4;
   --go-text-tertiary: #8A8579;
   --go-text-muted: #5E594F;
-  --go-text-inverse: #171A14;
+  --go-text-inverse: #26211A;
 
   /* Category colors */
   --go-cat-materiales: #5A8FB8;
