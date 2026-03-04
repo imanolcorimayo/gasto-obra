@@ -32,8 +32,9 @@ export const DEFAULT_EXPENSE_CATEGORIES: ExpenseCategory[] = [
   { value: 'otros', label: 'Otros', color: '#8B847A' }
 ];
 
-// Backward compat alias
+// Backward compat aliases
 export const EXPENSE_CATEGORIES = DEFAULT_EXPENSE_CATEGORIES;
+export const categories = DEFAULT_EXPENSE_CATEGORIES;
 
 export const resolveCategories = (
   globalCats: ExpenseCategory[],
