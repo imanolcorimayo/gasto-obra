@@ -1,57 +1,55 @@
 <template>
-  <div class="mb-8">
-    <div class="flex flex-col gap-6">
-      <!-- Settings Sub-Nav -->
-      <div class="flex gap-2 border-b border-go-border pb-3">
-        <NuxtLink to="/settings/whatsapp" class="text-sm px-3 py-1.5 rounded-go-md transition-colors text-go-text-tertiary hover:text-go-text hover:bg-go-surface-hover">
-          WhatsApp
-        </NuxtLink>
-        <NuxtLink to="/settings/categories" class="text-sm px-3 py-1.5 rounded-go-md transition-colors" :class="'bg-go-surface-alt text-go-text'">
-          Categorias
-        </NuxtLink>
-        <NuxtLink to="/settings/recipients" class="text-sm px-3 py-1.5 rounded-go-md transition-colors text-go-text-tertiary hover:text-go-text hover:bg-go-surface-hover">
-          Destinatarios
-        </NuxtLink>
+  <div>
+    <!-- Settings Sub-Nav -->
+    <div class="flex gap-2 border-b border-go-border pb-3 mb-8">
+      <NuxtLink to="/settings/whatsapp" class="text-sm px-3 py-1.5 rounded-go-md transition-colors text-go-text-tertiary hover:text-go-text hover:bg-go-surface-hover">
+        WhatsApp
+      </NuxtLink>
+      <NuxtLink to="/settings/categories" class="text-sm px-3 py-1.5 rounded-go-md transition-colors bg-go-surface-alt text-go-text">
+        Categorías
+      </NuxtLink>
+      <NuxtLink to="/settings/recipients" class="text-sm px-3 py-1.5 rounded-go-md transition-colors text-go-text-tertiary hover:text-go-text hover:bg-go-surface-hover">
+        Destinatarios
+      </NuxtLink>
+    </div>
+
+    <!-- Page Header -->
+    <div class="mb-8">
+      <h1 class="font-display font-bold text-2xl text-go-text">Categorías globales</h1>
+      <p class="text-go-text-muted text-sm mt-1">Se aplican a todas tus obras. Podés sobreescribirlas por proyecto.</p>
+    </div>
+
+    <!-- Loading State -->
+    <div v-if="categoryStore.isLoading && !hasLoaded" class="bg-go-surface border border-go-border rounded-go-xl p-6">
+      <div class="space-y-3">
+        <div class="skeleton-shimmer bg-go-surface-alt rounded-go-md h-10 w-full"></div>
+        <div class="skeleton-shimmer bg-go-surface-alt rounded-go-md h-10 w-full"></div>
+        <div class="skeleton-shimmer bg-go-surface-alt rounded-go-md h-10 w-full"></div>
+        <div class="skeleton-shimmer bg-go-surface-alt rounded-go-md h-10 w-full"></div>
+        <div class="skeleton-shimmer bg-go-surface-alt rounded-go-md h-10 w-3/4"></div>
+      </div>
+    </div>
+
+    <!-- Category Editor -->
+    <div v-else class="bg-go-surface border border-go-border rounded-go-xl p-6">
+      <!-- Info Callout -->
+      <div class="bg-go-bg border border-go-border-subtle rounded-go-md p-3 mb-5 flex items-start gap-3">
+        <svg class="w-4 h-4 text-go-info shrink-0 mt-0.5" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M13,9H11V7H13M13,17H11V11H13M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2Z" />
+        </svg>
+        <p class="text-go-text-secondary text-sm">Estos son tus categorías predeterminadas. Para cambiar las de una obra específica, editá el proyecto.</p>
       </div>
 
-      <!-- Header -->
-      <div>
-        <h1 class="text-[28px] font-bold tracking-tight">Categorias de gastos</h1>
-        <p class="text-go-text-tertiary text-sm mt-1">Estas categorias se aplican a todos tus proyectos. Podes agregar categorias especificas por proyecto desde la configuracion de cada proyecto.</p>
-      </div>
+      <CategoryManager v-model="editingCategories" />
 
-      <!-- Loading State -->
-      <div v-if="categoryStore.isLoading && !hasLoaded" class="flex flex-col gap-4 skeleton-shimmer">
-        <div class="h-48 w-full bg-go-surface-alt rounded-go-xl"></div>
-      </div>
-
-      <!-- Category Editor -->
-      <div v-else class="bg-go-surface rounded-go-xl border border-go-border p-6">
-        <CategoryManager v-model="editingCategories" />
-
-        <button
-          @click="handleSave"
-          :disabled="isSaving || !isValid"
-          class="mt-6 btn-primary w-full flex items-center justify-center gap-2"
-        >
-          <span v-if="isSaving" class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
-          Guardar
-        </button>
-      </div>
-
-      <!-- Info -->
-      <div class="bg-go-surface rounded-go-xl border border-go-border p-6">
-        <h3 class="font-semibold mb-4 flex items-center gap-2">
-          <MdiInformation class="text-go-primary" />
-          Como funciona
-        </h3>
-        <ul class="space-y-2 text-go-text-tertiary text-sm">
-          <li>Las categorias globales se usan en todos tus proyectos.</li>
-          <li>Podes definir categorias especificas para un proyecto desde su configuracion.</li>
-          <li>Si no configuras ninguna categoria, se usan las 6 categorias por defecto.</li>
-          <li>Las categorias tambien se usan en WhatsApp con el prefijo <code class="bg-go-surface px-1.5 py-0.5 rounded-go-sm text-go-primary">c:nombre</code>.</li>
-        </ul>
-      </div>
+      <button
+        @click="handleSave"
+        :disabled="isSaving || !isValid"
+        class="mt-6 btn-primary w-full flex items-center justify-center gap-2"
+      >
+        <span v-if="isSaving" class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+        Guardar
+      </button>
     </div>
   </div>
 </template>

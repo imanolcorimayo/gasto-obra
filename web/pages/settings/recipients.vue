@@ -1,56 +1,46 @@
 <template>
-  <div class="mb-8">
-    <div class="flex flex-col gap-6">
-      <!-- Settings Sub-Nav -->
-      <div class="flex gap-2 border-b border-go-border pb-3">
-        <NuxtLink to="/settings/whatsapp" class="text-sm px-3 py-1.5 rounded-go-md transition-colors text-go-text-tertiary hover:text-go-text hover:bg-go-surface-hover">
-          WhatsApp
-        </NuxtLink>
-        <NuxtLink to="/settings/categories" class="text-sm px-3 py-1.5 rounded-go-md transition-colors text-go-text-tertiary hover:text-go-text hover:bg-go-surface-hover">
-          Categorias
-        </NuxtLink>
-        <NuxtLink to="/settings/recipients" class="text-sm px-3 py-1.5 rounded-go-md transition-colors" :class="'bg-go-surface-alt text-go-text'">
-          Destinatarios
-        </NuxtLink>
-      </div>
+  <div>
+    <!-- Settings Sub-Nav -->
+    <div class="flex gap-2 border-b border-go-border pb-3 mb-8">
+      <NuxtLink to="/settings/whatsapp" class="text-sm px-3 py-1.5 rounded-go-md transition-colors text-go-text-tertiary hover:text-go-text hover:bg-go-surface-hover">
+        WhatsApp
+      </NuxtLink>
+      <NuxtLink to="/settings/categories" class="text-sm px-3 py-1.5 rounded-go-md transition-colors text-go-text-tertiary hover:text-go-text hover:bg-go-surface-hover">
+        Categorías
+      </NuxtLink>
+      <NuxtLink to="/settings/recipients" class="text-sm px-3 py-1.5 rounded-go-md transition-colors bg-go-surface-alt text-go-text">
+        Destinatarios
+      </NuxtLink>
+    </div>
 
-      <!-- Header -->
-      <div>
-        <h1 class="text-[28px] font-bold tracking-tight">Destinatarios de pago</h1>
-        <p class="text-go-text-tertiary text-sm mt-1">Configura los destinatarios frecuentes para tus pagos. Aparecen como opciones rapidas al registrar gastos y cobros.</p>
-      </div>
+    <!-- Page Header -->
+    <div class="mb-8">
+      <h1 class="font-display font-bold text-2xl text-go-text">Destinatarios de pago</h1>
+      <p class="text-go-text-muted text-sm mt-1">Personas o empresas a las que realizás pagos frecuentes.</p>
+    </div>
 
-      <!-- Loading State -->
-      <div v-if="recipientStore.isLoading && !hasLoaded" class="flex flex-col gap-4 skeleton-shimmer">
-        <div class="h-48 w-full bg-go-surface-alt rounded-go-xl"></div>
+    <!-- Loading State -->
+    <div v-if="recipientStore.isLoading && !hasLoaded" class="bg-go-surface border border-go-border rounded-go-xl p-6">
+      <div class="space-y-3">
+        <div class="skeleton-shimmer bg-go-surface-alt rounded-go-md h-14 w-full"></div>
+        <div class="skeleton-shimmer bg-go-surface-alt rounded-go-md h-14 w-full"></div>
+        <div class="skeleton-shimmer bg-go-surface-alt rounded-go-md h-14 w-full"></div>
+        <div class="skeleton-shimmer bg-go-surface-alt rounded-go-md h-10 w-1/3"></div>
       </div>
+    </div>
 
-      <!-- Recipient Editor -->
-      <div v-else class="bg-go-surface rounded-go-xl border border-go-border p-6">
-        <RecipientManager v-model="editingRecipients" @delete="handleSave" />
+    <!-- Recipient Editor -->
+    <div v-else class="bg-go-surface border border-go-border rounded-go-xl p-6">
+      <RecipientManager v-model="editingRecipients" @delete="handleSave" />
 
-        <button
-          @click="handleSave"
-          :disabled="isSaving || !isValid"
-          class="mt-6 btn-primary w-full flex items-center justify-center gap-2"
-        >
-          <span v-if="isSaving" class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
-          Guardar
-        </button>
-      </div>
-
-      <!-- Info -->
-      <div class="bg-go-surface rounded-go-xl border border-go-border p-6">
-        <h3 class="font-semibold mb-4 flex items-center gap-2">
-          <MdiInformation class="text-go-primary" />
-          Como funciona
-        </h3>
-        <ul class="space-y-2 text-go-text-tertiary text-sm">
-          <li>Los destinatarios se muestran como opciones al crear o editar un gasto o cobro.</li>
-          <li>Al seleccionar un destinatario, se completan automaticamente los datos de pago.</li>
-          <li>Podes agregar tantos destinatarios como necesites.</li>
-        </ul>
-      </div>
+      <button
+        @click="handleSave"
+        :disabled="isSaving || !isValid"
+        class="mt-6 btn-primary w-full flex items-center justify-center gap-2"
+      >
+        <span v-if="isSaving" class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+        Guardar
+      </button>
     </div>
   </div>
 </template>
