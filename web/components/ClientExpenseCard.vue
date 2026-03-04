@@ -1,24 +1,36 @@
 <template>
   <div
-    class="bg-go-surface rounded-go-md border p-4"
-    :class="isPayment ? 'border-go-success/50' : 'border-go-border'"
+    class="bg-go-surface rounded-go-md border border-go-border p-4"
+    :class="isPayment ? 'border-l-[3px] border-l-go-secondary' : 'border-l-[3px] border-l-go-primary'"
   >
     <div class="flex items-start justify-between">
       <div class="flex-1">
         <div class="flex items-center gap-2">
-          <h4 class="font-medium">{{ expense.title }}</h4>
+          <h4 class="font-medium text-go-text">{{ expense.title }}</h4>
           <span
             v-if="isPayment"
-            class="text-xs px-2 py-0.5 rounded-full font-semibold bg-go-success-muted text-go-success"
+            class="text-xs font-semibold px-2 py-0.5 rounded-go-sm bg-go-secondary/20 text-go-secondary"
           >
             Pago
+          </span>
+          <span
+            v-if="!isPayment && expense.linkedPaymentId"
+            class="text-xs font-semibold px-2 py-0.5 rounded-go-sm bg-go-success-muted text-go-success"
+          >
+            Pagado
+          </span>
+          <span
+            v-else-if="!isPayment && expense.paymentStatus === 'pending'"
+            class="text-xs font-semibold px-2 py-0.5 rounded-go-sm bg-go-danger-muted text-go-danger"
+          >
+            Pendiente
           </span>
         </div>
         <p v-if="expense.description" class="text-go-text-tertiary text-sm mt-1">{{ expense.description }}</p>
       </div>
       <span
-        class="font-semibold text-lg ml-4 whitespace-nowrap"
-        :class="isPayment ? 'text-go-success' : 'text-go-primary'"
+        class="font-display font-bold text-lg ml-4 whitespace-nowrap tabular-nums"
+        :class="isPayment ? 'text-go-secondary' : 'text-go-primary'"
       >
         {{ isPayment ? '+' : '' }}{{ formatPrice(expense.amount) }}
       </span>
@@ -32,43 +44,29 @@
         class="flex justify-between text-sm py-0.5"
       >
         <span class="text-go-text-tertiary">{{ item.name }}</span>
-        <span v-if="item.amount" class="text-go-text ml-4">{{ formatPrice(item.amount) }}</span>
+        <span v-if="item.amount" class="text-go-text ml-4 tabular-nums">{{ formatPrice(item.amount) }}</span>
       </div>
     </div>
 
     <!-- Footer -->
-    <div class="flex flex-wrap items-center gap-3 mt-3 text-sm">
+    <div class="flex items-center gap-3 mt-3 text-sm flex-wrap">
       <span
-        class="px-2 py-0.5 rounded-full text-xs font-medium"
+        class="text-[11px] font-medium px-2 py-0.5 rounded-go-sm"
         :style="getCategoryStyles(expense.category, categories)"
       >
         {{ getCategoryLabel(expense.category, categories) }}
       </span>
 
-      <span class="text-go-text-muted">
+      <span class="text-go-text-muted text-xs tabular-nums">
         {{ formatExpenseDate(expense.date || expense.createdAt) }}
       </span>
 
-      <span v-if="expense.paymentMethod" class="text-go-text-muted text-xs">
+      <span v-if="expense.paymentMethod" class="text-go-text-tertiary text-xs">
         {{ getPaymentMethodLabel(expense.paymentMethod) }}
       </span>
 
-      <span v-if="expense.recipientName" class="text-go-text-muted text-xs">
-        → {{ expense.recipientName }}{{ expense.recipientPlatform ? ` (${expense.recipientPlatform})` : '' }}
-      </span>
-
-      <!-- Payment status for expenses (not for standalone payments) -->
-      <span
-        v-if="!isPayment && expense.linkedPaymentId"
-        class="text-xs text-go-success ml-auto"
-      >
-        Pagado
-      </span>
-      <span
-        v-else-if="!isPayment && expense.paymentStatus === 'pending'"
-        class="text-xs text-go-danger ml-auto"
-      >
-        Pendiente
+      <span v-if="expense.recipientName" class="text-go-text-tertiary text-xs">
+        &rarr; {{ expense.recipientName }}{{ expense.recipientPlatform ? ` (${expense.recipientPlatform})` : '' }}
       </span>
     </div>
   </div>
