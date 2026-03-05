@@ -46,6 +46,27 @@
             </div>
           </div>
 
+          <!-- Scope type (expense only) -->
+          <div v-if="type === 'expense'">
+            <label class="block text-[11px] font-semibold uppercase tracking-wider text-go-text-muted mb-0.5">Alcance</label>
+            <p class="text-[11px] text-go-text-muted mb-1.5">¿Es parte de la obra original o un trabajo adicional?</p>
+            <div class="flex gap-2">
+              <button
+                v-for="s in SCOPE_TYPES"
+                :key="s.value"
+                type="button"
+                @click="form.scopeType = s.value"
+                class="text-xs font-medium px-2.5 py-1 rounded-go-sm border transition-colors"
+                :class="form.scopeType === s.value
+                  ? 'border-current bg-opacity-10'
+                  : 'border-go-border text-go-text-muted hover:border-go-text-muted'"
+                :style="form.scopeType === s.value ? getScopeTypeStyles(s.value) : {}"
+              >
+                {{ s.label }}
+              </button>
+            </div>
+          </div>
+
           <!-- Category (expense + provider_expense only) -->
           <div v-if="type !== 'payment'">
             <label class="block text-[11px] font-semibold uppercase tracking-wider text-go-text-muted mb-1.5">Categoria</label>
@@ -238,7 +259,7 @@
 import MdiChevronDown from '~icons/mdi/chevron-down';
 import MdiPlus from '~icons/mdi/plus';
 import MdiClose from '~icons/mdi/close';
-import { DEFAULT_EXPENSE_CATEGORIES, PAYMENT_METHODS } from '~/utils';
+import { DEFAULT_EXPENSE_CATEGORIES, PAYMENT_METHODS, SCOPE_TYPES, getScopeTypeStyles } from '~/utils';
 import { useRecipientStore } from '~/stores/recipient';
 
 const props = defineProps({
@@ -263,6 +284,7 @@ const form = reactive({
   title: '',
   amount: '',
   category: 'materiales',
+  scopeType: 'original',
   description: '',
   paymentStatus: 'paid',
   paymentMethod: null,
@@ -330,12 +352,14 @@ watch(() => form.items, (items) => {
   }
 }, { deep: true });
 
-// Reset form when modal opens
+// Lock background scroll & reset form when modal opens
 watch(() => props.show, (show) => {
+  document.body.classList.toggle('modal-open', show);
   if (show) {
     form.title = '';
     form.amount = '';
     form.category = 'materiales';
+    form.scopeType = 'original';
     form.description = '';
     form.paymentStatus = 'paid';
     form.paymentMethod = null;
@@ -363,6 +387,7 @@ async function handleSubmit() {
       category: props.type === 'payment' ? 'pago' : form.category,
       description: form.description,
       type: props.type,
+      scopeType: props.type === 'expense' ? form.scopeType : 'original',
       paymentStatus: isProviderExpense ? 'paid' : form.paymentStatus,
       paymentMethod: isProviderExpense ? null : form.paymentMethod,
       recipientName: isProviderExpense ? null : (form.recipientName || null),

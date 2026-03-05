@@ -50,6 +50,11 @@ export class ExpenseSchema extends Schema {
       required: false,
       default: 'expense'
     },
+    scopeType: {
+      type: 'string',
+      required: false,
+      default: 'original'
+    },
     items: {
       type: 'array',
       required: false

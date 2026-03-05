@@ -1,5 +1,10 @@
 <template>
-  <div class="overflow-x-auto">
+  <div class="bg-go-surface border border-go-border rounded-go-xl p-5">
+    <div class="flex items-center justify-between mb-4">
+      <h3 class="font-display font-semibold text-go-text">Movimientos</h3>
+      <span v-if="rows.length" class="text-xs text-go-text-muted tabular-nums">{{ rows.length }} registros</span>
+    </div>
+    <div class="overflow-x-auto">
     <table class="w-full text-sm">
       <thead>
         <tr class="border-b border-go-border">
@@ -20,6 +25,11 @@
           <td class="py-3 pr-3 text-go-text">
             <span>{{ row.title }}</span>
             <span v-if="row.items" class="text-go-text-muted text-xs ml-1">({{ row.items }} items)</span>
+            <span
+              v-if="row.scopeType === 'addition'"
+              class="text-[10px] font-medium px-1.5 py-0.5 rounded-go-sm ml-1.5 align-middle"
+              :style="getScopeTypeStyles('addition')"
+            >Agregado</span>
           </td>
           <td class="py-3 pl-3 text-right whitespace-nowrap">
             <span v-if="row.expense" class="tabular-nums font-medium text-go-primary">{{ formatPrice(row.expense) }}</span>
@@ -42,11 +52,12 @@
       <p class="font-display text-go-text-secondary">Sin registros</p>
       <p class="text-go-text-muted text-sm mt-1">No hay registros todavia.</p>
     </div>
+    </div>
   </div>
 </template>
 
 <script setup>
-import { formatPrice } from '~/utils';
+import { formatPrice, getScopeTypeStyles } from '~/utils';
 
 const props = defineProps({
   expenses: { type: Array, default: () => [] }
@@ -88,6 +99,7 @@ const rows = computed(() => {
       date: formatDate(e),
       title: e.title,
       items: e.items?.length || 0,
+      scopeType: e.scopeType || 'original',
       expense: isPayment ? null : amount,
       payment: isPayment ? amount : null,
       balance

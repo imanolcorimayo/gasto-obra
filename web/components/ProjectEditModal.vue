@@ -123,8 +123,9 @@ const formData = computed(() => {
   };
 });
 
-// Load project categories when modal opens
+// Lock background scroll & load project categories when modal opens
 watch(() => props.show, async (show) => {
+  document.body.classList.toggle('modal-open', show);
   if (show && props.project) {
     await categoryStore.fetchForProject(props.project.id);
     const projCats = categoryStore.projectCategoriesMap[props.project.id] || [];

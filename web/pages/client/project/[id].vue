@@ -135,61 +135,7 @@
 
         <!-- Right column: expense history -->
         <div class="flex-1 min-w-0">
-          <div class="flex items-center justify-between mb-3">
-            <h3 class="font-display font-semibold text-go-text">Historial</h3>
-            <div class="flex items-center gap-2">
-              <span class="text-[11px] text-go-text-muted uppercase tracking-wider">Tipo</span>
-              <select
-                v-model="selectedType"
-                class="bg-go-surface border border-go-border rounded-go-md px-2.5 py-1.5 text-xs text-go-text focus:outline-none focus:border-go-primary cursor-pointer"
-              >
-                <option value="">Todos</option>
-                <option value="expense">Gastos</option>
-                <option value="payment">Pagos</option>
-              </select>
-            </div>
-          </div>
-          <div class="flex rounded-go-md border border-go-border overflow-hidden w-fit mb-4">
-            <button
-              @click="viewMode = 'cards'"
-              class="px-3 py-1.5 text-xs flex items-center gap-1.5 transition-colors"
-              :class="viewMode === 'cards' ? 'bg-go-surface-alt text-go-text' : 'text-go-text-tertiary hover:text-go-text'"
-            >
-              <MdiViewAgenda class="text-sm" />
-              Tarjetas
-            </button>
-            <button
-              @click="viewMode = 'table'"
-              class="px-3 py-1.5 text-xs flex items-center gap-1.5 transition-colors"
-              :class="viewMode === 'table' ? 'bg-go-surface-alt text-go-text' : 'text-go-text-tertiary hover:text-go-text'"
-            >
-              <MdiTable class="text-sm" />
-              Balance
-            </button>
-          </div>
-
-          <template v-if="viewMode === 'cards'">
-            <div v-if="filteredCards.length === 0" class="text-center py-12">
-              <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="mx-auto text-go-text-muted/30 mb-3"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
-              <p class="font-display text-go-text-secondary">Sin registros</p>
-              <p class="text-go-text-muted text-sm mt-1">No hay registros todavia.</p>
-            </div>
-            <div v-else>
-              <p class="text-[11px] font-semibold uppercase tracking-wider text-go-text-muted mb-3">Movimientos</p>
-              <div class="space-y-2">
-                <ClientExpenseCard
-                  v-for="expense in filteredCards"
-                  :key="expense.id"
-                  :expense="expense"
-                  :categories="resolvedCategories"
-                />
-              </div>
-            </div>
-          </template>
-
-          <template v-else>
-            <ClientBalanceTable :expenses="filteredAll" />
-          </template>
+          <ClientBalanceTable :expenses="allClientExpenses" />
         </div>
       </div>
     </template>
@@ -198,8 +144,6 @@
 
 <script setup>
 import MdiArrowLeft from '~icons/mdi/arrow-left';
-import MdiViewAgenda from '~icons/mdi/view-agenda';
-import MdiTable from '~icons/mdi/table';
 import { useProjectStore } from '~/stores/project';
 import { useExpenseStore } from '~/stores/expense';
 import { useCategoryStore } from '~/stores/category';
@@ -217,8 +161,6 @@ const categoryStore = useCategoryStore();
 
 const isLoading = ref(true);
 const project = ref(null);
-const selectedType = ref('');
-const viewMode = ref('cards');
 
 const resolvedCategories = computed(() => {
   const id = route.params.id;
@@ -254,12 +196,6 @@ const allClientExpenses = computed(() =>
   expenseStore.expenses.filter(e => e.type !== 'provider_expense')
 );
 
-// Card view hides auto-linked payments (shown as "Pagado" on expense card)
-const cardExpenses = computed(() =>
-  allClientExpenses.value.filter(e => !e.linkedExpenseId)
-);
-
-// Financial calculations use the full list
 const onlyExpenses = computed(() =>
   allClientExpenses.value.filter(e => !e.type || e.type === 'expense')
 );
@@ -310,18 +246,6 @@ const categoryBreakdown = computed(() => {
     }))
     .sort((a, b) => b.total - a.total);
 });
-
-// Apply type filter to each view
-const filteredCards = computed(() => applyTypeFilter(cardExpenses.value));
-const filteredAll = computed(() => applyTypeFilter(allClientExpenses.value));
-
-function applyTypeFilter(list) {
-  if (!selectedType.value) return list;
-  if (selectedType.value === 'expense') {
-    return list.filter(e => !e.type || e.type === 'expense');
-  }
-  return list.filter(e => e.type === selectedType.value);
-}
 
 onMounted(async () => {
   const id = route.params.id;

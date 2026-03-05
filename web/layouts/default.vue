@@ -4,7 +4,7 @@
 
     <!-- Navigation -->
     <div v-if="user" class="w-full bg-go-bg-elevated border-b border-go-border mb-4">
-      <div class="max-w-5xl m-auto px-0 sm:px-6">
+      <div class="max-w-7xl m-auto px-0 sm:px-6">
         <nav class="flex overflow-x-auto" aria-label="Navegacion principal">
           <NuxtLink to="/projects" class="nav-tab" :class="{ 'nav-tab-active': route.path.startsWith('/projects') }">
             Proyectos
@@ -24,7 +24,7 @@
       </div>
     </div>
 
-    <div class="flex-1 flex flex-col gap-12 max-w-5xl w-full m-auto px-3 sm:px-6">
+    <div class="flex-1 flex flex-col gap-12 max-w-7xl w-full m-auto px-3 sm:px-6">
       <main>
         <slot />
       </main>

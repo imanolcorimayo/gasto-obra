@@ -25,6 +25,13 @@
           >
             Pendiente
           </span>
+          <span
+            v-if="expense.scopeType === 'addition'"
+            class="text-[11px] font-medium px-2 py-0.5 rounded-go-sm"
+            :style="getScopeTypeStyles('addition')"
+          >
+            Agregado
+          </span>
         </div>
         <p v-if="expense.description" class="text-go-text-tertiary text-sm mt-1">{{ expense.description }}</p>
       </div>
@@ -73,7 +80,7 @@
 </template>
 
 <script setup>
-import { formatPrice, getCategoryStyles, getCategoryLabel, getPaymentMethodLabel } from '~/utils';
+import { formatPrice, getCategoryStyles, getCategoryLabel, getPaymentMethodLabel, getScopeTypeStyles } from '~/utils';
 
 const props = defineProps({
   expense: { type: Object, required: true },

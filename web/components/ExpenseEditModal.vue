@@ -31,6 +31,27 @@
             </div>
           </div>
 
+          <!-- Scope type (expense only) -->
+          <div v-if="form.type === 'expense'">
+            <label class="block text-[11px] font-semibold uppercase tracking-wider text-go-text-muted mb-0.5">Alcance</label>
+            <p class="text-[11px] text-go-text-muted mb-1.5">¿Es parte de la obra original o un trabajo adicional?</p>
+            <div class="flex gap-2">
+              <button
+                v-for="s in SCOPE_TYPES"
+                :key="s.value"
+                type="button"
+                @click="form.scopeType = s.value"
+                class="text-xs font-medium px-2.5 py-1 rounded-go-sm border transition-colors"
+                :class="form.scopeType === s.value
+                  ? 'border-current bg-opacity-10'
+                  : 'border-go-border text-go-text-muted hover:border-go-text-muted'"
+                :style="form.scopeType === s.value ? getScopeTypeStyles(s.value) : {}"
+              >
+                {{ s.label }}
+              </button>
+            </div>
+          </div>
+
           <!-- Title -->
           <div>
             <label class="block text-[11px] font-semibold uppercase tracking-wider text-go-text-muted mb-1.5">Titulo</label>
@@ -246,7 +267,7 @@
 import MdiChevronDown from '~icons/mdi/chevron-down';
 import MdiPlus from '~icons/mdi/plus';
 import MdiClose from '~icons/mdi/close';
-import { DEFAULT_EXPENSE_CATEGORIES, PAYMENT_METHODS, PAYMENT_STATUSES } from '~/utils';
+import { DEFAULT_EXPENSE_CATEGORIES, PAYMENT_METHODS, PAYMENT_STATUSES, SCOPE_TYPES, getScopeTypeStyles } from '~/utils';
 import { useRecipientStore } from '~/stores/recipient';
 
 const recipientStore = useRecipientStore();
@@ -281,6 +302,7 @@ const form = reactive({
   category: 'materiales',
   description: '',
   type: 'expense',
+  scopeType: 'original',
   paymentStatus: 'paid',
   paymentMethod: null,
   recipientName: '',
@@ -291,6 +313,11 @@ const form = reactive({
   projectId: ''
 });
 
+// Lock background scroll
+watch(() => props.show, (show) => {
+  document.body.classList.toggle('modal-open', show);
+});
+
 watch(() => props.expense, (expense) => {
   if (expense) {
     form.title = expense.title || '';
@@ -298,6 +325,7 @@ watch(() => props.expense, (expense) => {
     form.category = expense.category || 'materiales';
     form.description = expense.description || '';
     form.type = expense.type || 'expense';
+    form.scopeType = expense.scopeType || 'original';
     form.paymentStatus = expense.paymentStatus || 'paid';
     form.paymentMethod = expense.paymentMethod || null;
     form.recipientName = expense.recipientName || '';
@@ -363,6 +391,7 @@ async function handleSave() {
       category: form.type === 'payment' ? 'pago' : form.category,
       description: form.description,
       type: form.type,
+      scopeType: form.type === 'expense' ? form.scopeType : 'original',
       paymentStatus: form.paymentStatus,
       paymentMethod: form.paymentMethod,
       recipientName: form.recipientName || null,

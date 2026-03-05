@@ -31,6 +31,13 @@
           >
             Pagado
           </span>
+          <span
+            v-if="expense.scopeType === 'addition'"
+            class="text-[11px] font-medium px-2 py-0.5 rounded-go-sm"
+            :style="getScopeTypeStyles('addition')"
+          >
+            Agregado
+          </span>
         </div>
         <p v-if="expense.description" class="text-go-text-tertiary text-sm mt-1">{{ expense.description }}</p>
         <p v-if="expense.items && expense.items.length" class="text-go-text-muted text-xs mt-1">
@@ -108,7 +115,7 @@
 import MdiPencil from '~icons/mdi/pencil';
 import MdiCheck from '~icons/mdi/check';
 import MdiUndoVariant from '~icons/mdi/undo-variant';
-import { formatPrice, getCategoryStyles, getCategoryLabel, getPaymentMethodLabel } from '~/utils';
+import { formatPrice, getCategoryStyles, getCategoryLabel, getPaymentMethodLabel, getScopeTypeStyles, getScopeTypeLabel } from '~/utils';
 
 const props = defineProps({
   expense: { type: Object, required: true },

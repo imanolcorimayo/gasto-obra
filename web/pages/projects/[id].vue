@@ -167,7 +167,6 @@
             <ExpenseSummary :expenses="expenseStore.expenses" :budget="project.budget" :categories="resolvedCategories" />
           </div>
           <div class="lg:col-span-2 order-1 lg:order-none">
-            <h3 class="font-display font-semibold text-go-text mb-4">Historial</h3>
             <AppLoader v-if="expenseStore.isLoading" text="Cargando gastos..." />
             <template v-else>
               <!-- Empty state callout -->
@@ -340,6 +339,7 @@ async function handleCreateSubmit(formData) {
       amount: formData.amount,
       category: formData.category,
       type: formData.type,
+      scopeType: formData.scopeType || 'original',
       paymentStatus: formData.paymentStatus,
       paymentMethod: formData.paymentMethod,
       recipientName: formData.recipientName,

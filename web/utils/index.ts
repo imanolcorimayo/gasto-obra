@@ -89,6 +89,29 @@ export const PROJECT_STATUSES = [
   { value: 'completed', label: 'Completado' }
 ];
 
+export const SCOPE_TYPES = [
+  { value: 'original', label: 'Entrega', color: '#5A8FB8' },
+  { value: 'addition', label: 'Agregado', color: '#D4793D' }
+];
+
+export const getScopeTypeLabel = (value: string): string => {
+  const scope = SCOPE_TYPES.find(s => s.value === value);
+  return scope ? scope.label : '';
+};
+
+export const getScopeTypeColor = (value: string): string => {
+  const scope = SCOPE_TYPES.find(s => s.value === value);
+  return scope ? scope.color : '#8B847A';
+};
+
+export const getScopeTypeStyles = (value: string) => {
+  const color = getScopeTypeColor(value);
+  return {
+    backgroundColor: `${color}26`,
+    color: color
+  };
+};
+
 export const TRANSACTION_TYPES = [
   { value: 'expense', label: 'Gasto', color: '#FFAB40' },
   { value: 'payment', label: 'Cobro', color: '#5CB870' },

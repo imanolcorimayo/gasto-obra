@@ -30,6 +30,7 @@ export interface RecipientDoc extends Recipient {
 }
 
 export type ExpenseType = 'expense' | 'payment' | 'provider_expense';
+export type ScopeType = 'original' | 'addition';
 
 export interface ExpenseItem {
   name: string;
@@ -45,6 +46,7 @@ export interface Expense {
   amount: number;
   category: string;
   type: ExpenseType;
+  scopeType: ScopeType;
   items: ExpenseItem[] | null;
   imageUrl: string | null;
   audioTranscription: string | null;

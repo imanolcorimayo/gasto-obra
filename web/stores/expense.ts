@@ -66,6 +66,22 @@ export const useExpenseStore = defineStore('expense', {
 
     clientBalance(): number {
       return this.totalPayments - this.totalClientExpenses;
+    },
+
+    originalExpenses(): Expense[] {
+      return this.clientExpenses.filter(e => !e.scopeType || e.scopeType === 'original');
+    },
+
+    additionExpenses(): Expense[] {
+      return this.clientExpenses.filter(e => e.scopeType === 'addition');
+    },
+
+    totalOriginalExpenses(): number {
+      return this.originalExpenses.reduce((sum: number, e: Expense) => sum + (e.amount || 0), 0);
+    },
+
+    totalAdditionExpenses(): number {
+      return this.additionExpenses.reduce((sum: number, e: Expense) => sum + (e.amount || 0), 0);
     }
   },
 

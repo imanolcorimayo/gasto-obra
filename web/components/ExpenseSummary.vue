@@ -8,6 +8,16 @@
         <span class="text-[10px] font-semibold uppercase tracking-wider text-go-text-muted block mb-0.5">Gastos</span>
         <span class="font-display font-bold text-2xl tabular-nums text-go-primary">{{ formatPrice(totalExpenses) }}</span>
       </div>
+      <div v-if="totalAddition > 0" class="flex gap-4 pl-3 border-l-2 border-go-border-subtle">
+        <div class="flex-1">
+          <span class="text-[10px] font-semibold uppercase tracking-wider text-go-text-muted block mb-0.5">Entrega</span>
+          <span class="font-display font-bold text-base tabular-nums" :style="{ color: getScopeTypeColor('original') }">{{ formatPrice(totalOriginal) }}</span>
+        </div>
+        <div class="flex-1">
+          <span class="text-[10px] font-semibold uppercase tracking-wider text-go-text-muted block mb-0.5">Agregados</span>
+          <span class="font-display font-bold text-base tabular-nums" :style="{ color: getScopeTypeColor('addition') }">{{ formatPrice(totalAddition) }}</span>
+        </div>
+      </div>
       <div v-if="totalPayments > 0">
         <span class="text-[10px] font-semibold uppercase tracking-wider text-go-text-muted block mb-0.5">Pagos recibidos</span>
         <span class="font-display font-bold text-xl tabular-nums text-go-secondary">{{ formatPrice(totalPayments) }}</span>
@@ -73,7 +83,7 @@
 </template>
 
 <script setup>
-import { formatPrice, getCategoryColor, getCategoryLabel } from '~/utils';
+import { formatPrice, getCategoryColor, getCategoryLabel, getScopeTypeColor } from '~/utils';
 
 const props = defineProps({
   expenses: { type: Array, default: () => [] },
@@ -112,6 +122,18 @@ const totalPending = computed(() =>
 );
 
 const balance = computed(() => totalPayments.value - totalExpenses.value);
+
+const totalOriginal = computed(() =>
+  clientExpenses.value
+    .filter(e => !e.scopeType || e.scopeType === 'original')
+    .reduce((sum, e) => sum + (e.amount || 0), 0)
+);
+
+const totalAddition = computed(() =>
+  clientExpenses.value
+    .filter(e => e.scopeType === 'addition')
+    .reduce((sum, e) => sum + (e.amount || 0), 0)
+);
 
 const budgetPercent = computed(() => {
   if (!props.budget || props.budget <= 0) return 0;
