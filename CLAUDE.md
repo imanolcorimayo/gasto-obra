@@ -17,3 +17,8 @@ Both packages share the same Firebase project and Firestore database. See each p
 ## Language
 
 All user-facing text is in **Spanish (Argentine)**. Currency: ARS with `es-AR` locale.
+
+## GitHub CLI (gh)
+
+Remote uses custom SSH alias `github-corimayo`, so `gh` commands need `--repo imanolcorimayo/gasto-obra` flag.
+Project board: "Gasto Obra - Tickets" (#13, ID: `PVT_kwHOBS8o6M4BQMMH`). Status field ID: `PVTSSF_lAHOBS8o6M4BQMMHzg-YcnA`, options: Backlog(`f75ad846`), Ready(`61e4505c`), In progress(`47fc9ee4`), In review(`df73e18b`), Done(`98236657`).
