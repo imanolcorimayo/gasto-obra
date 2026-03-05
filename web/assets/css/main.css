@@ -2,64 +2,10 @@
 @tailwind components;
 @tailwind utilities;
 
-/* ─── Design Tokens ─── */
-
+/* ── Gasto Obra — Tokens (fuente de verdad) ── */
 :root {
-  /* Brand seeds */
-  --go-brand-olive: #483923;
-  --go-brand-amber: #FFAB40;
-
-  /* Backgrounds */
-  --go-bg: #26211A;
-  --go-bg-elevated: #2D271F;
-  --go-surface: #342D24;
-  --go-surface-hover: #3D362C;
-  --go-surface-alt: #4A4237;
-  --go-border: #574E42;
-  --go-border-subtle: #3D362C;
-
-  /* Primary (amber) */
-  --go-primary: #FFAB40;
-  --go-primary-hover: #FFBC62;
-  --go-primary-active: #E99A35;
-  --go-primary-muted: rgba(255, 171, 64, 0.12);
-  --go-primary-on: #1A1200;
-
-  /* Secondary (sage green) */
-  --go-secondary: #6B8F71;
-  --go-secondary-hover: #7DA383;
-  --go-secondary-muted: rgba(107, 143, 113, 0.12);
-
-  /* Semantic */
-  --go-success: #5CB870;
-  --go-success-muted: rgba(92, 184, 112, 0.12);
-  --go-danger: #D4544A;
-  --go-danger-muted: rgba(212, 84, 74, 0.12);
-  --go-warning: #E8B83A;
-  --go-warning-muted: rgba(232, 184, 58, 0.12);
-  --go-info: #5A9BBF;
-  --go-info-muted: rgba(90, 155, 191, 0.12);
-
-  /* Text */
-  --go-text: #F0EBE1;
-  --go-text-secondary: #B5B0A4;
-  --go-text-tertiary: #8A8579;
-  --go-text-muted: #5E594F;
-  --go-text-inverse: #26211A;
-
-  /* Category colors */
-  --go-cat-materiales: #5A8FB8;
-  --go-cat-herramientas: #D4793D;
-  --go-cat-transporte: #BFA63D;
-  --go-cat-mano-de-obra: #A86B5E;
-  --go-cat-comida: #6B9B6B;
-  --go-cat-otros: #8B847A;
-
-  /* Payment method colors */
-  --go-pay-transferencia: #5A8FB8;
-  --go-pay-efectivo: #6B9B6B;
-  --go-pay-tarjeta: #8B6BA3;
-  --go-pay-mercadopago: #00B1EA;
+  /* Fonts */
+  --go-font-ui: 'Red Hat Display', system-ui, sans-serif;
 
   /* Radius */
   --go-radius-sm: 6px;
@@ -68,26 +14,108 @@
   --go-radius-xl: 18px;
   --go-radius-full: 9999px;
 
+  /* Category colors (igual en ambos temas) */
+  --go-cat-materiales:   #5A8FB8;
+  --go-cat-herramientas: #D4793D;
+  --go-cat-transporte:   #BFA63D;
+  --go-cat-mano-de-obra: #A86B5E;
+  --go-cat-comida:       #6B9B6B;
+  --go-cat-otros:        #8B847A;
+
+  /* Payment method colors (igual en ambos temas) */
+  --go-pay-transferencia: #5A8FB8;
+  --go-pay-efectivo:      #6B9B6B;
+  --go-pay-tarjeta:       #8B6BA3;
+  --go-pay-mercadopago:   #00B1EA;
+}
+
+/* ── DARK THEME (default) ── */
+:root {
+  /* Surfaces */
+  --go-bg:              #26211A;
+  --go-bg-elevated:     #2C261E;
+  --go-surface:         #342D24;
+  --go-surface-hover:   #3D362C;
+  --go-surface-alt:     #463E33;
+  --go-border:          #574E42;
+  --go-border-subtle:   #3D362C;
+
+  /* Primary (ámbar) */
+  --go-primary:         #FFAB40;
+  --go-primary-hover:   #FFBC62;
+  --go-primary-active:  #E99A35;
+  --go-primary-muted:   rgba(255, 171, 64, 0.12);
+  --go-primary-on:      #1A1200;
+
+  /* Secondary (oliva/verde) */
+  --go-secondary:       #6B8F71;
+  --go-secondary-hover: #7DA383;
+  --go-secondary-muted: rgba(107, 143, 113, 0.12);
+
+  /* Semantic */
+  --go-success:         #5CB870;
+  --go-success-muted:   rgba(92, 184, 112, 0.12);
+  --go-danger:          #D4544A;
+  --go-danger-muted:    rgba(212, 84, 74, 0.12);
+  --go-warning:         #E8B83A;
+  --go-warning-muted:   rgba(232, 184, 58, 0.12);
+  --go-info:            #5A9BBF;
+  --go-info-muted:      rgba(90, 155, 191, 0.12);
+
+  /* Text */
+  --go-text:            #F0EBE1;
+  --go-text-secondary:  #B5B0A4;
+  --go-text-tertiary:   #8A8579;
+  --go-text-muted:      #5E594F;
+  --go-text-inverse:    #1C1915;
+
   /* Shadows */
   --go-shadow-sm: 0 1px 3px rgba(0,0,0,0.3);
   --go-shadow-md: 0 4px 12px rgba(0,0,0,0.35);
   --go-shadow-lg: 0 8px 28px rgba(0,0,0,0.4);
 }
 
-.light {
-  --go-bg: #F5F0E5;
-  --go-bg-elevated: #EDE8DB;
-  --go-surface: #E8E2D4;
-  --go-surface-hover: #DDD7C8;
-  --go-surface-alt: #D4CEBD;
-  --go-border: #C4BDA8;
-  --go-border-subtle: #D4CEBD;
-  --go-text: #1A1712;
-  --go-text-secondary: #4A4640;
-  --go-text-tertiary: #6B665C;
-  --go-text-muted: #9B968C;
-  --go-text-inverse: #F0EBE1;
-  --go-primary-on: #1A1200;
+/* ── LIGHT THEME (clase .light en <html>) ── */
+html.light {
+  /* Surfaces */
+  --go-bg:              #F5F0E8;
+  --go-bg-elevated:     #FDFAF4;
+  --go-surface:         #FFFFFF;
+  --go-surface-hover:   #EDE8DF;
+  --go-surface-alt:     #E0DBD2;
+  --go-border:          #D4CCC0;
+  --go-border-subtle:   #E8E3DA;
+
+  /* Primary (levemente más oscuro para contraste WCAG AA) */
+  --go-primary:         #E99A35;
+  --go-primary-hover:   #D4892C;
+  --go-primary-active:  #C47A25;
+  --go-primary-muted:   rgba(233, 154, 53, 0.10);
+  --go-primary-on:      #1A1200;
+
+  /* Secondary */
+  --go-secondary:       #4A7A52;
+  --go-secondary-hover: #3E6645;
+  --go-secondary-muted: rgba(74, 122, 82, 0.10);
+
+  /* Semantic */
+  --go-success:         #3E9954;
+  --go-success-muted:   rgba(62, 153, 84, 0.10);
+  --go-danger:          #C74840;
+  --go-danger-muted:    rgba(199, 72, 64, 0.08);
+  --go-warning:         #A07820;
+  --go-warning-muted:   rgba(160, 120, 32, 0.10);
+  --go-info:            #3A7A9F;
+  --go-info-muted:      rgba(58, 122, 159, 0.10);
+
+  /* Text */
+  --go-text:            #1C1915;
+  --go-text-secondary:  #4A443D;
+  --go-text-tertiary:   #8A8078;
+  --go-text-muted:      #B5AFA6;
+  --go-text-inverse:    #F0EBE1;
+
+  /* Shadows */
   --go-shadow-sm: 0 1px 3px rgba(0,0,0,0.08);
   --go-shadow-md: 0 4px 12px rgba(0,0,0,0.1);
   --go-shadow-lg: 0 8px 28px rgba(0,0,0,0.12);
@@ -129,8 +157,13 @@
     @apply cursor-text;
   }
 
+  html, body {
+    font-family: var(--go-font-ui);
+    background-color: var(--go-bg);
+    color: var(--go-text);
+  }
+
   body {
-    @apply bg-go-bg text-go-text font-ui;
     scrollbar-width: thin;
     scrollbar-color: var(--go-border) transparent;
   }
@@ -183,7 +216,9 @@
   }
 
   .modal-container {
-    @apply bg-go-bg-elevated rounded-t-go-xl sm:rounded-go-xl shadow-go-lg w-full sm:max-w-xl max-h-[90vh] overflow-hidden flex flex-col;
+    @apply rounded-t-go-xl sm:rounded-go-xl w-full sm:max-w-xl max-h-[90vh] overflow-hidden flex flex-col;
+    background-color: var(--go-bg-elevated);
+    box-shadow: var(--go-shadow-lg);
   }
 
   .modal-container > form {
@@ -191,11 +226,16 @@
   }
 
   .modal-header {
-    @apply flex justify-between items-center p-4 border-b border-go-border shrink-0;
+    @apply flex justify-between items-center p-4 shrink-0;
+    border-bottom: 1px solid var(--go-border);
   }
 
   .modal-close {
-    @apply text-go-text-muted hover:text-go-text transition-colors;
+    transition: color 0.15s;
+    color: var(--go-text-muted);
+  }
+  .modal-close:hover {
+    color: var(--go-text);
   }
 
   .modal-body {
@@ -203,37 +243,53 @@
   }
 
   .modal-footer {
-    @apply p-4 border-t border-go-border flex justify-end gap-3 shrink-0;
+    @apply p-4 flex justify-end gap-3 shrink-0;
+    border-top: 1px solid var(--go-border);
   }
 
   /* Button utilities */
   .btn-primary {
-    @apply px-5 py-2.5 bg-go-primary text-go-primary-on font-semibold rounded-go-md hover:bg-go-primary-hover transition-all duration-150 active:scale-[0.97] focus:outline-none focus:ring-2 focus:ring-offset-2;
+    @apply px-5 py-2.5 font-semibold rounded-go-md transition-all duration-150 active:scale-[0.97] focus:outline-none focus:ring-2 focus:ring-offset-2;
+    background-color: var(--go-primary);
+    color: var(--go-primary-on);
     --tw-ring-color: rgba(255, 171, 64, 0.5);
     --tw-ring-offset-color: var(--go-bg);
+  }
+  .btn-primary:hover {
+    background-color: var(--go-primary-hover);
   }
 
   .btn-secondary {
-    @apply px-5 py-2.5 bg-go-surface text-go-text-secondary border border-go-border rounded-go-md font-medium hover:bg-go-surface-hover transition-all duration-150 active:scale-[0.97] focus:outline-none focus:ring-2 focus:ring-offset-2;
+    @apply px-5 py-2.5 font-medium rounded-go-md transition-all duration-150 active:scale-[0.97] focus:outline-none focus:ring-2 focus:ring-offset-2;
+    background-color: var(--go-surface);
+    color: var(--go-text-secondary);
+    border: 1px solid var(--go-border);
     --tw-ring-color: rgba(255, 171, 64, 0.5);
     --tw-ring-offset-color: var(--go-bg);
   }
+  .btn-secondary:hover {
+    background-color: var(--go-surface-hover);
+  }
 
   .btn-danger {
-    @apply px-5 py-2.5 bg-go-danger-muted text-go-danger rounded-go-md font-medium transition-all duration-150 active:scale-[0.97] focus:outline-none focus:ring-2 focus:ring-offset-2;
+    @apply px-5 py-2.5 font-medium rounded-go-md transition-all duration-150 active:scale-[0.97] focus:outline-none focus:ring-2 focus:ring-offset-2;
+    background-color: var(--go-danger-muted);
+    color: var(--go-danger);
+    border: 1px solid var(--go-danger-muted);
     --tw-ring-color: rgba(255, 171, 64, 0.5);
     --tw-ring-offset-color: var(--go-bg);
-    border: 1px solid var(--go-danger-muted);
   }
   .btn-danger:hover {
     background-color: var(--go-danger-muted);
   }
 
   .btn-success {
-    @apply px-5 py-2.5 bg-go-success-muted text-go-success rounded-go-md font-medium transition-all duration-150 active:scale-[0.97] focus:outline-none focus:ring-2 focus:ring-offset-2;
+    @apply px-5 py-2.5 font-medium rounded-go-md transition-all duration-150 active:scale-[0.97] focus:outline-none focus:ring-2 focus:ring-offset-2;
+    background-color: var(--go-success-muted);
+    color: var(--go-success);
+    border: 1px solid var(--go-success-muted);
     --tw-ring-color: rgba(255, 171, 64, 0.5);
     --tw-ring-offset-color: var(--go-bg);
-    border: 1px solid var(--go-success-muted);
   }
   .btn-success:hover {
     background-color: rgba(92, 184, 112, 0.2);

@@ -6,28 +6,44 @@
         <span class="font-display font-bold text-go-text">gasto</span><span class="font-display font-bold text-go-primary">obra</span>
       </NuxtLink>
 
-      <div v-if="user" class="flex items-center gap-3">
-        <div class="flex items-center gap-2">
-          <span class="bg-go-surface border border-go-border rounded-full w-8 h-8 flex items-center justify-center text-go-text-secondary text-sm font-medium shrink-0">
-            {{ userInitial }}
-          </span>
-          <span class="text-go-text-secondary text-sm hidden sm:inline">{{ user.displayName || user.email }}</span>
-        </div>
+      <div class="flex items-center gap-3">
+        <!-- Theme toggle -->
         <button
-          @click="handleSignOut"
-          class="text-go-text-muted hover:text-go-danger transition-colors p-1"
-          title="Salir"
+          @click="toggle"
+          class="p-2 rounded-lg text-go-text-tertiary hover:text-go-text hover:bg-go-surface-hover transition-colors duration-200"
+          :aria-label="isDark ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'"
+          :title="isDark ? 'Modo claro' : 'Modo oscuro'"
         >
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+          <MdiSun v-if="isDark" class="text-lg" />
+          <MdiMoon v-else class="text-lg" />
         </button>
+
+        <template v-if="user">
+          <div class="flex items-center gap-2">
+            <span class="bg-go-surface border border-go-border rounded-full w-8 h-8 flex items-center justify-center text-go-text-secondary text-sm font-medium shrink-0">
+              {{ userInitial }}
+            </span>
+            <span class="text-go-text-secondary text-sm hidden sm:inline">{{ user.displayName || user.email }}</span>
+          </div>
+          <button
+            @click="handleSignOut"
+            class="text-go-text-muted hover:text-go-danger transition-colors p-1"
+            title="Salir"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+          </button>
+        </template>
       </div>
     </div>
   </header>
 </template>
 
 <script setup>
+import MdiSun from '~icons/mdi/white-balance-sunny';
+import MdiMoon from '~icons/mdi/moon-waning-crescent';
 import { getCurrentUser, signOutUser } from '~/utils/firebase';
 
+const { isDark, toggle } = useTheme();
 const user = import.meta.server ? null : getCurrentUser();
 
 const userInitial = computed(() => {

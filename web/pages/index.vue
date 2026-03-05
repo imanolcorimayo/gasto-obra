@@ -8,13 +8,24 @@
     >
       <div class="max-w-6xl mx-auto px-5 h-16 flex items-center justify-between">
         <img src="/img/logo-horizontal.svg" alt="Gasto Obra" class="h-7" />
-        <button
-          @click="handleLogin"
-          :disabled="isLoading"
-          class="px-4 py-2 rounded-go-md border border-go-border text-go-text-secondary text-sm font-medium hover:border-go-primary hover:text-go-primary transition-colors"
-        >
-          Ingresar
-        </button>
+        <div class="flex items-center gap-2">
+          <button
+            @click="toggleTheme"
+            class="p-2 rounded-lg text-go-text-tertiary hover:text-go-text hover:bg-go-surface-hover transition-colors duration-200"
+            :aria-label="isDark ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'"
+            :title="isDark ? 'Modo claro' : 'Modo oscuro'"
+          >
+            <MdiSun v-if="isDark" class="text-lg" />
+            <MdiMoon v-else class="text-lg" />
+          </button>
+          <button
+            @click="handleLogin"
+            :disabled="isLoading"
+            class="px-4 py-2 rounded-go-md border border-go-border text-go-text-secondary text-sm font-medium hover:border-go-primary hover:text-go-primary transition-colors"
+          >
+            Ingresar
+          </button>
+        </div>
       </div>
     </nav>
 
@@ -278,8 +289,12 @@
 </template>
 
 <script setup>
+import MdiSun from '~icons/mdi/white-balance-sunny';
+import MdiMoon from '~icons/mdi/moon-waning-crescent';
 import { signInWithGoogle, getCurrentUserAsync } from '~/utils/firebase';
 import { useProjectStore } from '~/stores/project';
+
+const { isDark, toggle: toggleTheme } = useTheme();
 
 definePageMeta({
   layout: 'landing'

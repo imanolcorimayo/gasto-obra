@@ -3,7 +3,17 @@
     <!-- Branded mini-header -->
     <header class="bg-go-bg border-b border-go-border px-4 py-3 flex items-center justify-between">
       <span class="font-display font-bold text-go-text">gasto<span class="text-go-primary">obra</span></span>
-      <span class="bg-go-surface border border-go-border rounded-go-sm px-2 py-1 text-[11px] text-go-text-muted">Vista de cliente</span>
+      <div class="flex items-center gap-2">
+        <button
+          @click="toggleTheme"
+          class="p-1.5 rounded-lg text-go-text-tertiary hover:text-go-text hover:bg-go-surface-hover transition-colors duration-200"
+          :aria-label="isDark ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'"
+        >
+          <MdiSun v-if="isDark" class="text-base" />
+          <MdiMoon v-else class="text-base" />
+        </button>
+        <span class="bg-go-surface border border-go-border rounded-go-sm px-2 py-1 text-[11px] text-go-text-muted">Vista de cliente</span>
+      </div>
     </header>
 
     <div class="max-w-3xl mx-auto px-3 sm:px-6 py-6">
@@ -189,6 +199,10 @@
 <script setup>
 import MdiViewAgenda from '~icons/mdi/view-agenda';
 import MdiTable from '~icons/mdi/table';
+import MdiSun from '~icons/mdi/white-balance-sunny';
+import MdiMoon from '~icons/mdi/moon-waning-crescent';
+
+const { isDark, toggle: toggleTheme } = useTheme();
 import { useProjectStore } from '~/stores/project';
 import { useExpenseStore } from '~/stores/expense';
 import { useCategoryStore } from '~/stores/category';
