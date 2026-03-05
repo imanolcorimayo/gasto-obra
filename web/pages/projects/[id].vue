@@ -160,13 +160,45 @@
         </button>
       </div>
 
-      <!-- Summary + Expenses -->
+      <!-- Summary + Content -->
       <div class="mt-8 pt-8 border-t border-go-border-subtle">
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
           <div class="order-2 lg:order-none lg:sticky lg:top-6 lg:self-start">
             <ExpenseSummary :expenses="expenseStore.expenses" :budget="project.budget" :categories="resolvedCategories" />
           </div>
           <div class="lg:col-span-2 order-1 lg:order-none">
+            <!-- Tab bar -->
+            <div class="flex items-center justify-between mb-4">
+              <div class="flex bg-go-surface border border-go-border rounded-go-md p-0.5 gap-0.5">
+                <button
+                  @click="activeTab = 'movimientos'"
+                  class="px-4 py-1.5 text-sm font-medium rounded-go-sm transition-colors"
+                  :class="activeTab === 'movimientos'
+                    ? 'bg-go-bg text-go-text shadow-sm'
+                    : 'text-go-text-muted hover:text-go-text'"
+                >
+                  Movimientos
+                </button>
+                <button
+                  @click="activeTab = 'entregas'"
+                  class="px-4 py-1.5 text-sm font-medium rounded-go-sm transition-colors"
+                  :class="activeTab === 'entregas'
+                    ? 'bg-go-bg text-go-text shadow-sm'
+                    : 'text-go-text-muted hover:text-go-text'"
+                >
+                  Entregas
+                </button>
+              </div>
+              <button
+                v-if="activeTab === 'entregas'"
+                @click="editingDelivery = null; showDeliveryModal = true"
+                class="btn-primary text-sm flex items-center gap-1.5"
+              >
+                <MdiPlus class="text-base" />
+                Nueva entrega
+              </button>
+            </div>
+
             <AppLoader v-if="expenseStore.isLoading" text="Cargando gastos..." />
             <template v-else>
               <!-- Empty state callout -->
@@ -177,7 +209,10 @@
                 <h4 class="font-display font-semibold text-go-text">Tu obra está lista.</h4>
                 <p class="text-go-text-muted text-sm mt-1">Mandá un gasto por WhatsApp para empezar, o usá el botón + Gasto acá arriba.</p>
               </div>
+
+              <!-- Movimientos tab -->
               <ExpenseList
+                v-if="activeTab === 'movimientos'"
                 :expenses="expenseStore.expenses"
                 :editable="true"
                 :categories="resolvedCategories"
@@ -185,7 +220,72 @@
                 @mark-paid="handleMarkPaid"
                 @mark-pending="handleMarkPending"
               />
+
+              <!-- Entregas tab -->
+              <DeliveryList
+                v-if="activeTab === 'entregas'"
+                :deliveries="deliveryStore.deliveries"
+                :expenses="expenseStore.expenses"
+                :editable="true"
+                @edit="openDeliveryEditModal"
+                @delete="handleDeleteDelivery"
+                @assign="openDeliveryAssignModal"
+                @edit-expense="openEditModal"
+                @view-unassigned="showUnassignedModal = true"
+              />
             </template>
+          </div>
+        </div>
+      </div>
+
+      <!-- Delivery create/edit modal -->
+      <DeliveryCreateModal
+        :show="showDeliveryModal"
+        :next-number="deliveryStore.nextNumber"
+        :delivery="editingDelivery"
+        @close="showDeliveryModal = false"
+        @submit="handleDeliverySubmit"
+      />
+
+      <!-- Delivery assign modal -->
+      <DeliveryAssignModal
+        :show="showDeliveryAssignModal"
+        :delivery="assigningDelivery"
+        :expenses="expenseStore.expenses"
+        @close="showDeliveryAssignModal = false"
+        @save="handleAssignExpenses"
+      />
+
+      <!-- Unassigned expenses modal -->
+      <div v-if="showUnassignedModal" class="modal-backdrop" @click.self="showUnassignedModal = false">
+        <div class="modal-container">
+          <div class="modal-header">
+            <div>
+              <h3 class="font-display font-semibold text-base text-go-text">Gastos sin entrega</h3>
+              <p class="text-go-text-muted text-xs mt-0.5">{{ unassignedExpenses.length }} gastos · {{ formatPrice(unassignedTotal) }}</p>
+            </div>
+            <button @click="showUnassignedModal = false" class="modal-close">
+              <MdiClose class="text-xl" />
+            </button>
+          </div>
+          <div class="modal-body">
+            <div class="divide-y divide-go-border-subtle">
+              <div
+                v-for="expense in unassignedExpenses"
+                :key="expense.id"
+                class="flex items-center gap-3 py-3 cursor-pointer hover:bg-go-surface-alt/50 -mx-4 px-4 transition-colors"
+                @click="showUnassignedModal = false; openEditModal(expense)"
+              >
+                <div class="flex-1 min-w-0">
+                  <span class="text-sm text-go-text">{{ expense.title }}</span>
+                  <span class="text-xs text-go-text-muted ml-2 tabular-nums">{{ formatExpenseDate(expense.date || expense.createdAt) }}</span>
+                </div>
+                <span class="font-display font-semibold text-sm tabular-nums text-go-primary whitespace-nowrap">{{ formatPrice(expense.amount) }}</span>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button @click="showUnassignedModal = false" class="btn-secondary">Cerrar</button>
           </div>
         </div>
       </div>
@@ -195,6 +295,7 @@
         :show="showCreateModal"
         :type="createModalType"
         :categories="resolvedCategories"
+        :deliveries="deliveryStore.deliveries"
         @close="showCreateModal = false"
         @submit="handleCreateSubmit"
       />
@@ -226,10 +327,12 @@ import MdiContentCopy from '~icons/mdi/content-copy';
 import MdiCheck from '~icons/mdi/check';
 import MdiPlus from '~icons/mdi/plus';
 import MdiPencil from '~icons/mdi/pencil';
+import MdiClose from '~icons/mdi/close';
 import { useProjectStore } from '~/stores/project';
 import { useExpenseStore } from '~/stores/expense';
 import { useCategoryStore } from '~/stores/category';
 import { useRecipientStore } from '~/stores/recipient';
+import { useDeliveryStore } from '~/stores/delivery';
 import { formatPrice, formatDate } from '~/utils';
 
 definePageMeta({
@@ -241,6 +344,7 @@ const projectStore = useProjectStore();
 const expenseStore = useExpenseStore();
 const categoryStore = useCategoryStore();
 const recipientStore = useRecipientStore();
+const deliveryStore = useDeliveryStore();
 
 const isLoading = ref(true);
 const project = ref(null);
@@ -250,11 +354,31 @@ const createModalType = ref('expense');
 const showEditModal = ref(false);
 const editingExpense = ref(null);
 const showProjectEditModal = ref(false);
+const activeTab = ref('movimientos');
+const showDeliveryModal = ref(false);
+const showDeliveryAssignModal = ref(false);
+const showUnassignedModal = ref(false);
+const assigningDelivery = ref(null);
+const editingDelivery = ref(null);
 
 const resolvedCategories = computed(() => {
   const id = route.params.id;
   return categoryStore.getResolved(id);
 });
+
+const unassignedExpenses = computed(() =>
+  expenseStore.expenses.filter(e => (!e.type || e.type === 'expense') && !e.deliveryId)
+);
+
+const unassignedTotal = computed(() =>
+  unassignedExpenses.value.reduce((sum, e) => sum + (e.amount || 0), 0)
+);
+
+function formatExpenseDate(timestamp) {
+  if (!timestamp) return '';
+  const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+  return date.toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit' });
+}
 
 const statusLabel = computed(() => {
   switch (project.value?.status) {
@@ -289,7 +413,8 @@ onMounted(async () => {
       expenseStore.fetchByProjectId(id),
       categoryStore.fetchGlobal(),
       categoryStore.fetchForProject(id),
-      recipientStore.fetchAll()
+      recipientStore.fetchAll(),
+      deliveryStore.fetchByProjectId(id)
     ]);
     // Load all projects for the edit modal's "move" feature
     if (projectStore.projects.length === 0) {
@@ -346,6 +471,7 @@ async function handleCreateSubmit(formData) {
       recipientBankInfo: formData.recipientBankInfo,
       recipientPlatform: formData.recipientPlatform,
       recipientCuit: formData.recipientCuit,
+      deliveryId: formData.deliveryId || null,
       items: formData.items
     };
 
@@ -463,6 +589,98 @@ async function handleMarkPaid(expense) {
   } catch (error) {
     console.error('Error marking as paid:', error);
     useToast('error', 'Error al marcar como pagado');
+  }
+}
+
+async function handleDeliverySubmit(formData) {
+  if (formData.id) {
+    // Edit
+    const result = await deliveryStore.updateDelivery(formData.id, {
+      date: formData.date,
+      description: formData.description
+    });
+    if (result.success) {
+      useToast('success', 'Entrega actualizada');
+      showDeliveryModal.value = false;
+    } else {
+      useToast('error', result.error || 'Error al actualizar la entrega');
+    }
+  } else {
+    // Create
+    const result = await deliveryStore.createDelivery({
+      projectId: project.value.id,
+      providerId: project.value.providerId,
+      date: formData.date,
+      description: formData.description
+    });
+    if (result.success) {
+      useToast('success', 'Entrega creada');
+      showDeliveryModal.value = false;
+    } else {
+      useToast('error', result.error || 'Error al crear la entrega');
+    }
+  }
+}
+
+function openDeliveryEditModal(delivery) {
+  editingDelivery.value = delivery;
+  showDeliveryModal.value = true;
+}
+
+async function handleDeleteDelivery(delivery) {
+  if (!confirm(`¿Eliminar la ${delivery.number}° Entrega? Los gastos asignados quedarán sin entrega.`)) return;
+
+  const result = await deliveryStore.deleteDelivery(delivery.id, expenseStore);
+  if (result) {
+    useToast('success', 'Entrega eliminada');
+  } else {
+    useToast('error', 'Error al eliminar la entrega');
+  }
+}
+
+function openDeliveryAssignModal(delivery) {
+  assigningDelivery.value = delivery;
+  showDeliveryAssignModal.value = true;
+}
+
+async function handleAssignExpenses({ deliveryId, expenseIds }) {
+  try {
+    const currentlyAssigned = expenseStore.expenses
+      .filter(e => e.deliveryId === deliveryId)
+      .map(e => e.id);
+
+    const assignments = [];
+
+    // Unassign removed
+    for (const id of currentlyAssigned) {
+      if (!expenseIds.includes(id)) {
+        assignments.push({ expenseId: id, deliveryId: null });
+      }
+    }
+
+    // Assign new
+    for (const id of expenseIds) {
+      if (!currentlyAssigned.includes(id)) {
+        assignments.push({ expenseId: id, deliveryId });
+      }
+    }
+
+    if (assignments.length === 0) {
+      showDeliveryAssignModal.value = false;
+      return;
+    }
+
+    const result = await expenseStore.batchUpdateDeliveryId(assignments);
+
+    if (result.success) {
+      useToast('success', 'Gastos asignados');
+      showDeliveryAssignModal.value = false;
+    } else {
+      useToast('error', result.error || 'Error al asignar gastos');
+    }
+  } catch (error) {
+    console.error('Error assigning expenses:', error);
+    useToast('error', 'Error al asignar gastos');
   }
 }
 

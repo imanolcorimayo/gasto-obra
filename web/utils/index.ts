@@ -90,7 +90,7 @@ export const PROJECT_STATUSES = [
 ];
 
 export const SCOPE_TYPES = [
-  { value: 'original', label: 'Entrega', color: '#5A8FB8' },
+  { value: 'original', label: 'Original', color: '#5A8FB8' },
   { value: 'addition', label: 'Agregado', color: '#D4793D' }
 ];
 

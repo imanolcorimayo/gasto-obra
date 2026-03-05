@@ -193,7 +193,7 @@ const paymentStatusFilters = [
 
 const scopeTypeFilters = [
   { value: '', label: 'Todos' },
-  { value: 'original', label: 'Entrega' },
+  { value: 'original', label: 'Original' },
   { value: 'addition', label: 'Agregados' }
 ];
 

@@ -10,7 +10,7 @@
       </div>
       <div v-if="totalAddition > 0" class="flex gap-4 pl-3 border-l-2 border-go-border-subtle">
         <div class="flex-1">
-          <span class="text-[10px] font-semibold uppercase tracking-wider text-go-text-muted block mb-0.5">Entrega</span>
+          <span class="text-[10px] font-semibold uppercase tracking-wider text-go-text-muted block mb-0.5">Original</span>
           <span class="font-display font-bold text-base tabular-nums" :style="{ color: getScopeTypeColor('original') }">{{ formatPrice(totalOriginal) }}</span>
         </div>
         <div class="flex-1">

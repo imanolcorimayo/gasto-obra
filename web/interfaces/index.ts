@@ -59,6 +59,7 @@ export interface Expense {
   recipientCuit: string | null;
   linkedExpenseId: string | null;
   linkedPaymentId: string | null;
+  deliveryId: string | null;
   source: 'whatsapp' | 'web';
   date: any;
   createdAt: any;
@@ -74,6 +75,17 @@ export interface CategoryDoc extends ExpenseCategory {
   id: string;
   userId: string;
   projectId: string | null;
+}
+
+export interface Delivery {
+  id: string;
+  projectId: string;
+  providerId: string;
+  number: number;
+  date: any;
+  description: string;
+  createdAt: any;
+  updatedAt: any;
 }
 
 export interface WhatsappLink {

@@ -67,6 +67,23 @@
             </div>
           </div>
 
+          <!-- Delivery (expense only) -->
+          <div v-if="type === 'expense' && deliveries.length > 0">
+            <label class="block text-[11px] font-semibold uppercase tracking-wider text-go-text-muted mb-1.5">Entrega</label>
+            <div class="relative">
+              <select
+                v-model="form.deliveryId"
+                class="w-full bg-go-bg border border-go-border rounded-go-md px-3 py-2.5 text-sm text-go-text focus:outline-none focus:ring-2 focus:ring-go-primary/40 focus:border-go-primary transition-colors appearance-none"
+              >
+                <option :value="null">Sin entrega</option>
+                <option v-for="d in deliveries" :key="d.id" :value="d.id">
+                  {{ d.number }}° Entrega{{ d.description ? ` — ${d.description}` : '' }}
+                </option>
+              </select>
+              <svg class="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-go-text-muted" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+            </div>
+          </div>
+
           <!-- Category (expense + provider_expense only) -->
           <div v-if="type !== 'payment'">
             <label class="block text-[11px] font-semibold uppercase tracking-wider text-go-text-muted mb-1.5">Categoria</label>
@@ -265,7 +282,8 @@ import { useRecipientStore } from '~/stores/recipient';
 const props = defineProps({
   show: { type: Boolean, default: false },
   type: { type: String, default: 'expense' },
-  categories: { type: Array, default: () => [] }
+  categories: { type: Array, default: () => [] },
+  deliveries: { type: Array, default: () => [] }
 });
 
 const recipientStore = useRecipientStore();
@@ -293,6 +311,7 @@ const form = reactive({
   recipientBankInfo: '',
   recipientPlatform: '',
   recipientCuit: '',
+  deliveryId: null,
   items: []
 });
 
@@ -368,6 +387,7 @@ watch(() => props.show, (show) => {
     form.recipientBankInfo = '';
     form.recipientPlatform = '';
     form.recipientCuit = '';
+    form.deliveryId = null;
     form.items = [];
     showItems.value = false;
     selectedRecipientIdx.value = -1;
@@ -395,6 +415,7 @@ async function handleSubmit() {
       recipientPlatform: isProviderExpense ? null : (form.recipientPlatform || null),
       recipientCuit: isProviderExpense ? null : (form.recipientCuit || null),
       createLinkedPayment: props.type === 'expense' && form.paymentStatus === 'paid' && form.createLinkedPayment,
+      deliveryId: props.type === 'expense' ? (form.deliveryId || null) : null,
       items: form.items.length > 0 ? form.items.filter(i => i.name) : null
     };
     emit('submit', data);

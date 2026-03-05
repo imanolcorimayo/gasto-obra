@@ -1,4 +1,6 @@
 import { Schema } from '../schema';
+import { writeBatch, doc, collection, serverTimestamp } from 'firebase/firestore';
+import { getFirestoreInstance } from '~/utils/firebase';
 import type { SchemaDefinition, FetchResult } from '../types';
 
 export class ExpenseSchema extends Schema {
@@ -96,6 +98,10 @@ export class ExpenseSchema extends Schema {
       type: 'string',
       required: false
     },
+    deliveryId: {
+      type: 'string',
+      required: false
+    },
     source: {
       type: 'string',
       required: true,
@@ -120,6 +126,27 @@ export class ExpenseSchema extends Schema {
       where: [{ field: 'projectId', operator: '==', value: projectId }],
       orderBy: [{ field: 'createdAt', direction: 'desc' }]
     }, 'providerId');
+  }
+
+  async batchUpdateDeliveryId(assignments: Array<{ expenseId: string; deliveryId: string | null }>): Promise<{ success: boolean; error?: string }> {
+    try {
+      const db = getFirestoreInstance();
+      const batch = writeBatch(db);
+      const colRef = collection(db, this.collectionName);
+
+      for (const { expenseId, deliveryId } of assignments) {
+        batch.update(doc(colRef, expenseId), {
+          deliveryId: deliveryId || null,
+          updatedAt: serverTimestamp()
+        });
+      }
+
+      await batch.commit();
+      return { success: true };
+    } catch (error) {
+      console.error('Error batch updating deliveryId:', error);
+      return { success: false, error: `Error al asignar entregas: ${error}` };
+    }
   }
 
   async findByProjectIdPublic(projectId: string): Promise<FetchResult> {
