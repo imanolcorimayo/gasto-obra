@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx nuxi:*)",
+      "Bash(curl:*)",
+      "Bash(kill %1:*)"
+    ]
+  }
+}
