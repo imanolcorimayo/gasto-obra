@@ -4,7 +4,7 @@
 
     <!-- Navigation -->
     <div v-if="user" class="w-full bg-go-bg-elevated border-b border-go-border mb-4">
-      <div class="max-w-7xl m-auto px-0 sm:px-6">
+      <div class="max-w-7xl m-auto px-3 sm:px-6">
         <nav class="flex overflow-x-auto" aria-label="Navegacion principal">
           <NuxtLink to="/projects" class="nav-tab" :class="{ 'nav-tab-active': route.path.startsWith('/projects') }">
             Proyectos
@@ -31,8 +31,10 @@
     </div>
 
     <!-- Footer -->
-    <footer class="mt-auto bg-go-bg border-t border-go-border-subtle py-4 text-center text-go-text-muted text-xs">
-      <p>gasto obra</p>
+    <footer class="mt-auto bg-go-bg border-t border-go-border-subtle py-4 text-go-text-muted text-xs">
+      <div class="max-w-7xl m-auto px-3 sm:px-6 text-center">
+        <p>gasto obra</p>
+      </div>
     </footer>
   </div>
 </template>

@@ -1,6 +1,6 @@
 <template>
   <header class="w-full bg-go-bg/90 backdrop-blur-sm border-b border-go-border sticky top-0 z-40">
-    <div class="max-w-5xl m-auto px-3 sm:px-6 py-3 flex items-center justify-between">
+    <div class="max-w-7xl m-auto px-3 sm:px-6 py-3 flex items-center justify-between">
       <NuxtLink to="/" class="flex items-center gap-2">
         <img src="/img/logo.png" alt="Gasto Obra" class="h-8 w-8" />
         <span class="font-display font-bold text-go-text">gasto</span><span class="font-display font-bold text-go-primary">obra</span>
