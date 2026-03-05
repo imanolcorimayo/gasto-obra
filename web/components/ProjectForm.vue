@@ -79,7 +79,7 @@
       <textarea
         v-model="form.description"
         rows="3"
-        placeholder="Descripcion opcional del proyecto"
+        placeholder="Ej: Reforma integral de cocina y baño. Materiales estimativos, pagos en ARS o USD (blue). Plazo estimado: 8 semanas."
         class="w-full bg-go-bg border border-go-border rounded-go-md px-3 py-2.5 text-sm text-go-text placeholder-go-text-muted focus:outline-none focus:ring-2 focus:ring-go-primary/40 focus:border-go-primary transition-colors resize-none"
       ></textarea>
     </div>
