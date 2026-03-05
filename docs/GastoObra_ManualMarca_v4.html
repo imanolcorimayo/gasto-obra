@@ -1,0 +1,1393 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gasto Obra — Dual Theme Preview v4</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Red+Hat+Display:ital,wght@0,300..900;1,300..900&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   DOCUMENT BASE
+   ============================================================ */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: 'Red Hat Display', system-ui, sans-serif;
+  background: #26211A;
+  color: #E8E3D9;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+.manual {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 40px 24px 120px;
+}
+
+/* ── Cover ── */
+.cover {
+  padding: 80px 20px 64px;
+  text-align: center;
+  border-bottom: 1px solid #3D362C;
+  margin-bottom: 72px;
+  position: relative;
+}
+.cover::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: radial-gradient(ellipse at 50% 30%, rgba(255,171,64,0.05) 0%, transparent 60%);
+  pointer-events: none;
+}
+.cover h1 {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 44px;
+  font-weight: 700;
+  color: #FFAB40;
+  letter-spacing: -1px;
+  margin-bottom: 8px;
+}
+.cover .subtitle {
+  font-size: 17px;
+  color: #8A8579;
+  margin-bottom: 32px;
+}
+.cover .badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255,171,64,0.1);
+  border: 1px solid rgba(255,171,64,0.25);
+  border-radius: 999px;
+  padding: 6px 16px;
+  font-size: 13px;
+  color: #FFAB40;
+  font-weight: 600;
+}
+.cover-meta {
+  display: flex;
+  justify-content: center;
+  gap: 32px;
+  font-size: 13px;
+  color: #5E594F;
+  margin-top: 24px;
+}
+
+/* ── Section ── */
+.section {
+  margin-bottom: 88px;
+}
+.section-number {
+  font-size: 12px;
+  font-weight: 600;
+  color: #FFAB40;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+  opacity: 0.8;
+}
+.section h2 {
+  font-size: 30px;
+  font-weight: 700;
+  color: #F0EBE1;
+  letter-spacing: -0.5px;
+  margin-bottom: 6px;
+}
+.section-desc {
+  font-size: 15px;
+  color: #8A8579;
+  margin-bottom: 40px;
+  max-width: 640px;
+}
+.subsection {
+  margin-bottom: 48px;
+}
+.subsection h3 {
+  font-size: 19px;
+  font-weight: 600;
+  color: #D4CFC3;
+  margin-bottom: 16px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #3D362C;
+}
+.subsection p {
+  font-size: 14px;
+  color: #B5B0A4;
+  line-height: 1.7;
+  margin-bottom: 12px;
+}
+.note {
+  background: rgba(255,171,64,0.06);
+  border-left: 3px solid #FFAB40;
+  border-radius: 0 10px 10px 0;
+  padding: 14px 18px;
+  margin: 16px 0 24px;
+  font-size: 13px;
+  color: #B5B0A4;
+}
+.note strong { color: #FFAB40; }
+.divider {
+  border: none;
+  border-top: 1px solid #3D362C;
+  margin: 72px 0;
+}
+
+/* ── Code Block ── */
+.code-block {
+  background: #13150F;
+  border: 1px solid #3D362C;
+  border-radius: 10px;
+  padding: 20px;
+  margin-top: 12px;
+  margin-bottom: 24px;
+  overflow-x: auto;
+  font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+  font-size: 12px;
+  line-height: 1.85;
+  color: #B5B0A4;
+}
+.code-block .comment { color: #5E594F; }
+.code-block .prop { color: #FFAB40; }
+.code-block .val { color: #6B9B6B; }
+.code-block .str { color: #5A8FB8; }
+
+/* ── Token Table ── */
+.token-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 16px;
+  margin-bottom: 24px;
+}
+.token-table thead th {
+  text-align: left;
+  font-size: 11px;
+  font-weight: 600;
+  color: #5E594F;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  padding: 8px 12px;
+  border-bottom: 1px solid #3D362C;
+}
+.token-table tbody td {
+  font-size: 13px;
+  padding: 10px 12px;
+  border-bottom: 1px solid #2C261E;
+  color: #B5B0A4;
+  vertical-align: middle;
+}
+.token-swatch {
+  width: 18px;
+  height: 18px;
+  border-radius: 4px;
+  display: inline-block;
+  vertical-align: middle;
+  margin-right: 8px;
+  border: 1px solid rgba(255,255,255,0.06);
+  flex-shrink: 0;
+}
+.token-name {
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 12px;
+  color: #FFAB40;
+}
+.token-value {
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 12px;
+  color: #8A8579;
+}
+
+/* ============================================================
+   SECTION 01 — THEME DECISION
+   ============================================================ */
+
+/* ── Toggle Tab Switcher ── */
+.theme-switcher {
+  display: flex;
+  gap: 0;
+  background: #2C261E;
+  border: 1px solid #3D362C;
+  border-radius: 12px;
+  padding: 4px;
+  width: fit-content;
+  margin-bottom: 32px;
+}
+.theme-tab {
+  padding: 8px 20px;
+  border-radius: 9px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  background: transparent;
+  color: #8A8579;
+  transition: all 0.2s ease;
+  font-family: 'Red Hat Display', sans-serif;
+}
+.theme-tab.active {
+  background: rgba(255,171,64,0.12);
+  color: #FFAB40;
+  border: 1px solid rgba(255,171,64,0.2);
+}
+
+/* ── Side-by-side layout ── */
+.dual-preview {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  margin-bottom: 24px;
+}
+@media (max-width: 720px) {
+  .dual-preview { grid-template-columns: 1fr; }
+}
+
+.theme-panel {
+  border-radius: 16px;
+  overflow: hidden;
+  border: 1px solid transparent;
+}
+.theme-panel .panel-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  padding: 10px 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.theme-panel .panel-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+.theme-panel .panel-body {
+  padding: 20px;
+}
+
+/* ── Dark panel ── */
+.panel-dark {
+  background: #26211A;
+  border-color: #3D362C;
+}
+.panel-dark .panel-label {
+  background: #2C261E;
+  border-bottom: 1px solid #3D362C;
+  color: #8A8579;
+}
+.panel-dark .panel-dot { background: #FFAB40; }
+
+/* ── Light panel ── */
+.panel-light {
+  background: #F5F0E8;
+  border-color: #D4CCC0;
+}
+.panel-light .panel-label {
+  background: #EDE8DF;
+  border-bottom: 1px solid #D4CCC0;
+  color: #8A8078;
+}
+.panel-light .panel-dot { background: #E99A35; }
+
+/* ── Mini component: App Header ── */
+.mini-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 16px;
+  border-radius: 10px;
+  margin-bottom: 12px;
+  font-size: 13px;
+}
+.mini-header-dark {
+  background: #2C261E;
+  border: 1px solid #3D362C;
+}
+.mini-header-dark .logo { color: #FFAB40; font-weight: 700; font-family: 'Space Grotesk', sans-serif; font-size: 14px; }
+.mini-header-dark .user { color: #8A8579; }
+
+.mini-header-light {
+  background: #FFFFFF;
+  border: 1px solid #D4CCC0;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+}
+.mini-header-light .logo { color: #E99A35; font-weight: 700; font-family: 'Space Grotesk', sans-serif; font-size: 14px; }
+.mini-header-light .user { color: #8A8078; }
+
+/* ── Mini component: Nav tabs ── */
+.mini-tabs {
+  display: flex;
+  gap: 2px;
+  padding: 0 4px;
+  border-radius: 8px;
+  margin-bottom: 12px;
+  padding: 4px;
+}
+.mini-tabs-dark { background: #2C261E; border: 1px solid #3D362C; }
+.mini-tabs-light { background: #EDE8DF; border: 1px solid #D4CCC0; }
+
+.mini-tab {
+  padding: 5px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+}
+.mini-tab-dark { color: #8A8579; }
+.mini-tab-dark.active {
+  background: rgba(255,171,64,0.12);
+  color: #FFAB40;
+}
+.mini-tab-light { color: #8A8078; }
+.mini-tab-light.active {
+  background: rgba(233,154,53,0.12);
+  color: #E99A35;
+}
+
+/* ── Mini component: Project card ── */
+.mini-card {
+  border-radius: 12px;
+  padding: 14px;
+  margin-bottom: 10px;
+}
+.mini-card-dark {
+  background: #342D24;
+  border: 1px solid #3D362C;
+}
+.mini-card-light {
+  background: #FFFFFF;
+  border: 1px solid #D4CCC0;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+}
+
+.mini-card-title-dark { font-size: 14px; font-weight: 600; color: #F0EBE1; margin-bottom: 2px; }
+.mini-card-title-light { font-size: 14px; font-weight: 600; color: #1C1915; margin-bottom: 2px; }
+
+.mini-card-sub-dark { font-size: 11px; color: #8A8579; margin-bottom: 10px; }
+.mini-card-sub-light { font-size: 11px; color: #8A8078; margin-bottom: 10px; }
+
+.mini-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 10px;
+}
+.mini-card-footer-dark { border-top: 1px solid #46402F; }
+.mini-card-footer-light { border-top: 1px solid #E8E3DA; }
+
+.mini-amount-dark { font-size: 16px; font-weight: 700; color: #FFAB40; font-variant-numeric: tabular-nums; }
+.mini-amount-light { font-size: 16px; font-weight: 700; color: #E99A35; font-variant-numeric: tabular-nums; }
+
+/* ── Mini component: Expense item ── */
+.mini-expense {
+  border-radius: 10px;
+  padding: 12px;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.mini-expense-dark { background: #2C261E; border: 1px solid #3D362C; }
+.mini-expense-light { background: #FDFAF4; border: 1px solid #E0DBD2; }
+
+.mini-exp-info { display: flex; flex-direction: column; gap: 2px; }
+.mini-exp-title-dark { font-size: 13px; font-weight: 500; color: #F0EBE1; }
+.mini-exp-title-light { font-size: 13px; font-weight: 500; color: #1C1915; }
+.mini-exp-meta-dark { font-size: 11px; color: #8A8579; }
+.mini-exp-meta-light { font-size: 11px; color: #8A8078; }
+.mini-exp-amount-dark { font-size: 14px; font-weight: 700; color: #D4544A; font-variant-numeric: tabular-nums; }
+.mini-exp-amount-light { font-size: 14px; font-weight: 700; color: #D4544A; }
+
+/* ── Mini badges ── */
+.mini-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+/* ── Mini buttons row ── */
+.mini-btn-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+.mini-btn {
+  padding: 7px 14px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  font-family: 'Red Hat Display', sans-serif;
+  border: none;
+  cursor: default;
+}
+.mini-btn-primary-dark { background: #FFAB40; color: #1A1200; }
+.mini-btn-primary-light { background: #E99A35; color: #1A1200; }
+.mini-btn-secondary-dark { background: #342D24; border: 1px solid #3D362C; color: #B5B0A4; }
+.mini-btn-secondary-light { background: #FFFFFF; border: 1px solid #D4CCC0; color: #6B6459; }
+.mini-btn-danger-dark { background: rgba(212,84,74,0.12); border: 1px solid rgba(212,84,74,0.2); color: #D4544A; }
+.mini-btn-danger-light { background: rgba(212,84,74,0.08); border: 1px solid rgba(212,84,74,0.18); color: #C74840; }
+.mini-btn-success-dark { background: rgba(92,184,112,0.12); border: 1px solid rgba(92,184,112,0.2); color: #5CB870; }
+.mini-btn-success-light { background: rgba(76,163,95,0.08); border: 1px solid rgba(76,163,95,0.18); color: #3E9954; }
+
+/* ── Mini input ── */
+.mini-input {
+  width: 100%;
+  padding: 9px 12px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-family: 'Red Hat Display', sans-serif;
+  margin-top: 8px;
+  outline: none;
+}
+.mini-input-dark { background: #342D24; border: 1px solid #574E42; color: #F0EBE1; }
+.mini-input-dark::placeholder { color: #5E594F; }
+.mini-input-light { background: #FFFFFF; border: 1px solid #C8C0B4; color: #1C1915; }
+.mini-input-light::placeholder { color: #B5AFA6; }
+
+/* ============================================================
+   SECTION 02 — LIGHT COLOR PALETTE
+   ============================================================ */
+.color-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 14px;
+  margin-top: 16px;
+  margin-bottom: 32px;
+}
+.color-card {
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid #3D362C;
+  background: #2C261E;
+}
+.color-swatch {
+  height: 68px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-end;
+  padding: 8px 10px;
+}
+.contrast-label {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: rgba(0,0,0,0.4);
+  color: #fff;
+}
+.color-info { padding: 12px; }
+.color-name { font-size: 13px; font-weight: 600; color: #D4CFC3; margin-bottom: 2px; }
+.color-token { font-size: 11px; font-family: 'SF Mono', 'Fira Code', monospace; color: #6B665C; margin-bottom: 4px; }
+.color-hex { font-size: 12px; font-family: 'SF Mono', 'Fira Code', monospace; color: #8A8579; }
+
+/* ── Comparison chip ── */
+.compare-row {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin: 16px 0 24px;
+}
+.compare-chip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-radius: 10px;
+  padding: 8px 12px;
+  background: #2C261E;
+  border: 1px solid #3D362C;
+  font-size: 12px;
+}
+.compare-dot-pair {
+  display: flex;
+  gap: 3px;
+}
+.compare-dot {
+  width: 18px;
+  height: 18px;
+  border-radius: 4px;
+  border: 1px solid rgba(255,255,255,0.08);
+}
+.compare-info { color: #B5B0A4; }
+.compare-arrow { color: #5E594F; }
+
+/* ============================================================
+   SECTION 03 — SURFACE STACK COMPARISON
+   ============================================================ */
+.surface-comparison {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  margin: 16px 0 24px;
+}
+@media (max-width: 600px) { .surface-comparison { grid-template-columns: 1fr; } }
+
+.surface-stack-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+.surface-stack-label.dark { color: #5E594F; }
+.surface-stack-label.light { color: #8A8078; }
+
+.surface-stack {
+  display: flex;
+  gap: 3px;
+  border-radius: 12px;
+  overflow: hidden;
+  height: 72px;
+}
+.surface-strip {
+  flex: 1;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding-bottom: 8px;
+}
+.surface-strip span { font-size: 9px; font-weight: 600; color: rgba(255,255,255,0.35); letter-spacing: 0.3px; }
+.surface-strip span.dark-label { color: rgba(255,255,255,0.35); }
+.surface-strip span.light-label { color: rgba(0,0,0,0.25); }
+
+/* ============================================================
+   SECTION 04 — IMPLEMENTATION
+   ============================================================ */
+.step-list {
+  counter-reset: steps;
+  margin: 16px 0 24px;
+}
+.step-item {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 16px;
+  align-items: flex-start;
+}
+.step-num {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: rgba(255,171,64,0.1);
+  border: 1px solid rgba(255,171,64,0.25);
+  color: #FFAB40;
+  font-size: 12px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+.step-content { flex: 1; }
+.step-title { font-size: 14px; font-weight: 600; color: #F0EBE1; margin-bottom: 2px; }
+.step-desc { font-size: 13px; color: #8A8579; line-height: 1.6; }
+
+/* ── Responsive fix ── */
+@media (max-width: 768px) {
+  .cover h1 { font-size: 34px; }
+  .section h2 { font-size: 24px; }
+  .color-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+}
+</style>
+</head>
+<body>
+<div class="manual">
+
+<!-- ============================================================
+     COVER
+     ============================================================ -->
+<header class="cover">
+  <h1>gasto obra</h1>
+  <p class="subtitle">Manual de Marca v4 — Dual Theme Preview</p>
+  <div class="badge">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+    Nuevo en v4: Tema Claro
+  </div>
+  <div class="cover-meta">
+    <span>Marzo 2026</span>
+    <span>·</span>
+    <span>Fase 2 — Brand Foundation</span>
+    <span>·</span>
+    <span>Andrea & Imanol</span>
+  </div>
+</header>
+
+<!-- ============================================================
+     SECTION 01 — SIDE BY SIDE PREVIEW
+     ============================================================ -->
+<section class="section">
+  <p class="section-number">01</p>
+  <h2>Vista Comparativa</h2>
+  <p class="section-desc">El mismo dashboard mostrado en modo oscuro (actual) y modo claro (propuesto). La paleta ámbar permanece como ancla visual en ambos temas.</p>
+
+  <!-- PANEL COMPARISON -->
+  <div class="subsection">
+    <h3>Header + Navegación</h3>
+    <div class="dual-preview">
+      <!-- DARK -->
+      <div class="theme-panel panel-dark">
+        <div class="panel-label">
+          <span class="panel-dot"></span>
+          Modo Oscuro
+        </div>
+        <div class="panel-body">
+          <div class="mini-header mini-header-dark">
+            <span class="logo">gasto obra</span>
+            <span class="user">María G. · Salir</span>
+          </div>
+          <div class="mini-tabs mini-tabs-dark">
+            <span class="mini-tab mini-tab-dark active">Proyectos</span>
+            <span class="mini-tab mini-tab-dark">Mis Obras</span>
+            <span class="mini-tab mini-tab-dark">Configuración</span>
+          </div>
+        </div>
+      </div>
+      <!-- LIGHT -->
+      <div class="theme-panel panel-light">
+        <div class="panel-label">
+          <span class="panel-dot"></span>
+          Modo Claro
+        </div>
+        <div class="panel-body">
+          <div class="mini-header mini-header-light">
+            <span class="logo">gasto obra</span>
+            <span class="user">María G. · Salir</span>
+          </div>
+          <div class="mini-tabs mini-tabs-light">
+            <span class="mini-tab mini-tab-light active">Proyectos</span>
+            <span class="mini-tab mini-tab-light">Mis Obras</span>
+            <span class="mini-tab mini-tab-light">Configuración</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <h3>Tarjeta de Proyecto</h3>
+    <div class="dual-preview">
+      <!-- DARK -->
+      <div class="theme-panel panel-dark">
+        <div class="panel-label"><span class="panel-dot"></span>Modo Oscuro</div>
+        <div class="panel-body">
+          <div class="mini-card mini-card-dark">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px;">
+              <span class="mini-card-title-dark">Depto Flores 3B</span>
+              <span class="mini-badge" style="background:rgba(92,184,112,0.12);color:#5CB870;font-size:10px;">Activo</span>
+            </div>
+            <div class="mini-card-sub-dark">#flores3b · Av. Rivadavia 1234</div>
+            <div style="font-size:11px;color:#6B665C;margin-bottom:6px;">Cliente: Juan Pérez</div>
+            <div class="mini-card-footer mini-card-footer-dark">
+              <span style="font-size:11px;color:#6B665C;">15 gastos</span>
+              <span class="mini-amount-dark">$485.200</span>
+            </div>
+          </div>
+          <div class="mini-card mini-card-dark">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px;">
+              <span class="mini-card-title-dark">Casa Palermo Norte</span>
+              <span class="mini-badge" style="background:rgba(232,184,58,0.12);color:#E8B83A;font-size:10px;">Pausado</span>
+            </div>
+            <div class="mini-card-sub-dark">#palermo · Thames 890</div>
+            <div class="mini-card-footer mini-card-footer-dark">
+              <span style="font-size:11px;color:#6B665C;">8 gastos</span>
+              <span class="mini-amount-dark">$198.750</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- LIGHT -->
+      <div class="theme-panel panel-light">
+        <div class="panel-label"><span class="panel-dot"></span>Modo Claro</div>
+        <div class="panel-body">
+          <div class="mini-card mini-card-light">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px;">
+              <span class="mini-card-title-light">Depto Flores 3B</span>
+              <span class="mini-badge" style="background:rgba(76,163,95,0.1);color:#3E9954;font-size:10px;">Activo</span>
+            </div>
+            <div class="mini-card-sub-light">#flores3b · Av. Rivadavia 1234</div>
+            <div style="font-size:11px;color:#A09890;margin-bottom:6px;">Cliente: Juan Pérez</div>
+            <div class="mini-card-footer mini-card-footer-light">
+              <span style="font-size:11px;color:#A09890;">15 gastos</span>
+              <span class="mini-amount-light">$485.200</span>
+            </div>
+          </div>
+          <div class="mini-card mini-card-light">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px;">
+              <span class="mini-card-title-light">Casa Palermo Norte</span>
+              <span class="mini-badge" style="background:rgba(205,160,40,0.1);color:#A07A20;font-size:10px;">Pausado</span>
+            </div>
+            <div class="mini-card-sub-light">#palermo · Thames 890</div>
+            <div class="mini-card-footer mini-card-footer-light">
+              <span style="font-size:11px;color:#A09890;">8 gastos</span>
+              <span class="mini-amount-light">$198.750</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <h3>Lista de Gastos</h3>
+    <div class="dual-preview">
+      <!-- DARK -->
+      <div class="theme-panel panel-dark">
+        <div class="panel-label"><span class="panel-dot"></span>Modo Oscuro</div>
+        <div class="panel-body">
+          <div class="mini-expense mini-expense-dark">
+            <div class="mini-exp-info">
+              <span class="mini-exp-title-dark">Cemento Portland x10</span>
+              <span class="mini-exp-meta-dark">ayer · Materiales</span>
+            </div>
+            <div style="text-align:right;">
+              <div class="mini-exp-amount-dark">-$24.500</div>
+              <span class="mini-badge" style="background:rgba(212,84,74,0.12);color:#D4544A;font-size:10px;">Pendiente</span>
+            </div>
+          </div>
+          <div class="mini-expense mini-expense-dark">
+            <div class="mini-exp-info">
+              <span class="mini-exp-title-dark">Cobro semana #2</span>
+              <span class="mini-exp-meta-dark">lunes · Pago</span>
+            </div>
+            <div style="text-align:right;">
+              <div style="font-size:14px;font-weight:700;color:#5CB870;font-variant-numeric:tabular-nums;">+$85.000</div>
+              <span class="mini-badge" style="background:rgba(92,184,112,0.12);color:#5CB870;font-size:10px;">Pagado</span>
+            </div>
+          </div>
+          <div class="mini-expense mini-expense-dark">
+            <div class="mini-exp-info">
+              <span class="mini-exp-title-dark">Herramientas eléctricas</span>
+              <span class="mini-exp-meta-dark">lunes · Herramientas</span>
+            </div>
+            <div style="text-align:right;">
+              <div class="mini-exp-amount-dark">-$18.200</div>
+              <span class="mini-badge" style="background:rgba(92,184,112,0.12);color:#5CB870;font-size:10px;">Pagado</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- LIGHT -->
+      <div class="theme-panel panel-light">
+        <div class="panel-label"><span class="panel-dot"></span>Modo Claro</div>
+        <div class="panel-body">
+          <div class="mini-expense mini-expense-light">
+            <div class="mini-exp-info">
+              <span class="mini-exp-title-light">Cemento Portland x10</span>
+              <span class="mini-exp-meta-light">ayer · Materiales</span>
+            </div>
+            <div style="text-align:right;">
+              <div class="mini-exp-amount-light">-$24.500</div>
+              <span class="mini-badge" style="background:rgba(194,64,56,0.08);color:#C74840;font-size:10px;">Pendiente</span>
+            </div>
+          </div>
+          <div class="mini-expense mini-expense-light">
+            <div class="mini-exp-info">
+              <span class="mini-exp-title-light">Cobro semana #2</span>
+              <span class="mini-exp-meta-light">lunes · Pago</span>
+            </div>
+            <div style="text-align:right;">
+              <div style="font-size:14px;font-weight:700;color:#3E9954;font-variant-numeric:tabular-nums;">+$85.000</div>
+              <span class="mini-badge" style="background:rgba(62,153,84,0.08);color:#3E9954;font-size:10px;">Pagado</span>
+            </div>
+          </div>
+          <div class="mini-expense mini-expense-light">
+            <div class="mini-exp-info">
+              <span class="mini-exp-title-light">Herramientas eléctricas</span>
+              <span class="mini-exp-meta-light">lunes · Herramientas</span>
+            </div>
+            <div style="text-align:right;">
+              <div class="mini-exp-amount-light">-$18.200</div>
+              <span class="mini-badge" style="background:rgba(62,153,84,0.08);color:#3E9954;font-size:10px;">Pagado</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <h3>Botones & Inputs</h3>
+    <div class="dual-preview">
+      <!-- DARK -->
+      <div class="theme-panel panel-dark">
+        <div class="panel-label"><span class="panel-dot"></span>Modo Oscuro</div>
+        <div class="panel-body">
+          <div class="mini-btn-row">
+            <button class="mini-btn mini-btn-primary-dark">+ Gasto</button>
+            <button class="mini-btn mini-btn-success-dark">Cobro</button>
+            <button class="mini-btn mini-btn-secondary-dark">Editar</button>
+            <button class="mini-btn mini-btn-danger-dark">Eliminar</button>
+          </div>
+          <input class="mini-input mini-input-dark" type="text" placeholder="Ej: Cemento Portland x10" readonly>
+        </div>
+      </div>
+      <!-- LIGHT -->
+      <div class="theme-panel panel-light">
+        <div class="panel-label"><span class="panel-dot"></span>Modo Claro</div>
+        <div class="panel-body">
+          <div class="mini-btn-row">
+            <button class="mini-btn mini-btn-primary-light">+ Gasto</button>
+            <button class="mini-btn mini-btn-success-light">Cobro</button>
+            <button class="mini-btn mini-btn-secondary-light">Editar</button>
+            <button class="mini-btn mini-btn-danger-light">Eliminar</button>
+          </div>
+          <input class="mini-input mini-input-light" type="text" placeholder="Ej: Cemento Portland x10" readonly>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- ============================================================
+     SECTION 02 — LIGHT PALETTE
+     ============================================================ -->
+<section class="section">
+  <p class="section-number">02</p>
+  <h2>Paleta — Modo Claro</h2>
+  <p class="section-desc">Warm off-white — no es el blanco clínico de un SaaS genérico. Evoca papel de construcción, documentos de obra, planos. El ámbar y el oliva se mantienen como ancla.</p>
+
+  <div class="subsection">
+    <h3>Superficies — Comparación Dark vs Light</h3>
+
+    <div class="surface-comparison">
+      <div>
+        <div class="surface-stack-label dark">Modo Oscuro (actual)</div>
+        <div class="surface-stack">
+          <div class="surface-strip" style="background:#26211A;"><span class="dark-label">bg</span></div>
+          <div class="surface-strip" style="background:#2C261E;"><span class="dark-label">elev.</span></div>
+          <div class="surface-strip" style="background:#342D24;"><span class="dark-label">surf.</span></div>
+          <div class="surface-strip" style="background:#3D362C;"><span class="dark-label">hover</span></div>
+          <div class="surface-strip" style="background:#463E33;"><span class="dark-label">alt</span></div>
+          <div class="surface-strip" style="background:#574E42;"><span class="dark-label">bord.</span></div>
+        </div>
+      </div>
+      <div>
+        <div class="surface-stack-label light" style="color:#8A8078;">Modo Claro (nuevo)</div>
+        <div class="surface-stack" style="border:1px solid #D4CCC0;border-radius:12px;">
+          <div class="surface-strip" style="background:#F5F0E8;"><span class="light-label">bg</span></div>
+          <div class="surface-strip" style="background:#FDFAF4;"><span class="light-label">elev.</span></div>
+          <div class="surface-strip" style="background:#FFFFFF;"><span class="light-label">surf.</span></div>
+          <div class="surface-strip" style="background:#EDE8DF;"><span class="light-label">hover</span></div>
+          <div class="surface-strip" style="background:#E0DBD2;"><span class="light-label">alt</span></div>
+          <div class="surface-strip" style="background:#D4CCC0;"><span class="light-label">bord.</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="subsection">
+    <h3>Tokens — Modo Claro</h3>
+    <div class="color-grid">
+      <div class="color-card">
+        <div class="color-swatch" style="background:#F5F0E8;">
+          <span class="contrast-label" style="color:#1C1915;">Page BG</span>
+        </div>
+        <div class="color-info">
+          <div class="color-name">Background</div>
+          <div class="color-token">--go-bg</div>
+          <div class="color-hex">#F5F0E8</div>
+        </div>
+      </div>
+      <div class="color-card">
+        <div class="color-swatch" style="background:#FDFAF4;">
+          <span class="contrast-label" style="color:#1C1915;">Elevated</span>
+        </div>
+        <div class="color-info">
+          <div class="color-name">BG Elevated</div>
+          <div class="color-token">--go-bg-elevated</div>
+          <div class="color-hex">#FDFAF4</div>
+        </div>
+      </div>
+      <div class="color-card">
+        <div class="color-swatch" style="background:#FFFFFF; border-bottom:1px solid #E8E3DA;">
+          <span class="contrast-label" style="color:#1C1915;">Card</span>
+        </div>
+        <div class="color-info">
+          <div class="color-name">Surface</div>
+          <div class="color-token">--go-surface</div>
+          <div class="color-hex">#FFFFFF</div>
+        </div>
+      </div>
+      <div class="color-card">
+        <div class="color-swatch" style="background:#EDE8DF;">
+          <span class="contrast-label" style="color:#1C1915;">Hover</span>
+        </div>
+        <div class="color-info">
+          <div class="color-name">Surface Hover</div>
+          <div class="color-token">--go-surface-hover</div>
+          <div class="color-hex">#EDE8DF</div>
+        </div>
+      </div>
+      <div class="color-card">
+        <div class="color-swatch" style="background:#E0DBD2;">
+          <span class="contrast-label" style="color:#1C1915;">Alt</span>
+        </div>
+        <div class="color-info">
+          <div class="color-name">Surface Alt</div>
+          <div class="color-token">--go-surface-alt</div>
+          <div class="color-hex">#E0DBD2</div>
+        </div>
+      </div>
+      <div class="color-card">
+        <div class="color-swatch" style="background:#D4CCC0;">
+          <span class="contrast-label" style="color:#1C1915;">Border</span>
+        </div>
+        <div class="color-info">
+          <div class="color-name">Border</div>
+          <div class="color-token">--go-border</div>
+          <div class="color-hex">#D4CCC0</div>
+        </div>
+      </div>
+    </div>
+
+    <h3 style="margin-top:32px;">Texto — Modo Claro</h3>
+    <div style="background:#F5F0E8; border:1px solid #D4CCC0; border-radius:14px; padding:28px; margin:16px 0 24px;">
+      <p style="font-size:22px; font-weight:700; color:#1C1915; margin-bottom:8px; font-family:'Red Hat Display',sans-serif;">Depto Flores 3B — Remodelación</p>
+      <p style="font-size:14px; color:#4A443D; margin-bottom:6px; font-family:'Red Hat Display',sans-serif;">Presupuesto: $2.500.000 · Av. Rivadavia 1234</p>
+      <p style="font-size:13px; color:#8A8078; margin-bottom:6px; font-family:'Red Hat Display',sans-serif;">Inicio: 15 enero 2026 · Fin estimado: abril 2026</p>
+      <p style="font-size:12px; color:#B5AFA6; font-family:'Red Hat Display',sans-serif;">Creado hace 2 días · Última actualización: hoy</p>
+    </div>
+
+    <div class="color-grid">
+      <div class="color-card">
+        <div class="color-swatch" style="background:#1C1915;"><span class="contrast-label">Primary</span></div>
+        <div class="color-info"><div class="color-name">Text Primary</div><div class="color-token">--go-text</div><div class="color-hex">#1C1915</div></div>
+      </div>
+      <div class="color-card">
+        <div class="color-swatch" style="background:#4A443D;"><span class="contrast-label">Secondary</span></div>
+        <div class="color-info"><div class="color-name">Text Secondary</div><div class="color-token">--go-text-secondary</div><div class="color-hex">#4A443D</div></div>
+      </div>
+      <div class="color-card">
+        <div class="color-swatch" style="background:#8A8078;"><span class="contrast-label">Tertiary</span></div>
+        <div class="color-info"><div class="color-name">Text Tertiary</div><div class="color-token">--go-text-tertiary</div><div class="color-hex">#8A8078</div></div>
+      </div>
+      <div class="color-card">
+        <div class="color-swatch" style="background:#B5AFA6;"><span class="contrast-label" style="background:rgba(0,0,0,0.3);">Muted</span></div>
+        <div class="color-info"><div class="color-name">Text Muted</div><div class="color-token">--go-text-muted</div><div class="color-hex">#B5AFA6</div></div>
+      </div>
+    </div>
+
+    <h3 style="margin-top:32px;">Primario en modo claro</h3>
+    <p>El ámbar se oscurece levemente para mantener contraste WCAG AA sobre fondos claros.</p>
+    <div class="compare-row">
+      <div class="compare-chip">
+        <div class="compare-dot-pair">
+          <div class="compare-dot" style="background:#FFAB40;"></div>
+          <div class="compare-dot" style="background:#E99A35;"></div>
+        </div>
+        <div class="compare-info">
+          <div style="font-weight:600;color:#D4CFC3;">#FFAB40 → #E99A35</div>
+          <div style="color:#6B665C;font-size:11px;">Dark primary → Light primary</div>
+        </div>
+      </div>
+      <div class="compare-chip">
+        <div class="compare-dot-pair">
+          <div class="compare-dot" style="background:#5CB870;"></div>
+          <div class="compare-dot" style="background:#3E9954;"></div>
+        </div>
+        <div class="compare-info">
+          <div style="font-weight:600;color:#D4CFC3;">#5CB870 → #3E9954</div>
+          <div style="color:#6B665C;font-size:11px;">Success dark → light</div>
+        </div>
+      </div>
+      <div class="compare-chip">
+        <div class="compare-dot-pair">
+          <div class="compare-dot" style="background:#D4544A;"></div>
+          <div class="compare-dot" style="background:#C74840;"></div>
+        </div>
+        <div class="compare-info">
+          <div style="font-weight:600;color:#D4CFC3;">#D4544A → #C74840</div>
+          <div style="color:#6B665C;font-size:11px;">Danger dark → light</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="note">
+      <strong>¿Por qué warm off-white y no blanco puro?</strong> El blanco puro (#FFFFFF) se usa solo para las cards (surfaces). La página en sí (#F5F0E8) tiene un tinte cálido que evoca papel de obra, planos, documentos de campo. Evita la sensación de "app de hospital" y mantiene coherencia con la identidad terrenal de la marca.
+    </div>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- ============================================================
+     SECTION 03 — CSS VARIABLES
+     ============================================================ -->
+<section class="section">
+  <p class="section-number">03</p>
+  <h2>CSS Variables — Ambos Temas</h2>
+  <p class="section-desc">El bloque completo para <code style="color:#FFAB40;">assets/css/main.css</code>. Modo oscuro por defecto, modo claro con la clase <code style="color:#FFAB40;">.light</code> en el elemento <code style="color:#FFAB40;">&lt;html&gt;</code>.</p>
+
+  <div class="subsection">
+    <div class="code-block">
+<span class="comment">/* ── Gasto Obra — Tokens compartidos (sin cambio entre temas) ── */</span>
+<span class="prop">:root</span> {
+  <span class="comment">/* Fonts */</span>
+  <span class="prop">--go-font-ui</span>: <span class="str">'Red Hat Display', system-ui, sans-serif</span>;
+
+  <span class="comment">/* Radius */</span>
+  <span class="prop">--go-radius-sm</span>: <span class="val">6px</span>;
+  <span class="prop">--go-radius-md</span>: <span class="val">10px</span>;
+  <span class="prop">--go-radius-lg</span>: <span class="val">14px</span>;
+  <span class="prop">--go-radius-xl</span>: <span class="val">18px</span>;
+  <span class="prop">--go-radius-full</span>: <span class="val">9999px</span>;
+
+  <span class="comment">/* Categories (same in both themes) */</span>
+  <span class="prop">--go-cat-materiales</span>: <span class="val">#5A8FB8</span>;
+  <span class="prop">--go-cat-herramientas</span>: <span class="val">#D4793D</span>;
+  <span class="prop">--go-cat-transporte</span>: <span class="val">#BFA63D</span>;
+  <span class="prop">--go-cat-mano-de-obra</span>: <span class="val">#A86B5E</span>;
+  <span class="prop">--go-cat-comida</span>: <span class="val">#6B9B6B</span>;
+  <span class="prop">--go-cat-otros</span>: <span class="val">#8B847A</span>;
+
+  <span class="comment">/* Payment Methods (same in both themes) */</span>
+  <span class="prop">--go-pay-transferencia</span>: <span class="val">#5A8FB8</span>;
+  <span class="prop">--go-pay-efectivo</span>: <span class="val">#6B9B6B</span>;
+  <span class="prop">--go-pay-tarjeta</span>: <span class="val">#8B6BA3</span>;
+  <span class="prop">--go-pay-mercadopago</span>: <span class="val">#00B1EA</span>;
+}
+
+<span class="comment">/* ── DARK THEME (default — clase HTML sin .light) ── */</span>
+<span class="prop">:root</span> {
+  <span class="comment">/* Surfaces */</span>
+  <span class="prop">--go-bg</span>: <span class="val">#26211A</span>;
+  <span class="prop">--go-bg-elevated</span>: <span class="val">#2C261E</span>;
+  <span class="prop">--go-surface</span>: <span class="val">#342D24</span>;
+  <span class="prop">--go-surface-hover</span>: <span class="val">#3D362C</span>;
+  <span class="prop">--go-surface-alt</span>: <span class="val">#463E33</span>;
+  <span class="prop">--go-border</span>: <span class="val">#574E42</span>;
+  <span class="prop">--go-border-subtle</span>: <span class="val">#3D362C</span>;
+
+  <span class="comment">/* Primary */</span>
+  <span class="prop">--go-primary</span>: <span class="val">#FFAB40</span>;
+  <span class="prop">--go-primary-hover</span>: <span class="val">#FFBC62</span>;
+  <span class="prop">--go-primary-active</span>: <span class="val">#E99A35</span>;
+  <span class="prop">--go-primary-muted</span>: <span class="val">rgba(255, 171, 64, 0.12)</span>;
+  <span class="prop">--go-primary-on</span>: <span class="val">#1A1200</span>;
+
+  <span class="comment">/* Secondary */</span>
+  <span class="prop">--go-secondary</span>: <span class="val">#6B8F71</span>;
+  <span class="prop">--go-secondary-hover</span>: <span class="val">#7DA383</span>;
+  <span class="prop">--go-secondary-muted</span>: <span class="val">rgba(107, 143, 113, 0.12)</span>;
+
+  <span class="comment">/* Semantic */</span>
+  <span class="prop">--go-success</span>: <span class="val">#5CB870</span>;
+  <span class="prop">--go-success-muted</span>: <span class="val">rgba(92, 184, 112, 0.12)</span>;
+  <span class="prop">--go-danger</span>: <span class="val">#D4544A</span>;
+  <span class="prop">--go-danger-muted</span>: <span class="val">rgba(212, 84, 74, 0.12)</span>;
+  <span class="prop">--go-warning</span>: <span class="val">#E8B83A</span>;
+  <span class="prop">--go-warning-muted</span>: <span class="val">rgba(232, 184, 58, 0.12)</span>;
+  <span class="prop">--go-info</span>: <span class="val">#5A9BBF</span>;
+  <span class="prop">--go-info-muted</span>: <span class="val">rgba(90, 155, 191, 0.12)</span>;
+
+  <span class="comment">/* Text */</span>
+  <span class="prop">--go-text</span>: <span class="val">#F0EBE1</span>;
+  <span class="prop">--go-text-secondary</span>: <span class="val">#B5B0A4</span>;
+  <span class="prop">--go-text-tertiary</span>: <span class="val">#8A8579</span>;
+  <span class="prop">--go-text-muted</span>: <span class="val">#5E594F</span>;
+  <span class="prop">--go-text-inverse</span>: <span class="val">#1C1915</span>;
+}
+
+<span class="comment">/* ── LIGHT THEME (clase .light en &lt;html&gt;) ── */</span>
+<span class="prop">html.light</span> {
+  <span class="comment">/* Surfaces */</span>
+  <span class="prop">--go-bg</span>: <span class="val">#F5F0E8</span>;
+  <span class="prop">--go-bg-elevated</span>: <span class="val">#FDFAF4</span>;
+  <span class="prop">--go-surface</span>: <span class="val">#FFFFFF</span>;
+  <span class="prop">--go-surface-hover</span>: <span class="val">#EDE8DF</span>;
+  <span class="prop">--go-surface-alt</span>: <span class="val">#E0DBD2</span>;
+  <span class="prop">--go-border</span>: <span class="val">#D4CCC0</span>;
+  <span class="prop">--go-border-subtle</span>: <span class="val">#E8E3DA</span>;
+
+  <span class="comment">/* Primary (slightly darker for WCAG AA on light bg) */</span>
+  <span class="prop">--go-primary</span>: <span class="val">#E99A35</span>;
+  <span class="prop">--go-primary-hover</span>: <span class="val">#D4892C</span>;
+  <span class="prop">--go-primary-active</span>: <span class="val">#C47A25</span>;
+  <span class="prop">--go-primary-muted</span>: <span class="val">rgba(233, 154, 53, 0.10)</span>;
+  <span class="prop">--go-primary-on</span>: <span class="val">#1A1200</span>;
+
+  <span class="comment">/* Secondary */</span>
+  <span class="prop">--go-secondary</span>: <span class="val">#4A7A52</span>;
+  <span class="prop">--go-secondary-hover</span>: <span class="val">#3E6645</span>;
+  <span class="prop">--go-secondary-muted</span>: <span class="val">rgba(74, 122, 82, 0.10)</span>;
+
+  <span class="comment">/* Semantic (darkened for contrast on white) */</span>
+  <span class="prop">--go-success</span>: <span class="val">#3E9954</span>;
+  <span class="prop">--go-success-muted</span>: <span class="val">rgba(62, 153, 84, 0.10)</span>;
+  <span class="prop">--go-danger</span>: <span class="val">#C74840</span>;
+  <span class="prop">--go-danger-muted</span>: <span class="val">rgba(199, 72, 64, 0.08)</span>;
+  <span class="prop">--go-warning</span>: <span class="val">#A07820</span>;
+  <span class="prop">--go-warning-muted</span>: <span class="val">rgba(160, 120, 32, 0.10)</span>;
+  <span class="prop">--go-info</span>: <span class="val">#3A7A9F</span>;
+  <span class="prop">--go-info-muted</span>: <span class="val">rgba(58, 122, 159, 0.10)</span>;
+
+  <span class="comment">/* Text */</span>
+  <span class="prop">--go-text</span>: <span class="val">#1C1915</span>;
+  <span class="prop">--go-text-secondary</span>: <span class="val">#4A443D</span>;
+  <span class="prop">--go-text-tertiary</span>: <span class="val">#8A8078</span>;
+  <span class="prop">--go-text-muted</span>: <span class="val">#B5AFA6</span>;
+  <span class="prop">--go-text-inverse</span>: <span class="val">#F0EBE1</span>;
+}
+    </div>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- ============================================================
+     SECTION 04 — TAILWIND CONFIG
+     ============================================================ -->
+<section class="section">
+  <p class="section-number">04</p>
+  <h2>Tailwind Config — darkMode class</h2>
+  <p class="section-desc">Cambio mínimo al config existente: agregar <code style="color:#FFAB40">darkMode: 'class'</code> y consumir los tokens via CSS variables.</p>
+
+  <div class="subsection">
+    <div class="code-block">
+<span class="comment">/** @type {import('tailwindcss').Config} */</span>
+<span class="prop">export default</span> {
+  content: [<span class="str">"./components/**/*.{js,vue,ts}"</span>, <span class="str">"./layouts/**/*.vue"</span>,
+    <span class="str">"./pages/**/*.vue"</span>, <span class="str">"./app.vue"</span>, <span class="str">"./utils/**/*.{js,ts}"</span>],
+
+  <span class="comment">// ← La clave: dark mode por clase en &lt;html&gt;</span>
+  darkMode: <span class="str">'class'</span>,
+
+  theme: {
+    extend: {
+      fontFamily: {
+        ui: [<span class="str">'Red Hat Display'</span>, <span class="str">'system-ui'</span>, <span class="str">'sans-serif'</span>],
+      },
+      colors: {
+        go: {
+          <span class="comment">// Todos resuelven a CSS variables → tema automático</span>
+          bg:             <span class="str">'var(--go-bg)'</span>,
+          <span class="str">'bg-elevated'</span>:  <span class="str">'var(--go-bg-elevated)'</span>,
+          surface:        <span class="str">'var(--go-surface)'</span>,
+          <span class="str">'surface-hover'</span>:<span class="str">'var(--go-surface-hover)'</span>,
+          <span class="str">'surface-alt'</span>:  <span class="str">'var(--go-surface-alt)'</span>,
+          border:         <span class="str">'var(--go-border)'</span>,
+          <span class="str">'border-subtle'</span>:<span class="str">'var(--go-border-subtle)'</span>,
+          primary:        <span class="str">'var(--go-primary)'</span>,
+          <span class="str">'primary-hover'</span>:<span class="str">'var(--go-primary-hover)'</span>,
+          <span class="str">'primary-muted'</span>:<span class="str">'var(--go-primary-muted)'</span>,
+          <span class="str">'primary-on'</span>:   <span class="str">'var(--go-primary-on)'</span>,
+          secondary:      <span class="str">'var(--go-secondary)'</span>,
+          success:        <span class="str">'var(--go-success)'</span>,
+          <span class="str">'success-muted'</span>:<span class="str">'var(--go-success-muted)'</span>,
+          danger:         <span class="str">'var(--go-danger)'</span>,
+          <span class="str">'danger-muted'</span>: <span class="str">'var(--go-danger-muted)'</span>,
+          warning:        <span class="str">'var(--go-warning)'</span>,
+          <span class="str">'warning-muted'</span>:<span class="str">'var(--go-warning-muted)'</span>,
+          info:           <span class="str">'var(--go-info)'</span>,
+          <span class="str">'info-muted'</span>:   <span class="str">'var(--go-info-muted)'</span>,
+          text:           <span class="str">'var(--go-text)'</span>,
+          <span class="str">'text-secondary'</span>:<span class="str">'var(--go-text-secondary)'</span>,
+          <span class="str">'text-tertiary'</span>:<span class="str">'var(--go-text-tertiary)'</span>,
+          <span class="str">'text-muted'</span>:   <span class="str">'var(--go-text-muted)'</span>,
+        },
+      },
+      borderRadius: {
+        <span class="str">'go-sm'</span>: <span class="str">'var(--go-radius-sm)'</span>,
+        <span class="str">'go-md'</span>: <span class="str">'var(--go-radius-md)'</span>,
+        <span class="str">'go-lg'</span>: <span class="str">'var(--go-radius-lg)'</span>,
+        <span class="str">'go-xl'</span>: <span class="str">'var(--go-radius-xl)'</span>,
+      },
+    },
+  },
+  plugins: [],
+}
+    </div>
+
+    <div class="note">
+      <strong>Por qué CSS variables + Tailwind (no Tailwind dark: puro):</strong> Con este enfoque, todos los componentes solo necesitan <code style="color:#FFAB40">bg-go-surface</code> — sin <code>dark:bg-go-surface-dark</code>. Cambiar de tema es cambiar variables, no clases. Los componentes no saben qué tema están mostrando. Agregar light mode en el futuro requiere cero toques a los templates.
+    </div>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- ============================================================
+     SECTION 05 — useTheme COMPOSABLE
+     ============================================================ -->
+<section class="section">
+  <p class="section-number">05</p>
+  <h2>useTheme — Composable</h2>
+  <p class="section-desc">Un composable Nuxt 3 para manejar el toggle y persistir la preferencia en localStorage. Se agrega en <code style="color:#FFAB40;">composables/useTheme.ts</code>.</p>
+
+  <div class="subsection">
+    <div class="code-block">
+<span class="comment">// composables/useTheme.ts</span>
+<span class="prop">import</span> { ref, computed, onMounted } <span class="prop">from</span> <span class="str">'vue'</span>
+
+<span class="prop">type</span> Theme = <span class="str">'dark'</span> | <span class="str">'light'</span>
+
+<span class="prop">const</span> STORAGE_KEY = <span class="str">'go-theme'</span>
+<span class="prop">const</span> DEFAULT_THEME: Theme = <span class="str">'light'</span>  <span class="comment">// ← light como default</span>
+
+<span class="comment">// Estado compartido entre todos los componentes</span>
+<span class="prop">const</span> currentTheme = ref&lt;Theme&gt;(DEFAULT_THEME)
+
+<span class="prop">export function</span> <span class="val">useTheme</span>() {
+  <span class="prop">const</span> isDark = computed(() => currentTheme.value === <span class="str">'dark'</span>)
+  <span class="prop">const</span> isLight = computed(() => currentTheme.value === <span class="str">'light'</span>)
+
+  <span class="prop">function</span> <span class="val">applyTheme</span>(theme: Theme) {
+    currentTheme.value = theme
+    <span class="prop">if</span> (process.client) {
+      document.documentElement.classList.toggle(<span class="str">'light'</span>, theme === <span class="str">'light'</span>)
+      localStorage.setItem(STORAGE_KEY, theme)
+    }
+  }
+
+  <span class="prop">function</span> <span class="val">toggle</span>() {
+    applyTheme(currentTheme.value === <span class="str">'dark'</span> ? <span class="str">'light'</span> : <span class="str">'dark'</span>)
+  }
+
+  <span class="comment">// Leer preferencia guardada al montar</span>
+  onMounted(() => {
+    <span class="prop">const</span> saved = localStorage.getItem(STORAGE_KEY) as Theme | null
+    <span class="prop">const</span> systemPrefers = window.matchMedia(<span class="str">'(prefers-color-scheme: dark)'</span>).matches
+    <span class="prop">const</span> resolved: Theme = saved ?? (systemPrefers ? <span class="str">'dark'</span> : <span class="str">'light'</span>)
+    applyTheme(resolved)
+  })
+
+  <span class="prop">return</span> { currentTheme, isDark, isLight, toggle, applyTheme }
+}
+    </div>
+
+    <div class="note">
+      <strong>Lógica de resolución:</strong> Si el usuario ya eligió un tema → se usa. Si no → se detecta la preferencia del sistema (<code>prefers-color-scheme</code>). Esto respeta tanto la elección explícita como las preferencias del OS.
+    </div>
+  </div>
+
+  <div class="subsection">
+    <h3>Toggle en AppHeader.vue</h3>
+    <div class="code-block">
+<span class="comment">&lt;!-- Agregar en AppHeader.vue, junto al botón "Salir" --&gt;</span>
+&lt;<span class="prop">script setup lang="ts"</span>&gt;
+<span class="prop">const</span> { isDark, toggle } = useTheme()
+&lt;/<span class="prop">script</span>&gt;
+
+&lt;<span class="prop">template</span>&gt;
+  &lt;!-- ... logo, user ... --&gt;
+  &lt;<span class="prop">button</span>
+    @click="toggle"
+    class="p-2 rounded-go-md text-go-text-tertiary hover:text-go-text hover:bg-go-surface-hover transition-colors"
+    :aria-label="isDark ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'"
+  &gt;
+    &lt;<span class="comment">&lt;!-- Sol (modo claro activo) --&gt;</span>
+    &lt;<span class="prop">svg v-if="isDark"</span> width="18" height="18" ...&gt; &lt;!-- sol icon --&gt; &lt;/<span class="prop">svg</span>&gt;
+    &lt;<span class="comment">&lt;!-- Luna (modo oscuro activo) --&gt;</span>
+    &lt;<span class="prop">svg v-else</span> width="18" height="18" ...&gt; &lt;!-- luna icon --&gt; &lt;/<span class="prop">svg</span>&gt;
+  &lt;/<span class="prop">button</span>&gt;
+&lt;/<span class="prop">template</span>&gt;
+    </div>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- ============================================================
+     SECTION 06 — MIGRATION GUIDE
+     ============================================================ -->
+<section class="section">
+  <p class="section-number">06</p>
+  <h2>Guía de Migración</h2>
+  <p class="section-desc">Pasos ordenados para migrar el dashboard al sistema dual-tema. Cada paso es atómico y testeable.</p>
+
+  <div class="subsection">
+    <div class="step-list">
+      <div class="step-item">
+        <div class="step-num">1</div>
+        <div class="step-content">
+          <div class="step-title">CSS Variables en main.css</div>
+          <div class="step-desc">Reemplazar el bloque <code style="color:#FFAB40;">:root</code> actual con el nuevo bloque que incluye ambos temas (Sección 03 de este manual). No toca ningún componente.</div>
+        </div>
+      </div>
+      <div class="step-item">
+        <div class="step-num">2</div>
+        <div class="step-content">
+          <div class="step-title">Tailwind config — darkMode: 'class'</div>
+          <div class="step-desc">Reemplazar <code style="color:#FFAB40;">tailwind.config.js</code> con la nueva versión (Sección 04). Renombrar tokens: <code style="color:#FFAB40;">bg-base</code> → <code style="color:#FFAB40;">bg-go-bg</code>, <code style="color:#FFAB40;">bg-surface</code> → <code style="color:#FFAB40;">bg-go-surface</code>, etc.</div>
+        </div>
+      </div>
+      <div class="step-item">
+        <div class="step-num">3</div>
+        <div class="step-content">
+          <div class="step-title">useTheme composable</div>
+          <div class="step-desc">Crear <code style="color:#FFAB40;">composables/useTheme.ts</code> (Sección 05). Agregar el toggle al <code style="color:#FFAB40;">AppHeader.vue</code>. Verificar que el toggle cambia la clase en <code style="color:#FFAB40;">&lt;html&gt;</code>.</div>
+        </div>
+      </div>
+      <div class="step-item">
+        <div class="step-num">4</div>
+        <div class="step-content">
+          <div class="step-title">Fuente + body en app.vue</div>
+          <div class="step-desc">Agregar Google Fonts link en <code style="color:#FFAB40;">nuxt.config.ts</code>. Setear <code style="color:#FFAB40;">font-family: var(--go-font-ui)</code> en <code style="color:#FFAB40;">body</code> dentro de <code style="color:#FFAB40;">main.css</code>. Y <code style="color:#FFAB40;">background: var(--go-bg); color: var(--go-text)</code>.</div>
+        </div>
+      </div>
+      <div class="step-item">
+        <div class="step-num">5</div>
+        <div class="step-content">
+          <div class="step-title">Migrar main.css utility classes</div>
+          <div class="step-desc">Actualizar <code style="color:#FFAB40;">btn-primary</code>, <code style="color:#FFAB40;">modal-*</code>, <code style="color:#FFAB40;">btn-secondary</code> para usar <code style="color:#FFAB40;">var(--go-*)</code> tokens en vez de valores hardcodeados. Como son CSS classes reales (no Tailwind), responden automáticamente al cambio de variables.</div>
+        </div>
+      </div>
+      <div class="step-item">
+        <div class="step-num">6</div>
+        <div class="step-content">
+          <div class="step-title">Migrar layouts y componentes</div>
+          <div class="step-desc">En todos los componentes: reemplazar <code style="color:#FFAB40;">bg-gray-800</code> → <code style="color:#FFAB40;">bg-go-surface</code>, <code style="color:#FFAB40;">text-gray-100</code> → <code style="color:#FFAB40;">text-go-text</code>, <code style="color:#FFAB40;">border-gray-700</code> → <code style="color:#FFAB40;">border-go-border</code>, <code style="color:#FFAB40;">bg-base</code> → <code style="color:#FFAB40;">bg-go-bg</code>. Ver tabla completa en v3 Sección 05.</div>
+        </div>
+      </div>
+      <div class="step-item">
+        <div class="step-num">7</div>
+        <div class="step-content">
+          <div class="step-title">Logo SVG en AppHeader</div>
+          <div class="step-desc">Reemplazar el texto "Gasto Obra" en <code style="color:#FFAB40;">AppHeader.vue</code> con el SVG del logo horizontal. El ícono del logo usa <code style="color:#FFAB40;">currentColor</code> para el wordmark, adaptándose a ambos temas.</div>
+        </div>
+      </div>
+      <div class="step-item">
+        <div class="step-num">8</div>
+        <div class="step-content">
+          <div class="step-title">Actualizar utils/index.ts</div>
+          <div class="step-desc">Actualizar los colores hardcodeados de categorías y métodos de pago con los nuevos valores (los colores de categoría son los mismos en ambos temas).</div>
+        </div>
+      </div>
+    </div>
+
+    <table class="token-table">
+      <thead>
+        <tr><th>Clase actual</th><th>→</th><th>Token nuevo</th><th>Automático (sin dark:)</th></tr>
+      </thead>
+      <tbody>
+        <tr><td class="token-value">bg-base / bg-[#1A1D23]</td><td style="color:#5E594F;">→</td><td class="token-name">bg-go-bg</td><td style="color:#5CB870;font-size:12px;">✓ auto</td></tr>
+        <tr><td class="token-value">bg-surface / bg-[#2A2D35]</td><td style="color:#5E594F;">→</td><td class="token-name">bg-go-surface</td><td style="color:#5CB870;font-size:12px;">✓ auto</td></tr>
+        <tr><td class="token-value">bg-gray-800 / bg-gray-900</td><td style="color:#5E594F;">→</td><td class="token-name">bg-go-surface</td><td style="color:#5CB870;font-size:12px;">✓ auto</td></tr>
+        <tr><td class="token-value">border-gray-700 / border-surface</td><td style="color:#5E594F;">→</td><td class="token-name">border-go-border</td><td style="color:#5CB870;font-size:12px;">✓ auto</td></tr>
+        <tr><td class="token-value">text-gray-100 / text-white</td><td style="color:#5E594F;">→</td><td class="token-name">text-go-text</td><td style="color:#5CB870;font-size:12px;">✓ auto</td></tr>
+        <tr><td class="token-value">text-gray-300</td><td style="color:#5E594F;">→</td><td class="token-name">text-go-text-secondary</td><td style="color:#5CB870;font-size:12px;">✓ auto</td></tr>
+        <tr><td class="token-value">text-gray-400</td><td style="color:#5E594F;">→</td><td class="token-name">text-go-text-tertiary</td><td style="color:#5CB870;font-size:12px;">✓ auto</td></tr>
+        <tr><td class="token-value">text-gray-500/600</td><td style="color:#5E594F;">→</td><td class="token-name">text-go-text-muted</td><td style="color:#5CB870;font-size:12px;">✓ auto</td></tr>
+        <tr><td class="token-value">text-primary / text-[#E67E22]</td><td style="color:#5E594F;">→</td><td class="token-name">text-go-primary</td><td style="color:#5CB870;font-size:12px;">✓ auto</td></tr>
+        <tr><td class="token-value">bg-green-500/20 text-green-400</td><td style="color:#5E594F;">→</td><td class="token-name">bg-go-success-muted text-go-success</td><td style="color:#5CB870;font-size:12px;">✓ auto</td></tr>
+        <tr><td class="token-value">bg-red-500/20 text-red-400</td><td style="color:#5E594F;">→</td><td class="token-name">bg-go-danger-muted text-go-danger</td><td style="color:#5CB870;font-size:12px;">✓ auto</td></tr>
+        <tr><td class="token-value">bg-yellow-500/20 text-yellow-400</td><td style="color:#5E594F;">→</td><td class="token-name">bg-go-warning-muted text-go-warning</td><td style="color:#5CB870;font-size:12px;">✓ auto</td></tr>
+      </tbody>
+    </table>
+
+    <div class="note">
+      <strong>Zero dark: prefixes.</strong> Gracias al enfoque CSS-variable-first, ningún componente necesita clases <code style="color:#FFAB40;">dark:</code>. El tema cambia globalmente desde las variables. Esto significa que el trabajo de migración es simplemente un find-and-replace semántico — sin lógica condicional en los templates.
+    </div>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- FOOTER -->
+<footer style="text-align:center; padding:40px 20px; color:#5E594F; font-size:13px;">
+  <p style="margin-bottom:8px;">
+    <span style="color:#FFAB40; font-weight:700; font-family:'Space Grotesk',sans-serif;">gasto obra</span>
+    <span style="margin:0 8px;">·</span>
+    Manual de Marca v4 — Dual Theme
+  </p>
+  <p>Marzo 2026 · Andrea López Palomeque & Imanol</p>
+</footer>
+
+</div>
+</body>
+</html>
