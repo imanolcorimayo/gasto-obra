@@ -4,7 +4,8 @@
       "Bash(npx nuxi:*)",
       "Bash(npx tailwindcss:*)",
       "Bash(cp:*)",
-      "Bash(npx vue-tsc:*)"
+      "Bash(npx vue-tsc:*)",
+      "Bash(python3:*)"
     ]
   }
 }
