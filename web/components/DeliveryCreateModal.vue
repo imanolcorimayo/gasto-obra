@@ -51,8 +51,8 @@
             Cancelar
           </button>
           <button type="submit" :disabled="isSubmitting" class="btn-primary flex-1 sm:flex-initial flex items-center justify-center gap-2 order-1 sm:order-2">
-            <span v-if="isSubmitting" class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
-            {{ isEdit ? 'Guardar' : 'Crear entrega' }}
+            <span v-if="isSubmitting" class="btn-spinner"></span>
+            {{ isSubmitting ? 'Guardando...' : (isEdit ? 'Guardar' : 'Crear entrega') }}
           </button>
         </div>
       </form>
@@ -66,12 +66,12 @@ import MdiClose from '~icons/mdi/close';
 const props = defineProps({
   show: { type: Boolean, default: false },
   nextNumber: { type: Number, default: 1 },
-  delivery: { type: Object, default: null }
+  delivery: { type: Object, default: null },
+  isSubmitting: { type: Boolean, default: false }
 });
 
 const emit = defineEmits(['close', 'submit']);
 
-const isSubmitting = ref(false);
 const isEdit = computed(() => !!props.delivery);
 const displayNumber = computed(() => isEdit.value ? props.delivery.number : props.nextNumber);
 
@@ -95,7 +95,6 @@ function toDateInputValue(timestamp) {
 watch(() => props.show, (show) => {
   document.body.classList.toggle('modal-open', show);
   if (show) {
-    isSubmitting.value = false;
     if (props.delivery) {
       form.date = toDateInputValue(props.delivery.date);
       form.description = props.delivery.description || '';
@@ -106,16 +105,11 @@ watch(() => props.show, (show) => {
   }
 });
 
-async function handleSubmit() {
-  isSubmitting.value = true;
-  try {
-    emit('submit', {
-      id: props.delivery?.id || null,
-      date: new Date(form.date + 'T12:00:00'),
-      description: form.description
-    });
-  } finally {
-    isSubmitting.value = false;
-  }
+function handleSubmit() {
+  emit('submit', {
+    id: props.delivery?.id || null,
+    date: new Date(form.date + 'T12:00:00'),
+    description: form.description
+  });
 }
 </script>

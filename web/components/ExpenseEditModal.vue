@@ -263,8 +263,8 @@
             Cancelar
           </button>
           <button type="submit" :disabled="isSaving" class="btn-primary flex-1 sm:flex-initial flex items-center justify-center gap-2 order-1 sm:order-2">
-            <span v-if="isSaving" class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
-            Guardar
+            <span v-if="isSaving" class="btn-spinner"></span>
+            {{ isSaving ? 'Guardando...' : 'Guardar' }}
           </button>
         </div>
       </form>
@@ -285,7 +285,8 @@ const props = defineProps({
   show: { type: Boolean, default: false },
   expense: { type: Object, default: null },
   projects: { type: Array, default: () => [] },
-  categories: { type: Array, default: () => [] }
+  categories: { type: Array, default: () => [] },
+  isSaving: { type: Boolean, default: false }
 });
 
 const resolvedCategories = computed(() =>
@@ -297,7 +298,6 @@ const emit = defineEmits(['close', 'save']);
 const showItems = ref(false);
 const selectedRecipientIdx = ref(-1);
 const showMoveProject = ref(false);
-const isSaving = ref(false);
 
 const isPartial = computed(() => form.installmentPercent > 0 && form.installmentPercent < 100);
 
@@ -404,33 +404,28 @@ watch(() => form.items, (items) => {
   }
 }, { deep: true });
 
-async function handleSave() {
-  isSaving.value = true;
-  try {
-    const percent = form.type === 'expense' ? form.installmentPercent : null;
-    const partialCalc = percent !== null && percent > 0 && percent < 100;
-    const needsGroup = partialCalc;
+function handleSave() {
+  const percent = form.type === 'expense' ? form.installmentPercent : null;
+  const partialCalc = percent !== null && percent > 0 && percent < 100;
+  const needsGroup = partialCalc;
 
-    const data = {
-      title: form.title,
-      amount: partialCalc ? editInstallmentAmount.value : parseFloat(form.amount),
-      category: form.type === 'payment' ? 'pago' : form.category,
-      description: form.description,
-      type: form.type,
-      scopeType: form.type === 'expense' ? form.scopeType : 'original',
-      paymentMethod: form.paymentMethod,
-      recipientName: form.recipientName || null,
-      recipientBankInfo: form.recipientBankInfo || null,
-      recipientPlatform: form.recipientPlatform || null,
-      recipientCuit: form.recipientCuit || null,
-      items: form.items.length > 0 ? form.items.filter(i => i.name) : null,
-      projectId: form.projectId,
-      installmentPercent: percent,
-      installmentGroupId: needsGroup ? (form.installmentGroupId || crypto.randomUUID()) : null
-    };
-    emit('save', { id: props.expense.id, data });
-  } finally {
-    isSaving.value = false;
-  }
+  const data = {
+    title: form.title,
+    amount: partialCalc ? editInstallmentAmount.value : parseFloat(form.amount),
+    category: form.type === 'payment' ? 'pago' : form.category,
+    description: form.description,
+    type: form.type,
+    scopeType: form.type === 'expense' ? form.scopeType : 'original',
+    paymentMethod: form.paymentMethod,
+    recipientName: form.recipientName || null,
+    recipientBankInfo: form.recipientBankInfo || null,
+    recipientPlatform: form.recipientPlatform || null,
+    recipientCuit: form.recipientCuit || null,
+    items: form.items.length > 0 ? form.items.filter(i => i.name) : null,
+    projectId: form.projectId,
+    installmentPercent: percent,
+    installmentGroupId: needsGroup ? (form.installmentGroupId || crypto.randomUUID()) : null
+  };
+  emit('save', { id: props.expense.id, data });
 }
 </script>

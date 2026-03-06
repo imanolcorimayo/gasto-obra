@@ -85,10 +85,12 @@
             </button>
             <button
               @click.stop="$emit('delete', delivery)"
-              class="text-xs text-go-text-muted hover:text-go-danger transition-colors flex items-center gap-1"
+              :disabled="isDeleting"
+              class="text-xs text-go-text-muted hover:text-go-danger transition-colors flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <MdiDelete class="text-sm" />
-              Eliminar
+              <span v-if="isDeleting" class="btn-spinner !w-3 !h-3 !mr-1"></span>
+              <MdiDelete v-else class="text-sm" />
+              {{ isDeleting ? 'Eliminando...' : 'Eliminar' }}
             </button>
           </div>
         </div>
@@ -107,7 +109,8 @@ import { formatPrice } from '~/utils';
 const props = defineProps({
   deliveries: { type: Array, default: () => [] },
   expenses: { type: Array, default: () => [] },
-  editable: { type: Boolean, default: false }
+  editable: { type: Boolean, default: false },
+  isDeleting: { type: Boolean, default: false }
 });
 
 defineEmits(['edit', 'delete', 'assign', 'editExpense', 'viewUnassigned']);

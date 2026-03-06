@@ -216,6 +216,7 @@
                 :expenses="expenseStore.expenses"
                 :editable="true"
                 :categories="resolvedCategories"
+                :loading="expenseStore.isLoading"
                 @edit="openEditModal"
                 @add-installment="handleAddInstallment"
               />
@@ -226,6 +227,7 @@
                 :deliveries="deliveryStore.deliveries"
                 :expenses="expenseStore.expenses"
                 :editable="true"
+                :is-deleting="isDeletingDelivery"
                 @edit="openDeliveryEditModal"
                 @delete="handleDeleteDelivery"
                 @assign="openDeliveryAssignModal"
@@ -242,6 +244,7 @@
         :show="showDeliveryModal"
         :next-number="deliveryStore.nextNumber"
         :delivery="editingDelivery"
+        :is-submitting="isCreatingDelivery"
         @close="showDeliveryModal = false"
         @submit="handleDeliverySubmit"
       />
@@ -296,6 +299,7 @@
         :categories="resolvedCategories"
         :deliveries="deliveryStore.deliveries"
         :prefill="createModalPrefill"
+        :is-submitting="isCreatingExpense"
         @close="showCreateModal = false"
         @submit="handleCreateSubmit"
       />
@@ -306,6 +310,7 @@
         :expense="editingExpense"
         :projects="projectStore.projects"
         :categories="resolvedCategories"
+        :is-saving="isEditingExpense"
         @close="showEditModal = false"
         @save="handleEditSave"
       />
@@ -361,6 +366,10 @@ const showDeliveryAssignModal = ref(false);
 const showUnassignedModal = ref(false);
 const assigningDelivery = ref(null);
 const editingDelivery = ref(null);
+const isCreatingExpense = ref(false);
+const isEditingExpense = ref(false);
+const isCreatingDelivery = ref(false);
+const isDeletingDelivery = ref(false);
 
 const resolvedCategories = computed(() => {
   const id = route.params.id;
@@ -502,6 +511,7 @@ function getInstallmentGroupTotal(groupId) {
 }
 
 async function handleCreateSubmit(formData) {
+  isCreatingExpense.value = true;
   try {
     const data = {
       projectId: project.value.id,
@@ -562,6 +572,8 @@ async function handleCreateSubmit(formData) {
   } catch (error) {
     console.error('Error adding expense:', error);
     useToast('error', 'Error al agregar');
+  } finally {
+    isCreatingExpense.value = false;
   }
 }
 
@@ -584,48 +596,58 @@ async function handleProjectEditSave(data) {
 }
 
 async function handleEditSave({ id, data }) {
-  const result = await expenseStore.updateExpense(id, data);
+  isEditingExpense.value = true;
+  try {
+    const result = await expenseStore.updateExpense(id, data);
 
-  if (result.success) {
-    useToast('success', 'Registro actualizado');
-    showEditModal.value = false;
+    if (result.success) {
+      useToast('success', 'Registro actualizado');
+      showEditModal.value = false;
 
-    // If moved to another project, remove from current list
-    if (data.projectId && data.projectId !== project.value.id) {
-      expenseStore.expenses = expenseStore.expenses.filter(e => e.id !== id);
+      // If moved to another project, remove from current list
+      if (data.projectId && data.projectId !== project.value.id) {
+        expenseStore.expenses = expenseStore.expenses.filter(e => e.id !== id);
+      }
+    } else {
+      useToast('error', result.error || 'Error al actualizar');
     }
-  } else {
-    useToast('error', result.error || 'Error al actualizar');
+  } finally {
+    isEditingExpense.value = false;
   }
 }
 
 async function handleDeliverySubmit(formData) {
-  if (formData.id) {
-    // Edit
-    const result = await deliveryStore.updateDelivery(formData.id, {
-      date: formData.date,
-      description: formData.description
-    });
-    if (result.success) {
-      useToast('success', 'Entrega actualizada');
-      showDeliveryModal.value = false;
+  isCreatingDelivery.value = true;
+  try {
+    if (formData.id) {
+      // Edit
+      const result = await deliveryStore.updateDelivery(formData.id, {
+        date: formData.date,
+        description: formData.description
+      });
+      if (result.success) {
+        useToast('success', 'Entrega actualizada');
+        showDeliveryModal.value = false;
+      } else {
+        useToast('error', result.error || 'Error al actualizar la entrega');
+      }
     } else {
-      useToast('error', result.error || 'Error al actualizar la entrega');
+      // Create
+      const result = await deliveryStore.createDelivery({
+        projectId: project.value.id,
+        providerId: project.value.providerId,
+        date: formData.date,
+        description: formData.description
+      });
+      if (result.success) {
+        useToast('success', 'Entrega creada');
+        showDeliveryModal.value = false;
+      } else {
+        useToast('error', result.error || 'Error al crear la entrega');
+      }
     }
-  } else {
-    // Create
-    const result = await deliveryStore.createDelivery({
-      projectId: project.value.id,
-      providerId: project.value.providerId,
-      date: formData.date,
-      description: formData.description
-    });
-    if (result.success) {
-      useToast('success', 'Entrega creada');
-      showDeliveryModal.value = false;
-    } else {
-      useToast('error', result.error || 'Error al crear la entrega');
-    }
+  } finally {
+    isCreatingDelivery.value = false;
   }
 }
 
@@ -637,11 +659,16 @@ function openDeliveryEditModal(delivery) {
 async function handleDeleteDelivery(delivery) {
   if (!confirm(`¿Eliminar la ${delivery.number}° Entrega? Los gastos asignados quedarán sin entrega.`)) return;
 
-  const result = await deliveryStore.deleteDelivery(delivery.id, expenseStore);
-  if (result) {
-    useToast('success', 'Entrega eliminada');
-  } else {
-    useToast('error', 'Error al eliminar la entrega');
+  isDeletingDelivery.value = true;
+  try {
+    const result = await deliveryStore.deleteDelivery(delivery.id, expenseStore);
+    if (result) {
+      useToast('success', 'Entrega eliminada');
+    } else {
+      useToast('error', 'Error al eliminar la entrega');
+    }
+  } finally {
+    isDeletingDelivery.value = false;
   }
 }
 

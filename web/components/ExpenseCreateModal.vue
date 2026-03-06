@@ -252,8 +252,8 @@
             Cancelar
           </button>
           <button type="submit" :disabled="isSubmitting" class="btn-primary flex-1 sm:flex-initial flex items-center justify-center gap-2 order-1 sm:order-2">
-            <span v-if="isSubmitting" class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
-            {{ submitLabel }}
+            <span v-if="isSubmitting" class="btn-spinner"></span>
+            {{ isSubmitting ? 'Guardando...' : submitLabel }}
           </button>
         </div>
       </form>
@@ -273,7 +273,8 @@ const props = defineProps({
   type: { type: String, default: 'expense' },
   categories: { type: Array, default: () => [] },
   deliveries: { type: Array, default: () => [] },
-  prefill: { type: Object, default: null }
+  prefill: { type: Object, default: null },
+  isSubmitting: { type: Boolean, default: false }
 });
 
 const recipientStore = useRecipientStore();
@@ -287,7 +288,6 @@ const emit = defineEmits(['close', 'submit']);
 const isLocked = computed(() => !!props.prefill?.locked);
 const installmentMaxPercent = computed(() => props.prefill?.installmentMaxPercent || 100);
 
-const isSubmitting = ref(false);
 const showItems = ref(false);
 const selectedRecipientIdx = ref(-1);
 
@@ -406,37 +406,32 @@ watch(() => props.show, (show) => {
   }
 });
 
-async function handleSubmit() {
-  isSubmitting.value = true;
-  try {
-    const isProviderExpense = props.type === 'provider_expense';
-    const percent = props.type === 'expense' ? form.installmentPercent : null;
-    const effectiveAmount = (percent !== null && percent > 0 && percent < 100)
-      ? installmentAmount.value
-      : parseFloat(form.amount);
-    const needsGroup = percent !== null && percent > 0 && percent < 100;
+function handleSubmit() {
+  const isProviderExpense = props.type === 'provider_expense';
+  const percent = props.type === 'expense' ? form.installmentPercent : null;
+  const effectiveAmount = (percent !== null && percent > 0 && percent < 100)
+    ? installmentAmount.value
+    : parseFloat(form.amount);
+  const needsGroup = percent !== null && percent > 0 && percent < 100;
 
-    const data = {
-      title: form.title,
-      amount: effectiveAmount,
-      category: props.type === 'payment' ? 'pago' : form.category,
-      description: form.description,
-      type: props.type,
-      scopeType: props.type === 'expense' ? form.scopeType : 'original',
-      paymentMethod: isProviderExpense ? null : form.paymentMethod,
-      recipientName: isProviderExpense ? null : (form.recipientName || null),
-      recipientBankInfo: isProviderExpense ? null : (form.recipientBankInfo || null),
-      recipientPlatform: isProviderExpense ? null : (form.recipientPlatform || null),
-      recipientCuit: isProviderExpense ? null : (form.recipientCuit || null),
-      createLinkedPayment: props.type === 'expense' && percent > 0,
-      deliveryId: props.type === 'expense' ? (form.deliveryId || null) : null,
-      items: form.items.length > 0 ? form.items.filter(i => i.name) : null,
-      installmentPercent: percent,
-      installmentGroupId: needsGroup ? (form.installmentGroupId || crypto.randomUUID()) : null
-    };
-    emit('submit', data);
-  } finally {
-    isSubmitting.value = false;
-  }
+  const data = {
+    title: form.title,
+    amount: effectiveAmount,
+    category: props.type === 'payment' ? 'pago' : form.category,
+    description: form.description,
+    type: props.type,
+    scopeType: props.type === 'expense' ? form.scopeType : 'original',
+    paymentMethod: isProviderExpense ? null : form.paymentMethod,
+    recipientName: isProviderExpense ? null : (form.recipientName || null),
+    recipientBankInfo: isProviderExpense ? null : (form.recipientBankInfo || null),
+    recipientPlatform: isProviderExpense ? null : (form.recipientPlatform || null),
+    recipientCuit: isProviderExpense ? null : (form.recipientCuit || null),
+    createLinkedPayment: props.type === 'expense' && percent > 0,
+    deliveryId: props.type === 'expense' ? (form.deliveryId || null) : null,
+    items: form.items.length > 0 ? form.items.filter(i => i.name) : null,
+    installmentPercent: percent,
+    installmentGroupId: needsGroup ? (form.installmentGroupId || crypto.randomUUID()) : null
+  };
+  emit('submit', data);
 }
 </script>

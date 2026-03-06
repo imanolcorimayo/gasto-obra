@@ -78,10 +78,12 @@
       <div class="flex justify-end mt-6">
         <button
           @click="handleUnlink"
-          class="btn-danger text-sm flex items-center gap-2"
+          :disabled="isUnlinking"
+          class="btn-danger text-sm flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          <MdiLinkOff class="text-base" />
-          Desvincular cuenta
+          <span v-if="isUnlinking" class="btn-spinner"></span>
+          <MdiLinkOff v-else class="text-base" />
+          {{ isUnlinking ? 'Desvinculando...' : 'Desvincular cuenta' }}
         </button>
       </div>
     </div>
@@ -220,6 +222,7 @@ const { linkedAccount, pendingCode, codeExpiresAt, isLoading, isGenerating } = s
 
 const timeRemaining = ref('10:00');
 const copied = ref(false);
+const isUnlinking = ref(false);
 let countdownInterval = null;
 
 async function generateCode() {
@@ -274,11 +277,16 @@ async function copyCode() {
 async function handleUnlink() {
   if (!confirm('Estas seguro de desvincular tu WhatsApp?')) return;
 
-  const success = await whatsappStore.unlinkAccount();
-  if (success) {
-    useToast('success', 'Cuenta desvinculada');
-  } else {
-    useToast('error', whatsappStore.error || 'Error al desvincular');
+  isUnlinking.value = true;
+  try {
+    const success = await whatsappStore.unlinkAccount();
+    if (success) {
+      useToast('success', 'Cuenta desvinculada');
+    } else {
+      useToast('error', whatsappStore.error || 'Error al desvincular');
+    }
+  } finally {
+    isUnlinking.value = false;
   }
 }
 
