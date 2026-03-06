@@ -117,6 +117,10 @@
 </template>
 
 <script setup>
+definePageMeta({
+  layout: 'landing'
+});
+
 useHead({
   title: 'Politica de Privacidad - Gasto Obra',
 })
