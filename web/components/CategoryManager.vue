@@ -4,7 +4,7 @@
     <div
       v-for="(cat, idx) in categories"
       :key="idx"
-      class="flex items-center gap-3 p-2.5 bg-go-bg rounded-go-md border border-go-border-subtle"
+      class="flex items-center gap-3 p-2.5 bg-go-surface rounded-go-md border border-go-border"
     >
       <input
         type="color"

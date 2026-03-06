@@ -31,9 +31,9 @@
     </div>
 
     <!-- Category Editor -->
-    <div v-else class="bg-go-surface border border-go-border rounded-go-xl p-6">
+    <div v-else>
       <!-- Info Callout -->
-      <div class="bg-go-bg border border-go-border-subtle rounded-go-md p-3 mb-5 flex items-start gap-3">
+      <div class="bg-go-surface border border-go-border rounded-go-xl p-3 mb-5 flex items-start gap-3">
         <svg class="w-4 h-4 text-go-info shrink-0 mt-0.5" viewBox="0 0 24 24" fill="currentColor">
           <path d="M13,9H11V7H13M13,17H11V11H13M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2Z" />
         </svg>

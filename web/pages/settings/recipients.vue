@@ -30,7 +30,7 @@
     </div>
 
     <!-- Recipient Editor -->
-    <div v-else class="bg-go-surface border border-go-border rounded-go-xl p-6">
+    <div v-else>
       <RecipientManager v-model="editingRecipients" @delete="handleSave" />
 
       <button

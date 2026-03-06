@@ -32,50 +32,52 @@
     </div>
 
     <!-- Linked Successfully -->
-    <div v-else-if="linkedAccount" class="bg-go-surface border border-go-border rounded-go-xl p-6">
-      <!-- Success Banner -->
-      <div class="bg-go-success/10 border border-go-success/30 rounded-go-xl p-5 flex items-start gap-4">
-        <div class="bg-go-success/20 rounded-full p-2 shrink-0">
-          <MdiCheck class="text-go-success text-lg" />
+    <div v-else-if="linkedAccount" class="space-y-4">
+      <!-- Success Banner + Account Details -->
+      <div class="bg-go-surface border border-go-border rounded-go-xl p-6">
+        <div class="bg-go-success/10 border border-go-success/30 rounded-go-xl p-5 flex items-start gap-4">
+          <div class="bg-go-success/20 rounded-full p-2 shrink-0">
+            <MdiCheck class="text-go-success text-lg" />
+          </div>
+          <div>
+            <h2 class="font-display font-semibold text-go-text">WhatsApp vinculado</h2>
+            <p class="text-go-text-muted text-sm mt-0.5">
+              +{{ formatPhoneNumber(linkedAccount.phoneNumber) }}
+              <span v-if="linkedAccount.contactName"> · {{ linkedAccount.contactName }}</span>
+            </p>
+          </div>
         </div>
-        <div>
-          <h2 class="font-display font-semibold text-go-text">WhatsApp vinculado</h2>
-          <p class="text-go-text-muted text-sm mt-0.5">
-            +{{ formatPhoneNumber(linkedAccount.phoneNumber) }}
-            <span v-if="linkedAccount.contactName"> · {{ linkedAccount.contactName }}</span>
-          </p>
-        </div>
-      </div>
 
-      <!-- Account Details -->
-      <div class="mt-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div>
-          <span class="text-[11px] font-semibold uppercase tracking-wider text-go-text-muted block mb-1">Teléfono</span>
-          <span class="text-sm text-go-text font-mono">+{{ formatPhoneNumber(linkedAccount.phoneNumber) }}</span>
-        </div>
-        <div v-if="linkedAccount.contactName">
-          <span class="text-[11px] font-semibold uppercase tracking-wider text-go-text-muted block mb-1">Contacto</span>
-          <span class="text-sm text-go-text">{{ linkedAccount.contactName }}</span>
-        </div>
-        <div v-if="linkedAccount.linkedAt">
-          <span class="text-[11px] font-semibold uppercase tracking-wider text-go-text-muted block mb-1">Vinculado</span>
-          <span class="text-sm text-go-text">{{ linkedAccount.linkedAt }}</span>
+        <!-- Account Details -->
+        <div class="mt-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <span class="text-[11px] font-semibold uppercase tracking-wider text-go-text-muted block mb-1">Teléfono</span>
+            <span class="text-sm text-go-text font-mono">+{{ formatPhoneNumber(linkedAccount.phoneNumber) }}</span>
+          </div>
+          <div v-if="linkedAccount.contactName">
+            <span class="text-[11px] font-semibold uppercase tracking-wider text-go-text-muted block mb-1">Contacto</span>
+            <span class="text-sm text-go-text">{{ linkedAccount.contactName }}</span>
+          </div>
+          <div v-if="linkedAccount.linkedAt">
+            <span class="text-[11px] font-semibold uppercase tracking-wider text-go-text-muted block mb-1">Vinculado</span>
+            <span class="text-sm text-go-text">{{ linkedAccount.linkedAt }}</span>
+          </div>
         </div>
       </div>
 
       <!-- How to Use -->
-      <div class="bg-go-bg border border-go-border-subtle rounded-go-xl p-4 mt-5">
+      <div class="bg-go-surface border border-go-border rounded-go-xl p-4">
         <h3 class="text-[11px] font-semibold uppercase tracking-wider text-go-text-muted mb-3">Formato de mensaje</h3>
         <div class="space-y-2">
-          <code class="block font-mono text-sm text-go-primary bg-go-surface border border-go-border-subtle rounded-go-md px-3 py-2">$500 Clavos #flores3b</code>
-          <code class="block font-mono text-sm text-go-primary bg-go-surface border border-go-border-subtle rounded-go-md px-3 py-2">$1200 Viaje ferretería #flores3b</code>
-          <code class="block font-mono text-sm text-go-primary bg-go-surface border border-go-border-subtle rounded-go-md px-3 py-2">Foto de ticket + caption #flores3b</code>
+          <code class="block font-mono text-sm text-go-primary bg-go-bg border border-go-border-subtle rounded-go-md px-3 py-2">$500 Clavos #flores3b</code>
+          <code class="block font-mono text-sm text-go-primary bg-go-bg border border-go-border-subtle rounded-go-md px-3 py-2">$1200 Viaje ferretería #flores3b</code>
+          <code class="block font-mono text-sm text-go-primary bg-go-bg border border-go-border-subtle rounded-go-md px-3 py-2">Foto de ticket + caption #flores3b</code>
         </div>
         <p class="text-go-text-muted text-xs mt-3">Formato: <span class="font-mono text-go-primary">$monto concepto #tag</span></p>
       </div>
 
       <!-- Unlink -->
-      <div class="flex justify-end mt-6">
+      <div class="flex justify-end">
         <button
           @click="handleUnlink"
           :disabled="isUnlinking"

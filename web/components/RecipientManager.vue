@@ -22,7 +22,7 @@
       <div
         v-for="(r, idx) in recipients"
         :key="idx"
-        class="flex items-start gap-3 p-3 bg-go-bg border border-go-border-subtle rounded-go-md mb-2"
+        class="flex items-start gap-3 p-3 bg-go-surface border border-go-border rounded-go-md mb-2"
       >
         <!-- Avatar -->
         <div class="bg-go-surface border border-go-border rounded-full w-9 h-9 flex items-center justify-center text-go-text-secondary text-sm font-semibold flex-shrink-0 mt-0.5">
