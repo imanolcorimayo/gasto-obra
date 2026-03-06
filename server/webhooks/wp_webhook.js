@@ -189,6 +189,19 @@ function clearPendingExpense(phoneNumber) {
 // ============================================
 app.use(express.json());
 
+app.use((req, res, next) => {
+  const start = Date.now();
+  res.on('finish', () => {
+    logger.info('HTTP request', {
+      method: req.method,
+      path: req.originalUrl,
+      status: res.statusCode,
+      duration: Date.now() - start,
+    });
+  });
+  next();
+});
+
 // ============================================
 // Routes
 // ============================================
