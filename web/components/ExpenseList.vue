@@ -15,18 +15,6 @@
       </div>
 
       <div class="flex flex-col gap-0.5">
-        <span class="text-[11px] text-go-text-muted uppercase tracking-wider">Estado</span>
-        <select
-          v-model="selectedPaymentStatus"
-          class="bg-go-surface border border-go-border rounded-go-md px-2.5 py-1.5 text-xs text-go-text focus:outline-none focus:border-go-primary cursor-pointer"
-        >
-          <option v-for="ps in paymentStatusFilters" :key="ps.value" :value="ps.value">
-            {{ ps.label }}
-          </option>
-        </select>
-      </div>
-
-      <div class="flex flex-col gap-0.5">
         <span class="text-[11px] text-go-text-muted uppercase tracking-wider">Alcance</span>
         <select
           v-model="selectedScopeType"
@@ -86,28 +74,48 @@
           <tr class="border-b border-go-border">
             <th class="text-[10px] font-semibold uppercase tracking-wider text-go-text-muted text-left pb-2 pr-3">Fecha</th>
             <th class="text-[10px] font-semibold uppercase tracking-wider text-go-text-muted text-left pb-2 pr-3">Concepto</th>
+            <th v-if="hasInstallments" class="text-[10px] font-semibold uppercase tracking-wider text-go-text-muted text-center pb-2 px-3">Pagado</th>
             <th class="text-[10px] font-semibold uppercase tracking-wider text-go-text-muted text-left pb-2 px-3">Categoria</th>
             <th v-if="hasAdditions" class="text-[10px] font-semibold uppercase tracking-wider text-go-text-muted text-left pb-2 px-3">Alcance</th>
-            <th class="text-[10px] font-semibold uppercase tracking-wider text-go-text-muted text-left pb-2 px-3">Estado</th>
             <th class="text-[10px] font-semibold uppercase tracking-wider text-go-text-muted text-right pb-2 pl-3">Gasto</th>
             <th class="text-[10px] font-semibold uppercase tracking-wider text-go-text-muted text-right pb-2 pl-3">Pago</th>
             <th v-if="hasProviderExpenses" class="text-[10px] font-semibold uppercase tracking-wider text-go-text-muted text-right pb-2 pl-3">Propio</th>
             <th class="text-[10px] font-semibold uppercase tracking-wider text-go-text-muted text-right pb-2 pl-3">Saldo</th>
-            <th v-if="editable" class="pb-2 pl-3 w-10"></th>
+            <th v-if="editable" class="text-[10px] font-semibold uppercase tracking-wider text-go-text-muted text-right pb-2 pl-3">Acciones</th>
           </tr>
         </thead>
         <tbody>
           <tr
             v-for="row in tableRows"
             :key="row.id"
-            class="border-b border-go-border-subtle hover:bg-go-surface/50 transition-colors group"
-            :class="{ 'cursor-pointer': editable }"
-            @click="editable && $emit('edit', row.expense)"
+            class="border-b border-go-border-subtle hover:bg-go-surface/50 transition-colors"
           >
             <td class="py-3 pr-3 text-go-text-muted text-xs tabular-nums whitespace-nowrap">{{ row.date }}</td>
             <td class="py-3 pr-3 text-go-text">
               <span>{{ row.title }}</span>
               <span v-if="row.items" class="text-go-text-muted text-xs ml-1">({{ row.items }} items)</span>
+            </td>
+            <td v-if="hasInstallments" class="py-3 px-3 whitespace-nowrap">
+              <div
+                v-if="!row.isPayment && !row.isProvider && row.installmentPercent != null"
+                class="w-16"
+              >
+                <div class="flex items-baseline gap-0.5 mb-0.5">
+                  <span class="text-[10px] tabular-nums font-semibold"
+                    :class="(row.groupPercent || row.installmentPercent) >= 100 ? 'text-go-success' : 'text-go-text'"
+                  >{{ row.groupPercent != null ? row.groupPercent : row.installmentPercent }}%</span>
+                  <span v-if="row.groupPercent != null && row.groupPercent !== row.installmentPercent" class="text-[9px] tabular-nums text-go-text-muted">
+                    (+{{ row.installmentPercent }})
+                  </span>
+                </div>
+                <div class="w-full h-1 rounded-full bg-go-surface-alt overflow-hidden">
+                  <div
+                    class="h-full rounded-full transition-all"
+                    :class="(row.groupPercent || row.installmentPercent) >= 100 ? 'bg-go-success' : (row.groupPercent || row.installmentPercent) > 0 ? 'bg-go-primary' : ''"
+                    :style="{ width: Math.min(row.groupPercent != null ? row.groupPercent : row.installmentPercent, 100) + '%' }"
+                  ></div>
+                </div>
+              </div>
             </td>
             <td class="py-3 px-3 whitespace-nowrap">
               <span v-if="row.categoryLabel" class="text-xs text-go-text-muted">{{ row.categoryLabel }}</span>
@@ -118,18 +126,6 @@
                 class="text-[10px] font-medium px-1.5 py-0.5 rounded-go-sm"
                 :style="getScopeTypeStyles('addition')"
               >Agregado</span>
-            </td>
-            <td class="py-3 px-3 whitespace-nowrap">
-              <button
-                v-if="editable && row.paymentStatus === 'pending' && !row.isPayment && !row.isProvider"
-                class="text-[10px] font-medium px-1.5 py-0.5 rounded-go-sm bg-go-warning/15 text-go-warning hover:bg-go-warning/25 transition-colors"
-                @click.stop="$emit('markPaid', row.expense)"
-              >Pendiente</button>
-              <button
-                v-else-if="editable && row.paymentStatus === 'paid' && !row.isPayment && !row.isProvider && row.expense.linkedPaymentId"
-                class="text-[10px] font-medium px-1.5 py-0.5 rounded-go-sm bg-go-success/15 text-go-success hover:bg-go-success/25 transition-colors"
-                @click.stop="$emit('markPending', row.expense)"
-              >Pagado</button>
             </td>
             <td class="py-3 pl-3 text-right whitespace-nowrap">
               <span v-if="row.expenseAmount" class="tabular-nums font-medium text-go-primary">{{ formatPrice(row.expenseAmount) }}</span>
@@ -146,8 +142,20 @@
             >
               {{ formatPrice(row.balance) }}
             </td>
-            <td v-if="editable" class="py-3 pl-3 text-right">
-              <MdiPencil class="text-sm text-go-text-muted opacity-0 group-hover:opacity-100 transition-opacity" />
+            <td v-if="editable" class="py-3 pl-3 text-right whitespace-nowrap">
+              <div class="flex items-center justify-end gap-1.5">
+                <button
+                  v-if="row.canAddInstallment"
+                  class="p-1.5 rounded-go-sm border border-go-primary text-go-primary hover:bg-go-primary-muted transition-colors cursor-pointer"
+                  title="Agregar pago"
+                  @click.stop="$emit('addInstallment', row.expense)"
+                ><MdiCashPlus class="text-base pointer-events-none" /></button>
+                <button
+                  class="p-1.5 rounded-go-sm border border-go-border text-go-text-muted hover:bg-go-surface-alt hover:text-go-text transition-colors cursor-pointer"
+                  title="Editar"
+                  @click.stop="$emit('edit', row.expense)"
+                ><MdiPencil class="text-base pointer-events-none" /></button>
+              </div>
             </td>
           </tr>
         </tbody>
@@ -159,6 +167,7 @@
 
 <script setup>
 import MdiPencil from '~icons/mdi/pencil';
+import MdiCashPlus from '~icons/mdi/cash-plus';
 import { DEFAULT_EXPENSE_CATEGORIES, formatPrice, getScopeTypeStyles, getCategoryLabel } from '~/utils';
 
 const props = defineProps({
@@ -171,11 +180,10 @@ const resolvedCategories = computed(() =>
   props.categories.length > 0 ? props.categories : DEFAULT_EXPENSE_CATEGORIES
 );
 
-defineEmits(['edit', 'markPaid', 'markPending']);
+defineEmits(['edit', 'addInstallment']);
 
 const selectedCategory = ref('');
 const selectedType = ref('');
-const selectedPaymentStatus = ref('');
 const selectedScopeType = ref('');
 
 const typeFilters = [
@@ -183,12 +191,6 @@ const typeFilters = [
   { value: 'expense', label: 'Gastos' },
   { value: 'payment', label: 'Pagos' },
   { value: 'provider_expense', label: 'Propios' }
-];
-
-const paymentStatusFilters = [
-  { value: '', label: 'Todos' },
-  { value: 'paid', label: 'Pagados' },
-  { value: 'pending', label: 'Pendientes' }
 ];
 
 const scopeTypeFilters = [
@@ -203,12 +205,11 @@ const allCategories = computed(() => [
 ]);
 
 const hasActiveFilters = computed(() =>
-  selectedType.value || selectedPaymentStatus.value || selectedCategory.value || selectedScopeType.value
+  selectedType.value || selectedCategory.value || selectedScopeType.value
 );
 
 function clearFilters() {
   selectedType.value = '';
-  selectedPaymentStatus.value = '';
   selectedCategory.value = '';
   selectedScopeType.value = '';
 }
@@ -226,14 +227,6 @@ const filteredExpenses = computed(() => {
 
   if (selectedCategory.value) {
     result = result.filter(e => e.category === selectedCategory.value);
-  }
-
-  if (selectedPaymentStatus.value) {
-    if (selectedPaymentStatus.value === 'paid') {
-      result = result.filter(e => !e.paymentStatus || e.paymentStatus === 'paid');
-    } else {
-      result = result.filter(e => e.paymentStatus === selectedPaymentStatus.value);
-    }
   }
 
   if (selectedScopeType.value) {
@@ -269,6 +262,20 @@ const hasAdditions = computed(() =>
   filteredExpenses.value.some(e => e.scopeType === 'addition')
 );
 
+const hasInstallments = computed(() =>
+  filteredExpenses.value.some(e => (!e.type || e.type === 'expense') && e.installmentPercent != null && e.installmentPercent < 100)
+);
+
+const groupPercents = computed(() => {
+  const groups = {};
+  for (const e of props.expenses) {
+    if (e.installmentGroupId) {
+      groups[e.installmentGroupId] = (groups[e.installmentGroupId] || 0) + (e.installmentPercent || 0);
+    }
+  }
+  return groups;
+});
+
 const tableRows = computed(() => {
   const sorted = [...filteredExpenses.value].sort((a, b) => getTimestamp(a) - getTimestamp(b));
 
@@ -277,6 +284,7 @@ const tableRows = computed(() => {
     const isPayment = e.type === 'payment';
     const isProvider = e.type === 'provider_expense';
     const amount = e.amount || 0;
+    const groupTotal = e.installmentGroupId ? (groupPercents.value[e.installmentGroupId] || 0) : null;
 
     if (isPayment) balance += amount;
     else if (!isProvider) balance -= amount;
@@ -289,13 +297,15 @@ const tableRows = computed(() => {
       items: e.items?.length || 0,
       scopeType: e.scopeType || 'original',
       categoryLabel: getCategoryLabel(e.category || 'otros', resolvedCategories.value),
-      paymentStatus: e.paymentStatus,
       isPayment,
       isProvider,
       expenseAmount: (!isPayment && !isProvider) ? amount : null,
       paymentAmount: isPayment ? amount : null,
       providerAmount: isProvider ? amount : null,
-      balance
+      balance,
+      installmentPercent: e.installmentPercent ?? null,
+      groupPercent: groupTotal,
+      canAddInstallment: !isPayment && !isProvider && groupTotal != null && groupTotal < 100
     };
   });
 

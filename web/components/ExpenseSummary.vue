@@ -116,8 +116,8 @@ const totalProviderExpenses = computed(() =>
 );
 
 const totalPending = computed(() =>
-  props.expenses
-    .filter(e => e.paymentStatus === 'pending')
+  clientExpenses.value
+    .filter(e => e.installmentPercent === 0)
     .reduce((sum, e) => sum + (e.amount || 0), 0)
 );
 

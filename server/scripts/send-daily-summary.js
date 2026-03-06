@@ -199,7 +199,7 @@ ${expenseLines}`;
 
     // Calculate pending amounts
     const pendingTotal = allEntries
-      .filter(e => e.paymentStatus === 'pending')
+      .filter(e => (!e.type || e.type === 'expense') && e.installmentPercent === 0)
       .reduce((sum, e) => sum + (e.amount || 0), 0);
 
     message += `\n\n*Total acumulado gastos:* ${formatAmount(accumulatedExpenses)}`;

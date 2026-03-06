@@ -63,20 +63,49 @@
             />
           </div>
 
-          <!-- Amount -->
+          <!-- Amount + Installment percent -->
           <div>
-            <label class="block text-[11px] font-semibold uppercase tracking-wider text-go-text-muted mb-1.5">Monto</label>
-            <div class="flex">
-              <span class="bg-go-surface border border-go-border border-r-0 rounded-l-go-md px-3 py-2.5 text-go-text-muted text-sm">$</span>
-              <input
-                v-model="form.amount"
-                type="number"
-                required
-                min="1"
-                step="0.01"
-                class="flex-1 bg-go-bg border border-go-border rounded-r-go-md rounded-l-none px-3 py-2.5 text-lg font-display font-semibold tabular-nums text-go-text placeholder-go-text-muted focus:outline-none focus:ring-2 focus:ring-go-primary/40 focus:border-go-primary transition-colors"
-              />
+            <div :class="form.type === 'expense' ? 'flex flex-col sm:flex-row sm:items-end gap-3' : ''">
+              <div class="sm:flex-1">
+                <label class="block text-[11px] font-semibold uppercase tracking-wider text-go-text-muted mb-1.5">
+                  {{ isPartial ? 'Monto total' : 'Monto' }}
+                </label>
+                <div class="flex">
+                  <span class="bg-go-surface border border-go-border border-r-0 rounded-l-go-md px-3 py-2.5 text-go-text-muted text-sm">$</span>
+                  <input
+                    v-model="form.amount"
+                    type="number"
+                    required
+                    min="1"
+                    step="0.01"
+                    class="flex-1 bg-go-bg border border-go-border rounded-r-go-md rounded-l-none px-3 py-2.5 text-lg font-display font-semibold tabular-nums text-go-text placeholder-go-text-muted focus:outline-none focus:ring-2 focus:ring-go-primary/40 focus:border-go-primary transition-colors"
+                  />
+                </div>
+              </div>
+              <div v-if="form.type === 'expense'">
+                <label class="block text-[11px] font-semibold uppercase tracking-wider text-go-text-muted mb-1.5 whitespace-nowrap">Pagado por cliente</label>
+                <div class="flex">
+                  <span class="bg-go-surface border border-go-border border-r-0 rounded-l-go-md px-3 py-2.5 text-lg font-display font-semibold text-go-text-muted">%</span>
+                  <input
+                    v-model.number="form.installmentPercent"
+                    type="number"
+                    min="0"
+                    max="100"
+                    @blur="form.installmentPercent = form.installmentPercent || 0"
+                    class="flex-1 sm:w-16 bg-go-bg border border-go-border rounded-r-go-md rounded-l-none px-3 py-2.5 text-lg font-display font-semibold text-go-text tabular-nums focus:outline-none focus:ring-2 focus:ring-go-primary/40 focus:border-go-primary transition-colors"
+                  />
+                </div>
+              </div>
             </div>
+            <p v-if="form.type === 'expense'" class="text-xs mt-1.5 font-medium"
+              :class="form.installmentPercent >= 100 ? 'text-go-success' : 'text-go-info'"
+            >
+              <template v-if="!form.installmentPercent">Sin pago directo — se descuenta del saldo del cliente</template>
+              <template v-else-if="form.installmentPercent >= 100">Pagado — se genera un cobro automático por {{ form.amount ? formatPrice(parseFloat(form.amount)) : 'el monto' }}</template>
+              <template v-else-if="form.amount">
+                <span class="tabular-nums">Parcial — se genera un cobro automático de {{ formatPrice(editInstallmentAmount) }}</span>
+              </template>
+            </p>
           </div>
 
           <!-- Category (hidden for payments) -->
@@ -98,36 +127,15 @@
           <!-- Description -->
           <div>
             <label class="block text-[11px] font-semibold uppercase tracking-wider text-go-text-muted mb-1.5">Descripcion</label>
-            <input
+            <textarea
               v-model="form.description"
-              type="text"
+              rows="2"
               placeholder="Opcional"
-              class="w-full bg-go-bg border border-go-border rounded-go-md px-3 py-2.5 text-sm text-go-text placeholder-go-text-muted focus:outline-none focus:ring-2 focus:ring-go-primary/40 focus:border-go-primary transition-colors"
+              class="w-full bg-go-bg border border-go-border rounded-go-md px-3 py-2.5 text-sm text-go-text placeholder-go-text-muted focus:outline-none focus:ring-2 focus:ring-go-primary/40 focus:border-go-primary transition-colors resize-none"
             />
           </div>
 
           <hr class="border-go-border-subtle" />
-
-          <!-- Payment Status -->
-          <div>
-            <label class="block text-[11px] font-semibold uppercase tracking-wider text-go-text-muted mb-1.5">Estado de pago</label>
-            <div class="flex gap-2">
-              <button
-                v-for="s in PAYMENT_STATUSES"
-                :key="s.value"
-                type="button"
-                @click="form.paymentStatus = s.value"
-                class="text-xs font-medium px-2.5 py-1 rounded-go-sm border transition-colors"
-                :class="form.paymentStatus === s.value
-                  ? s.value === 'paid'
-                    ? 'border-go-success bg-go-success-muted text-go-success'
-                    : 'border-go-danger bg-go-danger-muted text-go-danger'
-                  : 'border-go-border text-go-text-muted hover:border-go-text-muted'"
-              >
-                {{ s.label }}
-              </button>
-            </div>
-          </div>
 
           <!-- Payment Method -->
           <div>
@@ -186,17 +194,18 @@
               Items ({{ form.items.length }})
             </button>
 
-            <div v-if="showItems" class="mt-2 flex flex-col gap-2">
+            <div v-if="showItems" class="mt-2">
               <div
                 v-for="(item, idx) in form.items"
                 :key="idx"
-                class="flex items-center gap-2 p-2 bg-go-bg rounded-go-md border border-go-border-subtle"
+                class="flex items-center gap-2 py-2"
+                :class="{ 'border-b border-go-border-subtle': idx < form.items.length - 1 }"
               >
                 <input
                   v-model="item.name"
                   type="text"
                   placeholder="Nombre"
-                  class="flex-1 bg-transparent border border-go-border rounded-go-md px-3 py-1.5 text-sm text-go-text placeholder-go-text-muted focus:outline-none focus:ring-2 focus:ring-go-primary/40 focus:border-go-primary transition-colors"
+                  class="flex-1 bg-go-bg border border-go-border rounded-go-md px-3 py-1.5 text-sm text-go-text placeholder-go-text-muted focus:outline-none focus:ring-2 focus:ring-go-primary/40 focus:border-go-primary transition-colors"
                 />
                 <input
                   v-model.number="item.amount"
@@ -204,7 +213,7 @@
                   placeholder="Monto"
                   min="0"
                   step="0.01"
-                  class="w-28 bg-transparent border border-go-border rounded-go-md px-3 py-1.5 text-sm text-go-text placeholder-go-text-muted focus:outline-none focus:ring-2 focus:ring-go-primary/40 focus:border-go-primary transition-colors"
+                  class="w-28 bg-go-bg border border-go-border rounded-go-md px-3 py-1.5 text-sm text-go-text placeholder-go-text-muted focus:outline-none focus:ring-2 focus:ring-go-primary/40 focus:border-go-primary transition-colors"
                 />
                 <button type="button" @click="removeItem(idx)" class="text-go-text-muted hover:text-go-danger transition-colors p-1">
                   <MdiClose class="text-base" />
@@ -213,7 +222,7 @@
               <button
                 type="button"
                 @click="addItem"
-                class="btn-secondary text-xs w-full mt-2 flex items-center justify-center gap-1"
+                class="btn-secondary text-xs w-full flex items-center justify-center gap-1 mt-2"
               >
                 <MdiPlus class="text-base" />
                 Agregar item
@@ -267,7 +276,7 @@
 import MdiChevronDown from '~icons/mdi/chevron-down';
 import MdiPlus from '~icons/mdi/plus';
 import MdiClose from '~icons/mdi/close';
-import { DEFAULT_EXPENSE_CATEGORIES, PAYMENT_METHODS, PAYMENT_STATUSES, SCOPE_TYPES, getScopeTypeStyles } from '~/utils';
+import { DEFAULT_EXPENSE_CATEGORIES, PAYMENT_METHODS, SCOPE_TYPES, getScopeTypeStyles, formatPrice } from '~/utils';
 import { useRecipientStore } from '~/stores/recipient';
 
 const recipientStore = useRecipientStore();
@@ -290,6 +299,13 @@ const selectedRecipientIdx = ref(-1);
 const showMoveProject = ref(false);
 const isSaving = ref(false);
 
+const isPartial = computed(() => form.installmentPercent > 0 && form.installmentPercent < 100);
+
+const editInstallmentAmount = computed(() => {
+  const total = parseFloat(form.amount) || 0;
+  return Math.round(total * form.installmentPercent / 100);
+});
+
 const typeOptions = [
   { value: 'expense', label: 'Gasto' },
   { value: 'payment', label: 'Cobro' },
@@ -303,14 +319,15 @@ const form = reactive({
   description: '',
   type: 'expense',
   scopeType: 'original',
-  paymentStatus: 'paid',
   paymentMethod: null,
   recipientName: '',
   recipientBankInfo: '',
   recipientPlatform: '',
   recipientCuit: '',
   items: [],
-  projectId: ''
+  projectId: '',
+  installmentPercent: 100,
+  installmentGroupId: null
 });
 
 // Lock background scroll
@@ -321,12 +338,15 @@ watch(() => props.show, (show) => {
 watch(() => props.expense, (expense) => {
   if (expense) {
     form.title = expense.title || '';
-    form.amount = expense.amount || '';
+    const percent = expense.installmentPercent ?? 100;
+    const hasPartial = percent > 0 && percent < 100;
+    form.amount = hasPartial
+      ? Math.round((expense.amount || 0) / (percent / 100))
+      : (expense.amount || '');
     form.category = expense.category || 'materiales';
     form.description = expense.description || '';
     form.type = expense.type || 'expense';
     form.scopeType = expense.scopeType || 'original';
-    form.paymentStatus = expense.paymentStatus || 'paid';
     form.paymentMethod = expense.paymentMethod || null;
     form.recipientName = expense.recipientName || '';
     form.recipientBankInfo = expense.recipientBankInfo || '';
@@ -334,6 +354,8 @@ watch(() => props.expense, (expense) => {
     form.recipientCuit = expense.recipientCuit || '';
     form.items = expense.items ? expense.items.map(i => ({ ...i })) : [];
     form.projectId = expense.projectId || '';
+    form.installmentPercent = percent;
+    form.installmentGroupId = expense.installmentGroupId || null;
     showItems.value = form.items.length > 0;
     showMoveProject.value = false;
 
@@ -385,21 +407,26 @@ watch(() => form.items, (items) => {
 async function handleSave() {
   isSaving.value = true;
   try {
+    const percent = form.type === 'expense' ? form.installmentPercent : null;
+    const partialCalc = percent !== null && percent > 0 && percent < 100;
+    const needsGroup = partialCalc;
+
     const data = {
       title: form.title,
-      amount: parseFloat(form.amount),
+      amount: partialCalc ? editInstallmentAmount.value : parseFloat(form.amount),
       category: form.type === 'payment' ? 'pago' : form.category,
       description: form.description,
       type: form.type,
       scopeType: form.type === 'expense' ? form.scopeType : 'original',
-      paymentStatus: form.paymentStatus,
       paymentMethod: form.paymentMethod,
       recipientName: form.recipientName || null,
       recipientBankInfo: form.recipientBankInfo || null,
       recipientPlatform: form.recipientPlatform || null,
       recipientCuit: form.recipientCuit || null,
       items: form.items.length > 0 ? form.items.filter(i => i.name) : null,
-      projectId: form.projectId
+      projectId: form.projectId,
+      installmentPercent: percent,
+      installmentGroupId: needsGroup ? (form.installmentGroupId || crypto.randomUUID()) : null
     };
     emit('save', { id: props.expense.id, data });
   } finally {

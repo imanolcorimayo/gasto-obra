@@ -61,11 +61,6 @@ export class ExpenseSchema extends Schema {
       type: 'array',
       required: false
     },
-    paymentStatus: {
-      type: 'string',
-      required: false,
-      default: 'paid'
-    },
     paymentMethod: {
       type: 'string',
       required: false
@@ -99,6 +94,14 @@ export class ExpenseSchema extends Schema {
       required: false
     },
     deliveryId: {
+      type: 'string',
+      required: false
+    },
+    installmentPercent: {
+      type: 'number',
+      required: false
+    },
+    installmentGroupId: {
       type: 'string',
       required: false
     },

@@ -14,23 +14,18 @@
             Pago
           </span>
           <span
-            v-if="!isPayment && expense.linkedPaymentId"
-            class="text-xs font-semibold px-2 py-0.5 rounded-go-sm bg-go-success-muted text-go-success"
-          >
-            Pagado
-          </span>
-          <span
-            v-else-if="!isPayment && expense.paymentStatus === 'pending'"
-            class="text-xs font-semibold px-2 py-0.5 rounded-go-sm bg-go-danger-muted text-go-danger"
-          >
-            Pendiente
-          </span>
-          <span
             v-if="expense.scopeType === 'addition'"
             class="text-[11px] font-medium px-2 py-0.5 rounded-go-sm"
             :style="getScopeTypeStyles('addition')"
           >
             Agregado
+          </span>
+          <span
+            v-if="!isPayment && expense.installmentPercent != null && expense.installmentPercent < 100"
+            class="text-[11px] font-semibold px-2 py-0.5 rounded-go-sm tabular-nums"
+            :class="expense.installmentPercent === 0 ? 'bg-go-danger-muted text-go-danger' : 'bg-go-info/15 text-go-info'"
+          >
+            {{ expense.installmentPercent }}%
           </span>
         </div>
         <p v-if="expense.description" class="text-go-text-tertiary text-sm mt-1">{{ expense.description }}</p>

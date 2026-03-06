@@ -118,35 +118,12 @@ export const TRANSACTION_TYPES = [
   { value: 'provider_expense', label: 'Gasto propio', color: '#8B847A' }
 ];
 
-export const PAYMENT_STATUSES = [
-  { value: 'paid', label: 'Pagado', color: '#5CB870' },
-  { value: 'pending', label: 'Pendiente', color: '#D4544A' }
-];
-
 export const PAYMENT_METHODS = [
   { value: 'transferencia', label: 'Transferencia', color: '#5A8FB8' },
   { value: 'efectivo', label: 'Efectivo', color: '#6B9B6B' },
   { value: 'tarjeta', label: 'Tarjeta', color: '#8B6BA3' },
   { value: 'mercadopago', label: 'Mercado Pago', color: '#00B1EA' }
 ];
-
-export const getPaymentStatusLabel = (value: string): string => {
-  const status = PAYMENT_STATUSES.find(s => s.value === value);
-  return status ? status.label : capitalizeFirst(value);
-};
-
-export const getPaymentStatusColor = (value: string): string => {
-  const status = PAYMENT_STATUSES.find(s => s.value === value);
-  return status ? status.color : '#8B847A';
-};
-
-export const getPaymentStatusStyles = (value: string) => {
-  const color = getPaymentStatusColor(value);
-  return {
-    backgroundColor: `${color}26`,
-    color: color
-  };
-};
 
 export const getPaymentMethodLabel = (value: string): string => {
   const method = PAYMENT_METHODS.find(m => m.value === value);

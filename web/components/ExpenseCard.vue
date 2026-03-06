@@ -20,23 +20,18 @@
             Propio
           </span>
           <span
-            v-if="expense.paymentStatus === 'pending'"
-            class="text-xs font-semibold px-2 py-0.5 rounded-go-sm bg-go-danger-muted text-go-danger"
-          >
-            Pendiente
-          </span>
-          <span
-            v-if="expense.paymentStatus === 'paid' && expense.type === 'expense'"
-            class="text-xs font-semibold px-2 py-0.5 rounded-go-sm bg-go-success-muted text-go-success"
-          >
-            Pagado
-          </span>
-          <span
             v-if="expense.scopeType === 'addition'"
             class="text-[11px] font-medium px-2 py-0.5 rounded-go-sm"
             :style="getScopeTypeStyles('addition')"
           >
             Agregado
+          </span>
+          <span
+            v-if="expense.type === 'expense' && expense.installmentPercent != null && expense.installmentPercent < 100"
+            class="text-[11px] font-semibold px-2 py-0.5 rounded-go-sm tabular-nums"
+            :class="expense.installmentPercent === 0 ? 'bg-go-danger-muted text-go-danger' : 'bg-go-info/15 text-go-info'"
+          >
+            {{ expense.installmentPercent }}%
           </span>
         </div>
         <p v-if="expense.description" class="text-go-text-tertiary text-sm mt-1">{{ expense.description }}</p>
@@ -91,31 +86,22 @@
       </span>
 
       <button
-        v-if="canMarkPaid"
-        @click="$emit('markPaid', expense)"
-        class="ml-auto text-go-text-muted hover:text-go-success transition-colors p-1 rounded-go-sm hover:bg-go-surface-alt flex items-center gap-1 text-xs"
+        v-if="canAddInstallment"
+        @click="$emit('addInstallment', expense)"
+        class="ml-auto text-go-text-muted hover:text-go-info transition-colors p-1 rounded-go-sm hover:bg-go-surface-alt flex items-center gap-1 text-xs"
       >
-        <MdiCheck class="text-sm" />
-        <span class="hidden sm:inline">Marcar pagado</span>
+        <MdiPlus class="text-sm" />
+        <span class="hidden sm:inline">Pago restante</span>
       </button>
 
-      <button
-        v-if="canMarkPending"
-        @click="$emit('markPending', expense)"
-        class="ml-auto text-go-text-muted hover:text-go-text transition-colors p-1 rounded-go-sm hover:bg-go-surface-alt flex items-center gap-1 text-xs"
-      >
-        <MdiUndoVariant class="text-sm" />
-        <span class="hidden sm:inline">Marcar pendiente</span>
-      </button>
     </div>
   </div>
 </template>
 
 <script setup>
 import MdiPencil from '~icons/mdi/pencil';
-import MdiCheck from '~icons/mdi/check';
-import MdiUndoVariant from '~icons/mdi/undo-variant';
-import { formatPrice, getCategoryStyles, getCategoryLabel, getPaymentMethodLabel, getScopeTypeStyles, getScopeTypeLabel } from '~/utils';
+import MdiPlus from '~icons/mdi/plus';
+import { formatPrice, getCategoryStyles, getCategoryLabel, getPaymentMethodLabel, getScopeTypeStyles } from '~/utils';
 
 const props = defineProps({
   expense: { type: Object, required: true },
@@ -123,19 +109,13 @@ const props = defineProps({
   categories: { type: Array, default: () => [] }
 });
 
-defineEmits(['viewImage', 'edit', 'markPaid', 'markPending']);
+defineEmits(['viewImage', 'edit', 'addInstallment']);
 
-const canMarkPaid = computed(() =>
+const canAddInstallment = computed(() =>
   props.editable
   && props.expense.type === 'expense'
-  && props.expense.paymentStatus === 'pending'
-);
-
-const canMarkPending = computed(() =>
-  props.editable
-  && props.expense.type === 'expense'
-  && props.expense.paymentStatus === 'paid'
-  && props.expense.linkedPaymentId
+  && props.expense.installmentPercent != null
+  && props.expense.installmentPercent < 100
 );
 
 const accentClass = computed(() => {

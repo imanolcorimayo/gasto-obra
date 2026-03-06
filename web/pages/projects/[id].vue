@@ -217,8 +217,7 @@
                 :editable="true"
                 :categories="resolvedCategories"
                 @edit="openEditModal"
-                @mark-paid="handleMarkPaid"
-                @mark-pending="handleMarkPending"
+                @add-installment="handleAddInstallment"
               />
 
               <!-- Entregas tab -->
@@ -296,6 +295,7 @@
         :type="createModalType"
         :categories="resolvedCategories"
         :deliveries="deliveryStore.deliveries"
+        :prefill="createModalPrefill"
         @close="showCreateModal = false"
         @submit="handleCreateSubmit"
       />
@@ -351,6 +351,7 @@ const project = ref(null);
 const copied = ref(false);
 const showCreateModal = ref(false);
 const createModalType = ref('expense');
+const createModalPrefill = ref(null);
 const showEditModal = ref(false);
 const editingExpense = ref(null);
 const showProjectEditModal = ref(false);
@@ -449,9 +450,55 @@ async function copyShareLink() {
   }
 }
 
-function openCreateModal(type) {
+function openCreateModal(type, prefill = null) {
   createModalType.value = type;
+  createModalPrefill.value = prefill;
   showCreateModal.value = true;
+}
+
+function handleAddInstallment(expense) {
+  const groupId = expense.installmentGroupId;
+  const paidPercent = getInstallmentGroupPercent(groupId);
+  const remainingPercent = 100 - paidPercent;
+  if (remainingPercent <= 0) {
+    useToast('info', 'Este gasto ya está pagado al 100%');
+    return;
+  }
+
+  // Calculate total amount from first installment in the group
+  const totalAmount = getInstallmentGroupTotal(groupId);
+
+  openCreateModal('expense', {
+    title: expense.title,
+    category: expense.category,
+    scopeType: expense.scopeType,
+    paymentMethod: expense.paymentMethod,
+    recipientName: expense.recipientName,
+    recipientBankInfo: expense.recipientBankInfo,
+    recipientPlatform: expense.recipientPlatform,
+    recipientCuit: expense.recipientCuit,
+    installmentPercent: remainingPercent,
+    installmentMaxPercent: remainingPercent,
+    installmentGroupId: groupId,
+    totalAmount,
+    items: expense.items || [],
+    locked: true
+  });
+}
+
+function getInstallmentGroupPercent(groupId) {
+  if (!groupId) return 0;
+  return expenseStore.expenses
+    .filter(e => e.installmentGroupId === groupId)
+    .reduce((sum, e) => sum + (e.installmentPercent || 0), 0);
+}
+
+function getInstallmentGroupTotal(groupId) {
+  if (!groupId) return 0;
+  // Reverse-calculate total from any installment: amount / (percent / 100)
+  const first = expenseStore.expenses.find(e => e.installmentGroupId === groupId && e.installmentPercent);
+  if (!first) return 0;
+  return Math.round(first.amount / (first.installmentPercent / 100));
 }
 
 async function handleCreateSubmit(formData) {
@@ -465,14 +512,15 @@ async function handleCreateSubmit(formData) {
       category: formData.category,
       type: formData.type,
       scopeType: formData.scopeType || 'original',
-      paymentStatus: formData.paymentStatus,
       paymentMethod: formData.paymentMethod,
       recipientName: formData.recipientName,
       recipientBankInfo: formData.recipientBankInfo,
       recipientPlatform: formData.recipientPlatform,
       recipientCuit: formData.recipientCuit,
       deliveryId: formData.deliveryId || null,
-      items: formData.items
+      items: formData.items,
+      installmentPercent: formData.installmentPercent ?? null,
+      installmentGroupId: formData.installmentGroupId || null
     };
 
     const result = await expenseStore.createExpense(data);
@@ -488,7 +536,6 @@ async function handleCreateSubmit(formData) {
           amount: formData.amount,
           category: 'pago',
           type: 'payment',
-          paymentStatus: 'paid',
           paymentMethod: formData.paymentMethod,
           recipientName: formData.recipientName,
           recipientBankInfo: formData.recipientBankInfo,
@@ -549,46 +596,6 @@ async function handleEditSave({ id, data }) {
     }
   } else {
     useToast('error', result.error || 'Error al actualizar');
-  }
-}
-
-async function handleMarkPaid(expense) {
-  try {
-    // 1. Create a linked payment record
-    const paymentData = {
-      projectId: expense.projectId,
-      providerId: expense.providerId,
-      title: `Pago: ${expense.title}`,
-      description: '',
-      amount: expense.amount,
-      category: 'pago',
-      type: 'payment',
-      paymentStatus: 'paid',
-      paymentMethod: expense.paymentMethod,
-      linkedExpenseId: expense.id,
-      items: null
-    };
-
-    const createResult = await expenseStore.createExpense(paymentData);
-    if (!createResult.success) {
-      useToast('error', 'Error al crear el pago');
-      return;
-    }
-
-    // 2. Update the expense with paymentStatus + linkedPaymentId
-    const updateResult = await expenseStore.updateExpense(expense.id, {
-      paymentStatus: 'paid',
-      linkedPaymentId: createResult.data.id
-    });
-
-    if (updateResult.success) {
-      useToast('success', 'Marcado como pagado');
-    } else {
-      useToast('error', 'Error al actualizar el gasto');
-    }
-  } catch (error) {
-    console.error('Error marking as paid:', error);
-    useToast('error', 'Error al marcar como pagado');
   }
 }
 
@@ -684,31 +691,4 @@ async function handleAssignExpenses({ deliveryId, expenseIds }) {
   }
 }
 
-async function handleMarkPending(expense) {
-  try {
-    // 1. Delete the linked payment
-    if (expense.linkedPaymentId) {
-      const deleted = await expenseStore.deleteExpense(expense.linkedPaymentId);
-      if (!deleted) {
-        useToast('error', 'Error al eliminar el pago vinculado');
-        return;
-      }
-    }
-
-    // 2. Update the expense back to pending
-    const updateResult = await expenseStore.updateExpense(expense.id, {
-      paymentStatus: 'pending',
-      linkedPaymentId: null
-    });
-
-    if (updateResult.success) {
-      useToast('success', 'Marcado como pendiente');
-    } else {
-      useToast('error', 'Error al actualizar el gasto');
-    }
-  } catch (error) {
-    console.error('Error marking as pending:', error);
-    useToast('error', 'Error al marcar como pendiente');
-  }
-}
 </script>

@@ -24,26 +24,60 @@
               v-model="form.title"
               type="text"
               required
+              :disabled="isLocked"
               :placeholder="type === 'payment' ? 'Concepto del pago' : 'Titulo del gasto'"
-              class="w-full bg-go-bg border border-go-border rounded-go-md px-3 py-2.5 text-sm text-go-text placeholder-go-text-muted focus:outline-none focus:ring-2 focus:ring-go-primary/40 focus:border-go-primary transition-colors"
+              class="w-full bg-go-bg border border-go-border rounded-go-md px-3 py-2.5 text-sm text-go-text placeholder-go-text-muted focus:outline-none focus:ring-2 focus:ring-go-primary/40 focus:border-go-primary transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
             />
           </div>
 
-          <!-- Amount -->
+          <!-- Amount + Installment percent -->
           <div>
-            <label class="block text-[11px] font-semibold uppercase tracking-wider text-go-text-muted mb-1.5">Monto</label>
-            <div class="flex">
-              <span class="bg-go-surface border border-go-border border-r-0 rounded-l-go-md px-3 py-2.5 text-go-text-muted text-sm">$</span>
-              <input
-                v-model="form.amount"
-                type="number"
-                required
-                min="1"
-                step="0.01"
-                placeholder="0.00"
-                class="flex-1 bg-go-bg border border-go-border rounded-r-go-md rounded-l-none px-3 py-2.5 text-lg font-display font-semibold tabular-nums text-go-text placeholder-go-text-muted focus:outline-none focus:ring-2 focus:ring-go-primary/40 focus:border-go-primary transition-colors"
-              />
+            <div :class="type === 'expense' ? 'flex flex-col sm:flex-row sm:items-end gap-3' : ''">
+              <div class="sm:flex-1">
+                <label class="block text-[11px] font-semibold uppercase tracking-wider text-go-text-muted mb-1.5">
+                  {{ isPartial ? 'Monto total' : 'Monto' }}
+                </label>
+                <div class="flex">
+                  <span class="bg-go-surface border border-go-border border-r-0 rounded-l-go-md px-3 py-2.5 text-go-text-muted text-sm">$</span>
+                  <input
+                    v-model="form.amount"
+                    type="number"
+                    required
+                    min="1"
+                    step="0.01"
+                    :disabled="isLocked"
+                    placeholder="0.00"
+                    class="flex-1 bg-go-bg border border-go-border rounded-r-go-md rounded-l-none px-3 py-2.5 text-lg font-display font-semibold tabular-nums text-go-text placeholder-go-text-muted focus:outline-none focus:ring-2 focus:ring-go-primary/40 focus:border-go-primary transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+                  />
+                </div>
+              </div>
+              <div v-if="type === 'expense'">
+                <label class="block text-[11px] font-semibold uppercase tracking-wider text-go-text-muted mb-1.5 whitespace-nowrap">
+                  Pagado por cliente
+                  <span v-if="installmentMaxPercent < 100" class="font-normal normal-case">(máx. {{ installmentMaxPercent }}%)</span>
+                </label>
+                <div class="flex">
+                  <span class="bg-go-surface border border-go-border border-r-0 rounded-l-go-md px-3 py-2.5 text-lg font-display font-semibold text-go-text-muted">%</span>
+                  <input
+                    v-model.number="form.installmentPercent"
+                    type="number"
+                    min="0"
+                    :max="installmentMaxPercent"
+                    @blur="form.installmentPercent = form.installmentPercent || 0"
+                    class="flex-1 sm:w-16 bg-go-bg border border-go-border rounded-r-go-md rounded-l-none px-3 py-2.5 text-lg font-display font-semibold text-go-text tabular-nums focus:outline-none focus:ring-2 focus:ring-go-primary/40 focus:border-go-primary transition-colors"
+                  />
+                </div>
+              </div>
             </div>
+            <p v-if="type === 'expense'" class="text-xs mt-1.5 font-medium"
+              :class="form.installmentPercent >= 100 ? 'text-go-success' : 'text-go-info'"
+            >
+              <template v-if="!form.installmentPercent">Sin pago directo — se descuenta del saldo del cliente</template>
+              <template v-else-if="form.installmentPercent >= 100">Pagado — se genera un cobro automático por {{ form.amount ? formatPrice(parseFloat(form.amount)) : 'el monto' }}</template>
+              <template v-else-if="form.amount">
+                <span class="tabular-nums">Parcial — se genera un cobro automático de {{ formatPrice(installmentAmount) }}</span>
+              </template>
+            </p>
           </div>
 
           <!-- Scope type (expense only) -->
@@ -55,8 +89,9 @@
                 v-for="s in SCOPE_TYPES"
                 :key="s.value"
                 type="button"
-                @click="form.scopeType = s.value"
-                class="text-xs font-medium px-2.5 py-1 rounded-go-sm border transition-colors"
+                @click="!isLocked && (form.scopeType = s.value)"
+                :disabled="isLocked"
+                class="text-xs font-medium px-2.5 py-1 rounded-go-sm border transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
                 :class="form.scopeType === s.value
                   ? 'border-current bg-opacity-10'
                   : 'border-go-border text-go-text-muted hover:border-go-text-muted'"
@@ -90,7 +125,8 @@
             <div class="relative">
               <select
                 v-model="form.category"
-                class="w-full bg-go-bg border border-go-border rounded-go-md px-3 py-2.5 text-sm text-go-text focus:outline-none focus:ring-2 focus:ring-go-primary/40 focus:border-go-primary transition-colors appearance-none"
+                :disabled="isLocked"
+                class="w-full bg-go-bg border border-go-border rounded-go-md px-3 py-2.5 text-sm text-go-text focus:outline-none focus:ring-2 focus:ring-go-primary/40 focus:border-go-primary transition-colors appearance-none disabled:opacity-60 disabled:cursor-not-allowed"
               >
                 <option v-for="cat in resolvedCategories" :key="cat.value" :value="cat.value">
                   {{ cat.label }}
@@ -103,66 +139,15 @@
           <!-- Description (expense + provider_expense only) -->
           <div v-if="type !== 'payment'">
             <label class="block text-[11px] font-semibold uppercase tracking-wider text-go-text-muted mb-1.5">Descripcion</label>
-            <input
+            <textarea
               v-model="form.description"
-              type="text"
+              rows="2"
               placeholder="Opcional"
-              class="w-full bg-go-bg border border-go-border rounded-go-md px-3 py-2.5 text-sm text-go-text placeholder-go-text-muted focus:outline-none focus:ring-2 focus:ring-go-primary/40 focus:border-go-primary transition-colors"
+              class="w-full bg-go-bg border border-go-border rounded-go-md px-3 py-2.5 text-sm text-go-text placeholder-go-text-muted focus:outline-none focus:ring-2 focus:ring-go-primary/40 focus:border-go-primary transition-colors resize-none"
             />
           </div>
 
           <hr class="border-go-border-subtle" />
-
-          <!-- Payment status (expense only, not provider_expense) -->
-          <div v-if="type === 'expense'">
-            <label class="block text-[11px] font-semibold uppercase tracking-wider text-go-text-muted mb-1.5">Estado de pago</label>
-            <div class="flex gap-2">
-              <button
-                type="button"
-                @click="form.paymentStatus = 'paid'"
-                class="text-xs font-medium px-2.5 py-1 rounded-go-sm border transition-colors"
-                :class="form.paymentStatus === 'paid'
-                  ? 'border-go-success bg-go-success-muted text-go-success'
-                  : 'border-go-border text-go-text-muted hover:border-go-text-muted'"
-              >
-                Pagado
-              </button>
-              <button
-                type="button"
-                @click="form.paymentStatus = 'pending'"
-                class="text-xs font-medium px-2.5 py-1 rounded-go-sm border transition-colors"
-                :class="form.paymentStatus === 'pending'
-                  ? 'border-go-danger bg-go-danger-muted text-go-danger'
-                  : 'border-go-border text-go-text-muted hover:border-go-text-muted'"
-              >
-                Pendiente
-              </button>
-            </div>
-
-            <!-- Auto-create payment toggle -->
-            <div
-              v-if="form.paymentStatus === 'paid'"
-              class="flex items-center gap-3 p-3 bg-go-surface rounded-go-md border border-go-border mt-3"
-            >
-              <label class="flex items-center justify-between cursor-pointer flex-1">
-                <div>
-                  <span class="text-sm text-go-text">Registrar cobro del cliente</span>
-                  <p class="text-xs text-go-text-muted mt-0.5">Crea automaticamente un ingreso vinculado a este gasto</p>
-                </div>
-                <button
-                  type="button"
-                  @click="form.createLinkedPayment = !form.createLinkedPayment"
-                  class="relative inline-flex h-5 w-9 flex-shrink-0 rounded-full transition-colors duration-200 ease-in-out"
-                  :class="form.createLinkedPayment ? 'bg-go-success' : 'bg-go-surface-alt'"
-                >
-                  <span
-                    class="inline-block h-4 w-4 rounded-full bg-white shadow transform transition-transform duration-200 ease-in-out mt-0.5"
-                    :class="form.createLinkedPayment ? 'translate-x-4 ml-0.5' : 'translate-x-0 ml-0.5'"
-                  />
-                </button>
-              </label>
-            </div>
-          </div>
 
           <!-- Payment method (expense + payment only, not provider_expense) -->
           <div v-if="type !== 'provider_expense'">
@@ -221,17 +206,19 @@
               Items ({{ form.items.length }})
             </button>
 
-            <div v-if="showItems" class="mt-2 flex flex-col gap-2">
+            <div v-if="showItems" class="mt-2">
               <div
                 v-for="(item, idx) in form.items"
                 :key="idx"
-                class="flex items-center gap-2 p-2 bg-go-bg rounded-go-md border border-go-border-subtle"
+                class="flex items-center gap-2 py-2"
+                :class="{ 'border-b border-go-border-subtle': idx < form.items.length - 1 }"
               >
                 <input
                   v-model="item.name"
                   type="text"
                   placeholder="Nombre"
-                  class="flex-1 bg-transparent border border-go-border rounded-go-md px-3 py-1.5 text-sm text-go-text placeholder-go-text-muted focus:outline-none focus:ring-2 focus:ring-go-primary/40 focus:border-go-primary transition-colors"
+                  :disabled="isLocked"
+                  class="flex-1 bg-go-bg border border-go-border rounded-go-md px-3 py-1.5 text-sm text-go-text placeholder-go-text-muted focus:outline-none focus:ring-2 focus:ring-go-primary/40 focus:border-go-primary transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
                 />
                 <input
                   v-model.number="item.amount"
@@ -239,16 +226,18 @@
                   placeholder="Monto"
                   min="0"
                   step="0.01"
-                  class="w-28 bg-transparent border border-go-border rounded-go-md px-3 py-1.5 text-sm text-go-text placeholder-go-text-muted focus:outline-none focus:ring-2 focus:ring-go-primary/40 focus:border-go-primary transition-colors"
+                  :disabled="isLocked"
+                  class="w-28 bg-go-bg border border-go-border rounded-go-md px-3 py-1.5 text-sm text-go-text placeholder-go-text-muted focus:outline-none focus:ring-2 focus:ring-go-primary/40 focus:border-go-primary transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
                 />
-                <button type="button" @click="form.items.splice(idx, 1)" class="text-go-text-muted hover:text-go-danger transition-colors p-1">
+                <button v-if="!isLocked" type="button" @click="form.items.splice(idx, 1)" class="text-go-text-muted hover:text-go-danger transition-colors p-1">
                   <MdiClose class="text-base" />
                 </button>
               </div>
               <button
+                v-if="!isLocked"
                 type="button"
                 @click="form.items.push({ name: '', amount: 0 })"
-                class="btn-secondary text-xs w-full mt-2 flex items-center justify-center gap-1"
+                class="btn-secondary text-xs w-full flex items-center justify-center gap-1 mt-2"
               >
                 <MdiPlus class="text-base" />
                 Agregar item
@@ -276,14 +265,15 @@
 import MdiChevronDown from '~icons/mdi/chevron-down';
 import MdiPlus from '~icons/mdi/plus';
 import MdiClose from '~icons/mdi/close';
-import { DEFAULT_EXPENSE_CATEGORIES, PAYMENT_METHODS, SCOPE_TYPES, getScopeTypeStyles } from '~/utils';
+import { DEFAULT_EXPENSE_CATEGORIES, PAYMENT_METHODS, SCOPE_TYPES, getScopeTypeStyles, formatPrice } from '~/utils';
 import { useRecipientStore } from '~/stores/recipient';
 
 const props = defineProps({
   show: { type: Boolean, default: false },
   type: { type: String, default: 'expense' },
   categories: { type: Array, default: () => [] },
-  deliveries: { type: Array, default: () => [] }
+  deliveries: { type: Array, default: () => [] },
+  prefill: { type: Object, default: null }
 });
 
 const recipientStore = useRecipientStore();
@@ -293,6 +283,9 @@ const resolvedCategories = computed(() =>
 );
 
 const emit = defineEmits(['close', 'submit']);
+
+const isLocked = computed(() => !!props.prefill?.locked);
+const installmentMaxPercent = computed(() => props.prefill?.installmentMaxPercent || 100);
 
 const isSubmitting = ref(false);
 const showItems = ref(false);
@@ -304,15 +297,22 @@ const form = reactive({
   category: 'materiales',
   scopeType: 'original',
   description: '',
-  paymentStatus: 'paid',
   paymentMethod: null,
-  createLinkedPayment: true,
   recipientName: '',
   recipientBankInfo: '',
   recipientPlatform: '',
   recipientCuit: '',
   deliveryId: null,
-  items: []
+  items: [],
+  installmentPercent: 100,
+  installmentGroupId: null
+});
+
+const isPartial = computed(() => form.installmentPercent > 0 && form.installmentPercent < 100);
+
+const installmentAmount = computed(() => {
+  const total = parseFloat(form.amount) || 0;
+  return Math.round(total * form.installmentPercent / 100);
 });
 
 watch(selectedRecipientIdx, (idx) => {
@@ -356,9 +356,13 @@ const submitLabel = computed(() => {
   }
 });
 
-// Auto-toggle createLinkedPayment when paymentStatus changes
-watch(() => form.paymentStatus, (status) => {
-  form.createLinkedPayment = status === 'paid';
+// Clamp installment percent to allowed range
+watch(() => form.installmentPercent, (val) => {
+  if (val > installmentMaxPercent.value) {
+    form.installmentPercent = installmentMaxPercent.value;
+  } else if (val < 0) {
+    form.installmentPercent = 0;
+  }
 });
 
 // Auto-calculate amount from items
@@ -375,22 +379,27 @@ watch(() => form.items, (items) => {
 watch(() => props.show, (show) => {
   document.body.classList.toggle('modal-open', show);
   if (show) {
-    form.title = '';
-    form.amount = '';
-    form.category = 'materiales';
-    form.scopeType = 'original';
+    const p = props.prefill;
+    form.title = p?.title || '';
+    form.amount = p?.totalAmount || '';
+    form.category = p?.category || 'materiales';
+    form.scopeType = p?.scopeType || 'original';
     form.description = '';
-    form.paymentStatus = 'paid';
-    form.paymentMethod = null;
-    form.createLinkedPayment = true;
-    form.recipientName = '';
-    form.recipientBankInfo = '';
-    form.recipientPlatform = '';
-    form.recipientCuit = '';
+    form.paymentMethod = p?.paymentMethod || null;
+    form.recipientName = p?.recipientName || '';
+    form.recipientBankInfo = p?.recipientBankInfo || '';
+    form.recipientPlatform = p?.recipientPlatform || '';
+    form.recipientCuit = p?.recipientCuit || '';
     form.deliveryId = null;
-    form.items = [];
-    showItems.value = false;
+    form.items = p?.items?.length ? p.items.map(i => ({ ...i })) : [];
+    form.installmentPercent = p?.installmentPercent ?? 100;
+    form.installmentGroupId = p?.installmentGroupId || null;
+    showItems.value = form.items.length > 0;
     selectedRecipientIdx.value = -1;
+    if (p?.recipientName && recipientStore.recipients.length > 0) {
+      const idx = recipientStore.recipients.findIndex(r => r.name === p.recipientName);
+      if (idx >= 0) selectedRecipientIdx.value = idx;
+    }
     if (recipientStore.recipients.length === 0) {
       recipientStore.fetchAll();
     }
@@ -401,22 +410,29 @@ async function handleSubmit() {
   isSubmitting.value = true;
   try {
     const isProviderExpense = props.type === 'provider_expense';
+    const percent = props.type === 'expense' ? form.installmentPercent : null;
+    const effectiveAmount = (percent !== null && percent > 0 && percent < 100)
+      ? installmentAmount.value
+      : parseFloat(form.amount);
+    const needsGroup = percent !== null && percent > 0 && percent < 100;
+
     const data = {
       title: form.title,
-      amount: parseFloat(form.amount),
+      amount: effectiveAmount,
       category: props.type === 'payment' ? 'pago' : form.category,
       description: form.description,
       type: props.type,
       scopeType: props.type === 'expense' ? form.scopeType : 'original',
-      paymentStatus: isProviderExpense ? 'paid' : form.paymentStatus,
       paymentMethod: isProviderExpense ? null : form.paymentMethod,
       recipientName: isProviderExpense ? null : (form.recipientName || null),
       recipientBankInfo: isProviderExpense ? null : (form.recipientBankInfo || null),
       recipientPlatform: isProviderExpense ? null : (form.recipientPlatform || null),
       recipientCuit: isProviderExpense ? null : (form.recipientCuit || null),
-      createLinkedPayment: props.type === 'expense' && form.paymentStatus === 'paid' && form.createLinkedPayment,
+      createLinkedPayment: props.type === 'expense' && percent > 0,
       deliveryId: props.type === 'expense' ? (form.deliveryId || null) : null,
-      items: form.items.length > 0 ? form.items.filter(i => i.name) : null
+      items: form.items.length > 0 ? form.items.filter(i => i.name) : null,
+      installmentPercent: percent,
+      installmentGroupId: needsGroup ? (form.installmentGroupId || crypto.randomUUID()) : null
     };
     emit('submit', data);
   } finally {

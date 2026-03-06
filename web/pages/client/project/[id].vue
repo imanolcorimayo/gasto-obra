@@ -214,7 +214,7 @@ const totalPayments = computed(() =>
 
 const totalPending = computed(() =>
   onlyExpenses.value
-    .filter(e => e.paymentStatus === 'pending')
+    .filter(e => e.installmentPercent === 0)
     .reduce((sum, e) => sum + (e.amount || 0), 0)
 );
 

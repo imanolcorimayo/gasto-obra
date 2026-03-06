@@ -112,9 +112,9 @@ function resolveTransactionType(captionType, aiType) {
 }
 
 function getTypeDefaults(type) {
-  if (type === 'payment') return { paymentStatus: 'paid', category: 'pago' };
-  if (type === 'provider_expense') return { paymentStatus: 'paid' };
-  return { paymentStatus: 'pending' };
+  if (type === 'payment') return { installmentPercent: null, category: 'pago' };
+  if (type === 'provider_expense') return { installmentPercent: null };
+  return { installmentPercent: 0 };
 }
 
 function getTypeLabel(type) {
@@ -417,7 +417,7 @@ async function processImageMessage(phoneNumber, imageId, caption, contactName) {
         amount: receiptData.totalAmount,
         category,
         type: transactionType,
-        paymentStatus: typeDefaults.paymentStatus,
+        installmentPercent: typeDefaults.installmentPercent,
         paymentMethod: null,
         recipientName: null,
         recipientBankInfo: null,
@@ -459,7 +459,7 @@ async function processImageMessage(phoneNumber, imageId, caption, contactName) {
       description,
       category,
       type: transactionType,
-      paymentStatus: typeDefaults.paymentStatus,
+      installmentPercent: typeDefaults.installmentPercent,
       originalCaption: caption,
       timestamp: Date.now()
     });
@@ -496,7 +496,7 @@ async function processImageMessage(phoneNumber, imageId, caption, contactName) {
     amount: receiptData.totalAmount,
     category,
     type: transactionType,
-    paymentStatus: typeDefaults.paymentStatus,
+    installmentPercent: typeDefaults.installmentPercent,
     paymentMethod: null,
     recipientName: null,
     recipientBankInfo: null,
@@ -626,7 +626,7 @@ async function processAudioMessage(phoneNumber, audioId, caption, contactName) {
       description,
       category,
       type: transactionType,
-      paymentStatus: typeDefaults.paymentStatus,
+      installmentPercent: typeDefaults.installmentPercent,
       transcription: transcription.transcription,
       originalCaption: caption,
       timestamp: Date.now()
@@ -665,7 +665,7 @@ async function processAudioMessage(phoneNumber, audioId, caption, contactName) {
     amount,
     category,
     type: transactionType,
-    paymentStatus: typeDefaults.paymentStatus,
+    installmentPercent: typeDefaults.installmentPercent,
     paymentMethod: null,
     recipientName: null,
     recipientBankInfo: null,
@@ -714,7 +714,7 @@ async function confirmPendingExpense(phoneNumber, pending) {
     amount: data.amount,
     category: data.category,
     type: data.type || 'expense',
-    paymentStatus: data.paymentStatus || 'paid',
+    installmentPercent: data.installmentPercent ?? null,
     paymentMethod: data.paymentMethod || null,
     recipientName: data.recipientName || null,
     recipientBankInfo: data.recipientBankInfo || null,
@@ -1072,7 +1072,7 @@ async function handlePagoCommand(phoneNumber, text) {
     amount,
     category: 'pago',
     type: 'payment',
-    paymentStatus: 'paid',
+    installmentPercent: null,
     paymentMethod: null,
     recipientName: null,
     recipientBankInfo: null,
@@ -1164,7 +1164,7 @@ async function handlePropioCommand(phoneNumber, text) {
     amount,
     category,
     type: 'provider_expense',
-    paymentStatus: 'paid',
+    installmentPercent: null,
     paymentMethod: null,
     recipientName: null,
     recipientBankInfo: null,
@@ -1260,7 +1260,7 @@ async function handleExpenseMessage(phoneNumber, text) {
       amount: parsed.amount,
       category,
       type: 'expense',
-      paymentStatus: 'pending',
+      installmentPercent: 0,
       paymentMethod: null,
       recipientName: null,
       recipientBankInfo: null,
@@ -1422,7 +1422,7 @@ async function completePendingExpense(phoneNumber, pending, tag) {
     amount: data.amount,
     category: data.category,
     type,
-    paymentStatus: data.paymentStatus || typeDefaults.paymentStatus,
+    installmentPercent: data.installmentPercent ?? typeDefaults.installmentPercent,
     paymentMethod: data.paymentMethod || null,
     recipientName: null,
     recipientBankInfo: null,

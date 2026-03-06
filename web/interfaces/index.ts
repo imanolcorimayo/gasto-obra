@@ -51,7 +51,6 @@ export interface Expense {
   imageUrl: string | null;
   audioTranscription: string | null;
   originalMessage: string;
-  paymentStatus: 'paid' | 'pending';
   paymentMethod: string | null;
   recipientName: string | null;
   recipientBankInfo: string | null;
@@ -60,6 +59,8 @@ export interface Expense {
   linkedExpenseId: string | null;
   linkedPaymentId: string | null;
   deliveryId: string | null;
+  installmentPercent: number | null;
+  installmentGroupId: string | null;
   source: 'whatsapp' | 'web';
   date: any;
   createdAt: any;
