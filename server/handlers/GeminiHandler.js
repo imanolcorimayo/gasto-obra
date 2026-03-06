@@ -1,3 +1,5 @@
+import logger from '../lib/logger.js';
+
 class GeminiHandler {
   constructor(apiKey) {
     this.apiKey = apiKey;
@@ -24,14 +26,14 @@ class GeminiHandler {
       );
 
       if (!response.ok) {
-        console.error('Gemini API error:', await response.text());
+        logger.error('Gemini API error', { response: await response.text() });
         return null;
       }
 
       const result = await response.json();
       return result.candidates?.[0]?.content?.parts?.[0]?.text || null;
     } catch (error) {
-      console.error('Error calling Gemini:', error);
+      logger.error('Error calling Gemini', { error });
       return null;
     }
   }
@@ -80,7 +82,7 @@ Solo responde con el JSON, sin texto adicional.`;
       const cleaned = text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
       return JSON.parse(cleaned);
     } catch (error) {
-      console.error('Error parsing receipt JSON:', error);
+      logger.error('Error parsing receipt JSON', { error });
       return null;
     }
   }
@@ -141,7 +143,7 @@ Si no podes extraer algun campo, usa null. Solo responde con el JSON.`;
       const cleaned = text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
       return JSON.parse(cleaned);
     } catch (error) {
-      console.error('Error parsing audio transcription JSON:', error);
+      logger.error('Error parsing audio transcription JSON', { error });
       return null;
     }
   }

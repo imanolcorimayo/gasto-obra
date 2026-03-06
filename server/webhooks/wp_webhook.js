@@ -1,7 +1,10 @@
+import '../lib/instrument.js';
 import 'dotenv/config';
 import express from 'express';
 import admin from 'firebase-admin';
+import * as Sentry from '@sentry/node';
 import GeminiHandler from '../handlers/GeminiHandler.js';
+import logger from '../lib/logger.js';
 
 // ============================================
 // Configuration
@@ -29,11 +32,11 @@ if (!admin.apps.length) {
   }
 
   admin.initializeApp(firebaseConfig);
-  console.log('Firebase initialized successfully');
+  logger.info('Firebase initialized successfully');
 }
 
 const db = admin.firestore();
-console.log('Firestore connection established');
+logger.info('Firestore connection established');
 
 // ============================================
 // Collections
@@ -88,7 +91,7 @@ async function getProviderCategories(providerId, projectId = null) {
 
     return merged.length > 0 ? merged.map(c => c.value) : DEFAULT_EXPENSE_CATEGORIES;
   } catch (error) {
-    console.error('Error fetching provider categories:', error);
+    logger.error('Error fetching provider categories', { error });
     return DEFAULT_EXPENSE_CATEGORIES;
   }
 }
@@ -201,20 +204,20 @@ app.get('/webhook', (req, res) => {
   const token = req.query['hub.verify_token'];
   const challenge = req.query['hub.challenge'];
 
-  console.log('Verification request received:', { mode, token, challenge });
+  logger.info('Verification request received', { mode, token, challenge });
 
   if (mode === 'subscribe' && token === VERIFY_TOKEN) {
-    console.log('Webhook verified successfully');
+    logger.info('Webhook verified successfully');
     return res.status(200).send(challenge);
   }
 
-  console.log('Webhook verification failed');
+  logger.warn('Webhook verification failed');
   return res.sendStatus(403);
 });
 
 // POST - Receive incoming messages
 app.post('/webhook', async (req, res) => {
-  console.log('Incoming webhook:', JSON.stringify(req.body, null, 2));
+  logger.debug('Incoming webhook', { body: req.body });
 
   // Always respond 200 quickly
   res.sendStatus(200);
@@ -241,21 +244,22 @@ app.post('/webhook', async (req, res) => {
     // Handle different message types
     if (message.type === 'text') {
       const messageText = message.text?.body || '';
-      console.log(`Text from ${from} (${contactName}): ${messageText}`);
+      logger.info('Text message received', { from, contactName, messageText });
       await processMessage(from, messageText, contactName);
     } else if (message.type === 'image') {
       const caption = message.image?.caption || '';
       const imageId = message.image?.id;
-      console.log(`Image from ${from} (${contactName}), caption: ${caption}`);
+      logger.info('Image message received', { from, contactName, caption });
       await processImageMessage(from, imageId, caption, contactName);
     } else if (message.type === 'audio') {
       const caption = message.audio?.caption || '';
       const audioId = message.audio?.id;
-      console.log(`Audio from ${from} (${contactName})`);
+      logger.info('Audio message received', { from, contactName });
       await processAudioMessage(from, audioId, caption, contactName);
     }
   } catch (error) {
-    console.error('Error processing webhook:', error);
+    Sentry.captureException(error);
+    logger.error('Error processing webhook', { error });
   }
 });
 
@@ -773,7 +777,8 @@ async function notifyClient(projectId, amount, projectName, type) {
     );
   } catch (error) {
     // Fail silently - client notification is best-effort
-    console.error('Error notifying client:', error);
+    Sentry.captureException(error);
+    logger.error('Error notifying client', { error });
   }
 }
 
@@ -830,7 +835,8 @@ async function handleLinkCommand(phoneNumber, code, contactName) {
       `Cuenta vinculada!\n\nAhora podes registrar gastos de obra:\n\n\`$500 Clavos y tornillos #flores3b\`\n\`$1200 Viaje ferreteria #flores3b\`\n\nEscribi AYUDA para mas info.`
     );
   } catch (error) {
-    console.error('Error linking account:', error);
+    Sentry.captureException(error);
+    logger.error('Error linking account', { error });
     await sendWhatsAppMessage(phoneNumber, 'Error al vincular la cuenta. Intenta nuevamente.');
   }
 }
@@ -848,7 +854,8 @@ async function handleUnlinkCommand(phoneNumber) {
 
     await sendWhatsAppMessage(phoneNumber, 'Cuenta desvinculada exitosamente. Ya no se registraran gastos desde este numero.');
   } catch (error) {
-    console.error('Error unlinking account:', error);
+    Sentry.captureException(error);
+    logger.error('Error unlinking account', { error });
     await sendWhatsAppMessage(phoneNumber, 'Error al desvincular la cuenta. Intenta nuevamente.');
   }
 }
@@ -938,7 +945,8 @@ async function handleProyectosCommand(phoneNumber) {
 
     await sendWhatsAppMessage(phoneNumber, message.trim());
   } catch (error) {
-    console.error('Error in PROYECTOS command:', error);
+    Sentry.captureException(error);
+    logger.error('Error in PROYECTOS command', { error });
     await sendWhatsAppMessage(phoneNumber, 'Error al obtener los proyectos.');
   }
 }
@@ -1016,7 +1024,8 @@ ${categoryLines}
 
     await sendWhatsAppMessage(phoneNumber, message);
   } catch (error) {
-    console.error('Error in RESUMEN command:', error);
+    Sentry.captureException(error);
+    logger.error('Error in RESUMEN command', { error });
     await sendWhatsAppMessage(phoneNumber, 'Error al obtener el resumen.');
   }
 }
@@ -1295,7 +1304,8 @@ async function handleExpenseMessage(phoneNumber, text) {
     // Notify client
     await notifyClient(project.id, parsed.amount, project.name, 'expense');
   } catch (error) {
-    console.error('Error creating expense:', error);
+    Sentry.captureException(error);
+    logger.error('Error creating expense', { error });
     await sendWhatsAppMessage(phoneNumber, 'Error al registrar el gasto. Intenta nuevamente.');
   }
 }
@@ -1497,7 +1507,7 @@ function normalizePhoneNumber(phone) {
 
 async function downloadWhatsAppMedia(mediaId) {
   if (!WP_ACCESS_TOKEN) {
-    console.log('WhatsApp credentials not configured, cannot download media');
+    logger.warn('WhatsApp credentials not configured, cannot download media');
     return null;
   }
 
@@ -1511,7 +1521,7 @@ async function downloadWhatsAppMedia(mediaId) {
     );
 
     if (!mediaResponse.ok) {
-      console.error('Error getting media URL:', await mediaResponse.text());
+      logger.error('Error getting media URL', { response: await mediaResponse.text() });
       return null;
     }
 
@@ -1525,7 +1535,7 @@ async function downloadWhatsAppMedia(mediaId) {
     });
 
     if (!downloadResponse.ok) {
-      console.error('Error downloading media');
+      logger.error('Error downloading media');
       return null;
     }
 
@@ -1534,7 +1544,8 @@ async function downloadWhatsAppMedia(mediaId) {
 
     return { base64, mimeType };
   } catch (error) {
-    console.error('Error downloading WhatsApp media:', error);
+    Sentry.captureException(error);
+    logger.error('Error downloading WhatsApp media', { error });
     return null;
   }
 }
@@ -1543,8 +1554,7 @@ async function sendWhatsAppMessage(to, message) {
   const normalizedTo = normalizePhoneNumber(to);
 
   if (!WP_PHONE_NUMBER_ID || !WP_ACCESS_TOKEN) {
-    console.log('WhatsApp credentials not configured, skipping message send');
-    console.log(`Would send to ${normalizedTo}: ${message}`);
+    logger.warn('WhatsApp credentials not configured, skipping message send', { to: normalizedTo });
     return;
   }
 
@@ -1573,20 +1583,24 @@ async function sendWhatsAppMessage(to, message) {
     const result = await response.json();
 
     if (!response.ok) {
-      console.error('Error sending WhatsApp message:', result);
+      logger.error('Error sending WhatsApp message', { result });
     } else {
-      console.log('WhatsApp message sent successfully:', result);
+      logger.info('WhatsApp message sent', { to: normalizedTo });
     }
   } catch (error) {
-    console.error('Error sending WhatsApp message:', error);
+    Sentry.captureException(error);
+    logger.error('Error sending WhatsApp message', { error });
   }
 }
+
+// ============================================
+// Sentry Error Handler (must be after all routes)
+// ============================================
+Sentry.setupExpressErrorHandler(app);
 
 // ============================================
 // Start Server
 // ============================================
 app.listen(PORT, () => {
-  console.log(`Gasto Obra webhook server running on port ${PORT}`);
-  console.log(`Verify token: ${VERIFY_TOKEN}`);
-  console.log(`Webhook URL: http://localhost:${PORT}/webhook`);
+  logger.info('Server started', { port: PORT, verifyToken: VERIFY_TOKEN });
 });

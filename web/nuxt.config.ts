@@ -14,8 +14,11 @@ export default defineNuxtConfig({
     "dayjs-nuxt",
     "@vueuse/nuxt",
     "@pinia/nuxt",
-    "unplugin-icons/nuxt"
+    "unplugin-icons/nuxt",
+    "@sentry/nuxt/module",
   ],
+
+  sourcemap: { client: 'hidden' },
 
   dayjs: {
     locales: ['es'],
@@ -39,6 +42,7 @@ export default defineNuxtConfig({
       firebaseStorageBucket: process.env.FIREBASE_STORAGE_BUCKET,
       firebaseMessagingSenderId: process.env.FIREBASE_MESSAGING_SENDER_ID,
       firebaseAppId: process.env.FIREBASE_APP_ID,
+      sentryDsn: process.env.NUXT_PUBLIC_SENTRY_DSN,
     }
   },
 

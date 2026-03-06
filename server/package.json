@@ -9,8 +9,10 @@
     "daily-summary": "node scripts/send-daily-summary.js"
   },
   "dependencies": {
+    "@sentry/node": "^10.42.0",
+    "dotenv": "^16.4.5",
     "express": "^4.21.0",
     "firebase-admin": "^12.0.0",
-    "dotenv": "^16.4.5"
+    "winston": "^3.19.0"
   }
 }

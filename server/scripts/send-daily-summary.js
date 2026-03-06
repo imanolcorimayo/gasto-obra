@@ -1,5 +1,8 @@
+import '../lib/instrument.js';
 import 'dotenv/config';
 import admin from 'firebase-admin';
+import * as Sentry from '@sentry/node';
+import logger from '../lib/logger.js';
 
 // ============================================
 // Configuration
@@ -50,7 +53,7 @@ async function sendWhatsAppMessage(to, message) {
   const normalizedTo = normalizePhoneNumber(to);
 
   if (!WP_PHONE_NUMBER_ID || !WP_ACCESS_TOKEN) {
-    console.log(`[DRY RUN] Would send to ${normalizedTo}:\n${message}\n`);
+    logger.info('Dry run: would send message', { to: normalizedTo });
     return;
   }
 
@@ -75,12 +78,13 @@ async function sendWhatsAppMessage(to, message) {
 
     const result = await response.json();
     if (!response.ok) {
-      console.error(`Error sending to ${normalizedTo}:`, result);
+      logger.error('Error sending summary', { to: normalizedTo, result });
     } else {
-      console.log(`Summary sent to ${normalizedTo}`);
+      logger.info('Summary sent', { to: normalizedTo });
     }
   } catch (error) {
-    console.error(`Error sending to ${normalizedTo}:`, error);
+    Sentry.captureException(error);
+    logger.error('Error sending summary', { to: normalizedTo, error });
   }
 }
 
@@ -88,7 +92,7 @@ async function sendWhatsAppMessage(to, message) {
 // Main
 // ============================================
 async function sendDailySummaries() {
-  console.log('Starting daily summary generation...');
+  logger.info('Starting daily summary generation');
 
   // Get today's date range (ART timezone)
   const now = new Date();
@@ -110,7 +114,7 @@ async function sendDailySummaries() {
     .get();
 
   if (projectsSnapshot.empty) {
-    console.log('No active projects found.');
+    logger.info('No active projects found');
     return;
   }
 
@@ -120,7 +124,7 @@ async function sendDailySummaries() {
     const project = projectDoc.data();
 
     if (!project.clientPhone) {
-      console.log(`Project "${project.name}" has no client phone, skipping.`);
+      logger.info('Project has no client phone, skipping', { project: project.name });
       continue;
     }
 
@@ -138,7 +142,7 @@ async function sendDailySummaries() {
       .filter(e => !e.type || e.type === 'expense' || e.type === 'payment');
 
     if (todayEntries.length === 0) {
-      console.log(`No expenses today for project "${project.name}", skipping.`);
+      logger.info('No expenses today, skipping', { project: project.name });
       continue;
     }
 
@@ -218,7 +222,7 @@ ${expenseLines}`;
     await sendWhatsAppMessage(project.clientPhone, message);
   }
 
-  console.log('Daily summary generation complete.');
+  logger.info('Daily summary generation complete');
 }
 
 function capitalizeFirst(str) {
@@ -229,6 +233,7 @@ function capitalizeFirst(str) {
 sendDailySummaries()
   .then(() => process.exit(0))
   .catch((error) => {
-    console.error('Fatal error:', error);
+    Sentry.captureException(error);
+    logger.error('Fatal error', { error });
     process.exit(1);
   });
