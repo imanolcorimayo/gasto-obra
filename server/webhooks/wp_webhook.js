@@ -190,6 +190,11 @@ app.use(express.json());
 // Routes
 // ============================================
 
+// GET - Health check
+app.get('/health', (req, res) => {
+  res.sendStatus(200);
+});
+
 // GET - Webhook verification
 app.get('/webhook', (req, res) => {
   const mode = req.query['hub.mode'];
