@@ -634,7 +634,7 @@ async function handleTextExpense(phoneNumber, text) {
   const result = await geminiHandler.parseTextExpense(text, context);
 
   if (!result || !result.totalAmount) {
-    await sendWhatsAppMessage(phoneNumber, 'No pude entender el mensaje. Intenta con algo como "500 clavos" o envia una foto/audio.');
+    await sendWhatsAppMessage(phoneNumber, 'No pude entender el mensaje.\n\nPodes registrar gastos con un texto como:\n- "500 clavos"\n- "1500 cemento y 800 arena"\n- "me pagaron 5000 por transferencia"\n\nTambien podes enviar una *foto* o *audio*.\n\nEscribi *AYUDA* para mas info.');
     return;
   }
 
@@ -985,11 +985,15 @@ async function sendHelpMessage(phoneNumber) {
   const helpText = `*Gasto Obra - Ayuda*
 
 *Registrar gastos:*
-- Envia un *texto* describiendo el gasto
-- Envia una *foto* de un ticket
-- Envia un *audio* describiendo el gasto
+Envia un *texto*, *foto* o *audio* y se registra en tu proyecto activo.
 
-Se registra automaticamente en tu proyecto activo.
+*Ejemplos de texto:*
+- "500 clavos"
+- "1500 cemento y 800 arena"
+- "me pagaron 5000 por transferencia"
+- "2000 pintura pagado por el cliente"
+
+Podes incluir metodo de pago (efectivo, transferencia, tarjeta, mercadopago), destinatario, o mencionar otro proyecto en el mensaje.
 
 *Comandos:*
 *PROYECTO* - Seleccionar proyecto activo
