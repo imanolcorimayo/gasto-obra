@@ -1,92 +1,12 @@
-import '../lib/instrument.js';
+import '../../lib/instrument.js';
 import 'dotenv/config';
-import admin from 'firebase-admin';
 import * as Sentry from '@sentry/node';
-import logger from '../lib/logger.js';
+import { db } from '../config/firebase.js';
+import { sendWhatsAppMessage } from '../helpers/whatsapp.js';
+import { formatAmount, capitalizeFirst } from '../helpers/responseFormatter.js';
+import logger from '../../lib/logger.js';
 
-// ============================================
-// Configuration
-// ============================================
-const WP_PHONE_NUMBER_ID = process.env.IDENTIFIER_WP_NUMBER;
-const WP_ACCESS_TOKEN = process.env.ACCESS_TOKEN_WP_BUSINESS;
 const APP_URL = process.env.APP_URL || 'https://gasto-obra.web.app';
-
-// ============================================
-// Firebase Admin Initialization
-// ============================================
-if (!admin.apps.length) {
-  const firebaseConfig = {
-    projectId: process.env.FIREBASE_PROJECT_ID,
-  };
-
-  if (process.env.FIREBASE_SERVICE_ACCOUNT) {
-    const serviceAccount = JSON.parse(
-      Buffer.from(process.env.FIREBASE_SERVICE_ACCOUNT, 'base64').toString()
-    );
-    firebaseConfig.credential = admin.credential.cert(serviceAccount);
-  }
-
-  admin.initializeApp(firebaseConfig);
-}
-
-const db = admin.firestore();
-
-// ============================================
-// Helpers
-// ============================================
-function formatAmount(amount) {
-  return new Intl.NumberFormat('es-AR', {
-    style: 'currency',
-    currency: 'ARS',
-    maximumFractionDigits: 0
-  }).format(amount);
-}
-
-function normalizePhoneNumber(phone) {
-  if (phone.startsWith('549') && phone.length === 13) {
-    return '54' + phone.slice(3);
-  }
-  return phone;
-}
-
-async function sendWhatsAppMessage(to, message) {
-  const normalizedTo = normalizePhoneNumber(to);
-
-  if (!WP_PHONE_NUMBER_ID || !WP_ACCESS_TOKEN) {
-    logger.info('Dry run: would send message', { to: normalizedTo });
-    return;
-  }
-
-  try {
-    const response = await fetch(
-      `https://graph.facebook.com/v21.0/${WP_PHONE_NUMBER_ID}/messages`,
-      {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${WP_ACCESS_TOKEN}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          messaging_product: 'whatsapp',
-          recipient_type: 'individual',
-          to: normalizedTo,
-          type: 'text',
-          text: { preview_url: true, body: message }
-        })
-      }
-    );
-
-    const result = await response.json();
-    if (!response.ok) {
-      logger.error('Error sending summary', { to: normalizedTo, result });
-    } else {
-      logger.info('Summary sent', { to: normalizedTo });
-    }
-  } catch (error) {
-    Sentry.captureException(error);
-    logger.error('Error sending summary', { to: normalizedTo, error });
-  }
-}
 
 // ============================================
 // Main
@@ -223,10 +143,6 @@ ${expenseLines}`;
   }
 
   logger.info('Daily summary generation complete');
-}
-
-function capitalizeFirst(str) {
-  return str.charAt(0).toUpperCase() + str.slice(1);
 }
 
 // Run

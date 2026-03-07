@@ -1,0 +1,92 @@
+import * as Sentry from '@sentry/node';
+import logger from '../../lib/logger.js';
+import { normalizePhoneNumber } from './phone.js';
+
+const WP_PHONE_NUMBER_ID = process.env.IDENTIFIER_WP_NUMBER;
+const WP_ACCESS_TOKEN = process.env.ACCESS_TOKEN_WP_BUSINESS;
+
+export async function sendWhatsAppMessage(to, message) {
+  const normalizedTo = normalizePhoneNumber(to);
+
+  if (!WP_PHONE_NUMBER_ID || !WP_ACCESS_TOKEN) {
+    logger.warn('WhatsApp credentials not configured, skipping message send', { to: normalizedTo });
+    return;
+  }
+
+  try {
+    const response = await fetch(
+      `https://graph.facebook.com/v21.0/${WP_PHONE_NUMBER_ID}/messages`,
+      {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${WP_ACCESS_TOKEN}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          messaging_product: 'whatsapp',
+          recipient_type: 'individual',
+          to: normalizedTo,
+          type: 'text',
+          text: {
+            preview_url: false,
+            body: message
+          }
+        })
+      }
+    );
+
+    const result = await response.json();
+
+    if (!response.ok) {
+      logger.error('Error sending WhatsApp message', { result });
+    } else {
+      logger.info('WhatsApp message sent', { to: normalizedTo });
+    }
+  } catch (error) {
+    Sentry.captureException(error);
+    logger.error('Error sending WhatsApp message', { error });
+  }
+}
+
+export async function downloadWhatsAppMedia(mediaId) {
+  if (!WP_ACCESS_TOKEN) {
+    logger.warn('WhatsApp credentials not configured, cannot download media');
+    return null;
+  }
+
+  try {
+    const mediaResponse = await fetch(
+      `https://graph.facebook.com/v21.0/${mediaId}`,
+      {
+        headers: { 'Authorization': `Bearer ${WP_ACCESS_TOKEN}` }
+      }
+    );
+
+    if (!mediaResponse.ok) {
+      logger.error('Error getting media URL', { response: await mediaResponse.text() });
+      return null;
+    }
+
+    const mediaInfo = await mediaResponse.json();
+    const mediaUrl = mediaInfo.url;
+    const mimeType = mediaInfo.mime_type || 'application/octet-stream';
+
+    const downloadResponse = await fetch(mediaUrl, {
+      headers: { 'Authorization': `Bearer ${WP_ACCESS_TOKEN}` }
+    });
+
+    if (!downloadResponse.ok) {
+      logger.error('Error downloading media');
+      return null;
+    }
+
+    const buffer = await downloadResponse.arrayBuffer();
+    const base64 = Buffer.from(buffer).toString('base64');
+
+    return { base64, mimeType };
+  } catch (error) {
+    Sentry.captureException(error);
+    logger.error('Error downloading WhatsApp media', { error });
+    return null;
+  }
+}

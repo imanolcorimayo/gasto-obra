@@ -4,9 +4,9 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "node --watch webhooks/wp_webhook.js",
-    "start": "node webhooks/wp_webhook.js",
-    "daily-summary": "node scripts/send-daily-summary.js"
+    "dev": "node --watch src/webhooks/wp_webhook.js",
+    "start": "node src/webhooks/wp_webhook.js",
+    "daily-summary": "node src/scripts/send-daily-summary.js"
   },
   "dependencies": {
     "@sentry/node": "^10.42.0",

@@ -1,10 +1,12 @@
-import '../lib/instrument.js';
+import '../../lib/instrument.js';
 import 'dotenv/config';
 import express from 'express';
-import admin from 'firebase-admin';
 import * as Sentry from '@sentry/node';
+import { admin, db, COLLECTIONS } from '../config/firebase.js';
 import GeminiHandler from '../handlers/GeminiHandler.js';
-import logger from '../lib/logger.js';
+import { sendWhatsAppMessage, downloadWhatsAppMedia } from '../helpers/whatsapp.js';
+import { formatAmount, capitalizeFirst } from '../helpers/responseFormatter.js';
+import logger from '../../lib/logger.js';
 
 // ============================================
 // Configuration
@@ -12,41 +14,7 @@ import logger from '../lib/logger.js';
 const app = express();
 const PORT = process.env.PORT || 4001;
 const VERIFY_TOKEN = process.env.WP_VERIFY_TOKEN || 'gasto_obra_verify';
-const WP_PHONE_NUMBER_ID = process.env.IDENTIFIER_WP_NUMBER;
-const WP_ACCESS_TOKEN = process.env.ACCESS_TOKEN_WP_BUSINESS;
 const APP_URL = process.env.APP_URL || 'https://gasto-obra.web.app';
-
-// ============================================
-// Firebase Admin Initialization
-// ============================================
-if (!admin.apps.length) {
-  const firebaseConfig = {
-    projectId: process.env.FIREBASE_PROJECT_ID,
-  };
-
-  if (process.env.FIREBASE_SERVICE_ACCOUNT) {
-    const serviceAccount = JSON.parse(
-      Buffer.from(process.env.FIREBASE_SERVICE_ACCOUNT, 'base64').toString()
-    );
-    firebaseConfig.credential = admin.credential.cert(serviceAccount);
-  }
-
-  admin.initializeApp(firebaseConfig);
-  logger.info('Firebase initialized successfully');
-}
-
-const db = admin.firestore();
-logger.info('Firestore connection established');
-
-// ============================================
-// Collections
-// ============================================
-const COLLECTIONS = {
-  WHATSAPP_LINKS: 'whatsappLinks',
-  PROJECTS: 'projects',
-  EXPENSES: 'expenses',
-  CATEGORIES: 'categories'
-};
 
 // ============================================
 // Default expense categories
@@ -1496,114 +1464,6 @@ async function findProjectByTag(userId, tag) {
   }
 
   return { id: projectsSnapshot.docs[0].id, ...projectsSnapshot.docs[0].data() };
-}
-
-function capitalizeFirst(str) {
-  if (!str) return '';
-  return str.charAt(0).toUpperCase() + str.slice(1);
-}
-
-function formatAmount(amount) {
-  return new Intl.NumberFormat('es-AR', {
-    style: 'currency',
-    currency: 'ARS',
-    maximumFractionDigits: 0
-  }).format(amount);
-}
-
-function normalizePhoneNumber(phone) {
-  if (phone.startsWith('549') && phone.length === 13) {
-    return '54' + phone.slice(3);
-  }
-  return phone;
-}
-
-async function downloadWhatsAppMedia(mediaId) {
-  if (!WP_ACCESS_TOKEN) {
-    logger.warn('WhatsApp credentials not configured, cannot download media');
-    return null;
-  }
-
-  try {
-    // Step 1: Get media URL
-    const mediaResponse = await fetch(
-      `https://graph.facebook.com/v21.0/${mediaId}`,
-      {
-        headers: { 'Authorization': `Bearer ${WP_ACCESS_TOKEN}` }
-      }
-    );
-
-    if (!mediaResponse.ok) {
-      logger.error('Error getting media URL', { response: await mediaResponse.text() });
-      return null;
-    }
-
-    const mediaInfo = await mediaResponse.json();
-    const mediaUrl = mediaInfo.url;
-    const mimeType = mediaInfo.mime_type || 'application/octet-stream';
-
-    // Step 2: Download media
-    const downloadResponse = await fetch(mediaUrl, {
-      headers: { 'Authorization': `Bearer ${WP_ACCESS_TOKEN}` }
-    });
-
-    if (!downloadResponse.ok) {
-      logger.error('Error downloading media');
-      return null;
-    }
-
-    const buffer = await downloadResponse.arrayBuffer();
-    const base64 = Buffer.from(buffer).toString('base64');
-
-    return { base64, mimeType };
-  } catch (error) {
-    Sentry.captureException(error);
-    logger.error('Error downloading WhatsApp media', { error });
-    return null;
-  }
-}
-
-async function sendWhatsAppMessage(to, message) {
-  const normalizedTo = normalizePhoneNumber(to);
-
-  if (!WP_PHONE_NUMBER_ID || !WP_ACCESS_TOKEN) {
-    logger.warn('WhatsApp credentials not configured, skipping message send', { to: normalizedTo });
-    return;
-  }
-
-  try {
-    const response = await fetch(
-      `https://graph.facebook.com/v21.0/${WP_PHONE_NUMBER_ID}/messages`,
-      {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${WP_ACCESS_TOKEN}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          messaging_product: 'whatsapp',
-          recipient_type: 'individual',
-          to: normalizedTo,
-          type: 'text',
-          text: {
-            preview_url: false,
-            body: message
-          }
-        })
-      }
-    );
-
-    const result = await response.json();
-
-    if (!response.ok) {
-      logger.error('Error sending WhatsApp message', { result });
-    } else {
-      logger.info('WhatsApp message sent', { to: normalizedTo });
-    }
-  } catch (error) {
-    Sentry.captureException(error);
-    logger.error('Error sending WhatsApp message', { error });
-  }
 }
 
 // ============================================
