@@ -24,7 +24,8 @@ const COLLECTIONS = {
   WHATSAPP_LINKS: 'whatsappLinks',
   PROJECTS: 'projects',
   EXPENSES: 'expenses',
-  CATEGORIES: 'categories'
+  CATEGORIES: 'categories',
+  RECIPIENTS: 'recipients'
 };
 
 export { admin, db, COLLECTIONS };

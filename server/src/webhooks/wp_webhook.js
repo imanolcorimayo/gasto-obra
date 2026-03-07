@@ -20,6 +20,7 @@ const APP_URL = process.env.APP_URL || 'https://gasto-obra.web.app';
 // Default expense categories
 // ============================================
 const DEFAULT_EXPENSE_CATEGORIES = ['materiales', 'herramientas', 'transporte', 'mano de obra', 'comida', 'otros'];
+const VALID_PAYMENT_METHODS = ['transferencia', 'efectivo', 'tarjeta', 'mercadopago'];
 
 // Fetch provider's custom categories (project-specific override global)
 async function getProviderCategories(providerId, projectId = null) {
@@ -61,6 +62,19 @@ async function getProviderCategories(providerId, projectId = null) {
   } catch (error) {
     logger.error('Error fetching provider categories', { error });
     return DEFAULT_EXPENSE_CATEGORIES;
+  }
+}
+
+// Fetch provider's recipients
+async function getProviderRecipients(userId) {
+  try {
+    const snap = await db.collection(COLLECTIONS.RECIPIENTS)
+      .where('userId', '==', userId)
+      .get();
+    return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  } catch (error) {
+    logger.error('Error fetching provider recipients', { error });
+    return [];
   }
 }
 
@@ -163,6 +177,37 @@ function getPendingProjectSelection(phoneNumber) {
 
 function clearPendingProjectSelection(phoneNumber) {
   pendingProjectSelections.delete(phoneNumber);
+}
+
+// ============================================
+// Pending Project Switch Expenses (2 min TTL, no auto-confirm)
+// ============================================
+const PROJECT_SWITCH_TTL = 2 * 60 * 1000; // 2 minutes
+const pendingProjectSwitchExpenses = new Map(); // phoneNumber -> { userId, expenseData, detectedProject, timestamp }
+
+function setPendingProjectSwitchExpense(phoneNumber, userId, expenseData, detectedProject) {
+  const timestamp = Date.now();
+  pendingProjectSwitchExpenses.set(phoneNumber, { userId, expenseData, detectedProject, timestamp });
+  setTimeout(() => {
+    const pending = pendingProjectSwitchExpenses.get(phoneNumber);
+    if (pending && pending.timestamp === timestamp) {
+      pendingProjectSwitchExpenses.delete(phoneNumber);
+    }
+  }, PROJECT_SWITCH_TTL);
+}
+
+function getPendingProjectSwitchExpense(phoneNumber) {
+  const pending = pendingProjectSwitchExpenses.get(phoneNumber);
+  if (!pending) return null;
+  if (Date.now() - pending.timestamp > PROJECT_SWITCH_TTL) {
+    pendingProjectSwitchExpenses.delete(phoneNumber);
+    return null;
+  }
+  return pending;
+}
+
+function clearPendingProjectSwitchExpense(phoneNumber) {
+  pendingProjectSwitchExpenses.delete(phoneNumber);
 }
 
 // ============================================
@@ -278,7 +323,23 @@ async function processMessage(phoneNumber, text, contactName) {
     }
   }
 
-  // 2. Pending project selection → number
+  // 2. Pending project switch → si/no
+  const pendingSwitch = getPendingProjectSwitchExpense(phoneNumber);
+  if (pendingSwitch) {
+    if (['si', 'sí', 'ok', 'dale', 'yes', 'confirmar'].includes(normalizedText)) {
+      clearPendingProjectSwitchExpense(phoneNumber);
+      const syntheticPending = { data: pendingSwitch.expenseData, userId: pendingSwitch.userId };
+      await confirmPendingExpense(phoneNumber, syntheticPending);
+      return;
+    }
+    if (['no', 'cancelar', 'cancel'].includes(normalizedText)) {
+      clearPendingProjectSwitchExpense(phoneNumber);
+      await sendWhatsAppMessage(phoneNumber, 'Gasto cancelado.');
+      return;
+    }
+  }
+
+  // 3. Pending project selection → number
   const pendingSelection = getPendingProjectSelection(phoneNumber);
   if (pendingSelection) {
     const num = parseInt(normalizedText, 10);
@@ -322,11 +383,8 @@ async function processMessage(phoneNumber, text, contactName) {
     return;
   }
 
-  // 8. Fallback
-  await sendWhatsAppMessage(
-    phoneNumber,
-    'El procesamiento de texto esta siendo actualizado. Por ahora, envia una *foto* o *audio* para registrar gastos.\n\nEscribi *AYUDA* para ver los comandos disponibles.'
-  );
+  // 8. Fallback → text expense
+  await handleTextExpense(phoneNumber, text);
 }
 
 // ============================================
@@ -531,6 +589,205 @@ async function processAudioMessage(phoneNumber, audioId, caption, contactName) {
 }
 
 // ============================================
+// Text Message Expense Processing
+// ============================================
+
+async function handleTextExpense(phoneNumber, text) {
+  const linkDoc = await db.collection(COLLECTIONS.WHATSAPP_LINKS).doc(phoneNumber).get();
+  if (!linkDoc.exists || linkDoc.data()?.status !== 'linked') {
+    await sendWhatsAppMessage(phoneNumber, 'Este numero no esta vinculado. Envia VINCULAR <codigo> para vincular tu cuenta.');
+    return;
+  }
+
+  const linkData = linkDoc.data();
+  const userId = linkData.userId;
+  const activeProjectId = linkData.activeProjectId || null;
+
+  const activeProjects = await getActiveProjects(userId);
+  if (activeProjects.length === 0) {
+    await sendWhatsAppMessage(phoneNumber, 'No tenes proyectos activos.\n\nCrea uno desde la app web.');
+    return;
+  }
+
+  if (!activeProjectId) {
+    await sendWhatsAppMessage(phoneNumber, 'No tenes un proyecto activo. Envia *PROYECTO* para seleccionar uno.');
+    return;
+  }
+
+  if (!geminiHandler) {
+    await sendWhatsAppMessage(phoneNumber, 'El procesamiento de texto no esta disponible.');
+    return;
+  }
+
+  await sendWhatsAppMessage(phoneNumber, 'Procesando mensaje...');
+
+  const providerCats = await getProviderCategories(userId, activeProjectId);
+  const recipients = await getProviderRecipients(userId);
+
+  const context = {
+    activeProjects: activeProjects.map(p => ({ id: p.id, name: p.name, tag: p.tag })),
+    categories: providerCats,
+    recipients: recipients.map(r => ({ id: r.id, name: r.name, platform: r.platform })),
+    paymentMethods: VALID_PAYMENT_METHODS
+  };
+
+  const result = await geminiHandler.parseTextExpense(text, context);
+
+  if (!result || !result.totalAmount) {
+    await sendWhatsAppMessage(phoneNumber, 'No pude entender el mensaje. Intenta con algo como "500 clavos" o envia una foto/audio.');
+    return;
+  }
+
+  const title = result.title || result.items?.[0]?.name || 'Gasto por texto';
+  const items = Array.isArray(result.items) && result.items.length > 0
+    ? result.items.filter(i => i && i.name && i.amount > 0)
+    : null;
+  const amount = items && items.length > 0
+    ? items.reduce((sum, i) => sum + i.amount, 0)
+    : result.totalAmount;
+  const description = result.description || '';
+
+  const transactionType = resolveTransactionType(result.transactionType) || 'expense';
+  const typeDefaults = getTypeDefaults(transactionType);
+  const installmentPercent = result.installmentPercent === 100 ? 100 : (typeDefaults.installmentPercent ?? 0);
+
+  // Validate AI fields
+  const paymentMethod = VALID_PAYMENT_METHODS.includes(result.paymentMethod) ? result.paymentMethod : null;
+
+  let recipientId = null;
+  let recipientName = null;
+  let recipientBankInfo = null;
+  let recipientPlatform = null;
+  let recipientCuit = null;
+  if (result.recipientId) {
+    const matched = recipients.find(r => r.id === result.recipientId);
+    if (matched) {
+      recipientId = matched.id;
+      recipientName = matched.name || null;
+      recipientBankInfo = matched.bankInfo || null;
+      recipientPlatform = matched.platform || null;
+      recipientCuit = matched.cuit || null;
+    }
+  }
+
+  const detectedProjectId = result.projectId && activeProjects.some(p => p.id === result.projectId)
+    ? result.projectId
+    : null;
+
+  let category = transactionType === 'payment' ? 'pago' : (result.category || null);
+  if (category && category !== 'pago' && !providerCats.includes(category)) {
+    category = await geminiHandler.categorizeExpense(title, description, providerCats);
+  }
+  if (!category) {
+    category = await geminiHandler.categorizeExpense(title, description, providerCats);
+  }
+
+  // Determine target project
+  const targetProjectId = detectedProjectId || activeProjectId;
+  const isProjectSwitch = detectedProjectId && detectedProjectId !== activeProjectId;
+
+  if (isProjectSwitch) {
+    const detectedProject = activeProjects.find(p => p.id === detectedProjectId);
+    const expenseData = {
+      projectId: detectedProject.id,
+      providerId: userId,
+      title,
+      description,
+      amount,
+      category,
+      type: transactionType,
+      installmentPercent,
+      paymentMethod,
+      recipientName,
+      recipientBankInfo,
+      recipientPlatform,
+      recipientCuit,
+      linkedExpenseId: null,
+      linkedPaymentId: null,
+      items: items || null,
+      imageUrl: null,
+      audioTranscription: null,
+      originalMessage: text,
+      source: 'whatsapp',
+      projectTag: detectedProject.tag,
+      projectName: detectedProject.name,
+      timestamp: Date.now()
+    };
+
+    setPendingProjectSwitchExpense(phoneNumber, userId, expenseData, detectedProject);
+
+    const confirmMsg = buildExpenseConfirmationMessage(expenseData);
+    await sendWhatsAppMessage(
+      phoneNumber,
+      `${confirmMsg}\nEste gasto se guardaria en *${detectedProject.name}* (no tu proyecto activo).\n\nResponde *si* para confirmar o *no* para cancelar.\nSi queres guardar automaticamente a este proyecto, usa el comando *PROYECTO*.`
+    );
+    return;
+  }
+
+  const project = await resolveProject(userId, activeProjectId);
+  if (!project) {
+    await sendWhatsAppMessage(phoneNumber, 'No tenes un proyecto activo. Envia *PROYECTO* para seleccionar uno.');
+    return;
+  }
+
+  const expenseData = {
+    projectId: project.id,
+    providerId: userId,
+    title,
+    description,
+    amount,
+    category,
+    type: transactionType,
+    installmentPercent,
+    paymentMethod,
+    recipientName,
+    recipientBankInfo,
+    recipientPlatform,
+    recipientCuit,
+    linkedExpenseId: null,
+    linkedPaymentId: null,
+    items: items || null,
+    imageUrl: null,
+    audioTranscription: null,
+    originalMessage: text,
+    source: 'whatsapp',
+    projectTag: project.tag,
+    projectName: project.name,
+    timestamp: Date.now()
+  };
+
+  setPendingConfirmation(phoneNumber, userId, expenseData);
+
+  const confirmMsg = buildExpenseConfirmationMessage(expenseData);
+  await sendWhatsAppMessage(phoneNumber, confirmMsg);
+}
+
+function buildExpenseConfirmationMessage(data) {
+  const typeLabel = getTypeLabel(data.type);
+  const formattedAmount = formatAmount(data.amount);
+  let msg = `${typeLabel}: ${formattedAmount} - ${data.title}\n`;
+
+  if (data.items && data.items.length > 1) {
+    msg += data.items.map(i => `  - ${i.name}: ${formatAmount(i.amount)}`).join('\n') + '\n';
+  }
+
+  msg += `${capitalizeFirst(data.category)} - ${data.projectName}`;
+
+  if (data.paymentMethod) {
+    msg += `\nMetodo: ${capitalizeFirst(data.paymentMethod)}`;
+  }
+  if (data.recipientName) {
+    msg += `\nDestinatario: ${data.recipientName}`;
+  }
+  if (data.installmentPercent >= 100) {
+    msg += `\nEstado: Pagado`;
+  }
+
+  msg += `\n\nResponde *no* para cancelar. Se confirma automaticamente en 2 minutos.`;
+  return msg;
+}
+
+// ============================================
 // Confirmation Handler
 // ============================================
 
@@ -564,7 +821,37 @@ async function confirmPendingExpense(phoneNumber, pending) {
     createdAt: admin.firestore.FieldValue.serverTimestamp()
   };
 
-  await db.collection(COLLECTIONS.EXPENSES).add(expenseDoc);
+  const expenseRef = await db.collection(COLLECTIONS.EXPENSES).add(expenseDoc);
+
+  // Create linked payment if fully paid
+  if (data.installmentPercent >= 100 && (data.type === 'expense' || !data.type)) {
+    const paymentDoc = {
+      projectId: data.projectId,
+      providerId: userId,
+      title: `Pago: ${data.title}`,
+      description: '',
+      amount: data.amount,
+      category: 'pago',
+      type: 'payment',
+      installmentPercent: null,
+      paymentMethod: data.paymentMethod || null,
+      recipientName: data.recipientName || null,
+      recipientBankInfo: data.recipientBankInfo || null,
+      recipientPlatform: data.recipientPlatform || null,
+      recipientCuit: data.recipientCuit || null,
+      linkedExpenseId: expenseRef.id,
+      linkedPaymentId: null,
+      items: null,
+      imageUrl: null,
+      audioTranscription: null,
+      originalMessage: '',
+      source: 'whatsapp',
+      date: admin.firestore.FieldValue.serverTimestamp(),
+      createdAt: admin.firestore.FieldValue.serverTimestamp()
+    };
+    const paymentRef = await db.collection(COLLECTIONS.EXPENSES).add(paymentDoc);
+    await expenseRef.update({ linkedPaymentId: paymentRef.id });
+  }
 
   const formattedAmount = formatAmount(data.amount);
   const typeLabel = data.type === 'payment' ? 'Pago registrado' : data.type === 'provider_expense' ? 'Gasto propio registrado' : 'Gasto registrado';
@@ -698,6 +985,7 @@ async function sendHelpMessage(phoneNumber) {
   const helpText = `*Gasto Obra - Ayuda*
 
 *Registrar gastos:*
+- Envia un *texto* describiendo el gasto
 - Envia una *foto* de un ticket
 - Envia un *audio* describiendo el gasto
 

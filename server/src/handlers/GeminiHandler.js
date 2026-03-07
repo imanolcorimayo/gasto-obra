@@ -7,11 +7,17 @@ class GeminiHandler {
     this.baseUrl = 'https://generativelanguage.googleapis.com/v1beta/models';
   }
 
-  async generateContent(prompt, { maxOutputTokens = 500, temperature = 0.7, parts = null } = {}) {
+  async generateContent(prompt, { maxOutputTokens = 500, temperature = 0.7, parts = null, responseSchema = null } = {}) {
     try {
       const contents = parts
         ? [{ parts }]
         : [{ parts: [{ text: prompt }] }];
+
+      const generationConfig = { maxOutputTokens, temperature };
+      if (responseSchema) {
+        generationConfig.responseMimeType = 'application/json';
+        generationConfig.responseSchema = responseSchema;
+      }
 
       const response = await fetch(
         `${this.baseUrl}/${this.model}:generateContent?key=${this.apiKey}`,
@@ -20,7 +26,7 @@ class GeminiHandler {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             contents,
-            generationConfig: { maxOutputTokens, temperature }
+            generationConfig
           })
         }
       );
@@ -144,6 +150,101 @@ Si no podes extraer algun campo, usa null. Solo responde con el JSON.`;
       return JSON.parse(cleaned);
     } catch (error) {
       logger.error('Error parsing audio transcription JSON', { error });
+      return null;
+    }
+  }
+
+  async parseTextExpense(text, { activeProjects = [], categories = null, recipients = [], paymentMethods = [] } = {}) {
+    const projectList = activeProjects.length > 0
+      ? `\nProyectos activos (usa el ID exacto si el usuario menciona uno):\n${activeProjects.map(p => `- ID: "${p.id}", Nombre: "${p.name}", Tag: "#${p.tag}"`).join('\n')}`
+      : '';
+
+    const recipientList = recipients.length > 0
+      ? `\nDestinatarios conocidos (usa el ID exacto si el usuario menciona uno):\n${recipients.map(r => `- ID: "${r.id}", Nombre: "${r.name}", Plataforma: "${r.platform || ''}"`).join('\n')}`
+      : '';
+
+    const categoryList = categories
+      ? `\nCategorias validas: ${categories.join(', ')}`
+      : '\nCategorias validas: materiales, herramientas, transporte, mano de obra, comida, otros';
+
+    const methodList = paymentMethods.length > 0
+      ? `\nMetodos de pago validos: ${paymentMethods.join(', ')}`
+      : '\nMetodos de pago validos: transferencia, efectivo, tarjeta, mercadopago';
+
+    const prompt = `Analiza este mensaje de un proveedor de obra que describe un gasto, pago, o gasto propio. Extrae la informacion en formato JSON:
+{
+  "transactionType": "expense|payment|provider_expense",
+  "title": "titulo corto",
+  "items": [{"name": "item", "amount": 123.45}],
+  "totalAmount": 1234.56,
+  "description": "descripcion adicional",
+  "category": "<de las categorias validas>",
+  "paymentMethod": "<metodo de pago o null>",
+  "recipientId": "<ID del destinatario o null>",
+  "installmentPercent": 0,
+  "projectId": "<ID del proyecto si se menciona, o null>"
+}
+
+Mensaje: "${text}"
+${projectList}
+${recipientList}
+${categoryList}
+${methodList}
+
+Reglas importantes:
+- "transactionType": detecta el tipo segun lo que dice la persona:
+  - "payment" si dice "pago", "cobro", "me pagaron", "me transfirieron", "recibi plata", "me depositaron"
+  - "provider_expense" si dice "gasto propio", "gasto mio", "puse de mi bolsillo", "pague yo", "puse yo"
+  - "expense" para compras y gastos normales de obra (materiales, herramientas, mano de obra, etc.)
+  - Si no estas seguro, usa "expense"
+- "items" es un array con CADA item/gasto mencionado, cada uno con "name" y "amount"
+- "totalAmount" es la suma de todos los amounts de los items
+- Si se menciona un solo gasto, pone un solo item en el array
+- "installmentPercent": usa 100 SOLO si dice "pagado por el cliente", "el cliente pago", "ya esta pago". Caso contrario usa 0
+- "paymentMethod": debe ser EXACTAMENTE uno de los metodos validos, o null si no se menciona
+- "recipientId": debe ser EXACTAMENTE uno de los IDs de destinatarios listados, o null si no se menciona
+- "projectId": debe ser EXACTAMENTE uno de los IDs de proyectos listados si el usuario menciona un proyecto, o null
+Si no podes extraer algun campo, usa null.`;
+
+    const schema = {
+      type: 'object',
+      properties: {
+        transactionType: { type: 'string', enum: ['expense', 'payment', 'provider_expense'] },
+        title: { type: 'string' },
+        items: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              name: { type: 'string' },
+              amount: { type: 'number' }
+            },
+            required: ['name', 'amount']
+          }
+        },
+        totalAmount: { type: 'number' },
+        description: { type: ['string', 'null'] },
+        category: { type: ['string', 'null'] },
+        paymentMethod: { type: ['string', 'null'] },
+        recipientId: { type: ['string', 'null'] },
+        installmentPercent: { type: 'integer', enum: [0, 100] },
+        projectId: { type: ['string', 'null'] }
+      },
+      required: ['transactionType', 'title', 'items', 'totalAmount', 'installmentPercent']
+    };
+
+    const responseText = await this.generateContent(prompt, {
+      maxOutputTokens: 800,
+      temperature: 0.3,
+      responseSchema: schema
+    });
+
+    if (!responseText) return null;
+
+    try {
+      return JSON.parse(responseText);
+    } catch (error) {
+      logger.error('Error parsing text expense JSON', { error });
       return null;
     }
   }
