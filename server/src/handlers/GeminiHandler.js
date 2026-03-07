@@ -1,14 +1,52 @@
 import * as Sentry from '@sentry/node';
 import logger from '../../lib/logger.js';
 
+const MODELS = [
+  'gemini-3.1-flash-lite',  // 500 RPD — primary
+  'gemini-2.5-flash-lite',  // 20 RPD  — fallback 1
+  'gemini-2.5-flash',       // 20 RPD  — fallback 2
+];
+
 class GeminiHandler {
   constructor(apiKey) {
     this.apiKey = apiKey;
-    this.model = 'gemini-2.5-flash-lite';
     this.baseUrl = 'https://generativelanguage.googleapis.com/v1beta/models';
+    this.exhaustedModels = new Map(); // model -> 'YYYY-MM-DD'
   }
 
-  async generateContent(prompt, { maxOutputTokens = 500, temperature = 0.7, parts = null, responseSchema = null } = {}) {
+  _isExhausted(model) {
+    const today = new Date().toISOString().slice(0, 10);
+    return this.exhaustedModels.get(model) === today;
+  }
+
+  _markExhausted(model) {
+    const today = new Date().toISOString().slice(0, 10);
+    this.exhaustedModels.set(model, today);
+  }
+
+  async generateContent(prompt, options = {}) {
+    for (const model of MODELS) {
+      if (this._isExhausted(model)) continue;
+
+      const result = await this._tryWithModel(model, prompt, options);
+
+      if (result?.error === 'rate_limit') {
+        this._markExhausted(model);
+        Sentry.captureMessage('Gemini model exhausted, rotating', { level: 'warning', extra: { model } });
+        logger.info('Model exhausted, rotating to next', { model });
+        continue;
+      }
+
+      return result; // success, unavailable, or null
+    }
+
+    // All models exhausted
+    Sentry.captureException(new Error('All Gemini models exhausted'));
+    logger.error('All Gemini models exhausted');
+    return { error: 'rate_limit' };
+  }
+
+  async _tryWithModel(model, prompt, { maxOutputTokens = 500, temperature = 0.7, parts = null, responseSchema = null } = {}) {
     const maxRetries = 2;
     const retryDelays = [2000, 5000];
 
@@ -25,7 +63,7 @@ class GeminiHandler {
         }
 
         const response = await fetch(
-          `${this.baseUrl}/${this.model}:generateContent?key=${this.apiKey}`,
+          `${this.baseUrl}/${model}:generateContent?key=${this.apiKey}`,
           {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -38,29 +76,36 @@ class GeminiHandler {
 
         if (!response.ok) {
           const responseText = await response.text();
-          const retryable = response.status === 503 || response.status === 429;
-          if (retryable && attempt < maxRetries) {
-            Sentry.captureMessage(`Gemini API ${response.status} - retrying`, { level: 'warning', extra: { attempt: attempt + 1, model: this.model } });
-            logger.warn('Gemini API unavailable, retrying', { status: response.status, attempt: attempt + 1, delay: retryDelays[attempt] });
+
+          if (response.status === 429) {
+            Sentry.captureMessage('Gemini API 429 - rate limited', { level: 'warning', extra: { model } });
+            logger.warn('Gemini API rate limited', { model });
+            return { error: 'rate_limit' };
+          }
+
+          if (response.status === 503 && attempt < maxRetries) {
+            Sentry.captureMessage('Gemini API 503 - retrying', { level: 'warning', extra: { model, attempt: attempt + 1 } });
+            logger.warn('Gemini API 503, retrying', { model, attempt: attempt + 1, delay: retryDelays[attempt] });
             await new Promise(r => setTimeout(r, retryDelays[attempt]));
             continue;
           }
+
           const error = new Error(`Gemini API error: ${response.status}`);
-          Sentry.captureException(error, { extra: { response: responseText, status: response.status, model: this.model } });
-          logger.error('Gemini API error', { response: responseText });
-          return { error: response.status === 429 ? 'rate_limit' : 'unavailable' };
+          Sentry.captureException(error, { extra: { response: responseText, status: response.status, model } });
+          logger.error('Gemini API error', { status: response.status, model, response: responseText });
+          return { error: 'unavailable' };
         }
 
         const result = await response.json();
         return result.candidates?.[0]?.content?.parts?.[0]?.text || null;
       } catch (error) {
         if (attempt < maxRetries) {
-          logger.warn('Gemini request failed, retrying', { attempt: attempt + 1, error: error.message });
+          logger.warn('Gemini request failed, retrying', { model, attempt: attempt + 1, error: error.message });
           await new Promise(r => setTimeout(r, retryDelays[attempt]));
           continue;
         }
-        Sentry.captureException(error);
-        logger.error('Error calling Gemini', { error });
+        Sentry.captureException(error, { extra: { model } });
+        logger.error('Error calling Gemini', { model, error });
         return { error: 'unavailable' };
       }
     }
