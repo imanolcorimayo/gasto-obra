@@ -44,27 +44,65 @@ class GeminiHandler {
     }
   }
 
-  async parseReceiptImage(imageBase64, mimeType = 'image/jpeg') {
+  async parseReceiptImage(imageBase64, mimeType = 'image/jpeg', { caption = '', activeProjects = [], categories = null, recipients = [], paymentMethods = [] } = {}) {
+    const projectList = activeProjects.length > 0
+      ? `\nProyectos activos (usa el ID exacto si el usuario menciona uno en el texto):\n${activeProjects.map(p => `- ID: "${p.id}", Nombre: "${p.name}", Tag: "#${p.tag}"`).join('\n')}`
+      : '';
+
+    const recipientList = recipients.length > 0
+      ? `\nDestinatarios conocidos (usa el ID exacto si el usuario menciona uno en el texto):\n${recipients.map(r => `- ID: "${r.id}", Nombre: "${r.name}", Plataforma: "${r.platform || ''}"`).join('\n')}`
+      : '';
+
+    const methodList = paymentMethods.length > 0
+      ? `\nMetodos de pago validos: ${paymentMethods.join(', ')}`
+      : '';
+
+    const captionBlock = caption
+      ? `\n\nEl usuario envio este texto junto con la imagen: "${caption}"`
+      : '';
+
     const prompt = `Analiza esta imagen. Puede ser un ticket/factura de compra, un comprobante de transferencia bancaria, o un comprobante de pago.
-Extrae la siguiente informacion en formato JSON:
-{
-  "transactionType": "expense|payment",
-  "storeName": "nombre del comercio",
-  "items": [
-    {"name": "nombre del item", "amount": 123.45},
-    {"name": "otro item", "amount": 67.89}
-  ],
-  "totalAmount": 1234.56,
-  "date": "DD/MM/YYYY"
-}
+${captionBlock}
 
 - "transactionType": detecta el tipo de imagen:
   - "expense" para tickets de compra, facturas, recibos de comercio
   - "payment" para capturas de transferencia bancaria, comprobantes de pago, vouchers de deposito
-  - Si no estas seguro, usa null
-- Cada item debe tener "name" (descripcion corta) y "amount" (precio unitario o subtotal).
+- Cada item debe tener "name" (descripcion corta) y "amount" (precio unitario o subtotal)
+- Los campos paymentMethod, recipientId, installmentPercent y projectId se extraen SOLO del texto del usuario, NO de la imagen
+- "installmentPercent": usa "100" SOLO si el texto dice "pagado por el cliente", "el cliente pago", "ya esta pago". Caso contrario usa "0"
+- "paymentMethod": debe ser EXACTAMENTE uno de los metodos validos, o null
+- "recipientId": debe ser EXACTAMENTE uno de los IDs listados, o null
+- "projectId": debe ser EXACTAMENTE uno de los IDs listados, o null
 Si no podes extraer algun campo, usa null.
-Solo responde con el JSON, sin texto adicional.`;
+${projectList}
+${recipientList}
+${methodList}`;
+
+    const schema = {
+      type: 'object',
+      properties: {
+        transactionType: { type: 'string', enum: ['expense', 'payment'] },
+        storeName: { type: 'string', nullable: true },
+        items: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              name: { type: 'string' },
+              amount: { type: 'number' }
+            },
+            required: ['name', 'amount']
+          }
+        },
+        totalAmount: { type: 'number' },
+        date: { type: 'string', nullable: true },
+        paymentMethod: { type: 'string', nullable: true },
+        recipientId: { type: 'string', nullable: true },
+        installmentPercent: { type: 'string', enum: ['0', '100'] },
+        projectId: { type: 'string', nullable: true }
+      },
+      required: ['transactionType', 'items', 'totalAmount', 'installmentPercent']
+    };
 
     const parts = [
       { text: prompt },
@@ -79,53 +117,89 @@ Solo responde con el JSON, sin texto adicional.`;
     const text = await this.generateContent(null, {
       maxOutputTokens: 1000,
       temperature: 0.3,
-      parts
+      parts,
+      responseSchema: schema
     });
 
     if (!text) return null;
 
     try {
-      const cleaned = text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
-      return JSON.parse(cleaned);
+      const parsed = JSON.parse(text);
+      parsed.installmentPercent = parseInt(parsed.installmentPercent, 10) || 0;
+      return parsed;
     } catch (error) {
       logger.error('Error parsing receipt JSON', { error });
       return null;
     }
   }
 
-  async transcribeAudio(audioBase64, mimeType = 'audio/ogg', activeProjects = [], categories = null) {
+  async transcribeAudio(audioBase64, mimeType = 'audio/ogg', { activeProjects = [], categories = null, recipients = [], paymentMethods = [] } = {}) {
     const projectList = activeProjects.length > 0
-      ? `\n\nProyectos activos del usuario (nombre - tag):\n${activeProjects.map(p => `- ${p.name} (#${p.tag})`).join('\n')}`
+      ? `\nProyectos activos (usa el ID exacto si el usuario menciona uno):\n${activeProjects.map(p => `- ID: "${p.id}", Nombre: "${p.name}", Tag: "#${p.tag}"`).join('\n')}`
       : '';
 
+    const recipientList = recipients.length > 0
+      ? `\nDestinatarios conocidos (usa el ID exacto si el usuario menciona uno):\n${recipients.map(r => `- ID: "${r.id}", Nombre: "${r.name}", Plataforma: "${r.platform || ''}"`).join('\n')}`
+      : '';
+
+    const categoryList = categories
+      ? `\nCategorias validas: ${categories.join(', ')}`
+      : '\nCategorias validas: materiales, herramientas, transporte, mano de obra, comida, otros';
+
+    const methodList = paymentMethods.length > 0
+      ? `\nMetodos de pago validos: ${paymentMethods.join(', ')}`
+      : '\nMetodos de pago validos: transferencia, efectivo, tarjeta, mercadopago';
+
     const prompt = `Transcribi este audio en español argentino. El audio describe un gasto de obra, un pago recibido, o un gasto propio del proveedor.
-Extrae la informacion en formato JSON:
-{
-  "transcription": "texto completo transcrito",
-  "transactionType": "expense|payment|provider_expense",
-  "title": "titulo corto del gasto general",
-  "items": [
-    {"name": "nombre del item", "amount": 123.45},
-    {"name": "otro item", "amount": 67.89}
-  ],
-  "totalAmount": 191.34,
-  "description": "descripcion adicional si hay",
-  "category": "${categories ? categories.join('|') : 'materiales|herramientas|transporte|mano de obra|comida|otros'}",
-  "projectReference": "nombre o tag del proyecto si se menciona en el audio"
-}${projectList}
+Extrae la informacion en formato JSON.
+${projectList}
+${recipientList}
+${categoryList}
+${methodList}
 
 Reglas importantes:
 - "transactionType": detecta el tipo segun lo que dice la persona:
-  - "payment" si dice "pago", "cobro", "me pagaron", "me transfirieron", "recibí plata", "me depositaron"
-  - "provider_expense" si dice "gasto propio", "gasto mío", "puse de mi bolsillo", "pagué yo", "puse yo"
+  - "payment" si dice "pago", "cobro", "me pagaron", "me transfirieron", "recibi plata", "me depositaron"
+  - "provider_expense" si dice "gasto propio", "gasto mio", "puse de mi bolsillo", "pague yo", "puse yo"
   - "expense" para compras y gastos normales de obra (materiales, herramientas, mano de obra, etc.)
-  - Si no estas seguro, usa null
-- "items" es un array con CADA item/gasto mencionado, cada uno con "name" y "amount".
-- "totalAmount" es la suma de todos los amounts de los items.
-- Si se menciona un solo gasto, pone un solo item en el array.
-- Si se menciona un monto total pero no los items individuales, pone un solo item con ese monto.
-- Si el audio menciona un proyecto, obra, o lugar que coincida con alguno de los proyectos activos, incluilo en projectReference.
-Si no podes extraer algun campo, usa null. Solo responde con el JSON.`;
+  - Si no estas seguro, usa "expense"
+- "items" es un array con CADA item/gasto mencionado, cada uno con "name" y "amount"
+- "totalAmount" es la suma de todos los amounts de los items
+- Si se menciona un solo gasto, pone un solo item en el array
+- Si se menciona un monto total pero no los items individuales, pone un solo item con ese monto
+- "installmentPercent": usa 100 SOLO si dice "pagado por el cliente", "el cliente pago", "ya esta pago". Caso contrario usa 0
+- "paymentMethod": debe ser EXACTAMENTE uno de los metodos validos, o null si no se menciona
+- "recipientId": debe ser EXACTAMENTE uno de los IDs de destinatarios listados, o null si no se menciona
+- "projectId": debe ser EXACTAMENTE uno de los IDs de proyectos listados si el usuario menciona un proyecto, o null
+Si no podes extraer algun campo, usa null.`;
+
+    const schema = {
+      type: 'object',
+      properties: {
+        transcription: { type: 'string' },
+        transactionType: { type: 'string', enum: ['expense', 'payment', 'provider_expense'] },
+        title: { type: 'string' },
+        items: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              name: { type: 'string' },
+              amount: { type: 'number' }
+            },
+            required: ['name', 'amount']
+          }
+        },
+        totalAmount: { type: 'number' },
+        description: { type: 'string', nullable: true },
+        category: { type: 'string', nullable: true },
+        paymentMethod: { type: 'string', nullable: true },
+        recipientId: { type: 'string', nullable: true },
+        installmentPercent: { type: 'string', enum: ['0', '100'] },
+        projectId: { type: 'string', nullable: true }
+      },
+      required: ['transcription', 'transactionType', 'title', 'items', 'totalAmount', 'installmentPercent']
+    };
 
     const parts = [
       { text: prompt },
@@ -140,14 +214,16 @@ Si no podes extraer algun campo, usa null. Solo responde con el JSON.`;
     const text = await this.generateContent(null, {
       maxOutputTokens: 1000,
       temperature: 0.3,
-      parts
+      parts,
+      responseSchema: schema
     });
 
     if (!text) return null;
 
     try {
-      const cleaned = text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
-      return JSON.parse(cleaned);
+      const parsed = JSON.parse(text);
+      parsed.installmentPercent = parseInt(parsed.installmentPercent, 10) || 0;
+      return parsed;
     } catch (error) {
       logger.error('Error parsing audio transcription JSON', { error });
       return null;

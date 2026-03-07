@@ -400,9 +400,15 @@ async function processImageMessage(phoneNumber, imageId, caption, contactName) {
 
   const linkData = linkDoc.data();
   const userId = linkData.userId;
+  const activeProjectId = linkData.activeProjectId || null;
 
-  const project = await resolveProject(userId, linkData.activeProjectId);
-  if (!project) {
+  const activeProjects = await getActiveProjects(userId);
+  if (activeProjects.length === 0) {
+    await sendWhatsAppMessage(phoneNumber, 'No tenes proyectos activos.\n\nCrea uno desde la app web.');
+    return;
+  }
+
+  if (!activeProjectId) {
     await sendWhatsAppMessage(phoneNumber, 'No tenes un proyecto activo. Envia *PROYECTO* para seleccionar uno.');
     return;
   }
@@ -420,7 +426,18 @@ async function processImageMessage(phoneNumber, imageId, caption, contactName) {
     return;
   }
 
-  const receiptData = await geminiHandler.parseReceiptImage(imageData.base64, imageData.mimeType);
+  const providerCats = await getProviderCategories(userId, activeProjectId);
+  const recipients = await getProviderRecipients(userId);
+
+  const context = {
+    caption,
+    activeProjects: activeProjects.map(p => ({ id: p.id, name: p.name, tag: p.tag })),
+    categories: providerCats,
+    recipients: recipients.map(r => ({ id: r.id, name: r.name, platform: r.platform })),
+    paymentMethods: VALID_PAYMENT_METHODS
+  };
+
+  const receiptData = await geminiHandler.parseReceiptImage(imageData.base64, imageData.mimeType, context);
   if (!receiptData || !receiptData.totalAmount) {
     await sendWhatsAppMessage(phoneNumber, 'No pude leer el ticket. Intenta con una foto mas clara o registra el gasto manualmente.');
     return;
@@ -428,21 +445,89 @@ async function processImageMessage(phoneNumber, imageId, caption, contactName) {
 
   const transactionType = resolveTransactionType(receiptData.transactionType) || 'expense';
   const typeDefaults = getTypeDefaults(transactionType);
+  const installmentPercent = receiptData.installmentPercent === 100 ? 100 : (typeDefaults.installmentPercent ?? 0);
 
   const title = receiptData.storeName || (receiptData.items?.[0]?.name) || 'Ticket';
   const description = receiptData.items
     ? receiptData.items.map(i => typeof i === 'string' ? i : i.name).join(', ')
     : '';
 
+  // Validate AI fields
+  const paymentMethod = VALID_PAYMENT_METHODS.includes(receiptData.paymentMethod) ? receiptData.paymentMethod : null;
+
+  let recipientName = null;
+  let recipientBankInfo = null;
+  let recipientPlatform = null;
+  let recipientCuit = null;
+  if (receiptData.recipientId) {
+    const matched = recipients.find(r => r.id === receiptData.recipientId);
+    if (matched) {
+      recipientName = matched.name || null;
+      recipientBankInfo = matched.bankInfo || null;
+      recipientPlatform = matched.platform || null;
+      recipientCuit = matched.cuit || null;
+    }
+  }
+
+  const detectedProjectId = receiptData.projectId && activeProjects.some(p => p.id === receiptData.projectId)
+    ? receiptData.projectId
+    : null;
+
   let category = transactionType === 'payment' ? 'pago' : null;
   if (!category) {
-    const providerCats = await getProviderCategories(userId, project.id);
     category = await geminiHandler.categorizeExpense(title, description, providerCats);
   }
 
   const items = receiptData.items && receiptData.items.length > 0
     ? receiptData.items.map(i => typeof i === 'string' ? { name: i, amount: 0 } : { name: i.name || '', amount: i.amount || 0 })
     : null;
+
+  // Project switching detection
+  const isProjectSwitch = detectedProjectId && detectedProjectId !== activeProjectId;
+
+  if (isProjectSwitch) {
+    const detectedProject = activeProjects.find(p => p.id === detectedProjectId);
+    const expenseData = {
+      projectId: detectedProject.id,
+      providerId: userId,
+      title,
+      description,
+      amount: receiptData.totalAmount,
+      category,
+      type: transactionType,
+      installmentPercent,
+      paymentMethod,
+      recipientName,
+      recipientBankInfo,
+      recipientPlatform,
+      recipientCuit,
+      linkedExpenseId: null,
+      linkedPaymentId: null,
+      items,
+      imageUrl: null,
+      audioTranscription: null,
+      originalMessage: `[Imagen] ${caption}`,
+      source: 'whatsapp',
+      projectTag: detectedProject.tag,
+      projectName: detectedProject.name,
+      timestamp: Date.now()
+    };
+
+    setPendingProjectSwitchExpense(phoneNumber, userId, expenseData, detectedProject);
+
+    const confirmMsg = buildExpenseConfirmationMessage(expenseData);
+    await sendWhatsAppMessage(
+      phoneNumber,
+      `${confirmMsg}\nEste gasto se guardaria en *${detectedProject.name}* (no tu proyecto activo).\n\nResponde *si* para confirmar o *no* para cancelar.\nSi queres guardar automaticamente a este proyecto, usa el comando *PROYECTO*.`
+    );
+    return;
+  }
+
+  const project = await resolveProject(userId, activeProjectId);
+  if (!project) {
+    await sendWhatsAppMessage(phoneNumber, 'No tenes un proyecto activo. Envia *PROYECTO* para seleccionar uno.');
+    return;
+  }
 
   const expenseData = {
     projectId: project.id,
@@ -452,12 +537,12 @@ async function processImageMessage(phoneNumber, imageId, caption, contactName) {
     amount: receiptData.totalAmount,
     category,
     type: transactionType,
-    installmentPercent: typeDefaults.installmentPercent,
-    paymentMethod: null,
-    recipientName: null,
-    recipientBankInfo: null,
-    recipientPlatform: null,
-    recipientCuit: null,
+    installmentPercent,
+    paymentMethod,
+    recipientName,
+    recipientBankInfo,
+    recipientPlatform,
+    recipientCuit,
     linkedExpenseId: null,
     linkedPaymentId: null,
     items,
@@ -472,12 +557,8 @@ async function processImageMessage(phoneNumber, imageId, caption, contactName) {
 
   setPendingConfirmation(phoneNumber, userId, expenseData);
 
-  const typeLabel = getTypeLabel(transactionType);
-  const formattedAmount = formatAmount(receiptData.totalAmount);
-  await sendWhatsAppMessage(
-    phoneNumber,
-    `${typeLabel}: ${formattedAmount} - ${title}\n${capitalizeFirst(category)} - ${project.name}\n${description ? `_${description}_\n` : ''}\nResponde *si* para confirmar o *no* para cancelar.`
-  );
+  const confirmMsg = buildExpenseConfirmationMessage(expenseData);
+  await sendWhatsAppMessage(phoneNumber, confirmMsg);
 }
 
 // ============================================
@@ -493,9 +574,15 @@ async function processAudioMessage(phoneNumber, audioId, caption, contactName) {
 
   const linkData = linkDoc.data();
   const userId = linkData.userId;
+  const activeProjectId = linkData.activeProjectId || null;
 
-  const project = await resolveProject(userId, linkData.activeProjectId);
-  if (!project) {
+  const activeProjects = await getActiveProjects(userId);
+  if (activeProjects.length === 0) {
+    await sendWhatsAppMessage(phoneNumber, 'No tenes proyectos activos.\n\nCrea uno desde la app web.');
+    return;
+  }
+
+  if (!activeProjectId) {
     await sendWhatsAppMessage(phoneNumber, 'No tenes un proyecto activo. Envia *PROYECTO* para seleccionar uno.');
     return;
   }
@@ -513,9 +600,17 @@ async function processAudioMessage(phoneNumber, audioId, caption, contactName) {
     return;
   }
 
-  // Pass active projects for transcription context
-  const activeProjects = await getActiveProjects(userId);
-  const transcription = await geminiHandler.transcribeAudio(audioData.base64, audioData.mimeType, activeProjects);
+  const providerCats = await getProviderCategories(userId, activeProjectId);
+  const recipients = await getProviderRecipients(userId);
+
+  const context = {
+    activeProjects: activeProjects.map(p => ({ id: p.id, name: p.name, tag: p.tag })),
+    categories: providerCats,
+    recipients: recipients.map(r => ({ id: r.id, name: r.name, platform: r.platform })),
+    paymentMethods: VALID_PAYMENT_METHODS
+  };
+
+  const transcription = await geminiHandler.transcribeAudio(audioData.base64, audioData.mimeType, context);
 
   if (!transcription || (!transcription.totalAmount && !transcription.items?.length && !transcription.title)) {
     await sendWhatsAppMessage(phoneNumber, 'No pude entender el audio. Intenta nuevamente o envia una foto del ticket.');
@@ -531,21 +626,89 @@ async function processAudioMessage(phoneNumber, audioId, caption, contactName) {
     : (transcription.totalAmount || 0);
   const description = transcription.description || '';
 
-  const transactionType = transcription.transactionType && ['expense', 'payment', 'provider_expense'].includes(transcription.transactionType)
-    ? transcription.transactionType
-    : 'expense';
+  const transactionType = resolveTransactionType(transcription.transactionType) || 'expense';
   const typeDefaults = getTypeDefaults(transactionType);
-  let category = transactionType === 'payment' ? 'pago' : (transcription.category || null);
+  const installmentPercent = transcription.installmentPercent === 100 ? 100 : (typeDefaults.installmentPercent ?? 0);
 
   if (amount <= 0) {
     await sendWhatsAppMessage(phoneNumber, `Transcripcion: "${transcription.transcription}"\n\nNo pude determinar el monto. Envia una foto del ticket.`);
     return;
   }
 
-  // Resolve category with provider's custom categories
-  if (!category) {
-    const providerCats = await getProviderCategories(userId, project.id);
+  // Validate AI fields
+  const paymentMethod = VALID_PAYMENT_METHODS.includes(transcription.paymentMethod) ? transcription.paymentMethod : null;
+
+  let recipientName = null;
+  let recipientBankInfo = null;
+  let recipientPlatform = null;
+  let recipientCuit = null;
+  if (transcription.recipientId) {
+    const matched = recipients.find(r => r.id === transcription.recipientId);
+    if (matched) {
+      recipientName = matched.name || null;
+      recipientBankInfo = matched.bankInfo || null;
+      recipientPlatform = matched.platform || null;
+      recipientCuit = matched.cuit || null;
+    }
+  }
+
+  const detectedProjectId = transcription.projectId && activeProjects.some(p => p.id === transcription.projectId)
+    ? transcription.projectId
+    : null;
+
+  let category = transactionType === 'payment' ? 'pago' : (transcription.category || null);
+  if (category && category !== 'pago' && !providerCats.includes(category)) {
     category = await geminiHandler.categorizeExpense(title, description, providerCats);
+  }
+  if (!category) {
+    category = await geminiHandler.categorizeExpense(title, description, providerCats);
+  }
+
+  // Project switching detection
+  const isProjectSwitch = detectedProjectId && detectedProjectId !== activeProjectId;
+
+  if (isProjectSwitch) {
+    const detectedProject = activeProjects.find(p => p.id === detectedProjectId);
+    const expenseData = {
+      projectId: detectedProject.id,
+      providerId: userId,
+      title,
+      description,
+      amount,
+      category,
+      type: transactionType,
+      installmentPercent,
+      paymentMethod,
+      recipientName,
+      recipientBankInfo,
+      recipientPlatform,
+      recipientCuit,
+      linkedExpenseId: null,
+      linkedPaymentId: null,
+      items: items || null,
+      imageUrl: null,
+      audioTranscription: transcription.transcription || null,
+      originalMessage: `[Audio] ${caption}`,
+      source: 'whatsapp',
+      projectTag: detectedProject.tag,
+      projectName: detectedProject.name,
+      timestamp: Date.now()
+    };
+
+    setPendingProjectSwitchExpense(phoneNumber, userId, expenseData, detectedProject);
+
+    const confirmMsg = buildExpenseConfirmationMessage(expenseData);
+    await sendWhatsAppMessage(
+      phoneNumber,
+      `${confirmMsg}\nEste gasto se guardaria en *${detectedProject.name}* (no tu proyecto activo).\n\nResponde *si* para confirmar o *no* para cancelar.\nSi queres guardar automaticamente a este proyecto, usa el comando *PROYECTO*.`
+    );
+    return;
+  }
+
+  const project = await resolveProject(userId, activeProjectId);
+  if (!project) {
+    await sendWhatsAppMessage(phoneNumber, 'No tenes un proyecto activo. Envia *PROYECTO* para seleccionar uno.');
+    return;
   }
 
   const expenseData = {
@@ -556,12 +719,12 @@ async function processAudioMessage(phoneNumber, audioId, caption, contactName) {
     amount,
     category,
     type: transactionType,
-    installmentPercent: typeDefaults.installmentPercent,
-    paymentMethod: null,
-    recipientName: null,
-    recipientBankInfo: null,
-    recipientPlatform: null,
-    recipientCuit: null,
+    installmentPercent,
+    paymentMethod,
+    recipientName,
+    recipientBankInfo,
+    recipientPlatform,
+    recipientCuit,
     linkedExpenseId: null,
     linkedPaymentId: null,
     items: items || null,
@@ -576,15 +739,7 @@ async function processAudioMessage(phoneNumber, audioId, caption, contactName) {
 
   setPendingConfirmation(phoneNumber, userId, expenseData);
 
-  const typeLabel = getTypeLabel(transactionType);
-  const formattedAmount = formatAmount(amount);
-  let confirmMsg = `${typeLabel}: ${formattedAmount} - ${title}\n`;
-  if (items && items.length > 1) {
-    confirmMsg += items.map(i => `  - ${i.name}: ${formatAmount(i.amount)}`).join('\n') + '\n';
-  }
-  confirmMsg += `${capitalizeFirst(category)} - ${project.name}\n`;
-  if (description) confirmMsg += `_${description}_\n`;
-  confirmMsg += `\nResponde *si* para confirmar o *no* para cancelar.`;
+  const confirmMsg = buildExpenseConfirmationMessage(expenseData);
   await sendWhatsAppMessage(phoneNumber, confirmMsg);
 }
 

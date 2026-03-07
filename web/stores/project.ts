@@ -83,6 +83,12 @@ export const useProjectStore = defineStore('project', {
       this.error = null;
 
       try {
+        const normalizedTag = data.tag?.toLowerCase().replace(/[^a-z0-9]/g, '');
+        if (normalizedTag && this.projects.some(p => p.tag === normalizedTag)) {
+          this.error = 'Ya existe un proyecto con este tag';
+          return { success: false, error: this.error };
+        }
+
         const result = await getSchema().createProject(data);
 
         if (result.success && result.data) {
@@ -106,6 +112,14 @@ export const useProjectStore = defineStore('project', {
       this.error = null;
 
       try {
+        if (data.tag) {
+          const normalizedTag = data.tag.toLowerCase().replace(/[^a-z0-9]/g, '');
+          if (this.projects.some(p => p.tag === normalizedTag && p.id !== id)) {
+            this.error = 'Ya existe un proyecto con este tag';
+            return { success: false, error: this.error };
+          }
+        }
+
         const result = await getSchema().update(id, data);
 
         if (result.success) {
