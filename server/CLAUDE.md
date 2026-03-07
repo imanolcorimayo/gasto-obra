@@ -39,7 +39,7 @@ server/
 - Account linking via verification codes
 - Parses expense messages: `$500 Clavos #flores3b`
 - Handles receipt images (Gemini Vision) and audio (Gemini transcription)
-- Commands: VINCULAR, DESVINCULAR, AYUDA, PROYECTOS, RESUMEN #tag, PAGO, PROPIO
+- Commands: VINCULAR, DESVINCULAR, AYUDA, PROYECTO, RESUMEN
 
 ## Firestore Collections
 - `projects` - Renovation projects

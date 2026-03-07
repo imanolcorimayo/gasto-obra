@@ -5,7 +5,6 @@
       "Bash(npx tailwindcss:*)",
       "Bash(cp:*)",
       "Bash(npx vue-tsc:*)",
-      "Bash(python3:*)",
       "Bash(gh issue:*)",
       "Bash(gh project:*)"
     ]

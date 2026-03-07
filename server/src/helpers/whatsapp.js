@@ -9,7 +9,7 @@ export async function sendWhatsAppMessage(to, message) {
   const normalizedTo = normalizePhoneNumber(to);
 
   if (!WP_PHONE_NUMBER_ID || !WP_ACCESS_TOKEN) {
-    logger.warn('WhatsApp credentials not configured, skipping message send', { to: normalizedTo });
+    logger.warn('WhatsApp credentials not configured, skipping message send', { to: normalizedTo, message });
     return;
   }
 

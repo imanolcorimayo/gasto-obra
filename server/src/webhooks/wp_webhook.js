@@ -68,16 +68,7 @@ async function getProviderCategories(providerId, projectId = null) {
 // Transaction Type Helpers
 // ============================================
 
-function parseTransactionTypeFromCaption(caption) {
-  if (!caption) return null;
-  const normalized = caption.trim().toUpperCase();
-  if (/^PAGO\b/.test(normalized)) return 'payment';
-  if (/^PROPIO\b/.test(normalized)) return 'provider_expense';
-  return null;
-}
-
-function resolveTransactionType(captionType, aiType) {
-  if (captionType) return captionType;
+function resolveTransactionType(aiType) {
   if (aiType && ['expense', 'payment', 'provider_expense'].includes(aiType)) return aiType;
   return null;
 }
@@ -102,46 +93,37 @@ const geminiHandler = process.env.GEMINI_API_KEY
   : null;
 
 // ============================================
-// Pending Expenses (audio without project tag)
+// Pending Confirmations (2 min auto-confirm)
 // ============================================
-const PENDING_EXPENSE_TTL = 10 * 60 * 1000; // 10 minutes
-const pendingExpenses = new Map(); // phoneNumber -> { data, userId, timestamp, pendingConfirmation? }
-
-function setPendingExpense(phoneNumber, userId, expenseData) {
-  pendingExpenses.set(phoneNumber, {
-    data: expenseData,
-    userId,
-    timestamp: Date.now()
-  });
-  // Auto-cleanup after TTL
-  setTimeout(() => {
-    const pending = pendingExpenses.get(phoneNumber);
-    if (pending && pending.timestamp === expenseData.timestamp) {
-      pendingExpenses.delete(phoneNumber);
-    }
-  }, PENDING_EXPENSE_TTL);
-}
+const CONFIRMATION_TTL = 2 * 60 * 1000; // 2 minutes
+const pendingExpenses = new Map(); // phoneNumber -> { data, userId, timestamp, pendingConfirmation }
 
 function setPendingConfirmation(phoneNumber, userId, expenseData) {
+  const timestamp = Date.now();
   pendingExpenses.set(phoneNumber, {
     data: expenseData,
     userId,
-    timestamp: Date.now(),
+    timestamp,
     pendingConfirmation: true
   });
-  // Auto-cleanup after TTL
-  setTimeout(() => {
+  // Auto-confirm after TTL
+  setTimeout(async () => {
     const pending = pendingExpenses.get(phoneNumber);
-    if (pending && pending.pendingConfirmation && pending.timestamp === expenseData.timestamp) {
-      pendingExpenses.delete(phoneNumber);
+    if (pending && pending.pendingConfirmation && pending.timestamp === timestamp) {
+      try {
+        await confirmPendingExpense(phoneNumber, pending);
+      } catch (error) {
+        Sentry.captureException(error);
+        logger.error('Error auto-confirming expense', { error, phoneNumber });
+      }
     }
-  }, PENDING_EXPENSE_TTL);
+  }, CONFIRMATION_TTL);
 }
 
 function getPendingExpense(phoneNumber) {
   const pending = pendingExpenses.get(phoneNumber);
   if (!pending) return null;
-  if (Date.now() - pending.timestamp > PENDING_EXPENSE_TTL) {
+  if (Date.now() - pending.timestamp > CONFIRMATION_TTL) {
     pendingExpenses.delete(phoneNumber);
     return null;
   }
@@ -150,6 +132,37 @@ function getPendingExpense(phoneNumber) {
 
 function clearPendingExpense(phoneNumber) {
   pendingExpenses.delete(phoneNumber);
+}
+
+// ============================================
+// Pending Project Selections (PROYECTO command)
+// ============================================
+const PROJECT_SELECTION_TTL = 2 * 60 * 1000; // 2 minutes
+const pendingProjectSelections = new Map(); // phoneNumber -> { userId, projects, timestamp }
+
+function setPendingProjectSelection(phoneNumber, userId, projects) {
+  const timestamp = Date.now();
+  pendingProjectSelections.set(phoneNumber, { userId, projects, timestamp });
+  setTimeout(() => {
+    const pending = pendingProjectSelections.get(phoneNumber);
+    if (pending && pending.timestamp === timestamp) {
+      pendingProjectSelections.delete(phoneNumber);
+    }
+  }, PROJECT_SELECTION_TTL);
+}
+
+function getPendingProjectSelection(phoneNumber) {
+  const pending = pendingProjectSelections.get(phoneNumber);
+  if (!pending) return null;
+  if (Date.now() - pending.timestamp > PROJECT_SELECTION_TTL) {
+    pendingProjectSelections.delete(phoneNumber);
+    return null;
+  }
+  return pending;
+}
+
+function clearPendingProjectSelection(phoneNumber) {
+  pendingProjectSelections.delete(phoneNumber);
 }
 
 // ============================================
@@ -251,7 +264,7 @@ app.post('/webhook', async (req, res) => {
 async function processMessage(phoneNumber, text, contactName) {
   const normalizedText = text.trim().toLowerCase();
 
-  // Check if this is a confirmation reply for a pending expense
+  // 1. Pending confirmation → si/no
   const pending = getPendingExpense(phoneNumber);
   if (pending && pending.pendingConfirmation) {
     if (['si', 'sí', 'ok', 'dale', 'yes', 'confirmar'].includes(normalizedText)) {
@@ -265,65 +278,55 @@ async function processMessage(phoneNumber, text, contactName) {
     }
   }
 
-  // Check if this is a project selection for a pending expense (non-confirmation)
-  const tagOnlyMatch = text.trim().match(/^#(\S+)$/);
-  if (tagOnlyMatch) {
-    if (pending && !pending.pendingConfirmation) {
-      await completePendingExpense(phoneNumber, pending, tagOnlyMatch[1].toLowerCase());
+  // 2. Pending project selection → number
+  const pendingSelection = getPendingProjectSelection(phoneNumber);
+  if (pendingSelection) {
+    const num = parseInt(normalizedText, 10);
+    if (!isNaN(num) && num >= 1 && num <= pendingSelection.projects.length) {
+      const selected = pendingSelection.projects[num - 1];
+      clearPendingProjectSelection(phoneNumber);
+      await db.collection(COLLECTIONS.WHATSAPP_LINKS).doc(phoneNumber).update({ activeProjectId: selected.id });
+      await sendWhatsAppMessage(phoneNumber, `Proyecto activo: *${selected.name}* (${selected.tag})`);
       return;
     }
   }
 
-  // Check for VINCULAR command
+  // 3. VINCULAR
   if (normalizedText.startsWith('vincular ')) {
     const code = text.trim().split(' ')[1]?.toUpperCase();
     await handleLinkCommand(phoneNumber, code, contactName);
     return;
   }
 
-  // Check for DESVINCULAR command
+  // 4. DESVINCULAR
   if (normalizedText === 'desvincular') {
     await handleUnlinkCommand(phoneNumber);
     return;
   }
 
-  // Check for AYUDA command
+  // 5. AYUDA
   if (normalizedText === 'ayuda' || normalizedText === 'help') {
     await sendHelpMessage(phoneNumber);
     return;
   }
 
-  // Check for PROYECTOS command
-  if (normalizedText === 'proyectos') {
-    await handleProyectosCommand(phoneNumber);
+  // 6. PROYECTO / PROYECTOS
+  if (normalizedText === 'proyecto' || normalizedText === 'proyectos') {
+    await handleProyectoCommand(phoneNumber);
     return;
   }
 
-  // Check for RESUMEN #tag command
-  if (normalizedText.startsWith('resumen ')) {
-    const tagMatch = text.match(/#(\S+)/);
-    if (tagMatch) {
-      await handleResumenCommand(phoneNumber, tagMatch[1].toLowerCase());
-    } else {
-      await sendWhatsAppMessage(phoneNumber, 'Formato: RESUMEN #tag\n\nEjemplo: RESUMEN #flores3b');
-    }
+  // 7. RESUMEN
+  if (normalizedText === 'resumen' || normalizedText.startsWith('resumen ')) {
+    await handleResumenCommand(phoneNumber);
     return;
   }
 
-  // Check for PAGO command
-  if (normalizedText.startsWith('pago ')) {
-    await handlePagoCommand(phoneNumber, text);
-    return;
-  }
-
-  // Check for PROPIO command
-  if (normalizedText.startsWith('propio ')) {
-    await handlePropioCommand(phoneNumber, text);
-    return;
-  }
-
-  // Try to parse as expense
-  await handleExpenseMessage(phoneNumber, text);
+  // 8. Fallback
+  await sendWhatsAppMessage(
+    phoneNumber,
+    'El procesamiento de texto esta siendo actualizado. Por ahora, envia una *foto* o *audio* para registrar gastos.\n\nEscribi *AYUDA* para ver los comandos disponibles.'
+  );
 }
 
 // ============================================
@@ -331,18 +334,20 @@ async function processMessage(phoneNumber, text, contactName) {
 // ============================================
 
 async function processImageMessage(phoneNumber, imageId, caption, contactName) {
-  // Check if linked
   const linkDoc = await db.collection(COLLECTIONS.WHATSAPP_LINKS).doc(phoneNumber).get();
   if (!linkDoc.exists || linkDoc.data()?.status !== 'linked') {
     await sendWhatsAppMessage(phoneNumber, 'Este numero no esta vinculado. Envia VINCULAR <codigo> para vincular tu cuenta.');
     return;
   }
 
-  const userId = linkDoc.data().userId;
+  const linkData = linkDoc.data();
+  const userId = linkData.userId;
 
-  // Parse caption for transaction type keyword and project tag
-  const captionType = parseTransactionTypeFromCaption(caption);
-  const tagMatch = caption.match(/#(\S+)/);
+  const project = await resolveProject(userId, linkData.activeProjectId);
+  if (!project) {
+    await sendWhatsAppMessage(phoneNumber, 'No tenes un proyecto activo. Envia *PROYECTO* para seleccionar uno.');
+    return;
+  }
 
   if (!geminiHandler) {
     await sendWhatsAppMessage(phoneNumber, 'El procesamiento de imagenes no esta disponible.');
@@ -351,132 +356,35 @@ async function processImageMessage(phoneNumber, imageId, caption, contactName) {
 
   await sendWhatsAppMessage(phoneNumber, 'Procesando imagen...');
 
-  // Download image from WhatsApp
   const imageData = await downloadWhatsAppMedia(imageId);
   if (!imageData) {
     await sendWhatsAppMessage(phoneNumber, 'Error al descargar la imagen. Intenta nuevamente.');
     return;
   }
 
-  // Parse receipt with Gemini
   const receiptData = await geminiHandler.parseReceiptImage(imageData.base64, imageData.mimeType);
-
   if (!receiptData || !receiptData.totalAmount) {
     await sendWhatsAppMessage(phoneNumber, 'No pude leer el ticket. Intenta con una foto mas clara o registra el gasto manualmente.');
     return;
   }
 
-  // Resolve transaction type: caption keyword > AI detection > default 'expense'
-  const transactionType = resolveTransactionType(captionType, receiptData.transactionType) || 'expense';
+  const transactionType = resolveTransactionType(receiptData.transactionType) || 'expense';
   const typeDefaults = getTypeDefaults(transactionType);
 
-  // Create expense data
   const title = receiptData.storeName || (receiptData.items?.[0]?.name) || 'Ticket';
   const description = receiptData.items
     ? receiptData.items.map(i => typeof i === 'string' ? i : i.name).join(', ')
     : '';
-  // Category will be resolved after project is known; use default for now
+
   let category = transactionType === 'payment' ? 'pago' : null;
-
-  // Build line items from Gemini's items array
-  const items = receiptData.items && receiptData.items.length > 0
-    ? receiptData.items.map(i => typeof i === 'string' ? { name: i, amount: 0 } : { name: i.name || '', amount: i.amount || 0 })
-    : null;
-
-  // If no tag in caption, save as pending and ask for tag
-  if (!tagMatch) {
-    const activeProjects = await getActiveProjects(userId);
-    if (activeProjects.length === 0) {
-      await sendWhatsAppMessage(phoneNumber, 'No tenes proyectos activos. Crea uno desde la app web.');
-      return;
-    }
-
-    // If user has only one active project, use it directly
-    if (activeProjects.length === 1) {
-      const project = activeProjects[0];
-      // Resolve category with provider's custom categories
-      if (!category) {
-        const providerCats = await getProviderCategories(userId, project.id);
-        category = await geminiHandler.categorizeExpense(title, description, providerCats);
-      }
-      const expenseData = {
-        projectId: project.id,
-        providerId: userId,
-        title,
-        description,
-        amount: receiptData.totalAmount,
-        category,
-        type: transactionType,
-        installmentPercent: typeDefaults.installmentPercent,
-        paymentMethod: null,
-        recipientName: null,
-        recipientBankInfo: null,
-        recipientPlatform: null,
-        recipientCuit: null,
-        linkedExpenseId: null,
-        linkedPaymentId: null,
-        items,
-        imageUrl: null,
-        audioTranscription: null,
-        originalMessage: `[Imagen] ${caption}`,
-        source: 'whatsapp',
-        projectTag: project.tag,
-        projectName: project.name,
-        timestamp: Date.now()
-      };
-
-      setPendingConfirmation(phoneNumber, userId, expenseData);
-
-      const typeLabel = getTypeLabel(transactionType);
-      const formattedAmount = formatAmount(receiptData.totalAmount);
-      await sendWhatsAppMessage(
-        phoneNumber,
-        `${typeLabel}: ${formattedAmount} - ${title}\n${capitalizeFirst(category)} - #${project.tag}\n${description ? `_${description}_\n` : ''}\nResponde *si* para confirmar o *no* para cancelar.`
-      );
-      return;
-    }
-
-    // Multiple projects - resolve category with defaults for now
-    if (!category) {
-      category = await geminiHandler.categorizeExpense(title, description);
-    }
-
-    // Multiple projects - ask user to pick
-    setPendingExpense(phoneNumber, userId, {
-      title,
-      amount: receiptData.totalAmount,
-      items,
-      description,
-      category,
-      type: transactionType,
-      installmentPercent: typeDefaults.installmentPercent,
-      originalCaption: caption,
-      timestamp: Date.now()
-    });
-
-    const typeLabel = getTypeLabel(transactionType);
-    let message = `${typeLabel}: *${title}* - ${formatAmount(receiptData.totalAmount)}\n\n`;
-    message += `A que proyecto corresponde? Responde con el *#tag*:\n\n`;
-    for (const p of activeProjects) {
-      message += `*${p.name}* → #${p.tag}\n`;
-    }
-    message += `\n_Tenes 10 minutos para responder._`;
-    await sendWhatsAppMessage(phoneNumber, message);
-    return;
-  }
-
-  const tag = tagMatch[1].toLowerCase();
-  const project = await findProjectByTag(userId, tag);
-  if (!project) {
-    await sendWhatsAppMessage(phoneNumber, `No se encontro el proyecto con tag #${tag}.\n\nEnvia PROYECTOS para ver tus proyectos activos.`);
-    return;
-  }
-
-  // Resolve category with provider's custom categories
   if (!category) {
     const providerCats = await getProviderCategories(userId, project.id);
     category = await geminiHandler.categorizeExpense(title, description, providerCats);
   }
+
+  const items = receiptData.items && receiptData.items.length > 0
+    ? receiptData.items.map(i => typeof i === 'string' ? { name: i, amount: 0 } : { name: i.name || '', amount: i.amount || 0 })
+    : null;
 
   const expenseData = {
     projectId: project.id,
@@ -504,14 +412,13 @@ async function processImageMessage(phoneNumber, imageId, caption, contactName) {
     timestamp: Date.now()
   };
 
-  // Set as pending confirmation
   setPendingConfirmation(phoneNumber, userId, expenseData);
 
   const typeLabel = getTypeLabel(transactionType);
   const formattedAmount = formatAmount(receiptData.totalAmount);
   await sendWhatsAppMessage(
     phoneNumber,
-    `${typeLabel}: ${formattedAmount} - ${title}\n${capitalizeFirst(category)} - #${project.tag}\n${description ? `_${description}_\n` : ''}\nResponde *si* para confirmar o *no* para cancelar.`
+    `${typeLabel}: ${formattedAmount} - ${title}\n${capitalizeFirst(category)} - ${project.name}\n${description ? `_${description}_\n` : ''}\nResponde *no* para cancelar. Se confirma automaticamente en 2 minutos.`
   );
 }
 
@@ -526,10 +433,14 @@ async function processAudioMessage(phoneNumber, audioId, caption, contactName) {
     return;
   }
 
-  const userId = linkDoc.data().userId;
+  const linkData = linkDoc.data();
+  const userId = linkData.userId;
 
-  // Extract project tag from caption (if any)
-  const tagMatch = caption.match(/#(\S+)/);
+  const project = await resolveProject(userId, linkData.activeProjectId);
+  if (!project) {
+    await sendWhatsAppMessage(phoneNumber, 'No tenes un proyecto activo. Envia *PROYECTO* para seleccionar uno.');
+    return;
+  }
 
   if (!geminiHandler) {
     await sendWhatsAppMessage(phoneNumber, 'El procesamiento de audio no esta disponible.');
@@ -538,21 +449,18 @@ async function processAudioMessage(phoneNumber, audioId, caption, contactName) {
 
   await sendWhatsAppMessage(phoneNumber, 'Procesando audio...');
 
-  // Download audio from WhatsApp
   const audioData = await downloadWhatsAppMedia(audioId);
   if (!audioData) {
     await sendWhatsAppMessage(phoneNumber, 'Error al descargar el audio. Intenta nuevamente.');
     return;
   }
 
-  // Get active projects for this user (for Gemini context + matching)
+  // Pass active projects for transcription context
   const activeProjects = await getActiveProjects(userId);
-
-  // Transcribe with Gemini, passing active projects for context
   const transcription = await geminiHandler.transcribeAudio(audioData.base64, audioData.mimeType, activeProjects);
 
   if (!transcription || (!transcription.totalAmount && !transcription.items?.length && !transcription.title)) {
-    await sendWhatsAppMessage(phoneNumber, 'No pude entender el audio. Intenta nuevamente o registra el gasto por texto.');
+    await sendWhatsAppMessage(phoneNumber, 'No pude entender el audio. Intenta nuevamente o envia una foto del ticket.');
     return;
   }
 
@@ -565,88 +473,23 @@ async function processAudioMessage(phoneNumber, audioId, caption, contactName) {
     : (transcription.totalAmount || 0);
   const description = transcription.description || '';
 
-  // Resolve transaction type from AI (default to 'expense')
   const transactionType = transcription.transactionType && ['expense', 'payment', 'provider_expense'].includes(transcription.transactionType)
     ? transcription.transactionType
     : 'expense';
   const typeDefaults = getTypeDefaults(transactionType);
-  // Category will be resolved with provider's custom categories after project is known
   let category = transactionType === 'payment' ? 'pago' : (transcription.category || null);
 
   if (amount <= 0) {
-    await sendWhatsAppMessage(phoneNumber, `Transcripcion: "${transcription.transcription}"\n\nNo pude determinar el monto. Registra el gasto manualmente.`);
+    await sendWhatsAppMessage(phoneNumber, `Transcripcion: "${transcription.transcription}"\n\nNo pude determinar el monto. Envia una foto del ticket.`);
     return;
   }
 
-  // Find project: 1) caption tag, 2) AI-detected from audio, 3) only active project, 4) ask user
-  let project = null;
-
-  // 1. From caption tag
-  if (tagMatch) {
-    project = await findProjectByTag(userId, tagMatch[1].toLowerCase());
-  }
-
-  // 2. From AI-detected project reference in audio
-  if (!project && transcription.projectReference) {
-    project = matchProjectFromReference(activeProjects, transcription.projectReference);
-  }
-
-  // 3. If user has only one active project, use it
-  if (!project && activeProjects.length === 1) {
-    project = activeProjects[0];
-  }
-
-  // 4. Can't determine - save as pending and ask user to pick
-  if (!project) {
-    if (activeProjects.length === 0) {
-      await sendWhatsAppMessage(phoneNumber, 'No tenes proyectos activos. Crea uno desde la app web.');
-      return;
-    }
-
-    // Resolve category with defaults for pending (no project known yet)
-    if (!category) {
-      category = await geminiHandler.categorizeExpense(title, description);
-    }
-
-    // Save pending expense (project selection, NOT confirmation)
-    setPendingExpense(phoneNumber, userId, {
-      title,
-      amount,
-      items: items || null,
-      description,
-      category,
-      type: transactionType,
-      installmentPercent: typeDefaults.installmentPercent,
-      transcription: transcription.transcription,
-      originalCaption: caption,
-      timestamp: Date.now()
-    });
-
-    const pendingTypeLabel = getTypeLabel(transactionType);
-    let message = `Entendi (${pendingTypeLabel}):\n*${title}* - ${formatAmount(amount)}\n`;
-    if (items && items.length > 1) {
-      message += items.map(i => `  - ${i.name}: ${formatAmount(i.amount)}`).join('\n') + '\n';
-    }
-    message += '\n';
-    message += `A que proyecto corresponde? Responde con el *#tag*:\n\n`;
-
-    for (const p of activeProjects) {
-      message += `*${p.name}* → #${p.tag}\n`;
-    }
-
-    message += `\n_Tenes 10 minutos para responder._`;
-
-    await sendWhatsAppMessage(phoneNumber, message);
-    return;
-  }
-
-  // Resolve category with provider's custom categories for the known project
+  // Resolve category with provider's custom categories
   if (!category) {
     const providerCats = await getProviderCategories(userId, project.id);
     category = await geminiHandler.categorizeExpense(title, description, providerCats);
   }
 
-  // Set as pending confirmation instead of saving directly
   const expenseData = {
     projectId: project.id,
     providerId: userId,
@@ -681,9 +524,9 @@ async function processAudioMessage(phoneNumber, audioId, caption, contactName) {
   if (items && items.length > 1) {
     confirmMsg += items.map(i => `  - ${i.name}: ${formatAmount(i.amount)}`).join('\n') + '\n';
   }
-  confirmMsg += `${capitalizeFirst(category)} - #${project.tag}\n`;
+  confirmMsg += `${capitalizeFirst(category)} - ${project.name}\n`;
   if (description) confirmMsg += `_${description}_\n`;
-  confirmMsg += `\nResponde *si* para confirmar o *no* para cancelar.`;
+  confirmMsg += `\nResponde *no* para cancelar. Se confirma automaticamente en 2 minutos.`;
   await sendWhatsAppMessage(phoneNumber, confirmMsg);
 }
 
@@ -728,7 +571,7 @@ async function confirmPendingExpense(phoneNumber, pending) {
 
   await sendWhatsAppMessage(
     phoneNumber,
-    `${typeLabel}!\n\n*${data.title}*\n${formattedAmount}\n#${data.projectTag} - ${capitalizeFirst(data.category)}\n${data.description ? `_${data.description}_` : ''}`
+    `${typeLabel}!\n\n*${data.title}*\n${formattedAmount}\n${data.projectName} - ${capitalizeFirst(data.category)}\n${data.description ? `_${data.description}_` : ''}`
   );
 
   // Notify client
@@ -802,19 +645,29 @@ async function handleLinkCommand(phoneNumber, code, contactName) {
     // Delete pending code
     await db.collection(COLLECTIONS.WHATSAPP_LINKS).doc(code).delete();
 
-    // Create linked account
-    await db.collection(COLLECTIONS.WHATSAPP_LINKS).doc(phoneNumber).set({
+    // Create linked account, auto-set project if only 1
+    const linkData = {
       status: 'linked',
       userId: codeData.userId,
       phoneNumber: phoneNumber,
       contactName: contactName,
       linkedAt: admin.firestore.FieldValue.serverTimestamp()
-    });
+    };
 
-    await sendWhatsAppMessage(
-      phoneNumber,
-      `Cuenta vinculada!\n\nAhora podes registrar gastos de obra:\n\n\`$500 Clavos y tornillos #flores3b\`\n\`$1200 Viaje ferreteria #flores3b\`\n\nEscribi AYUDA para mas info.`
-    );
+    const activeProjects = await getActiveProjects(codeData.userId);
+    if (activeProjects.length === 1) {
+      linkData.activeProjectId = activeProjects[0].id;
+    }
+
+    await db.collection(COLLECTIONS.WHATSAPP_LINKS).doc(phoneNumber).set(linkData);
+
+    let message = 'Cuenta vinculada!\n\n';
+    if (activeProjects.length === 1) {
+      message += `Proyecto activo: *${activeProjects[0].name}* (${activeProjects[0].tag})\n\n`;
+    }
+    message += 'Envia una foto o audio para registrar gastos.\nEnvia *PROYECTO* para cambiar de proyecto.\nEscribi *AYUDA* para mas info.';
+
+    await sendWhatsAppMessage(phoneNumber, message);
   } catch (error) {
     Sentry.captureException(error);
     logger.error('Error linking account', { error });
@@ -844,47 +697,21 @@ async function handleUnlinkCommand(phoneNumber) {
 async function sendHelpMessage(phoneNumber) {
   const helpText = `*Gasto Obra - Ayuda*
 
-*Formato:*
-\`$<monto> <titulo> #<tag>\`
+*Registrar gastos:*
+- Envia una *foto* de un ticket
+- Envia un *audio* describiendo el gasto
 
-*Opcionales:*
-\`d:<descripcion>\` - Detalle
-\`c:<categoria>\` - Categoria manual
-
-*Ejemplos:*
-\`$500 Clavos #flores3b\`
-\`$1200 Viaje ferreteria #flores3b d:Fui a Easy\`
-\`$3000 Ayudante #flores3b c:mano de obra\`
-
-*Foto de ticket:*
-- Foto + caption con #tag → detecta tipo automaticamente
-- Foto + caption \`PAGO #tag\` → registra como pago
-- Foto + caption \`PROPIO #tag\` → registra como gasto propio
-- Foto sin #tag → te pregunta el proyecto
-
-*Audio:*
-- Describi el gasto, pago o gasto propio hablando
-- Detecta automaticamente el tipo segun lo que digas
-- Si no mencionas el proyecto, te lo pregunta
-
-*Pagos y gastos propios (texto):*
-\`PAGO $5000 #flores3b\` - Registrar cobro del cliente
-\`PROPIO $500 Tornillos #flores3b\` - Registrar gasto propio
-
-_Los gastos quedan pendientes de pago. Los pagos y gastos propios se registran como pagados._
-
-*Categorias:*
-materiales, herramientas, transporte, mano de obra, comida, otros
+Se registra automaticamente en tu proyecto activo.
 
 *Comandos:*
-PROYECTOS - Ver tus proyectos activos
-RESUMEN #tag - Resumen de un proyecto
-AYUDA - Ver este mensaje`;
+*PROYECTO* - Seleccionar proyecto activo
+*RESUMEN* - Resumen del proyecto activo
+*AYUDA* - Ver este mensaje`;
 
   await sendWhatsAppMessage(phoneNumber, helpText);
 }
 
-async function handleProyectosCommand(phoneNumber) {
+async function handleProyectoCommand(phoneNumber) {
   const linkDoc = await db.collection(COLLECTIONS.WHATSAPP_LINKS).doc(phoneNumber).get();
 
   if (!linkDoc.exists || linkDoc.data()?.status !== 'linked') {
@@ -892,47 +719,41 @@ async function handleProyectosCommand(phoneNumber) {
     return;
   }
 
-  const userId = linkDoc.data().userId;
+  const linkData = linkDoc.data();
+  const userId = linkData.userId;
+  const activeProjectId = linkData.activeProjectId || null;
 
   try {
-    const projectsSnapshot = await db
-      .collection(COLLECTIONS.PROJECTS)
-      .where('providerId', '==', userId)
-      .where('status', '==', 'active')
-      .get();
+    const projects = await getActiveProjects(userId);
 
-    if (projectsSnapshot.empty) {
+    if (projects.length === 0) {
       await sendWhatsAppMessage(phoneNumber, 'No tenes proyectos activos.\n\nCrea uno desde la app web.');
       return;
     }
 
-    let message = '*Tus proyectos activos:*\n\n';
-
-    for (const doc of projectsSnapshot.docs) {
-      const project = doc.data();
-
-      // Get expense total for this project
-      const expensesSnapshot = await db
-        .collection(COLLECTIONS.EXPENSES)
-        .where('projectId', '==', doc.id)
-        .get();
-
-      const total = expensesSnapshot.docs.reduce((sum, e) => sum + (e.data().amount || 0), 0);
-
-      message += `*${project.name}*\n`;
-      message += `Tag: #${project.tag}\n`;
-      message += `Total: ${formatAmount(total)}\n\n`;
+    // Auto-select if only 1 project
+    if (projects.length === 1) {
+      await db.collection(COLLECTIONS.WHATSAPP_LINKS).doc(phoneNumber).update({ activeProjectId: projects[0].id });
+      await sendWhatsAppMessage(phoneNumber, `Proyecto activo: *${projects[0].name}* (${projects[0].tag})`);
+      return;
     }
 
+    let message = 'Estos son tus proyectos, manda el numero que queres seleccionar:\n\n';
+    projects.forEach((p, i) => {
+      const active = p.id === activeProjectId ? ' (Actualmente activo)' : '';
+      message += `${i + 1}. ${p.name} - ${p.tag}${active}\n`;
+    });
+
+    setPendingProjectSelection(phoneNumber, userId, projects);
     await sendWhatsAppMessage(phoneNumber, message.trim());
   } catch (error) {
     Sentry.captureException(error);
-    logger.error('Error in PROYECTOS command', { error });
+    logger.error('Error in PROYECTO command', { error });
     await sendWhatsAppMessage(phoneNumber, 'Error al obtener los proyectos.');
   }
 }
 
-async function handleResumenCommand(phoneNumber, tag) {
+async function handleResumenCommand(phoneNumber) {
   const linkDoc = await db.collection(COLLECTIONS.WHATSAPP_LINKS).doc(phoneNumber).get();
 
   if (!linkDoc.exists || linkDoc.data()?.status !== 'linked') {
@@ -940,11 +761,12 @@ async function handleResumenCommand(phoneNumber, tag) {
     return;
   }
 
-  const userId = linkDoc.data().userId;
-  const project = await findProjectByTag(userId, tag);
+  const linkData = linkDoc.data();
+  const userId = linkData.userId;
 
+  const project = await resolveProject(userId, linkData.activeProjectId);
   if (!project) {
-    await sendWhatsAppMessage(phoneNumber, `No se encontro el proyecto con tag #${tag}.\n\nEnvia PROYECTOS para ver tus proyectos activos.`);
+    await sendWhatsAppMessage(phoneNumber, 'No tenes un proyecto activo. Envia *PROYECTO* para seleccionar uno.');
     return;
   }
 
@@ -1012,349 +834,16 @@ ${categoryLines}
 }
 
 // ============================================
-// PAGO Command Handler
-// ============================================
-
-async function handlePagoCommand(phoneNumber, text) {
-  const linkDoc = await db.collection(COLLECTIONS.WHATSAPP_LINKS).doc(phoneNumber).get();
-
-  if (!linkDoc.exists || linkDoc.data()?.status !== 'linked') {
-    await sendWhatsAppMessage(phoneNumber, 'Este numero no esta vinculado a ninguna cuenta.');
-    return;
-  }
-
-  const userId = linkDoc.data().userId;
-
-  // Parse: PAGO $5000 #tag or PAGO $5000 Concepto #tag
-  const match = text.trim().match(/^pago\s+\$?\s*([\d.,]+)\s*(.*)/i);
-  if (!match) {
-    await sendWhatsAppMessage(phoneNumber, 'Formato: PAGO $5000 #tag\n\nEjemplo: PAGO $5000 #flores3b');
-    return;
-  }
-
-  let amountStr = match[1].replace(/\./g, '').replace(',', '.');
-  const amount = parseFloat(amountStr);
-  const rest = match[2].trim();
-
-  if (isNaN(amount) || amount <= 0) {
-    await sendWhatsAppMessage(phoneNumber, 'Monto invalido.');
-    return;
-  }
-
-  // Extract tag
-  const tagMatch = rest.match(/#(\S+)/);
-  if (!tagMatch) {
-    await sendWhatsAppMessage(phoneNumber, 'Falta el tag del proyecto.\n\nFormato: PAGO $5000 #flores3b');
-    return;
-  }
-
-  const tag = tagMatch[1].toLowerCase();
-  const project = await findProjectByTag(userId, tag);
-  if (!project) {
-    await sendWhatsAppMessage(phoneNumber, `No se encontro el proyecto con tag #${tag}.`);
-    return;
-  }
-
-  // Extract title (anything between amount and tag)
-  let title = rest.replace(/#\S+/, '').trim();
-  if (!title) title = 'Cobro';
-
-  const expenseData = {
-    projectId: project.id,
-    providerId: userId,
-    title,
-    description: '',
-    amount,
-    category: 'pago',
-    type: 'payment',
-    installmentPercent: null,
-    paymentMethod: null,
-    recipientName: null,
-    recipientBankInfo: null,
-    recipientPlatform: null,
-    recipientCuit: null,
-    linkedExpenseId: null,
-    linkedPaymentId: null,
-    items: null,
-    imageUrl: null,
-    audioTranscription: null,
-    originalMessage: text,
-    source: 'whatsapp',
-    date: admin.firestore.FieldValue.serverTimestamp(),
-    createdAt: admin.firestore.FieldValue.serverTimestamp()
-  };
-
-  await db.collection(COLLECTIONS.EXPENSES).add(expenseData);
-
-  const formattedAmount = formatAmount(amount);
-  await sendWhatsAppMessage(
-    phoneNumber,
-    `Pago registrado!\n\n*${title}*\n${formattedAmount}\n#${project.tag}`
-  );
-
-  // Notify client
-  await notifyClient(project.id, amount, project.name, 'payment');
-}
-
-// ============================================
-// PROPIO Command Handler
-// ============================================
-
-async function handlePropioCommand(phoneNumber, text) {
-  const linkDoc = await db.collection(COLLECTIONS.WHATSAPP_LINKS).doc(phoneNumber).get();
-
-  if (!linkDoc.exists || linkDoc.data()?.status !== 'linked') {
-    await sendWhatsAppMessage(phoneNumber, 'Este numero no esta vinculado a ninguna cuenta.');
-    return;
-  }
-
-  const userId = linkDoc.data().userId;
-
-  // Parse: PROPIO $500 Tornillos #tag
-  const match = text.trim().match(/^propio\s+\$?\s*([\d.,]+)\s+(.*)/i);
-  if (!match) {
-    await sendWhatsAppMessage(phoneNumber, 'Formato: PROPIO $500 Titulo #tag\n\nEjemplo: PROPIO $500 Tornillos #flores3b');
-    return;
-  }
-
-  let amountStr = match[1].replace(/\./g, '').replace(',', '.');
-  const amount = parseFloat(amountStr);
-  const rest = match[2].trim();
-
-  if (isNaN(amount) || amount <= 0) {
-    await sendWhatsAppMessage(phoneNumber, 'Monto invalido.');
-    return;
-  }
-
-  // Extract tag
-  const tagMatch = rest.match(/#(\S+)/);
-  if (!tagMatch) {
-    await sendWhatsAppMessage(phoneNumber, 'Falta el tag del proyecto.\n\nFormato: PROPIO $500 Titulo #flores3b');
-    return;
-  }
-
-  const tag = tagMatch[1].toLowerCase();
-  const project = await findProjectByTag(userId, tag);
-  if (!project) {
-    await sendWhatsAppMessage(phoneNumber, `No se encontro el proyecto con tag #${tag}.`);
-    return;
-  }
-
-  // Extract title
-  let title = rest.replace(/#\S+/, '').trim();
-  if (!title) title = 'Gasto propio';
-
-  // Determine category using provider's custom categories
-  let category = 'otros';
-  if (geminiHandler) {
-    const providerCats = await getProviderCategories(userId, project.id);
-    category = await geminiHandler.categorizeExpense(title, '', providerCats);
-  }
-
-  const expenseData = {
-    projectId: project.id,
-    providerId: userId,
-    title: capitalizeFirst(title),
-    description: '',
-    amount,
-    category,
-    type: 'provider_expense',
-    installmentPercent: null,
-    paymentMethod: null,
-    recipientName: null,
-    recipientBankInfo: null,
-    recipientPlatform: null,
-    recipientCuit: null,
-    linkedExpenseId: null,
-    linkedPaymentId: null,
-    items: null,
-    imageUrl: null,
-    audioTranscription: null,
-    originalMessage: text,
-    source: 'whatsapp',
-    date: admin.firestore.FieldValue.serverTimestamp(),
-    createdAt: admin.firestore.FieldValue.serverTimestamp()
-  };
-
-  await db.collection(COLLECTIONS.EXPENSES).add(expenseData);
-
-  const formattedAmount = formatAmount(amount);
-  await sendWhatsAppMessage(
-    phoneNumber,
-    `Gasto propio registrado!\n\n*${capitalizeFirst(title)}*\n${formattedAmount}\n#${project.tag} - ${capitalizeFirst(category)}`
-  );
-}
-
-// ============================================
-// Expense Message Handler
-// ============================================
-
-async function handleExpenseMessage(phoneNumber, text) {
-  const linkDoc = await db.collection(COLLECTIONS.WHATSAPP_LINKS).doc(phoneNumber).get();
-
-  if (!linkDoc.exists || linkDoc.data()?.status !== 'linked') {
-    await sendWhatsAppMessage(
-      phoneNumber,
-      'Este numero no esta vinculado a ninguna cuenta.\n\nPara vincular:\n1. Ingresa a la app web\n2. Ve a Configuracion > WhatsApp\n3. Genera un codigo\n4. Envialo: VINCULAR <codigo>'
-    );
-    return;
-  }
-
-  const userId = linkDoc.data().userId;
-
-  // Parse the expense message
-  const parsed = parseExpenseMessage(text);
-
-  if (!parsed) {
-    await sendWhatsAppMessage(
-      phoneNumber,
-      `No pude entender el mensaje.\n\n*Formato:*\n\`$<monto> <titulo> #<tag>\`\n\n*Ejemplo:*\n\`$500 Clavos #flores3b\`\n\nEscribi AYUDA para mas info.`
-    );
-    return;
-  }
-
-  // Find project by tag
-  if (!parsed.projectTag) {
-    await sendWhatsAppMessage(
-      phoneNumber,
-      `Falta el tag del proyecto.\n\n*Formato:*\n\`$500 Clavos #flores3b\`\n\nEnvia PROYECTOS para ver tus tags.`
-    );
-    return;
-  }
-
-  const project = await findProjectByTag(userId, parsed.projectTag);
-
-  if (!project) {
-    await sendWhatsAppMessage(phoneNumber, `No se encontro el proyecto con tag #${parsed.projectTag}.\n\nEnvia PROYECTOS para ver tus proyectos activos.`);
-    return;
-  }
-
-  try {
-    // Fetch provider's custom categories for this project
-    const providerCats = await getProviderCategories(userId, project.id);
-
-    // Determine category
-    let category = parsed.category;
-    if (!category && geminiHandler) {
-      category = await geminiHandler.categorizeExpense(parsed.title, parsed.description, providerCats);
-    }
-    if (!category) {
-      category = 'otros';
-    }
-
-    // Validate category against provider's categories
-    const normalizedCategory = category.toLowerCase();
-    const matchedCategory = providerCats.find(c => c.includes(normalizedCategory) || normalizedCategory.includes(c));
-    category = matchedCategory || (providerCats.includes('otros') ? 'otros' : providerCats[providerCats.length - 1]);
-
-    const expenseData = {
-      projectId: project.id,
-      providerId: userId,
-      title: parsed.title,
-      description: parsed.description,
-      amount: parsed.amount,
-      category,
-      type: 'expense',
-      installmentPercent: 0,
-      paymentMethod: null,
-      recipientName: null,
-      recipientBankInfo: null,
-      recipientPlatform: null,
-      recipientCuit: null,
-      items: null,
-      imageUrl: null,
-      audioTranscription: null,
-      originalMessage: text,
-      source: 'whatsapp',
-      date: admin.firestore.FieldValue.serverTimestamp(),
-      createdAt: admin.firestore.FieldValue.serverTimestamp()
-    };
-
-    await db.collection(COLLECTIONS.EXPENSES).add(expenseData);
-
-    const formattedAmount = formatAmount(parsed.amount);
-
-    let successMessage = `Gasto registrado!\n\n*${parsed.title}*\n${formattedAmount}\n#${project.tag} - ${capitalizeFirst(category)}`;
-
-    if (parsed.description) {
-      successMessage += `\n_${parsed.description}_`;
-    }
-
-    await sendWhatsAppMessage(phoneNumber, successMessage);
-
-    // Notify client
-    await notifyClient(project.id, parsed.amount, project.name, 'expense');
-  } catch (error) {
-    Sentry.captureException(error);
-    logger.error('Error creating expense', { error });
-    await sendWhatsAppMessage(phoneNumber, 'Error al registrar el gasto. Intenta nuevamente.');
-  }
-}
-
-// ============================================
 // Helper Functions
 // ============================================
 
-function parseExpenseMessage(text) {
-  const cleanText = text.trim();
-
-  // Extract amount
-  const amountRegex = /^\$?\s*([\d.,]+)\s+(.+)$/i;
-  const match = cleanText.match(amountRegex);
-
-  if (!match) {
-    return null;
-  }
-
-  let amountStr = match[1];
-  let rest = match[2].trim();
-
-  // Normalize Argentine amount format
-  amountStr = amountStr.replace(/\./g, '').replace(',', '.');
-  const amount = parseFloat(amountStr);
-
-  if (isNaN(amount) || amount <= 0) {
-    return null;
-  }
-
-  // Extract project tag (#tag)
-  let projectTag = null;
-  const tagMatch = rest.match(/#(\S+)/);
-  if (tagMatch) {
-    projectTag = tagMatch[1].toLowerCase();
-    rest = rest.replace(/#\S+/, '').trim();
-  }
-
-  // Extract category (c:)
-  let category = null;
-  const catMatch = rest.match(/c:(.+?)(?=d:|$)/i);
-  if (catMatch) {
-    category = catMatch[1].trim().toLowerCase();
-    rest = rest.replace(/c:.+?(?=d:|$)/i, '').trim();
-  }
-
-  // Extract description (d:)
-  let description = '';
-  const descMatch = rest.match(/d:(.+?)$/i);
-  if (descMatch) {
-    description = descMatch[1].trim();
-    rest = rest.replace(/d:.+?$/i, '').trim();
-  }
-
-  // What remains is the title
-  const title = capitalizeFirst(rest.trim());
-
-  if (!title) {
-    return null;
-  }
-
-  return {
-    amount,
-    title,
-    projectTag,
-    category,
-    description
-  };
+async function resolveProject(userId, activeProjectId) {
+  if (!activeProjectId) return null;
+  const doc = await db.collection(COLLECTIONS.PROJECTS).doc(activeProjectId).get();
+  if (!doc.exists) return null;
+  const project = doc.data();
+  if (project.status !== 'active' || project.providerId !== userId) return null;
+  return { id: doc.id, ...project };
 }
 
 async function getActiveProjects(userId) {
@@ -1365,105 +854,6 @@ async function getActiveProjects(userId) {
     .get();
 
   return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-}
-
-function matchProjectFromReference(projects, reference) {
-  if (!reference) return null;
-  const ref = reference.toLowerCase().trim();
-
-  // Exact tag match
-  const byTag = projects.find(p => p.tag === ref);
-  if (byTag) return byTag;
-
-  // Tag contained in reference
-  const byTagPartial = projects.find(p => ref.includes(p.tag));
-  if (byTagPartial) return byTagPartial;
-
-  // Project name match (case-insensitive, partial)
-  const byName = projects.find(p => {
-    const name = p.name.toLowerCase();
-    return ref.includes(name) || name.includes(ref);
-  });
-  if (byName) return byName;
-
-  // Word overlap: match if any significant word from the reference matches project name words
-  const refWords = ref.split(/\s+/).filter(w => w.length > 2);
-  const byWord = projects.find(p => {
-    const nameWords = p.name.toLowerCase().split(/\s+/);
-    return refWords.some(rw => nameWords.some(nw => nw.includes(rw) || rw.includes(nw)));
-  });
-  if (byWord) return byWord;
-
-  return null;
-}
-
-async function completePendingExpense(phoneNumber, pending, tag) {
-  const project = await findProjectByTag(pending.userId, tag);
-
-  if (!project) {
-    await sendWhatsAppMessage(phoneNumber, `No se encontro el proyecto con tag #${tag}.\n\nEnvia PROYECTOS para ver tus tags.`);
-    return;
-  }
-
-  clearPendingExpense(phoneNumber);
-
-  const { data } = pending;
-  const type = data.type || 'expense';
-  const typeDefaults = getTypeDefaults(type);
-  const expenseData = {
-    projectId: project.id,
-    providerId: pending.userId,
-    title: data.title,
-    description: data.description,
-    amount: data.amount,
-    category: data.category,
-    type,
-    installmentPercent: data.installmentPercent ?? typeDefaults.installmentPercent,
-    paymentMethod: data.paymentMethod || null,
-    recipientName: null,
-    recipientBankInfo: null,
-    recipientPlatform: null,
-    recipientCuit: null,
-    linkedExpenseId: data.linkedExpenseId || null,
-    linkedPaymentId: data.linkedPaymentId || null,
-    items: data.items || null,
-    imageUrl: null,
-    audioTranscription: data.transcription || null,
-    originalMessage: `[Audio] ${data.originalCaption || ''}`,
-    source: 'whatsapp',
-    date: admin.firestore.FieldValue.serverTimestamp(),
-    createdAt: admin.firestore.FieldValue.serverTimestamp()
-  };
-
-  await db.collection(COLLECTIONS.EXPENSES).add(expenseData);
-
-  const typeLabel = getTypeLabel(type);
-  const formattedAmount = formatAmount(data.amount);
-  await sendWhatsAppMessage(
-    phoneNumber,
-    `${typeLabel} registrado!\n\n*${data.title}*\n${formattedAmount}\n#${project.tag} - ${capitalizeFirst(data.category)}\n${data.description ? `_${data.description}_` : ''}`
-  );
-
-  // Notify client (not for provider expenses)
-  if (type !== 'provider_expense') {
-    await notifyClient(project.id, data.amount, project.name, type);
-  }
-}
-
-async function findProjectByTag(userId, tag) {
-  const projectsSnapshot = await db
-    .collection(COLLECTIONS.PROJECTS)
-    .where('providerId', '==', userId)
-    .where('tag', '==', tag)
-    .where('status', '==', 'active')
-    .limit(1)
-    .get();
-
-  if (projectsSnapshot.empty) {
-    return null;
-  }
-
-  return { id: projectsSnapshot.docs[0].id, ...projectsSnapshot.docs[0].data() };
 }
 
 // ============================================
