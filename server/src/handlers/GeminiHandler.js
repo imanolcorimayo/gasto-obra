@@ -2,9 +2,9 @@ import * as Sentry from '@sentry/node';
 import logger from '../../lib/logger.js';
 
 const MODELS = [
-  'gemini-3.1-flash-lite',  // 500 RPD — primary
-  'gemini-2.5-flash-lite',  // 20 RPD  — fallback 1
-  'gemini-2.5-flash',       // 20 RPD  — fallback 2
+  'gemini-3.1-flash-lite-preview',  // 500 RPD — primary
+  'gemini-2.5-flash-lite',          // 20 RPD  — fallback 1
+  'gemini-2.5-flash',               // 20 RPD  — fallback 2
 ];
 
 class GeminiHandler {
