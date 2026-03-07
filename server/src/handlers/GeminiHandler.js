@@ -1,3 +1,4 @@
+import * as Sentry from '@sentry/node';
 import logger from '../../lib/logger.js';
 
 class GeminiHandler {
@@ -8,40 +9,62 @@ class GeminiHandler {
   }
 
   async generateContent(prompt, { maxOutputTokens = 500, temperature = 0.7, parts = null, responseSchema = null } = {}) {
-    try {
-      const contents = parts
-        ? [{ parts }]
-        : [{ parts: [{ text: prompt }] }];
+    const maxRetries = 2;
+    const retryDelays = [2000, 5000];
 
-      const generationConfig = { maxOutputTokens, temperature };
-      if (responseSchema) {
-        generationConfig.responseMimeType = 'application/json';
-        generationConfig.responseSchema = responseSchema;
-      }
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+      try {
+        const contents = parts
+          ? [{ parts }]
+          : [{ parts: [{ text: prompt }] }];
 
-      const response = await fetch(
-        `${this.baseUrl}/${this.model}:generateContent?key=${this.apiKey}`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            contents,
-            generationConfig
-          })
+        const generationConfig = { maxOutputTokens, temperature };
+        if (responseSchema) {
+          generationConfig.responseMimeType = 'application/json';
+          generationConfig.responseSchema = responseSchema;
         }
-      );
 
-      if (!response.ok) {
-        logger.error('Gemini API error', { response: await response.text() });
-        return null;
+        const response = await fetch(
+          `${this.baseUrl}/${this.model}:generateContent?key=${this.apiKey}`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              contents,
+              generationConfig
+            })
+          }
+        );
+
+        if (!response.ok) {
+          const responseText = await response.text();
+          const retryable = response.status === 503 || response.status === 429;
+          if (retryable && attempt < maxRetries) {
+            Sentry.captureMessage(`Gemini API ${response.status} - retrying`, { level: 'warning', extra: { attempt: attempt + 1, model: this.model } });
+            logger.warn('Gemini API unavailable, retrying', { status: response.status, attempt: attempt + 1, delay: retryDelays[attempt] });
+            await new Promise(r => setTimeout(r, retryDelays[attempt]));
+            continue;
+          }
+          const error = new Error(`Gemini API error: ${response.status}`);
+          Sentry.captureException(error, { extra: { response: responseText, status: response.status, model: this.model } });
+          logger.error('Gemini API error', { response: responseText });
+          return { error: response.status === 429 ? 'rate_limit' : 'unavailable' };
+        }
+
+        const result = await response.json();
+        return result.candidates?.[0]?.content?.parts?.[0]?.text || null;
+      } catch (error) {
+        if (attempt < maxRetries) {
+          logger.warn('Gemini request failed, retrying', { attempt: attempt + 1, error: error.message });
+          await new Promise(r => setTimeout(r, retryDelays[attempt]));
+          continue;
+        }
+        Sentry.captureException(error);
+        logger.error('Error calling Gemini', { error });
+        return { error: 'unavailable' };
       }
-
-      const result = await response.json();
-      return result.candidates?.[0]?.content?.parts?.[0]?.text || null;
-    } catch (error) {
-      logger.error('Error calling Gemini', { error });
-      return null;
     }
+    return { error: 'unavailable' };
   }
 
   async parseReceiptImage(imageBase64, mimeType = 'image/jpeg', { caption = '', activeProjects = [], categories = null, recipients = [], paymentMethods = [] } = {}) {
@@ -121,7 +144,7 @@ ${methodList}`;
       responseSchema: schema
     });
 
-    if (!text) return null;
+    if (typeof text !== 'string') return text || null;
 
     try {
       const parsed = JSON.parse(text);
@@ -315,7 +338,7 @@ Si no podes extraer algun campo, usa null.`;
       responseSchema: schema
     });
 
-    if (!responseText) return null;
+    if (typeof responseText !== 'string') return responseText || null;
 
     try {
       const parsed = JSON.parse(responseText);
@@ -340,7 +363,7 @@ Responde SOLO con el nombre de la categoria en minusculas, sin texto adicional.`
 
     const text = await this.generateContent(prompt, { maxOutputTokens: 50, temperature: 0.2 });
 
-    if (!text) return validCategories.includes('otros') ? 'otros' : validCategories[validCategories.length - 1];
+    if (typeof text !== 'string') return validCategories.includes('otros') ? 'otros' : validCategories[validCategories.length - 1];
 
     const normalized = text.trim().toLowerCase();
 

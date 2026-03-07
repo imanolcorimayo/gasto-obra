@@ -82,6 +82,14 @@ async function getProviderRecipients(userId) {
 // Transaction Type Helpers
 // ============================================
 
+function isGeminiError(result) {
+  return result && typeof result === 'object' && result.error;
+}
+
+function getGeminiErrorMessage() {
+  return `El servicio de procesamiento no esta disponible en este momento.\n\nPodes registrar el gasto desde la app web: ${APP_URL}\n\nIntenta nuevamente en unos minutos.`;
+}
+
 function resolveTransactionType(aiType) {
   if (aiType && ['expense', 'payment', 'provider_expense'].includes(aiType)) return aiType;
   return null;
@@ -454,6 +462,10 @@ async function processImageMessage(phoneNumber, imageId, caption, contactName) {
   };
 
   const receiptData = await geminiHandler.parseReceiptImage(imageData.base64, imageData.mimeType, context);
+  if (isGeminiError(receiptData)) {
+    await sendWhatsAppMessage(phoneNumber, getGeminiErrorMessage());
+    return;
+  }
   if (!receiptData || !receiptData.totalAmount) {
     await sendWhatsAppMessage(phoneNumber, 'No pude leer el ticket. Intenta con una foto mas clara o registra el gasto manualmente.');
     return;
@@ -632,6 +644,10 @@ async function processAudioMessage(phoneNumber, audioId, caption, contactName) {
 
   const transcription = await geminiHandler.transcribeAudio(audioData.base64, audioData.mimeType, context);
 
+  if (isGeminiError(transcription)) {
+    await sendWhatsAppMessage(phoneNumber, getGeminiErrorMessage());
+    return;
+  }
   if (!transcription || (!transcription.totalAmount && !transcription.items?.length && !transcription.title)) {
     await sendWhatsAppMessage(phoneNumber, 'No pude entender el audio. Intenta nuevamente o envia una foto del ticket.');
     return;
@@ -812,6 +828,10 @@ async function handleTextExpense(phoneNumber, text) {
 
   const result = await geminiHandler.parseTextExpense(text, context);
 
+  if (isGeminiError(result)) {
+    await sendWhatsAppMessage(phoneNumber, getGeminiErrorMessage());
+    return;
+  }
   if (!result || !result.totalAmount) {
     await sendWhatsAppMessage(phoneNumber, 'No pude entender el mensaje.\n\nPodes registrar gastos con un texto como:\n- "500 clavos"\n- "1500 cemento y 800 arena"\n- "me pagaron 5000 por transferencia"\n\nTambien podes enviar una *foto* o *audio*.\n\nEscribi *AYUDA* para mas info.');
     return;
@@ -1043,36 +1063,6 @@ async function confirmPendingExpense(phoneNumber, pending) {
     `${typeLabel}!\n\n*${data.title}*\n${formattedAmount}\n${data.projectName} - ${capitalizeFirst(data.category)}\n${data.description ? `_${data.description}_` : ''}`
   );
 
-  // Notify client
-  if (data.type !== 'provider_expense') {
-    await notifyClient(data.projectId, data.amount, data.projectName, data.type);
-  }
-}
-
-// ============================================
-// Client Notification
-// ============================================
-
-async function notifyClient(projectId, amount, projectName, type) {
-  try {
-    const projectDoc = await db.collection(COLLECTIONS.PROJECTS).doc(projectId).get();
-    if (!projectDoc.exists) return;
-
-    const project = projectDoc.data();
-    if (!project.clientPhone) return;
-
-    const formattedAmount = formatAmount(amount);
-    const label = type === 'payment' ? 'pago' : 'gasto';
-
-    await sendWhatsAppMessage(
-      project.clientPhone,
-      `El proveedor registro un ${label} de ${formattedAmount} en *${projectName}*.`
-    );
-  } catch (error) {
-    // Fail silently - client notification is best-effort
-    Sentry.captureException(error);
-    logger.error('Error notifying client', { error });
-  }
 }
 
 // ============================================
