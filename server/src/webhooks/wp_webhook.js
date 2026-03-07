@@ -4,7 +4,7 @@ import express from 'express';
 import * as Sentry from '@sentry/node';
 import { admin, db, COLLECTIONS } from '../config/firebase.js';
 import GeminiHandler from '../handlers/GeminiHandler.js';
-import { sendWhatsAppMessage, downloadWhatsAppMedia } from '../helpers/whatsapp.js';
+import { sendWhatsAppMessage, sendWhatsAppButtons, downloadWhatsAppMedia } from '../helpers/whatsapp.js';
 import { formatAmount, capitalizeFirst } from '../helpers/responseFormatter.js';
 import logger from '../../lib/logger.js';
 
@@ -112,7 +112,18 @@ const geminiHandler = process.env.GEMINI_API_KEY
 const CONFIRMATION_TTL = 2 * 60 * 1000; // 2 minutes
 const pendingExpenses = new Map(); // phoneNumber -> { data, userId, timestamp, pendingConfirmation }
 
-function setPendingConfirmation(phoneNumber, userId, expenseData) {
+async function setPendingConfirmation(phoneNumber, userId, expenseData) {
+  // Auto-confirm existing pending expense before setting a new one
+  const existing = getPendingExpense(phoneNumber);
+  if (existing && existing.pendingConfirmation) {
+    try {
+      await confirmPendingExpense(phoneNumber, existing);
+    } catch (error) {
+      Sentry.captureException(error);
+      logger.error('Error auto-confirming previous expense', { error, phoneNumber });
+    }
+  }
+
   const timestamp = Date.now();
   pendingExpenses.set(phoneNumber, {
     data: expenseData,
@@ -295,6 +306,11 @@ app.post('/webhook', async (req, res) => {
       const audioId = message.audio?.id;
       logger.info('Audio message received', { from, contactName });
       await processAudioMessage(from, audioId, caption, contactName);
+    } else if (message.type === 'interactive') {
+      const buttonId = message.interactive?.button_reply?.id;
+      const buttonTitle = message.interactive?.button_reply?.title || '';
+      logger.info('Button reply received', { from, contactName, buttonId, buttonTitle });
+      await processMessage(from, buttonTitle, contactName);
     }
   } catch (error) {
     Sentry.captureException(error);
@@ -516,10 +532,11 @@ async function processImageMessage(phoneNumber, imageId, caption, contactName) {
     setPendingProjectSwitchExpense(phoneNumber, userId, expenseData, detectedProject);
 
     const confirmMsg = buildExpenseConfirmationMessage(expenseData);
-    await sendWhatsAppMessage(
-      phoneNumber,
-      `${confirmMsg}\nEste gasto se guardaria en *${detectedProject.name}* (no tu proyecto activo).\n\nResponde *si* para confirmar o *no* para cancelar.\nSi queres guardar automaticamente a este proyecto, usa el comando *PROYECTO*.`
-    );
+    const switchBody = `${confirmMsg}\nEste gasto se guardaria en *${detectedProject.name}* (no tu proyecto activo).\n\nSi queres guardar automaticamente a este proyecto, usa el comando *PROYECTO*.`;
+    await sendWhatsAppButtons(phoneNumber, switchBody, [
+      { id: 'confirm_yes', title: 'Si' },
+      { id: 'confirm_no', title: 'No' }
+    ]);
     return;
   }
 
@@ -555,10 +572,13 @@ async function processImageMessage(phoneNumber, imageId, caption, contactName) {
     timestamp: Date.now()
   };
 
-  setPendingConfirmation(phoneNumber, userId, expenseData);
+  await setPendingConfirmation(phoneNumber, userId, expenseData);
 
   const confirmMsg = buildExpenseConfirmationMessage(expenseData);
-  await sendWhatsAppMessage(phoneNumber, confirmMsg);
+  await sendWhatsAppButtons(phoneNumber, confirmMsg, [
+    { id: 'confirm_yes', title: 'Si' },
+    { id: 'confirm_no', title: 'No' }
+  ]);
 }
 
 // ============================================
@@ -698,10 +718,11 @@ async function processAudioMessage(phoneNumber, audioId, caption, contactName) {
     setPendingProjectSwitchExpense(phoneNumber, userId, expenseData, detectedProject);
 
     const confirmMsg = buildExpenseConfirmationMessage(expenseData);
-    await sendWhatsAppMessage(
-      phoneNumber,
-      `${confirmMsg}\nEste gasto se guardaria en *${detectedProject.name}* (no tu proyecto activo).\n\nResponde *si* para confirmar o *no* para cancelar.\nSi queres guardar automaticamente a este proyecto, usa el comando *PROYECTO*.`
-    );
+    const switchBody = `${confirmMsg}\nEste gasto se guardaria en *${detectedProject.name}* (no tu proyecto activo).\n\nSi queres guardar automaticamente a este proyecto, usa el comando *PROYECTO*.`;
+    await sendWhatsAppButtons(phoneNumber, switchBody, [
+      { id: 'confirm_yes', title: 'Si' },
+      { id: 'confirm_no', title: 'No' }
+    ]);
     return;
   }
 
@@ -737,10 +758,13 @@ async function processAudioMessage(phoneNumber, audioId, caption, contactName) {
     timestamp: Date.now()
   };
 
-  setPendingConfirmation(phoneNumber, userId, expenseData);
+  await setPendingConfirmation(phoneNumber, userId, expenseData);
 
   const confirmMsg = buildExpenseConfirmationMessage(expenseData);
-  await sendWhatsAppMessage(phoneNumber, confirmMsg);
+  await sendWhatsAppButtons(phoneNumber, confirmMsg, [
+    { id: 'confirm_yes', title: 'Si' },
+    { id: 'confirm_no', title: 'No' }
+  ]);
 }
 
 // ============================================
@@ -872,10 +896,11 @@ async function handleTextExpense(phoneNumber, text) {
     setPendingProjectSwitchExpense(phoneNumber, userId, expenseData, detectedProject);
 
     const confirmMsg = buildExpenseConfirmationMessage(expenseData);
-    await sendWhatsAppMessage(
-      phoneNumber,
-      `${confirmMsg}\nEste gasto se guardaria en *${detectedProject.name}* (no tu proyecto activo).\n\nResponde *si* para confirmar o *no* para cancelar.\nSi queres guardar automaticamente a este proyecto, usa el comando *PROYECTO*.`
-    );
+    const switchBody = `${confirmMsg}\nEste gasto se guardaria en *${detectedProject.name}* (no tu proyecto activo).\n\nSi queres guardar automaticamente a este proyecto, usa el comando *PROYECTO*.`;
+    await sendWhatsAppButtons(phoneNumber, switchBody, [
+      { id: 'confirm_yes', title: 'Si' },
+      { id: 'confirm_no', title: 'No' }
+    ]);
     return;
   }
 
@@ -911,10 +936,13 @@ async function handleTextExpense(phoneNumber, text) {
     timestamp: Date.now()
   };
 
-  setPendingConfirmation(phoneNumber, userId, expenseData);
+  await setPendingConfirmation(phoneNumber, userId, expenseData);
 
   const confirmMsg = buildExpenseConfirmationMessage(expenseData);
-  await sendWhatsAppMessage(phoneNumber, confirmMsg);
+  await sendWhatsAppButtons(phoneNumber, confirmMsg, [
+    { id: 'confirm_yes', title: 'Si' },
+    { id: 'confirm_no', title: 'No' }
+  ]);
 }
 
 function buildExpenseConfirmationMessage(data) {
@@ -938,7 +966,6 @@ function buildExpenseConfirmationMessage(data) {
     msg += `\nEstado: Pagado`;
   }
 
-  msg += `\n\nResponde *si* para confirmar o *no* para cancelar.`;
   return msg;
 }
 

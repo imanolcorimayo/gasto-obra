@@ -48,6 +48,55 @@ export async function sendWhatsAppMessage(to, message) {
   }
 }
 
+export async function sendWhatsAppButtons(to, body, buttons) {
+  const normalizedTo = normalizePhoneNumber(to);
+
+  if (!WP_PHONE_NUMBER_ID || !WP_ACCESS_TOKEN) {
+    logger.warn('WhatsApp credentials not configured, skipping message send', { to: normalizedTo });
+    return;
+  }
+
+  try {
+    const response = await fetch(
+      `https://graph.facebook.com/v21.0/${WP_PHONE_NUMBER_ID}/messages`,
+      {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${WP_ACCESS_TOKEN}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          messaging_product: 'whatsapp',
+          recipient_type: 'individual',
+          to: normalizedTo,
+          type: 'interactive',
+          interactive: {
+            type: 'button',
+            body: { text: body },
+            action: {
+              buttons: buttons.map((btn, i) => ({
+                type: 'reply',
+                reply: { id: btn.id || `btn_${i}`, title: btn.title }
+              }))
+            }
+          }
+        })
+      }
+    );
+
+    const result = await response.json();
+
+    if (!response.ok) {
+      logger.error('Error sending WhatsApp buttons', { result });
+    } else {
+      logger.info('WhatsApp buttons sent', { to: normalizedTo });
+    }
+  } catch (error) {
+    Sentry.captureException(error);
+    logger.error('Error sending WhatsApp buttons', { error });
+  }
+}
+
 export async function downloadWhatsAppMedia(mediaId) {
   if (!WP_ACCESS_TOKEN) {
     logger.warn('WhatsApp credentials not configured, cannot download media');
