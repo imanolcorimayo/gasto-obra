@@ -476,7 +476,7 @@ async function processImageMessage(phoneNumber, imageId, caption, contactName) {
   const formattedAmount = formatAmount(receiptData.totalAmount);
   await sendWhatsAppMessage(
     phoneNumber,
-    `${typeLabel}: ${formattedAmount} - ${title}\n${capitalizeFirst(category)} - ${project.name}\n${description ? `_${description}_\n` : ''}\nResponde *no* para cancelar. Se confirma automaticamente en 2 minutos.`
+    `${typeLabel}: ${formattedAmount} - ${title}\n${capitalizeFirst(category)} - ${project.name}\n${description ? `_${description}_\n` : ''}\nResponde *si* para confirmar o *no* para cancelar.`
   );
 }
 
@@ -584,7 +584,7 @@ async function processAudioMessage(phoneNumber, audioId, caption, contactName) {
   }
   confirmMsg += `${capitalizeFirst(category)} - ${project.name}\n`;
   if (description) confirmMsg += `_${description}_\n`;
-  confirmMsg += `\nResponde *no* para cancelar. Se confirma automaticamente en 2 minutos.`;
+  confirmMsg += `\nResponde *si* para confirmar o *no* para cancelar.`;
   await sendWhatsAppMessage(phoneNumber, confirmMsg);
 }
 
@@ -783,7 +783,7 @@ function buildExpenseConfirmationMessage(data) {
     msg += `\nEstado: Pagado`;
   }
 
-  msg += `\n\nResponde *no* para cancelar. Se confirma automaticamente en 2 minutos.`;
+  msg += `\n\nResponde *si* para confirmar o *no* para cancelar.`;
   return msg;
 }
 

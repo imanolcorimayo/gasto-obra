@@ -223,12 +223,12 @@ Si no podes extraer algun campo, usa null.`;
           }
         },
         totalAmount: { type: 'number' },
-        description: { type: ['string', 'null'] },
-        category: { type: ['string', 'null'] },
-        paymentMethod: { type: ['string', 'null'] },
-        recipientId: { type: ['string', 'null'] },
-        installmentPercent: { type: 'integer', enum: [0, 100] },
-        projectId: { type: ['string', 'null'] }
+        description: { type: 'string', nullable: true },
+        category: { type: 'string', nullable: true },
+        paymentMethod: { type: 'string', nullable: true },
+        recipientId: { type: 'string', nullable: true },
+        installmentPercent: { type: 'string', enum: ['0', '100'] },
+        projectId: { type: 'string', nullable: true }
       },
       required: ['transactionType', 'title', 'items', 'totalAmount', 'installmentPercent']
     };
@@ -242,7 +242,9 @@ Si no podes extraer algun campo, usa null.`;
     if (!responseText) return null;
 
     try {
-      return JSON.parse(responseText);
+      const parsed = JSON.parse(responseText);
+      parsed.installmentPercent = parseInt(parsed.installmentPercent, 10) || 0;
+      return parsed;
     } catch (error) {
       logger.error('Error parsing text expense JSON', { error });
       return null;
