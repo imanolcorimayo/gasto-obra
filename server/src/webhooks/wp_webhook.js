@@ -230,6 +230,37 @@ function clearPendingProjectSwitchExpense(phoneNumber) {
 }
 
 // ============================================
+// Pending Resumen Selections (RESUMEN command)
+// ============================================
+const RESUMEN_SELECTION_TTL = 2 * 60 * 1000; // 2 minutes
+const pendingResumenSelections = new Map(); // phoneNumber -> { project, expenses, timestamp }
+
+function setPendingResumenSelection(phoneNumber, data) {
+  const timestamp = Date.now();
+  pendingResumenSelections.set(phoneNumber, { ...data, timestamp });
+  setTimeout(() => {
+    const pending = pendingResumenSelections.get(phoneNumber);
+    if (pending && pending.timestamp === timestamp) {
+      pendingResumenSelections.delete(phoneNumber);
+    }
+  }, RESUMEN_SELECTION_TTL);
+}
+
+function getPendingResumenSelection(phoneNumber) {
+  const pending = pendingResumenSelections.get(phoneNumber);
+  if (!pending) return null;
+  if (Date.now() - pending.timestamp > RESUMEN_SELECTION_TTL) {
+    pendingResumenSelections.delete(phoneNumber);
+    return null;
+  }
+  return pending;
+}
+
+function clearPendingResumenSelection(phoneNumber) {
+  pendingResumenSelections.delete(phoneNumber);
+}
+
+// ============================================
 // Middleware
 // ============================================
 app.use(express.json());
@@ -376,38 +407,55 @@ async function processMessage(phoneNumber, text, contactName) {
     }
   }
 
-  // 3. VINCULAR
+  // 4. Pending resumen selection
+  const pendingResumen = getPendingResumenSelection(phoneNumber);
+  if (pendingResumen) {
+    if (normalizedText === '1' || normalizedText === 'global') {
+      clearPendingResumenSelection(phoneNumber);
+      await sendGlobalResumen(phoneNumber, pendingResumen);
+      return;
+    }
+    if (normalizedText === '2' || normalizedText === 'semanal') {
+      clearPendingResumenSelection(phoneNumber);
+      await sendWeeklyResumen(phoneNumber, pendingResumen);
+      return;
+    }
+    // Unrecognized input: clear state, fall through to normal routing
+    clearPendingResumenSelection(phoneNumber);
+  }
+
+  // 5. VINCULAR
   if (normalizedText.startsWith('vincular ')) {
     const code = text.trim().split(' ')[1]?.toUpperCase();
     await handleLinkCommand(phoneNumber, code, contactName);
     return;
   }
 
-  // 4. DESVINCULAR
+  // 6. DESVINCULAR
   if (normalizedText === 'desvincular') {
     await handleUnlinkCommand(phoneNumber);
     return;
   }
 
-  // 5. AYUDA
+  // 7. AYUDA
   if (normalizedText === 'ayuda' || normalizedText === 'help') {
     await sendHelpMessage(phoneNumber);
     return;
   }
 
-  // 6. PROYECTO / PROYECTOS
+  // 8. PROYECTO / PROYECTOS
   if (normalizedText === 'proyecto' || normalizedText === 'proyectos') {
     await handleProyectoCommand(phoneNumber);
     return;
   }
 
-  // 7. RESUMEN
+  // 9. RESUMEN
   if (normalizedText === 'resumen' || normalizedText.startsWith('resumen ')) {
     await handleResumenCommand(phoneNumber);
     return;
   }
 
-  // 8. Fallback → text expense
+  // 10. Fallback → text expense
   await handleTextExpense(phoneNumber, text);
 }
 
@@ -1247,54 +1295,161 @@ async function handleResumenCommand(phoneNumber) {
 
     const expenses = expensesSnapshot.docs.map(doc => doc.data());
 
-    // Separate by type
-    const clientExpenses = expenses.filter(e => !e.type || e.type === 'expense');
-    const payments = expenses.filter(e => e.type === 'payment');
-    const providerExpenses = expenses.filter(e => e.type === 'provider_expense');
+    // Cache data and show menu
+    setPendingResumenSelection(phoneNumber, { project, expenses });
 
-    const totalExpenses = clientExpenses.reduce((sum, e) => sum + (e.amount || 0), 0);
-    const totalPayments = payments.reduce((sum, e) => sum + (e.amount || 0), 0);
-    const totalProviderExpenses = providerExpenses.reduce((sum, e) => sum + (e.amount || 0), 0);
-    const balance = totalPayments - totalExpenses;
-
-    // Group expenses by category
-    const byCategory = {};
-    clientExpenses.forEach(e => {
-      const cat = e.category || 'otros';
-      byCategory[cat] = (byCategory[cat] || 0) + (e.amount || 0);
-    });
-
-    const categoryLines = Object.entries(byCategory)
-      .sort((a, b) => b[1] - a[1])
-      .map(([cat, amount]) => `  ${capitalizeFirst(cat)}: ${formatAmount(amount)}`)
-      .join('\n');
-
-    let message = `*Resumen - ${project.name}*
-Tag: #${project.tag}
-${project.clientName ? `Cliente: ${project.clientName}` : ''}
-
-*${clientExpenses.length} gastos registrados*
-
-*Por categoria:*
-${categoryLines}
-
-*Total gastos:* ${formatAmount(totalExpenses)}`;
-
-    if (totalPayments > 0) {
-      message += `\n*Pagos recibidos:* ${formatAmount(totalPayments)}`;
-      message += `\n*Saldo:* ${formatAmount(balance)}`;
-    }
-
-    if (totalProviderExpenses > 0) {
-      message += `\n*Gastos propios:* ${formatAmount(totalProviderExpenses)}`;
-    }
-
-    await sendWhatsAppMessage(phoneNumber, message);
+    const body = `📊 *Resumen - ${project.name}*\n\nSelecciona una opcion:\n1️⃣ *Global* - Resumen completo del proyecto\n2️⃣ *Semanal* - Gastos de esta semana dia por dia`;
+    const buttons = [
+      { id: 'resumen_global', title: 'Global' },
+      { id: 'resumen_semanal', title: 'Semanal' },
+    ];
+    await sendWhatsAppButtons(phoneNumber, body, buttons);
   } catch (error) {
     Sentry.captureException(error);
     logger.error('Error in RESUMEN command', { error });
     await sendWhatsAppMessage(phoneNumber, 'Error al obtener el resumen.');
   }
+}
+
+// ============================================
+// Resumen Views
+// ============================================
+
+async function sendGlobalResumen(phoneNumber, pendingData) {
+  const { project, expenses } = pendingData;
+
+  const clientExpenses = expenses.filter(e => !e.type || e.type === 'expense');
+  const payments = expenses.filter(e => e.type === 'payment');
+  const providerExpenses = expenses.filter(e => e.type === 'provider_expense');
+
+  const totalExpenses = clientExpenses.reduce((sum, e) => sum + (e.amount || 0), 0);
+  const totalPayments = payments.reduce((sum, e) => sum + (e.amount || 0), 0);
+  const totalProviderExpenses = providerExpenses.reduce((sum, e) => sum + (e.amount || 0), 0);
+  const balance = totalPayments - totalExpenses;
+
+  // Group expenses by category (only regular expenses)
+  const byCategory = {};
+  clientExpenses.forEach(e => {
+    const cat = e.category || 'otros';
+    byCategory[cat] = (byCategory[cat] || 0) + (e.amount || 0);
+  });
+
+  const categoryLines = Object.entries(byCategory)
+    .sort((a, b) => b[1] - a[1])
+    .map(([cat, amount]) => `  ${capitalizeFirst(cat)}: ${formatAmount(amount)}`)
+    .join('\n');
+
+  let message = `📊 *Resumen global - ${project.name}*\nTag: #${project.tag}`;
+  if (project.clientName) message += `\nCliente: ${project.clientName}`;
+
+  message += `\n\n*${clientExpenses.length} gastos registrados*`;
+  message += `\n\n*Por categoria:*\n${categoryLines}`;
+  message += `\n\n*Total gastos:* ${formatAmount(totalExpenses)}`;
+  message += `\n*Pagos recibidos:* ${formatAmount(totalPayments)}`;
+  message += `\n*Saldo:* ${formatAmount(balance)}`;
+
+  if (providerExpenses.length > 0) {
+    message += `\n\n*Gastos propios (${providerExpenses.length}):* ${formatAmount(totalProviderExpenses)}`;
+  }
+
+  message += `\n\n🔗 Ver detalle: ${APP_URL}`;
+  message += `\n\n_Podes compartir este mensaje con tu cliente_`;
+
+  await sendWhatsAppMessage(phoneNumber, message);
+}
+
+function getARTDate(date) {
+  const artOffset = -3 * 60; // ART is UTC-3
+  const utcTime = date.getTime() + date.getTimezoneOffset() * 60000;
+  return new Date(utcTime + artOffset * 60000);
+}
+
+const DAY_NAMES = ['Domingo', 'Lunes', 'Martes', 'Miercoles', 'Jueves', 'Viernes', 'Sabado'];
+
+async function sendWeeklyResumen(phoneNumber, pendingData) {
+  const { project, expenses } = pendingData;
+
+  const artNow = getARTDate(new Date());
+  // Get Monday of current week
+  const dayOfWeek = artNow.getDay();
+  const mondayOffset = dayOfWeek === 0 ? 6 : dayOfWeek - 1; // Sunday=6, Mon=0, Tue=1...
+  const monday = new Date(artNow.getFullYear(), artNow.getMonth(), artNow.getDate() - mondayOffset);
+
+  // Filter expenses for this week (Monday 00:00 ART to now)
+  const weekExpenses = expenses.filter(e => {
+    if (!e.date) return false;
+    const expDate = e.date.toDate ? e.date.toDate() : new Date(e.date);
+    const artExpDate = getARTDate(expDate);
+    return artExpDate >= monday && artExpDate <= artNow;
+  });
+
+  if (weekExpenses.length === 0) {
+    await sendWhatsAppMessage(phoneNumber, `📊 *Resumen semanal - ${project.name}*\n\nNo hay gastos esta semana.`);
+    return;
+  }
+
+  // Group by ART day
+  const byDay = {}; // 'YYYY-MM-DD' -> [expenses]
+  weekExpenses.forEach(e => {
+    const expDate = e.date.toDate ? e.date.toDate() : new Date(e.date);
+    const artDate = getARTDate(expDate);
+    const key = `${artDate.getFullYear()}-${String(artDate.getMonth() + 1).padStart(2, '0')}-${String(artDate.getDate()).padStart(2, '0')}`;
+    if (!byDay[key]) byDay[key] = [];
+    byDay[key].push(e);
+  });
+
+  // Build day entries from Monday to today
+  const daysWithExpenses = [];
+  const daysWithout = [];
+  let weekTotal = 0;
+
+  for (let d = new Date(monday); d <= artNow; d.setDate(d.getDate() + 1)) {
+    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    const dayName = DAY_NAMES[d.getDay()];
+    const dateStr = `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}`;
+
+    if (byDay[key]) {
+      let daySection = `*${dayName} ${dateStr}:*\n`;
+      let subtotal = 0;
+      byDay[key].forEach(e => {
+        const amount = e.amount || 0;
+        subtotal += amount;
+        let prefix = '';
+        if (e.type === 'payment') prefix = '💰 ';
+        else if (e.type === 'provider_expense') prefix = '👤 ';
+
+        const title = e.title || 'Sin titulo';
+        const category = e.type !== 'payment' && e.category ? ` (${capitalizeFirst(e.category)})` : '';
+        daySection += `  ${prefix}${formatAmount(amount)} - ${title}${category}\n`;
+      });
+      daySection += `  Subtotal: ${formatAmount(subtotal)}`;
+      daysWithExpenses.push(daySection);
+      weekTotal += subtotal;
+    } else {
+      daysWithout.push(dayName);
+    }
+  }
+
+  const mondayStr = `${String(monday.getDate()).padStart(2, '0')}/${String(monday.getMonth() + 1).padStart(2, '0')}`;
+  const todayStr = `${String(artNow.getDate()).padStart(2, '0')}/${String(artNow.getMonth() + 1).padStart(2, '0')}`;
+
+  let message = `📊 *Resumen semanal - ${project.name}*\nSemana del ${mondayStr} al ${todayStr}\n\n`;
+  message += daysWithExpenses.join('\n\n');
+
+  if (daysWithout.length > 0) {
+    message += `\n\n_${daysWithout.join(', ')}: Sin gastos_`;
+  }
+
+  message += `\n\n*Total de la semana:* ${formatAmount(weekTotal)}`;
+  message += `\n\n🔗 Ver detalle: ${APP_URL}`;
+  message += `\n\n_Podes compartir este mensaje con tu cliente_`;
+
+  // WhatsApp message length safety
+  if (message.length > 3800) {
+    message = message.substring(0, 3750) + '\n... (ver mas en la app)';
+  }
+
+  await sendWhatsAppMessage(phoneNumber, message);
 }
 
 // ============================================
