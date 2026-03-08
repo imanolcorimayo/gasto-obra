@@ -146,7 +146,8 @@ ${captionBlock}
   - "expense" para tickets de compra, facturas, recibos de comercio
   - "payment" para capturas de transferencia bancaria, comprobantes de pago, vouchers de deposito
 - Cada item debe tener "name" (descripcion corta) y "amount" (precio unitario o subtotal)
-- Los campos paymentMethod, recipientId, installmentPercent y projectId se extraen SOLO del texto del usuario, NO de la imagen
+- "paymentMethod" y "recipientId" se pueden extraer de la imagen o del texto del usuario
+- Los campos installmentPercent y projectId se extraen SOLO del texto del usuario, NO de la imagen
 - "installmentPercent": usa "100" SOLO si el texto dice "pagado por el cliente", "el cliente pago", "ya esta pago". Caso contrario usa "0"
 - "paymentMethod": debe ser EXACTAMENTE uno de los metodos validos, o null
 - "recipientId": debe ser EXACTAMENTE uno de los IDs listados, o null
@@ -444,6 +445,110 @@ Si no podes extraer algun campo, usa null.`;
       return parsed;
     } catch (error) {
       logger.error('Error parsing text expense JSON', { error });
+      return null;
+    }
+  }
+
+  async parseDocument(pdfBase64, mimeType = 'application/pdf', { caption = '', activeProjects = [], categories = null, recipients = [], paymentMethods = [], vendors = [] } = {}) {
+    const projectList = activeProjects.length > 0
+      ? `\nProyectos activos (usa el ID exacto si el usuario menciona uno en el texto):\n${activeProjects.map(p => `- ID: "${p.id}", Nombre: "${p.name}", Tag: "#${p.tag}"`).join('\n')}`
+      : '';
+
+    const recipientList = recipients.length > 0
+      ? `\nDestinatarios conocidos (usa el ID exacto si el usuario menciona uno en el texto):\n${recipients.map(r => `- ID: "${r.id}", Nombre: "${r.name}", Plataforma: "${r.platform || ''}"`).join('\n')}`
+      : '';
+
+    const methodList = paymentMethods.length > 0
+      ? `\nMetodos de pago validos: ${paymentMethods.join(', ')}`
+      : '';
+
+    const vendorList = vendors.length > 0
+      ? `\nComercio/proveedores conocidos (usa el ID exacto si coincide):\n${vendors.map(v => `- ID: "${v.id}", Nombre: "${v.name}"`).join('\n')}`
+      : '';
+
+    const captionBlock = caption
+      ? `\n\nEl usuario envio este texto junto con el documento: "${caption}"`
+      : '';
+
+    const prompt = `Analiza este documento PDF. Puede ser una factura, presupuesto, ticket de compra, o comprobante de pago.
+${captionBlock}
+
+- "transactionType": detecta el tipo de documento:
+  - "expense" para facturas de compra, presupuestos, recibos de comercio
+  - "payment" para comprobantes de transferencia bancaria, recibos de pago, vouchers de deposito
+- Cada item debe tener "name" (descripcion corta) y "amount" (precio unitario o subtotal)
+- "paymentMethod" y "recipientId" se pueden extraer del documento o del texto del usuario
+- Los campos installmentPercent y projectId se extraen SOLO del texto del usuario, NO del documento
+- "installmentPercent": usa "100" SOLO si el texto dice "pagado por el cliente", "el cliente pago", "ya esta pago". Caso contrario usa "0"
+- "paymentMethod": debe ser EXACTAMENTE uno de los metodos validos, o null
+- "recipientId": debe ser EXACTAMENTE uno de los IDs listados, o null
+- "projectId": debe ser EXACTAMENTE uno de los IDs listados, o null
+- "vendorId": debe ser EXACTAMENTE uno de los IDs de comercios listados, o null si no coincide con ninguno
+- "vendorName": nombre del comercio/local si se detecta uno nuevo no listado, o null
+Si no podes extraer algun campo, usa null.
+${projectList}
+${recipientList}
+${methodList}
+${vendorList}`;
+
+    const schema = {
+      type: 'object',
+      properties: {
+        transactionType: { type: 'string', enum: ['expense', 'payment'] },
+        vendorId: { type: 'string', nullable: true },
+        vendorName: { type: 'string', nullable: true },
+        items: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              name: { type: 'string' },
+              amount: { type: 'number' }
+            },
+            required: ['name', 'amount']
+          }
+        },
+        totalAmount: { type: 'number' },
+        date: { type: 'string', nullable: true },
+        paymentMethod: { type: 'string', nullable: true },
+        recipientId: { type: 'string', nullable: true },
+        installmentPercent: { type: 'string', enum: ['0', '100'] },
+        projectId: { type: 'string', nullable: true }
+      },
+      required: ['transactionType', 'items', 'totalAmount', 'installmentPercent']
+    };
+
+    const parts = [
+      { text: prompt },
+      {
+        inlineData: {
+          mimeType,
+          data: pdfBase64
+        }
+      }
+    ];
+
+    const text = await this.generateContent(null, {
+      maxOutputTokens: 1000,
+      temperature: 0.3,
+      parts,
+      responseSchema: schema
+    });
+
+    if (typeof text !== 'string') return text || null;
+
+    try {
+      const parsed = JSON.parse(text);
+      parsed.installmentPercent = parseInt(parsed.installmentPercent, 10) || 0;
+      if (parsed.vendorId && vendors.length > 0) {
+        const matched = vendors.find(v => v.id === parsed.vendorId);
+        parsed.vendor = matched ? matched.name : (parsed.vendorName || null);
+      } else {
+        parsed.vendor = parsed.vendorName || null;
+      }
+      return parsed;
+    } catch (error) {
+      logger.error('Error parsing document JSON', { error });
       return null;
     }
   }

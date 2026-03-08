@@ -89,6 +89,10 @@
         Foto
       </span>
 
+      <span v-if="expense.fileUrl" class="text-go-text-muted text-xs">
+        PDF
+      </span>
+
       <button
         v-if="canAddInstallment"
         @click="$emit('addInstallment', expense)"

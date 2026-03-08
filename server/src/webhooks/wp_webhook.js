@@ -7,6 +7,7 @@ import GeminiHandler from '../handlers/GeminiHandler.js';
 import StorageHandler from '../handlers/StorageHandler.js';
 import { sendWhatsAppMessage, sendWhatsAppButtons, downloadWhatsAppMedia } from '../helpers/whatsapp.js';
 import { compressImage } from '../helpers/compression.js';
+import pdfParse from 'pdf-parse';
 import { formatAmount, capitalizeFirst } from '../helpers/responseFormatter.js';
 import logger from '../../lib/logger.js';
 
@@ -367,6 +368,18 @@ app.post('/webhook', async (req, res) => {
       const audioId = message.audio?.id;
       logger.info('Audio message received', { from, contactName });
       await processAudioMessage(from, audioId, caption, contactName);
+    } else if (message.type === 'document') {
+      const caption = message.document?.caption || '';
+      const documentId = message.document?.id;
+      const documentMimeType = message.document?.mime_type || '';
+      const filename = message.document?.filename || 'document.pdf';
+      logger.info('Document message received', { from, contactName, filename, documentMimeType });
+
+      if (documentMimeType !== 'application/pdf') {
+        await sendWhatsAppMessage(from, 'Solo se aceptan documentos PDF. Para otros formatos, envia una foto del documento.');
+      } else {
+        await processDocumentMessage(from, documentId, caption, filename, contactName);
+      }
     } else if (message.type === 'interactive') {
       const buttonId = message.interactive?.button_reply?.id;
       const buttonTitle = message.interactive?.button_reply?.title || '';
@@ -684,6 +697,230 @@ async function processImageMessage(phoneNumber, imageId, caption, contactName) {
 }
 
 // ============================================
+// Document (PDF) Message Processing
+// ============================================
+
+const MAX_PDF_SIZE = 5 * 1024 * 1024; // 5MB
+const MAX_PDF_PAGES = 5;
+
+async function processDocumentMessage(phoneNumber, documentId, caption, filename, contactName) {
+  const linkDoc = await db.collection(COLLECTIONS.WHATSAPP_LINKS).doc(phoneNumber).get();
+  if (!linkDoc.exists || linkDoc.data()?.status !== 'linked') {
+    await sendWhatsAppMessage(phoneNumber, 'Este numero no esta vinculado. Envia VINCULAR <codigo> para vincular tu cuenta.');
+    return;
+  }
+
+  const linkData = linkDoc.data();
+  const userId = linkData.userId;
+  const activeProjectId = linkData.activeProjectId || null;
+
+  const activeProjects = await getActiveProjects(userId);
+  if (activeProjects.length === 0) {
+    await sendWhatsAppMessage(phoneNumber, 'No tenes proyectos activos.\n\nCrea uno desde la app web.');
+    return;
+  }
+
+  if (!activeProjectId) {
+    await sendWhatsAppMessage(phoneNumber, 'No tenes un proyecto activo. Envia *PROYECTO* para seleccionar uno.');
+    return;
+  }
+
+  if (!geminiHandler) {
+    await sendWhatsAppMessage(phoneNumber, 'El procesamiento de documentos no esta disponible.');
+    return;
+  }
+
+  await sendWhatsAppMessage(phoneNumber, 'Procesando documento...');
+
+  const documentData = await downloadWhatsAppMedia(documentId);
+  if (!documentData) {
+    await sendWhatsAppMessage(phoneNumber, 'Error al descargar el documento. Intenta nuevamente.');
+    return;
+  }
+
+  // Size check
+  const pdfBuffer = Buffer.from(documentData.base64, 'base64');
+  if (pdfBuffer.length > MAX_PDF_SIZE) {
+    await sendWhatsAppMessage(phoneNumber, `El documento es muy grande (${(pdfBuffer.length / 1024 / 1024).toFixed(1)} MB). El maximo es ${MAX_PDF_SIZE / 1024 / 1024} MB.`);
+    return;
+  }
+
+  // Page count check
+  try {
+    const pdfInfo = await pdfParse(pdfBuffer);
+    if (pdfInfo.numpages > MAX_PDF_PAGES) {
+      await sendWhatsAppMessage(phoneNumber, `El documento tiene ${pdfInfo.numpages} paginas. Solo se aceptan PDFs de hasta ${MAX_PDF_PAGES} paginas.`);
+      return;
+    }
+  } catch (error) {
+    Sentry.captureException(error);
+    logger.error('Error parsing PDF for page count', { error });
+    await sendWhatsAppMessage(phoneNumber, 'No se pudo leer el PDF. Asegurate de que sea un archivo valido.');
+    return;
+  }
+
+  const providerCats = await getProviderCategories(userId, activeProjectId);
+  const recipients = await getProviderRecipients(userId);
+  const vendors = await getProviderVendors(userId);
+
+  const context = {
+    caption,
+    activeProjects: activeProjects.map(p => ({ id: p.id, name: p.name, tag: p.tag })),
+    categories: providerCats,
+    recipients: recipients.map(r => ({ id: r.id, name: r.name, platform: r.platform })),
+    paymentMethods: VALID_PAYMENT_METHODS,
+    vendors
+  };
+
+  const documentResult = await geminiHandler.parseDocument(documentData.base64, 'application/pdf', context);
+  if (isGeminiError(documentResult)) {
+    await sendWhatsAppMessage(phoneNumber, getGeminiErrorMessage());
+    return;
+  }
+  if (!documentResult || !documentResult.totalAmount) {
+    await sendWhatsAppMessage(phoneNumber, 'No pude leer el documento. Intenta con una foto del mismo o registra el gasto manualmente.');
+    return;
+  }
+
+  // Upload PDF to Firebase Storage (non-fatal)
+  let fileUrl = null;
+  try {
+    const storagePath = storageHandler.generatePath('expenses', filename || 'document.pdf');
+    fileUrl = await storageHandler.uploadFile(pdfBuffer, storagePath, 'application/pdf');
+  } catch (error) {
+    Sentry.captureException(error);
+    logger.error('Error uploading PDF document', { error });
+  }
+
+  const transactionType = resolveTransactionType(documentResult.transactionType) || 'expense';
+  const typeDefaults = getTypeDefaults(transactionType);
+  const installmentPercent = documentResult.installmentPercent === 100 ? 100 : (typeDefaults.installmentPercent ?? 0);
+
+  const vendor = documentResult.vendor || null;
+  const title = vendor || (documentResult.items?.[0]?.name) || 'Documento';
+  const description = documentResult.items
+    ? documentResult.items.map(i => typeof i === 'string' ? i : i.name).join(', ')
+    : '';
+
+  const paymentMethod = VALID_PAYMENT_METHODS.includes(documentResult.paymentMethod) ? documentResult.paymentMethod : null;
+
+  let recipientName = null;
+  let recipientBankInfo = null;
+  let recipientPlatform = null;
+  let recipientCuit = null;
+  if (documentResult.recipientId) {
+    const matched = recipients.find(r => r.id === documentResult.recipientId);
+    if (matched) {
+      recipientName = matched.name || null;
+      recipientBankInfo = matched.bankInfo || null;
+      recipientPlatform = matched.platform || null;
+      recipientCuit = matched.cuit || null;
+    }
+  }
+
+  const detectedProjectId = documentResult.projectId && activeProjects.some(p => p.id === documentResult.projectId)
+    ? documentResult.projectId
+    : null;
+
+  let category = transactionType === 'payment' ? 'pago' : null;
+  if (!category) {
+    category = await geminiHandler.categorizeExpense(title, description, providerCats);
+  }
+
+  const items = documentResult.items && documentResult.items.length > 0
+    ? documentResult.items.map(i => typeof i === 'string' ? { name: i, amount: 0 } : { name: i.name || '', amount: i.amount || 0 })
+    : null;
+
+  // Project switching detection
+  const isProjectSwitch = detectedProjectId && detectedProjectId !== activeProjectId;
+
+  if (isProjectSwitch) {
+    const detectedProject = activeProjects.find(p => p.id === detectedProjectId);
+    const expenseData = {
+      projectId: detectedProject.id,
+      providerId: userId,
+      title,
+      description,
+      amount: documentResult.totalAmount,
+      category,
+      type: transactionType,
+      installmentPercent,
+      paymentMethod,
+      recipientName,
+      recipientBankInfo,
+      recipientPlatform,
+      recipientCuit,
+      vendor,
+      linkedExpenseId: null,
+      linkedPaymentId: null,
+      items,
+      imageUrl: null,
+      audioUrl: null,
+      audioTranscription: null,
+      fileUrl,
+      originalMessage: `[Documento] ${caption || filename}`,
+      source: 'whatsapp',
+      projectTag: detectedProject.tag,
+      projectName: detectedProject.name,
+      timestamp: Date.now()
+    };
+
+    setPendingProjectSwitchExpense(phoneNumber, userId, expenseData, detectedProject);
+
+    const confirmMsg = buildExpenseConfirmationMessage(expenseData);
+    const switchBody = `${confirmMsg}\nEste gasto se guardaria en *${detectedProject.name}* (no tu proyecto activo).\n\nSi queres guardar automaticamente a este proyecto, usa el comando *PROYECTO*.`;
+    await sendWhatsAppButtons(phoneNumber, switchBody, [
+      { id: 'confirm_yes', title: 'Si' },
+      { id: 'confirm_no', title: 'No' }
+    ]);
+    return;
+  }
+
+  const project = await resolveProject(userId, activeProjectId);
+  if (!project) {
+    await sendWhatsAppMessage(phoneNumber, 'No tenes un proyecto activo. Envia *PROYECTO* para seleccionar uno.');
+    return;
+  }
+
+  const expenseData = {
+    projectId: project.id,
+    providerId: userId,
+    title,
+    description,
+    amount: documentResult.totalAmount,
+    category,
+    type: transactionType,
+    installmentPercent,
+    paymentMethod,
+    recipientName,
+    recipientBankInfo,
+    recipientPlatform,
+    recipientCuit,
+    vendor,
+    linkedExpenseId: null,
+    linkedPaymentId: null,
+    items,
+    imageUrl: null,
+    audioUrl: null,
+    audioTranscription: null,
+    fileUrl,
+    originalMessage: `[Documento] ${caption || filename}`,
+    source: 'whatsapp',
+    projectTag: project.tag,
+    projectName: project.name,
+    timestamp: Date.now()
+  };
+
+  await setPendingConfirmation(phoneNumber, userId, expenseData);
+
+  const confirmMsg = buildExpenseConfirmationMessage(expenseData);
+  await sendWhatsAppButtons(phoneNumber, confirmMsg, [
+    { id: 'confirm_yes', title: 'Si' },
+    { id: 'confirm_no', title: 'No' }
+  ]);
+}
+
+// ============================================
 // Audio Message Processing
 // ============================================
 
@@ -944,7 +1181,7 @@ async function handleTextExpense(phoneNumber, text) {
     return;
   }
   if (!result || !result.totalAmount) {
-    await sendWhatsAppMessage(phoneNumber, 'No pude entender el mensaje.\n\nPodes registrar gastos con un texto como:\n- "500 clavos"\n- "1500 cemento y 800 arena"\n- "me pagaron 5000 por transferencia"\n\nTambien podes enviar una *foto* o *audio*.\n\nEscribi *AYUDA* para mas info.');
+    await sendWhatsAppMessage(phoneNumber, 'No pude entender el mensaje.\n\nPodes registrar gastos con un texto como:\n- "500 clavos"\n- "1500 cemento y 800 arena"\n- "me pagaron 5000 por transferencia"\n\nTambien podes enviar una *foto*, *audio* o *PDF*.\n\nEscribi *AYUDA* para mas info.');
     return;
   }
 
@@ -1137,6 +1374,7 @@ async function confirmPendingExpense(phoneNumber, pending) {
     imageUrl: data.imageUrl || null,
     audioUrl: data.audioUrl || null,
     audioTranscription: data.audioTranscription || null,
+    fileUrl: data.fileUrl || null,
     vendor: data.vendor || null,
     originalMessage: data.originalMessage || '',
     source: 'whatsapp',
@@ -1185,6 +1423,7 @@ async function confirmPendingExpense(phoneNumber, pending) {
       imageUrl: null,
       audioUrl: null,
       audioTranscription: null,
+      fileUrl: null,
       vendor: data.vendor || null,
       originalMessage: '',
       source: 'whatsapp',
@@ -1264,7 +1503,7 @@ async function handleLinkCommand(phoneNumber, code, contactName) {
     if (activeProjects.length === 1) {
       message += `Proyecto activo: *${activeProjects[0].name}* (${activeProjects[0].tag})\n\n`;
     }
-    message += 'Envia una foto o audio para registrar gastos.\nEnvia *PROYECTO* para cambiar de proyecto.\nEscribi *AYUDA* para mas info.';
+    message += 'Envia una foto, audio o PDF para registrar gastos.\nEnvia *PROYECTO* para cambiar de proyecto.\nEscribi *AYUDA* para mas info.';
 
     await sendWhatsAppMessage(phoneNumber, message);
   } catch (error) {
@@ -1297,7 +1536,7 @@ async function sendHelpMessage(phoneNumber) {
   const helpText = `*Gasto Obra - Ayuda*
 
 *Registrar gastos:*
-Envia un *texto*, *foto* o *audio* y se registra en tu proyecto activo.
+Envia un *texto*, *foto*, *audio* o *PDF* y se registra en tu proyecto activo.
 
 *Ejemplos de texto:*
 - "500 clavos"

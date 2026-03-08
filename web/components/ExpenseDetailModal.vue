@@ -122,6 +122,19 @@
           </div>
         </Teleport>
 
+        <!-- 5b. PDF document -->
+        <div v-if="expense.fileUrl">
+          <a :href="expense.fileUrl" target="_blank" rel="noopener"
+             class="flex items-center gap-3 border border-go-border-subtle rounded-go-md p-3 hover:bg-go-surface-alt transition-colors">
+            <MdiFilePdfBox class="text-2xl text-red-500 shrink-0" />
+            <div class="flex-1 min-w-0">
+              <span class="text-sm font-medium text-go-text">Documento PDF</span>
+              <span class="text-xs text-go-text-muted block">Toca para abrir</span>
+            </div>
+            <MdiOpenInNew class="text-base text-go-text-muted" />
+          </a>
+        </div>
+
         <!-- 6. Audio player -->
         <div v-if="expense.audioUrl" class="space-y-2">
           <audio
@@ -233,6 +246,8 @@
 import MdiClose from '~icons/mdi/close';
 import MdiPencil from '~icons/mdi/pencil';
 import MdiChevronDown from '~icons/mdi/chevron-down';
+import MdiFilePdfBox from '~icons/mdi/file-pdf-box';
+import MdiOpenInNew from '~icons/mdi/open-in-new';
 import { formatPrice, getCategoryLabel, getPaymentMethodLabel, getScopeTypeStyles, TRANSACTION_TYPES } from '~/utils';
 
 const props = defineProps({

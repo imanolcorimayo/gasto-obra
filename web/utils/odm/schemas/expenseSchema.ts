@@ -47,6 +47,10 @@ export class ExpenseSchema extends Schema {
       type: 'string',
       required: false
     },
+    fileUrl: {
+      type: 'string',
+      required: false
+    },
     originalMessage: {
       type: 'string',
       required: false

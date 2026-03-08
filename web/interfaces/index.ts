@@ -57,6 +57,7 @@ export interface Expense {
   imageUrl: string | null;
   audioUrl: string | null;
   audioTranscription: string | null;
+  fileUrl: string | null;
   originalMessage: string;
   paymentMethod: string | null;
   recipientName: string | null;
