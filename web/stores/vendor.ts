@@ -1,6 +1,12 @@
 import { defineStore } from 'pinia';
 import { VendorSchema } from '~/utils/odm/schemas/vendorSchema';
 
+function vendorSlug(name: string): string {
+  return name.trim().toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9\s]/g, '').replace(/\s+/g, ' ');
+}
+
 interface VendorState {
   vendors: string[];
   isLoading: boolean;
@@ -68,7 +74,9 @@ export const useVendorStore = defineStore('vendor', {
     async addVendor(name: string) {
       const normalized = name.trim();
       if (!normalized) return;
-      if (this.vendors.some(v => v.toLowerCase() === normalized.toLowerCase())) return;
+      const newSlug = vendorSlug(normalized);
+      const existing = this.vendors.find(v => vendorSlug(v) === newSlug);
+      if (existing) return; // same slug = same vendor, skip
 
       const updated = [...this.vendors, normalized];
       await this.saveAll(updated);

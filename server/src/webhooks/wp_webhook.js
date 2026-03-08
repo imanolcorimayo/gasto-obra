@@ -78,6 +78,12 @@ async function getProviderRecipients(userId) {
   }
 }
 
+function vendorSlug(name) {
+  return name.trim().toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9\s]/g, '').replace(/\s+/g, ' ');
+}
+
 // Fetch provider's vendors
 async function getProviderVendors(userId) {
   try {
@@ -538,8 +544,8 @@ async function processImageMessage(phoneNumber, imageId, caption, contactName) {
   const typeDefaults = getTypeDefaults(transactionType);
   const installmentPercent = receiptData.installmentPercent === 100 ? 100 : (typeDefaults.installmentPercent ?? 0);
 
-  const vendor = receiptData.vendor || receiptData.storeName || null;
-  const title = receiptData.storeName || (receiptData.items?.[0]?.name) || 'Ticket';
+  const vendor = receiptData.vendor || null;
+  const title = vendor || (receiptData.items?.[0]?.name) || 'Ticket';
   const description = receiptData.items
     ? receiptData.items.map(i => typeof i === 'string' ? i : i.name).join(', ')
     : '';
@@ -1105,11 +1111,16 @@ async function confirmPendingExpense(phoneNumber, pending) {
 
   const expenseRef = await db.collection(COLLECTIONS.EXPENSES).add(expenseDoc);
 
-  // Auto-add new vendor to provider's vendor list
+  // Auto-add new vendor to provider's vendor list (slug-based dedup)
   if (data.vendor) {
     try {
       const existingVendors = await getProviderVendors(userId);
-      if (!existingVendors.some(v => v.name.toLowerCase() === data.vendor.toLowerCase())) {
+      const newSlug = vendorSlug(data.vendor);
+      const match = existingVendors.find(v => vendorSlug(v.name) === newSlug);
+      if (match) {
+        // Use existing vendor name to avoid duplicates
+        expenseRef.update({ vendor: match.name });
+      } else {
         await db.collection(COLLECTIONS.VENDORS).add({ userId, name: data.vendor });
       }
     } catch (e) {

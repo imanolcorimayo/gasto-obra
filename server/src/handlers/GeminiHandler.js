@@ -7,6 +7,12 @@ const MODELS = [
   'gemini-2.5-flash',               // 20 RPD  — fallback 2
 ];
 
+function vendorSlug(name) {
+  return name.trim().toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9\s]/g, '').replace(/\s+/g, ' ');
+}
+
 class GeminiHandler {
   constructor(apiKey) {
     this.apiKey = apiKey;
@@ -126,7 +132,7 @@ class GeminiHandler {
       : '';
 
     const vendorList = vendors.length > 0
-      ? `\nComercio/proveedores conocidos del usuario: ${vendors.map(v => v.name).join(', ')}`
+      ? `\nComercio/proveedores conocidos (usa el ID exacto si coincide):\n${vendors.map(v => `- ID: "${v.id}", Nombre: "${v.name}"`).join('\n')}`
       : '';
 
     const captionBlock = caption
@@ -145,7 +151,8 @@ ${captionBlock}
 - "paymentMethod": debe ser EXACTAMENTE uno de los metodos validos, o null
 - "recipientId": debe ser EXACTAMENTE uno de los IDs listados, o null
 - "projectId": debe ser EXACTAMENTE uno de los IDs listados, o null
-- "vendor": nombre del comercio/local donde se compro. Si coincide con un comercio conocido, usa el nombre exacto de la lista
+- "vendorId": debe ser EXACTAMENTE uno de los IDs de comercios listados, o null si no coincide con ninguno
+- "vendorName": nombre del comercio/local si se detecta uno nuevo no listado, o null
 Si no podes extraer algun campo, usa null.
 ${projectList}
 ${recipientList}
@@ -156,8 +163,8 @@ ${vendorList}`;
       type: 'object',
       properties: {
         transactionType: { type: 'string', enum: ['expense', 'payment'] },
-        storeName: { type: 'string', nullable: true },
-        vendor: { type: 'string', nullable: true },
+        vendorId: { type: 'string', nullable: true },
+        vendorName: { type: 'string', nullable: true },
         items: {
           type: 'array',
           items: {
@@ -201,7 +208,13 @@ ${vendorList}`;
     try {
       const parsed = JSON.parse(text);
       parsed.installmentPercent = parseInt(parsed.installmentPercent, 10) || 0;
-      parsed.vendor = parsed.vendor || parsed.storeName || null;
+      // Resolve vendor: prefer matched vendorId, fall back to vendorName
+      if (parsed.vendorId && vendors.length > 0) {
+        const matched = vendors.find(v => v.id === parsed.vendorId);
+        parsed.vendor = matched ? matched.name : (parsed.vendorName || null);
+      } else {
+        parsed.vendor = parsed.vendorName || null;
+      }
       return parsed;
     } catch (error) {
       logger.error('Error parsing receipt JSON', { error });
@@ -227,7 +240,7 @@ ${vendorList}`;
       : '\nMetodos de pago validos: transferencia, efectivo, tarjeta, mercadopago';
 
     const vendorList = vendors.length > 0
-      ? `\nComercio/proveedores conocidos del usuario: ${vendors.map(v => v.name).join(', ')}`
+      ? `\nComercio/proveedores conocidos (usa el ID exacto si coincide):\n${vendors.map(v => `- ID: "${v.id}", Nombre: "${v.name}"`).join('\n')}`
       : '';
 
     const prompt = `Transcribi este audio en español argentino. El audio describe un gasto de obra, un pago recibido, o un gasto propio del proveedor.
@@ -252,7 +265,8 @@ Reglas importantes:
 - "paymentMethod": debe ser EXACTAMENTE uno de los metodos validos, o null si no se menciona
 - "recipientId": debe ser EXACTAMENTE uno de los IDs de destinatarios listados, o null si no se menciona
 - "projectId": debe ser EXACTAMENTE uno de los IDs de proyectos listados si el usuario menciona un proyecto, o null
-- "vendor": nombre del comercio/local donde se compro. Si coincide con un comercio conocido, usa el nombre exacto de la lista
+- "vendorId": debe ser EXACTAMENTE uno de los IDs de comercios listados, o null si no coincide con ninguno
+- "vendorName": nombre del comercio/local si se detecta uno nuevo no listado, o null
 Si no podes extraer algun campo, usa null.`;
 
     const schema = {
@@ -279,7 +293,8 @@ Si no podes extraer algun campo, usa null.`;
         recipientId: { type: 'string', nullable: true },
         installmentPercent: { type: 'string', enum: ['0', '100'] },
         projectId: { type: 'string', nullable: true },
-        vendor: { type: 'string', nullable: true }
+        vendorId: { type: 'string', nullable: true },
+        vendorName: { type: 'string', nullable: true }
       },
       required: ['transcription', 'transactionType', 'title', 'items', 'totalAmount', 'installmentPercent']
     };
@@ -306,6 +321,12 @@ Si no podes extraer algun campo, usa null.`;
     try {
       const parsed = JSON.parse(text);
       parsed.installmentPercent = parseInt(parsed.installmentPercent, 10) || 0;
+      if (parsed.vendorId && vendors.length > 0) {
+        const matched = vendors.find(v => v.id === parsed.vendorId);
+        parsed.vendor = matched ? matched.name : (parsed.vendorName || null);
+      } else {
+        parsed.vendor = parsed.vendorName || null;
+      }
       return parsed;
     } catch (error) {
       logger.error('Error parsing audio transcription JSON', { error });
@@ -331,7 +352,7 @@ Si no podes extraer algun campo, usa null.`;
       : '\nMetodos de pago validos: transferencia, efectivo, tarjeta, mercadopago';
 
     const vendorList = vendors.length > 0
-      ? `\nComercio/proveedores conocidos del usuario: ${vendors.map(v => v.name).join(', ')}`
+      ? `\nComercio/proveedores conocidos (usa el ID exacto si coincide):\n${vendors.map(v => `- ID: "${v.id}", Nombre: "${v.name}"`).join('\n')}`
       : '';
 
     const prompt = `Analiza este mensaje de un proveedor de obra que describe un gasto, pago, o gasto propio. Extrae la informacion en formato JSON:
@@ -346,7 +367,8 @@ Si no podes extraer algun campo, usa null.`;
   "recipientId": "<ID del destinatario o null>",
   "installmentPercent": 0,
   "projectId": "<ID del proyecto si se menciona, o null>",
-  "vendor": "<comercio donde se compro, o null>"
+  "vendorId": "<ID del comercio conocido, o null>",
+  "vendorName": "<nombre del comercio nuevo, o null>"
 }
 
 Mensaje: "${text}"
@@ -369,7 +391,8 @@ Reglas importantes:
 - "paymentMethod": debe ser EXACTAMENTE uno de los metodos validos, o null si no se menciona
 - "recipientId": debe ser EXACTAMENTE uno de los IDs de destinatarios listados, o null si no se menciona
 - "projectId": debe ser EXACTAMENTE uno de los IDs de proyectos listados si el usuario menciona un proyecto, o null
-- "vendor": nombre del comercio/local donde se compro. Si coincide con un comercio conocido, usa el nombre exacto de la lista
+- "vendorId": debe ser EXACTAMENTE uno de los IDs de comercios listados, o null si no coincide con ninguno
+- "vendorName": nombre del comercio/local si se detecta uno nuevo no listado, o null
 Si no podes extraer algun campo, usa null.`;
 
     const schema = {
@@ -395,7 +418,8 @@ Si no podes extraer algun campo, usa null.`;
         recipientId: { type: 'string', nullable: true },
         installmentPercent: { type: 'string', enum: ['0', '100'] },
         projectId: { type: 'string', nullable: true },
-        vendor: { type: 'string', nullable: true }
+        vendorId: { type: 'string', nullable: true },
+        vendorName: { type: 'string', nullable: true }
       },
       required: ['transactionType', 'title', 'items', 'totalAmount', 'installmentPercent']
     };
@@ -411,6 +435,12 @@ Si no podes extraer algun campo, usa null.`;
     try {
       const parsed = JSON.parse(responseText);
       parsed.installmentPercent = parseInt(parsed.installmentPercent, 10) || 0;
+      if (parsed.vendorId && vendors.length > 0) {
+        const matched = vendors.find(v => v.id === parsed.vendorId);
+        parsed.vendor = matched ? matched.name : (parsed.vendorName || null);
+      } else {
+        parsed.vendor = parsed.vendorName || null;
+      }
       return parsed;
     } catch (error) {
       logger.error('Error parsing text expense JSON', { error });
