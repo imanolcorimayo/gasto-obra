@@ -91,7 +91,8 @@
           <tr
             v-for="row in tableRows"
             :key="row.id"
-            class="border-b border-go-border-subtle hover:bg-go-surface/50 transition-colors"
+            class="border-b border-go-border-subtle hover:bg-go-surface/50 transition-colors cursor-pointer"
+            @click="$emit('viewDetail', row.expense)"
           >
             <td class="py-3 pr-3 text-go-text-muted text-xs tabular-nums whitespace-nowrap">{{ row.date }}</td>
             <td class="py-3 pr-3 text-go-text">
@@ -188,7 +189,7 @@ const resolvedCategories = computed(() =>
   props.categories.length > 0 ? props.categories : DEFAULT_EXPENSE_CATEGORIES
 );
 
-defineEmits(['edit', 'addInstallment']);
+defineEmits(['edit', 'addInstallment', 'viewDetail']);
 
 const selectedCategory = ref('');
 const selectedType = ref('');

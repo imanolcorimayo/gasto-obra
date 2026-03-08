@@ -1,7 +1,8 @@
 <template>
   <div
-    class="bg-go-surface rounded-go-md border border-go-border p-4"
+    class="bg-go-surface rounded-go-md border border-go-border p-4 cursor-pointer"
     :class="isPayment ? 'border-l-[3px] border-l-go-secondary' : 'border-l-[3px] border-l-go-primary'"
+    @click="$emit('viewDetail', expense)"
   >
     <div class="flex items-start justify-between">
       <div class="flex-1">
@@ -85,6 +86,8 @@ const props = defineProps({
   expense: { type: Object, required: true },
   categories: { type: Array, default: () => [] }
 });
+
+defineEmits(['viewDetail']);
 
 const isPayment = computed(() => props.expense.type === 'payment');
 

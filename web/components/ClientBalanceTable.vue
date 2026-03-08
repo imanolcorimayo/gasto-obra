@@ -19,7 +19,8 @@
         <tr
           v-for="(row, idx) in rows"
           :key="idx"
-          class="border-b border-go-border-subtle hover:bg-go-surface/50 transition-colors"
+          class="border-b border-go-border-subtle hover:bg-go-surface/50 transition-colors cursor-pointer"
+          @click="$emit('viewDetail', row.rawExpense)"
         >
           <td class="py-3 pr-3 text-go-text-muted text-xs tabular-nums whitespace-nowrap">{{ row.date }}</td>
           <td class="py-3 pr-3 text-go-text">
@@ -63,6 +64,8 @@ const props = defineProps({
   expenses: { type: Array, default: () => [] }
 });
 
+defineEmits(['viewDetail']);
+
 function getTimestamp(e) {
   const raw = e.date || e.createdAt;
   if (!raw) return 0;
@@ -102,7 +105,8 @@ const rows = computed(() => {
       scopeType: e.scopeType || 'original',
       expense: isPayment ? null : amount,
       payment: isPayment ? amount : null,
-      balance
+      balance,
+      rawExpense: e
     };
   });
 

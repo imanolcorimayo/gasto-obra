@@ -174,16 +174,28 @@
                   :key="expense.id"
                   :expense="expense"
                   :categories="resolvedCategories"
+                  @view-detail="openDetailModal"
                 />
               </div>
             </div>
           </template>
 
           <template v-else>
-            <ClientBalanceTable :expenses="filteredAll" />
+            <ClientBalanceTable :expenses="filteredAll" @view-detail="openDetailModal" />
           </template>
         </div>
       </template>
+
+      <!-- Detail expense modal -->
+      <ExpenseDetailModal
+        :show="showDetailModal"
+        :expense="detailExpense"
+        :expenses="expenses"
+        :categories="resolvedCategories"
+        :editable="false"
+        @close="showDetailModal = false"
+        @view-expense="handleDetailViewExpense"
+      />
 
       <!-- Join as client button -->
       <div v-if="project" class="mt-2 mb-8 bg-go-surface rounded-go-xl border border-go-border p-5 text-center">
@@ -230,6 +242,8 @@ const project = ref(null);
 const expenses = ref([]);
 const selectedType = ref('');
 const viewMode = ref('cards');
+const showDetailModal = ref(false);
+const detailExpense = ref(null);
 
 const resolvedCategories = computed(() => {
   if (!project.value) return [];
@@ -292,6 +306,15 @@ const cardExpenses = computed(() =>
 // Apply type filter to each view
 const filteredCards = computed(() => applyTypeFilter(cardExpenses.value));
 const filteredAll = computed(() => applyTypeFilter(allClientExpenses.value));
+
+function openDetailModal(expense) {
+  detailExpense.value = expense;
+  showDetailModal.value = true;
+}
+
+function handleDetailViewExpense(expense) {
+  detailExpense.value = expense;
+}
 
 function applyTypeFilter(list) {
   if (!selectedType.value) return list;

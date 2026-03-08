@@ -223,6 +223,7 @@
             :loading="expenseStore.isLoading"
             @edit="openEditModal"
             @add-installment="handleAddInstallment"
+            @view-detail="openDetailModal"
           />
 
           <!-- Entregas tab -->
@@ -306,6 +307,18 @@
         @submit="handleCreateSubmit"
       />
 
+      <!-- Detail expense modal -->
+      <ExpenseDetailModal
+        :show="showDetailModal"
+        :expense="detailExpense"
+        :expenses="expenseStore.expenses"
+        :categories="resolvedCategories"
+        :editable="true"
+        @close="showDetailModal = false"
+        @edit="handleDetailEdit"
+        @view-expense="handleDetailViewExpense"
+      />
+
       <!-- Edit expense modal -->
       <ExpenseEditModal
         :show="showEditModal"
@@ -377,6 +390,8 @@ const isEditingExpense = ref(false);
 const isDeletingExpense = ref(false);
 const isCreatingDelivery = ref(false);
 const isDeletingDelivery = ref(false);
+const showDetailModal = ref(false);
+const detailExpense = ref(null);
 
 const resolvedCategories = computed(() => {
   const id = route.params.id;
@@ -589,6 +604,20 @@ async function handleCreateSubmit(formData) {
   } finally {
     isCreatingExpense.value = false;
   }
+}
+
+function openDetailModal(expense) {
+  detailExpense.value = expense;
+  showDetailModal.value = true;
+}
+
+function handleDetailEdit(expense) {
+  showDetailModal.value = false;
+  openEditModal(expense);
+}
+
+function handleDetailViewExpense(expense) {
+  detailExpense.value = expense;
 }
 
 function openEditModal(expense) {
