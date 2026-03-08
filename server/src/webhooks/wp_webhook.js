@@ -7,7 +7,9 @@ import GeminiHandler from '../handlers/GeminiHandler.js';
 import StorageHandler from '../handlers/StorageHandler.js';
 import { sendWhatsAppMessage, sendWhatsAppButtons, downloadWhatsAppMedia } from '../helpers/whatsapp.js';
 import { compressImage } from '../helpers/compression.js';
-import pdfParse from 'pdf-parse';
+import { createRequire } from 'module';
+const require = createRequire(import.meta.url);
+const pdfParse = require('pdf-parse');
 import { formatAmount, capitalizeFirst } from '../helpers/responseFormatter.js';
 import logger from '../../lib/logger.js';
 
