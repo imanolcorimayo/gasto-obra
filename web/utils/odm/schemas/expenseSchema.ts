@@ -118,6 +118,14 @@ export class ExpenseSchema extends Schema {
       required: false,
       maxLength: 100
     },
+    amountBase: {
+      type: 'number',
+      required: false
+    },
+    managementFeePercent: {
+      type: 'number',
+      required: false
+    },
     source: {
       type: 'string',
       required: true,

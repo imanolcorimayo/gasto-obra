@@ -101,10 +101,25 @@
               :class="form.installmentPercent >= 100 ? 'text-go-success' : 'text-go-info'"
             >
               <template v-if="!form.installmentPercent">Sin pago directo — se descuenta del saldo del cliente</template>
-              <template v-else-if="form.installmentPercent >= 100">Pagado — se genera un cobro automático por {{ form.amount ? formatPrice(parseFloat(form.amount)) : 'el monto' }}</template>
+              <template v-else-if="form.installmentPercent >= 100">Pagado — se genera un cobro automático por {{ formatPrice(totalWithFee) }}</template>
               <template v-else-if="form.amount">
                 <span class="tabular-nums">Parcial — se genera un cobro automático de {{ formatPrice(editInstallmentAmount) }}</span>
               </template>
+            </p>
+          </div>
+
+          <!-- Management fee toggle (expense only, when provider has fee > 0 or expense already has fee) -->
+          <div v-if="form.type === 'expense' && (managementFeePercent > 0 || form.existingFeePercent > 0)">
+            <label class="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                v-model="form.applyManagementFee"
+                class="w-4 h-4 rounded border-go-border text-go-primary focus:ring-go-primary/40"
+              />
+              <span class="text-sm text-go-text">Aplicar gestión ({{ activeFeePercent || managementFeePercent }}%)</span>
+            </label>
+            <p v-if="form.applyManagementFee && form.amount" class="text-xs text-go-text-muted mt-1 tabular-nums ml-6">
+              {{ formatPrice(parseFloat(form.amount)) }} + {{ activeFeePercent }}% gestión = {{ formatPrice(totalWithFee) }}
             </p>
           </div>
 
@@ -308,7 +323,8 @@ const props = defineProps({
   projects: { type: Array, default: () => [] },
   categories: { type: Array, default: () => [] },
   isSaving: { type: Boolean, default: false },
-  isDeleting: { type: Boolean, default: false }
+  isDeleting: { type: Boolean, default: false },
+  managementFeePercent: { type: Number, default: 0 }
 });
 
 const resolvedCategories = computed(() =>
@@ -323,9 +339,21 @@ const showMoveProject = ref(false);
 
 const isPartial = computed(() => form.installmentPercent > 0 && form.installmentPercent < 100);
 
+const activeFeePercent = computed(() => {
+  if (!form.applyManagementFee) return 0;
+  return form.existingFeePercent ?? props.managementFeePercent;
+});
+
+const totalWithFee = computed(() => {
+  const base = parseFloat(form.amount) || 0;
+  if (activeFeePercent.value > 0) {
+    return Math.round(base * (1 + activeFeePercent.value / 100));
+  }
+  return base;
+});
+
 const editInstallmentAmount = computed(() => {
-  const total = parseFloat(form.amount) || 0;
-  return Math.round(total * form.installmentPercent / 100);
+  return Math.round(totalWithFee.value * form.installmentPercent / 100);
 });
 
 const typeOptions = [
@@ -350,7 +378,9 @@ const form = reactive({
   projectId: '',
   installmentPercent: 100,
   installmentGroupId: null,
-  vendor: ''
+  vendor: '',
+  applyManagementFee: false,
+  existingFeePercent: null
 });
 
 // Lock background scroll
@@ -380,6 +410,12 @@ watch(() => props.expense, (expense) => {
     form.installmentPercent = percent;
     form.installmentGroupId = expense.installmentGroupId || null;
     form.vendor = expense.vendor || '';
+    form.applyManagementFee = expense.managementFeePercent != null && expense.managementFeePercent > 0;
+    form.existingFeePercent = expense.managementFeePercent ?? null;
+    // If expense has fee, show base amount (without fee) in the amount field
+    if (expense.amountBase != null && expense.managementFeePercent > 0) {
+      form.amount = expense.amountBase;
+    }
     showItems.value = form.items.length > 0;
     showMoveProject.value = false;
 
@@ -430,6 +466,9 @@ watch(() => form.items, (items) => {
 
 function handleSave() {
   const percent = form.type === 'expense' ? form.installmentPercent : null;
+  const hasFee = form.applyManagementFee && activeFeePercent.value > 0 && form.type === 'expense';
+  const baseAmount = parseFloat(form.amount) || 0;
+  const amountWithFee = hasFee ? Math.round(baseAmount * (1 + activeFeePercent.value / 100)) : baseAmount;
   const partialCalc = percent !== null && percent > 0 && percent < 100;
   const needsGroup = partialCalc;
 
@@ -446,7 +485,7 @@ function handleSave() {
 
   const data = {
     title: form.title,
-    amount: partialCalc ? editInstallmentAmount.value : parseFloat(form.amount),
+    amount: partialCalc ? Math.round(amountWithFee * percent / 100) : amountWithFee,
     category: form.type === 'payment' ? 'pago' : form.category,
     description: form.description,
     type: form.type,
@@ -460,7 +499,9 @@ function handleSave() {
     projectId: form.projectId,
     installmentPercent: percent,
     installmentGroupId: needsGroup ? (form.installmentGroupId || crypto.randomUUID()) : null,
-    vendor: form.vendor || null
+    vendor: form.vendor || null,
+    amountBase: hasFee ? baseAmount : null,
+    managementFeePercent: hasFee ? activeFeePercent.value : null
   };
   emit('save', {
     id: props.expense.id,

@@ -118,7 +118,7 @@ class GeminiHandler {
     return { error: 'unavailable' };
   }
 
-  async parseReceiptImage(imageBase64, mimeType = 'image/jpeg', { caption = '', activeProjects = [], categories = null, recipients = [], paymentMethods = [], vendors = [] } = {}) {
+  async parseReceiptImage(imageBase64, mimeType = 'image/jpeg', { caption = '', activeProjects = [], categories = null, recipients = [], paymentMethods = [], vendors = [], managementFeePercent = 0 } = {}) {
     const projectList = activeProjects.length > 0
       ? `\nProyectos activos (usa el ID exacto si el usuario menciona uno en el texto):\n${activeProjects.map(p => `- ID: "${p.id}", Nombre: "${p.name}", Tag: "#${p.tag}"`).join('\n')}`
       : '';
@@ -139,6 +139,10 @@ class GeminiHandler {
       ? `\n\nEl usuario envio este texto junto con la imagen: "${caption}"`
       : '';
 
+    const feeBlock = managementFeePercent > 0
+      ? `\n- "applyManagementFee": true si el texto dice "con gestión", "con fee", "con comisión". false en caso contrario. Solo aplica a expenses.`
+      : '';
+
     const prompt = `Analiza esta imagen. Puede ser un ticket/factura de compra, un comprobante de transferencia bancaria, o un comprobante de pago.
 ${captionBlock}
 
@@ -153,37 +157,42 @@ ${captionBlock}
 - "recipientId": debe ser EXACTAMENTE uno de los IDs listados, o null
 - "projectId": debe ser EXACTAMENTE uno de los IDs listados, o null
 - "vendorId": debe ser EXACTAMENTE uno de los IDs de comercios listados, o null si no coincide con ninguno
-- "vendorName": nombre del comercio/local si se detecta uno nuevo no listado, o null
+- "vendorName": nombre del comercio/local si se detecta uno nuevo no listado, o null${feeBlock}
 Si no podes extraer algun campo, usa null.
 ${projectList}
 ${recipientList}
 ${methodList}
 ${vendorList}`;
 
+    const schemaProps = {
+      transactionType: { type: 'string', enum: ['expense', 'payment'] },
+      vendorId: { type: 'string', nullable: true },
+      vendorName: { type: 'string', nullable: true },
+      items: {
+        type: 'array',
+        items: {
+          type: 'object',
+          properties: {
+            name: { type: 'string' },
+            amount: { type: 'number' }
+          },
+          required: ['name', 'amount']
+        }
+      },
+      totalAmount: { type: 'number' },
+      date: { type: 'string', nullable: true },
+      paymentMethod: { type: 'string', nullable: true },
+      recipientId: { type: 'string', nullable: true },
+      installmentPercent: { type: 'string', enum: ['0', '100'] },
+      projectId: { type: 'string', nullable: true }
+    };
+    if (managementFeePercent > 0) {
+      schemaProps.applyManagementFee = { type: 'boolean' };
+    }
+
     const schema = {
       type: 'object',
-      properties: {
-        transactionType: { type: 'string', enum: ['expense', 'payment'] },
-        vendorId: { type: 'string', nullable: true },
-        vendorName: { type: 'string', nullable: true },
-        items: {
-          type: 'array',
-          items: {
-            type: 'object',
-            properties: {
-              name: { type: 'string' },
-              amount: { type: 'number' }
-            },
-            required: ['name', 'amount']
-          }
-        },
-        totalAmount: { type: 'number' },
-        date: { type: 'string', nullable: true },
-        paymentMethod: { type: 'string', nullable: true },
-        recipientId: { type: 'string', nullable: true },
-        installmentPercent: { type: 'string', enum: ['0', '100'] },
-        projectId: { type: 'string', nullable: true }
-      },
+      properties: schemaProps,
       required: ['transactionType', 'items', 'totalAmount', 'installmentPercent']
     };
 
@@ -223,7 +232,7 @@ ${vendorList}`;
     }
   }
 
-  async transcribeAudio(audioBase64, mimeType = 'audio/ogg', { activeProjects = [], categories = null, recipients = [], paymentMethods = [], vendors = [] } = {}) {
+  async transcribeAudio(audioBase64, mimeType = 'audio/ogg', { activeProjects = [], categories = null, recipients = [], paymentMethods = [], vendors = [], managementFeePercent = 0 } = {}) {
     const projectList = activeProjects.length > 0
       ? `\nProyectos activos (usa el ID exacto si el usuario menciona uno):\n${activeProjects.map(p => `- ID: "${p.id}", Nombre: "${p.name}", Tag: "#${p.tag}"`).join('\n')}`
       : '';
@@ -242,6 +251,10 @@ ${vendorList}`;
 
     const vendorList = vendors.length > 0
       ? `\nComercio/proveedores conocidos (usa el ID exacto si coincide):\n${vendors.map(v => `- ID: "${v.id}", Nombre: "${v.name}"`).join('\n')}`
+      : '';
+
+    const feeRule = managementFeePercent > 0
+      ? `\n- "applyManagementFee": true si dice "con gestión", "con fee", "con comisión". false en caso contrario. Solo aplica a expenses.`
       : '';
 
     const prompt = `Transcribi este audio en español argentino. El audio describe un gasto de obra, un pago recibido, o un gasto propio del proveedor.
@@ -267,36 +280,41 @@ Reglas importantes:
 - "recipientId": debe ser EXACTAMENTE uno de los IDs de destinatarios listados, o null si no se menciona
 - "projectId": debe ser EXACTAMENTE uno de los IDs de proyectos listados si el usuario menciona un proyecto, o null
 - "vendorId": debe ser EXACTAMENTE uno de los IDs de comercios listados, o null si no coincide con ninguno
-- "vendorName": nombre del comercio/local si se detecta uno nuevo no listado, o null
+- "vendorName": nombre del comercio/local si se detecta uno nuevo no listado, o null${feeRule}
 Si no podes extraer algun campo, usa null.`;
+
+    const audioSchemaProps = {
+      transcription: { type: 'string' },
+      transactionType: { type: 'string', enum: ['expense', 'payment', 'provider_expense'] },
+      title: { type: 'string' },
+      items: {
+        type: 'array',
+        items: {
+          type: 'object',
+          properties: {
+            name: { type: 'string' },
+            amount: { type: 'number' }
+          },
+          required: ['name', 'amount']
+        }
+      },
+      totalAmount: { type: 'number' },
+      description: { type: 'string', nullable: true },
+      category: { type: 'string', nullable: true },
+      paymentMethod: { type: 'string', nullable: true },
+      recipientId: { type: 'string', nullable: true },
+      installmentPercent: { type: 'string', enum: ['0', '100'] },
+      projectId: { type: 'string', nullable: true },
+      vendorId: { type: 'string', nullable: true },
+      vendorName: { type: 'string', nullable: true }
+    };
+    if (managementFeePercent > 0) {
+      audioSchemaProps.applyManagementFee = { type: 'boolean' };
+    }
 
     const schema = {
       type: 'object',
-      properties: {
-        transcription: { type: 'string' },
-        transactionType: { type: 'string', enum: ['expense', 'payment', 'provider_expense'] },
-        title: { type: 'string' },
-        items: {
-          type: 'array',
-          items: {
-            type: 'object',
-            properties: {
-              name: { type: 'string' },
-              amount: { type: 'number' }
-            },
-            required: ['name', 'amount']
-          }
-        },
-        totalAmount: { type: 'number' },
-        description: { type: 'string', nullable: true },
-        category: { type: 'string', nullable: true },
-        paymentMethod: { type: 'string', nullable: true },
-        recipientId: { type: 'string', nullable: true },
-        installmentPercent: { type: 'string', enum: ['0', '100'] },
-        projectId: { type: 'string', nullable: true },
-        vendorId: { type: 'string', nullable: true },
-        vendorName: { type: 'string', nullable: true }
-      },
+      properties: audioSchemaProps,
       required: ['transcription', 'transactionType', 'title', 'items', 'totalAmount', 'installmentPercent']
     };
 
@@ -335,7 +353,7 @@ Si no podes extraer algun campo, usa null.`;
     }
   }
 
-  async parseTextExpense(text, { activeProjects = [], categories = null, recipients = [], paymentMethods = [], vendors = [] } = {}) {
+  async parseTextExpense(text, { activeProjects = [], categories = null, recipients = [], paymentMethods = [], vendors = [], managementFeePercent = 0 } = {}) {
     const projectList = activeProjects.length > 0
       ? `\nProyectos activos (usa el ID exacto si el usuario menciona uno):\n${activeProjects.map(p => `- ID: "${p.id}", Nombre: "${p.name}", Tag: "#${p.tag}"`).join('\n')}`
       : '';
@@ -393,35 +411,40 @@ Reglas importantes:
 - "recipientId": debe ser EXACTAMENTE uno de los IDs de destinatarios listados, o null si no se menciona
 - "projectId": debe ser EXACTAMENTE uno de los IDs de proyectos listados si el usuario menciona un proyecto, o null
 - "vendorId": debe ser EXACTAMENTE uno de los IDs de comercios listados, o null si no coincide con ninguno
-- "vendorName": nombre del comercio/local si se detecta uno nuevo no listado, o null
+- "vendorName": nombre del comercio/local si se detecta uno nuevo no listado, o null${managementFeePercent > 0 ? '\n- "applyManagementFee": true si dice "con gestión", "con fee", "con comisión". false en caso contrario. Solo aplica a expenses.' : ''}
 Si no podes extraer algun campo, usa null.`;
+
+    const textSchemaProps = {
+      transactionType: { type: 'string', enum: ['expense', 'payment', 'provider_expense'] },
+      title: { type: 'string' },
+      items: {
+        type: 'array',
+        items: {
+          type: 'object',
+          properties: {
+            name: { type: 'string' },
+            amount: { type: 'number' }
+          },
+          required: ['name', 'amount']
+        }
+      },
+      totalAmount: { type: 'number' },
+      description: { type: 'string', nullable: true },
+      category: { type: 'string', nullable: true },
+      paymentMethod: { type: 'string', nullable: true },
+      recipientId: { type: 'string', nullable: true },
+      installmentPercent: { type: 'string', enum: ['0', '100'] },
+      projectId: { type: 'string', nullable: true },
+      vendorId: { type: 'string', nullable: true },
+      vendorName: { type: 'string', nullable: true }
+    };
+    if (managementFeePercent > 0) {
+      textSchemaProps.applyManagementFee = { type: 'boolean' };
+    }
 
     const schema = {
       type: 'object',
-      properties: {
-        transactionType: { type: 'string', enum: ['expense', 'payment', 'provider_expense'] },
-        title: { type: 'string' },
-        items: {
-          type: 'array',
-          items: {
-            type: 'object',
-            properties: {
-              name: { type: 'string' },
-              amount: { type: 'number' }
-            },
-            required: ['name', 'amount']
-          }
-        },
-        totalAmount: { type: 'number' },
-        description: { type: 'string', nullable: true },
-        category: { type: 'string', nullable: true },
-        paymentMethod: { type: 'string', nullable: true },
-        recipientId: { type: 'string', nullable: true },
-        installmentPercent: { type: 'string', enum: ['0', '100'] },
-        projectId: { type: 'string', nullable: true },
-        vendorId: { type: 'string', nullable: true },
-        vendorName: { type: 'string', nullable: true }
-      },
+      properties: textSchemaProps,
       required: ['transactionType', 'title', 'items', 'totalAmount', 'installmentPercent']
     };
 
@@ -449,7 +472,7 @@ Si no podes extraer algun campo, usa null.`;
     }
   }
 
-  async parseDocument(pdfBase64, mimeType = 'application/pdf', { caption = '', activeProjects = [], categories = null, recipients = [], paymentMethods = [], vendors = [] } = {}) {
+  async parseDocument(pdfBase64, mimeType = 'application/pdf', { caption = '', activeProjects = [], categories = null, recipients = [], paymentMethods = [], vendors = [], managementFeePercent = 0 } = {}) {
     const projectList = activeProjects.length > 0
       ? `\nProyectos activos (usa el ID exacto si el usuario menciona uno en el texto):\n${activeProjects.map(p => `- ID: "${p.id}", Nombre: "${p.name}", Tag: "#${p.tag}"`).join('\n')}`
       : '';
@@ -484,37 +507,42 @@ ${captionBlock}
 - "recipientId": debe ser EXACTAMENTE uno de los IDs listados, o null
 - "projectId": debe ser EXACTAMENTE uno de los IDs listados, o null
 - "vendorId": debe ser EXACTAMENTE uno de los IDs de comercios listados, o null si no coincide con ninguno
-- "vendorName": nombre del comercio/local si se detecta uno nuevo no listado, o null
+- "vendorName": nombre del comercio/local si se detecta uno nuevo no listado, o null${managementFeePercent > 0 ? '\n- "applyManagementFee": true si el texto dice "con gestión", "con fee", "con comisión". false en caso contrario. Solo aplica a expenses.' : ''}
 Si no podes extraer algun campo, usa null.
 ${projectList}
 ${recipientList}
 ${methodList}
 ${vendorList}`;
 
+    const docSchemaProps = {
+      transactionType: { type: 'string', enum: ['expense', 'payment'] },
+      vendorId: { type: 'string', nullable: true },
+      vendorName: { type: 'string', nullable: true },
+      items: {
+        type: 'array',
+        items: {
+          type: 'object',
+          properties: {
+            name: { type: 'string' },
+            amount: { type: 'number' }
+          },
+          required: ['name', 'amount']
+        }
+      },
+      totalAmount: { type: 'number' },
+      date: { type: 'string', nullable: true },
+      paymentMethod: { type: 'string', nullable: true },
+      recipientId: { type: 'string', nullable: true },
+      installmentPercent: { type: 'string', enum: ['0', '100'] },
+      projectId: { type: 'string', nullable: true }
+    };
+    if (managementFeePercent > 0) {
+      docSchemaProps.applyManagementFee = { type: 'boolean' };
+    }
+
     const schema = {
       type: 'object',
-      properties: {
-        transactionType: { type: 'string', enum: ['expense', 'payment'] },
-        vendorId: { type: 'string', nullable: true },
-        vendorName: { type: 'string', nullable: true },
-        items: {
-          type: 'array',
-          items: {
-            type: 'object',
-            properties: {
-              name: { type: 'string' },
-              amount: { type: 'number' }
-            },
-            required: ['name', 'amount']
-          }
-        },
-        totalAmount: { type: 'number' },
-        date: { type: 'string', nullable: true },
-        paymentMethod: { type: 'string', nullable: true },
-        recipientId: { type: 'string', nullable: true },
-        installmentPercent: { type: 'string', enum: ['0', '100'] },
-        projectId: { type: 'string', nullable: true }
-      },
+      properties: docSchemaProps,
       required: ['transactionType', 'items', 'totalAmount', 'installmentPercent']
     };
 

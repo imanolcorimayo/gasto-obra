@@ -285,12 +285,13 @@ html.light {
     @apply px-5 py-2.5 font-medium rounded-go-md transition-all duration-150 active:scale-[0.97] focus:outline-none focus:ring-2 focus:ring-offset-2;
     background-color: var(--go-danger-muted);
     color: var(--go-danger);
-    border: 1px solid var(--go-danger-muted);
-    --tw-ring-color: rgba(255, 171, 64, 0.5);
+    border: 1px solid var(--go-danger);
+    --tw-ring-color: var(--go-danger-muted);
     --tw-ring-offset-color: var(--go-bg);
   }
   .btn-danger:hover {
-    background-color: var(--go-danger-muted);
+    background-color: var(--go-danger);
+    color: white;
   }
 
   .btn-success {

@@ -75,6 +75,10 @@
       <span v-if="expense.recipientName" class="text-go-text-tertiary text-xs">
         &rarr; {{ expense.recipientName }}{{ expense.recipientPlatform ? ` (${expense.recipientPlatform})` : '' }}
       </span>
+
+      <span v-if="expense.managementFeePercent" class="text-go-text-muted text-xs">
+        incl. {{ expense.managementFeePercent }}% gestión
+      </span>
     </div>
   </div>
 </template>

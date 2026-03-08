@@ -94,7 +94,8 @@ async function sendDailySummaries() {
         .map(e => {
           const cat = e.category ? ` (${capitalizeFirst(e.category)})` : '';
           const vendorTag = e.vendor ? ` [${e.vendor}]` : '';
-          return `  ${formatAmount(e.amount)} - ${e.title}${cat}${vendorTag}`;
+          const feeTag = e.managementFeePercent ? ` (incl. ${e.managementFeePercent}% gestión)` : '';
+          return `  ${formatAmount(e.amount)} - ${e.title}${cat}${vendorTag}${feeTag}`;
         })
         .join('\n');
     }
@@ -118,6 +119,14 @@ ${expenseLines}`;
     if (todayExpenseTotal > 0) {
       message += `\n\n*Total gastos del dia:* ${formatAmount(todayExpenseTotal)}`;
     }
+
+    const todayFeeTotal = todayExpenses
+      .filter(e => e.managementFeePercent > 0)
+      .reduce((sum, e) => sum + (e.amount * e.managementFeePercent / (100 + e.managementFeePercent)), 0);
+    if (todayFeeTotal > 0) {
+      message += `\n*Gestión del dia:* ${formatAmount(Math.round(todayFeeTotal))} (incluido en gastos)`;
+    }
+
     if (todayPaymentTotal > 0) {
       message += `\n*Pagos del dia:* ${formatAmount(todayPaymentTotal)}`;
     }

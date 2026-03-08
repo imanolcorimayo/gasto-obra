@@ -47,6 +47,15 @@
       "queryScope": "COLLECTION",
       "fields": [
         { "fieldPath": "projectId", "order": "ASCENDING" },
+        { "fieldPath": "providerId", "order": "ASCENDING" },
+        { "fieldPath": "amount", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "expenses",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "projectId", "order": "ASCENDING" },
         { "fieldPath": "date", "order": "ASCENDING" }
       ]
     },

@@ -51,6 +51,22 @@
           </div>
         </div>
 
+        <!-- Fee breakdown -->
+        <div v-if="expense.amountBase && expense.managementFeePercent" class="bg-go-surface border border-go-border-subtle rounded-go-md p-3 space-y-1">
+          <div class="flex items-center justify-between text-sm">
+            <span class="text-go-text-muted">Monto base</span>
+            <span class="tabular-nums text-go-text">{{ formatPrice(expense.amountBase) }}</span>
+          </div>
+          <div class="flex items-center justify-between text-sm">
+            <span class="text-go-text-muted">Gestión ({{ expense.managementFeePercent }}%)</span>
+            <span class="tabular-nums text-go-text">{{ formatPrice(Math.round(getManagementFeeAmount(expense))) }}</span>
+          </div>
+          <div class="flex items-center justify-between text-sm pt-1 border-t border-go-border-subtle">
+            <span class="text-go-text font-medium">Total</span>
+            <span class="tabular-nums text-go-text font-semibold">{{ formatPrice(expense.amount) }}</span>
+          </div>
+        </div>
+
         <!-- 3. Description -->
         <p v-if="expense.description" class="text-sm text-go-text-secondary leading-relaxed">{{ expense.description }}</p>
 
@@ -248,7 +264,7 @@ import MdiPencil from '~icons/mdi/pencil';
 import MdiChevronDown from '~icons/mdi/chevron-down';
 import MdiFilePdfBox from '~icons/mdi/file-pdf-box';
 import MdiOpenInNew from '~icons/mdi/open-in-new';
-import { formatPrice, getCategoryLabel, getPaymentMethodLabel, getScopeTypeStyles, TRANSACTION_TYPES } from '~/utils';
+import { formatPrice, getCategoryLabel, getPaymentMethodLabel, getScopeTypeStyles, getManagementFeeAmount, TRANSACTION_TYPES } from '~/utils';
 
 const props = defineProps({
   show: { type: Boolean, default: false },

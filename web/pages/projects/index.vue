@@ -42,8 +42,7 @@
 <script setup>
 import MdiPlus from '~icons/mdi/plus';
 import { useProjectStore } from '~/stores/project';
-import { useExpenseStore } from '~/stores/expense';
-import { collection, query, where, getDocs } from 'firebase/firestore';
+import { collection, query, where, getAggregateFromServer, getCountFromServer, sum } from 'firebase/firestore';
 import { getFirestoreInstance, getCurrentUser } from '~/utils/firebase';
 
 definePageMeta({
@@ -60,27 +59,29 @@ const projectTotals = ref({});
 onMounted(async () => {
   await projectStore.fetchProjects();
 
-  // Fetch expense totals for each project
+  // Fetch expense totals using aggregation queries (1 read per query instead of 1 per document)
   const db = getFirestoreInstance();
   const user = getCurrentUser();
-  for (const project of projectStore.projects) {
+  await Promise.all(projectStore.projects.map(async (project) => {
     try {
-      const expensesSnapshot = await getDocs(
-        query(
-          collection(db, 'expenses'),
-          where('projectId', '==', project.id),
-          where('providerId', '==', user.uid)
-        )
+      const expensesQuery = query(
+        collection(db, 'expenses'),
+        where('projectId', '==', project.id),
+        where('providerId', '==', user.uid)
       );
 
-      const total = expensesSnapshot.docs.reduce((sum, doc) => sum + (doc.data().amount || 0), 0);
+      const [totalSnapshot, countSnapshot] = await Promise.all([
+        getAggregateFromServer(expensesQuery, { total: sum('amount') }),
+        getCountFromServer(expensesQuery)
+      ]);
+
       projectTotals.value[project.id] = {
-        total,
-        count: expensesSnapshot.size
+        total: totalSnapshot.data().total || 0,
+        count: countSnapshot.data().count
       };
     } catch (error) {
       console.error(`Error fetching totals for project ${project.id}:`, error);
     }
-  }
+  }));
 });
 </script>

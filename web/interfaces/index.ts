@@ -70,6 +70,8 @@ export interface Expense {
   installmentPercent: number | null;
   installmentGroupId: string | null;
   vendor: string | null;
+  amountBase: number | null;
+  managementFeePercent: number | null;
   source: 'whatsapp' | 'web';
   date: any;
   createdAt: any;

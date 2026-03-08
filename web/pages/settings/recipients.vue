@@ -2,8 +2,8 @@
   <div>
     <!-- Settings Sub-Nav -->
     <div class="flex gap-2 border-b border-go-border pb-3 mb-8">
-      <NuxtLink to="/settings/whatsapp" class="text-sm px-3 py-1.5 rounded-go-md transition-colors text-go-text-tertiary hover:text-go-text hover:bg-go-surface-hover">
-        WhatsApp
+      <NuxtLink to="/settings/general" class="text-sm px-3 py-1.5 rounded-go-md transition-colors text-go-text-tertiary hover:text-go-text hover:bg-go-surface-hover">
+        General
       </NuxtLink>
       <NuxtLink to="/settings/categories" class="text-sm px-3 py-1.5 rounded-go-md transition-colors text-go-text-tertiary hover:text-go-text hover:bg-go-surface-hover">
         Categorías

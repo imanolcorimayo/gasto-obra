@@ -129,6 +129,19 @@ function getTypeLabel(type) {
   return 'Gasto';
 }
 
+// Apply management fee to expense data when applicable
+function applyFeeToExpenseData(expenseData, aiResult, linkData) {
+  const feePercent = linkData.managementFeePercent || 0;
+  if (feePercent > 0 && aiResult.applyManagementFee && expenseData.type === 'expense') {
+    expenseData.amountBase = expenseData.amount;
+    expenseData.managementFeePercent = feePercent;
+    expenseData.amount = Math.round(expenseData.amount * (1 + feePercent / 100));
+  } else {
+    expenseData.amountBase = null;
+    expenseData.managementFeePercent = null;
+  }
+}
+
 // ============================================
 // Gemini Handler
 // ============================================
@@ -543,7 +556,8 @@ async function processImageMessage(phoneNumber, imageId, caption, contactName) {
     categories: providerCats,
     recipients: recipients.map(r => ({ id: r.id, name: r.name, platform: r.platform })),
     paymentMethods: VALID_PAYMENT_METHODS,
-    vendors
+    vendors,
+    managementFeePercent: linkData.managementFeePercent || 0
   };
 
   const receiptData = await geminiHandler.parseReceiptImage(imageData.base64, imageData.mimeType, context);
@@ -642,6 +656,7 @@ async function processImageMessage(phoneNumber, imageId, caption, contactName) {
       timestamp: Date.now()
     };
 
+    applyFeeToExpenseData(expenseData, receiptData, linkData);
     setPendingProjectSwitchExpense(phoneNumber, userId, expenseData, detectedProject);
 
     const confirmMsg = buildExpenseConfirmationMessage(expenseData);
@@ -687,6 +702,7 @@ async function processImageMessage(phoneNumber, imageId, caption, contactName) {
     timestamp: Date.now()
   };
 
+  applyFeeToExpenseData(expenseData, receiptData, linkData);
   await setPendingConfirmation(phoneNumber, userId, expenseData);
 
   const confirmMsg = buildExpenseConfirmationMessage(expenseData);
@@ -774,7 +790,8 @@ async function processDocumentMessage(phoneNumber, documentId, caption, filename
     categories: providerCats,
     recipients: recipients.map(r => ({ id: r.id, name: r.name, platform: r.platform })),
     paymentMethods: VALID_PAYMENT_METHODS,
-    vendors
+    vendors,
+    managementFeePercent: linkData.managementFeePercent || 0
   };
 
   const documentResult = await geminiHandler.parseDocument(documentData.base64, 'application/pdf', context);
@@ -870,6 +887,7 @@ async function processDocumentMessage(phoneNumber, documentId, caption, filename
       timestamp: Date.now()
     };
 
+    applyFeeToExpenseData(expenseData, documentResult, linkData);
     setPendingProjectSwitchExpense(phoneNumber, userId, expenseData, detectedProject);
 
     const confirmMsg = buildExpenseConfirmationMessage(expenseData);
@@ -916,6 +934,7 @@ async function processDocumentMessage(phoneNumber, documentId, caption, filename
     timestamp: Date.now()
   };
 
+  applyFeeToExpenseData(expenseData, documentResult, linkData);
   await setPendingConfirmation(phoneNumber, userId, expenseData);
 
   const confirmMsg = buildExpenseConfirmationMessage(expenseData);
@@ -973,7 +992,8 @@ async function processAudioMessage(phoneNumber, audioId, caption, contactName) {
     categories: providerCats,
     recipients: recipients.map(r => ({ id: r.id, name: r.name, platform: r.platform })),
     paymentMethods: VALID_PAYMENT_METHODS,
-    vendors
+    vendors,
+    managementFeePercent: linkData.managementFeePercent || 0
   };
 
   const transcription = await geminiHandler.transcribeAudio(audioData.base64, audioData.mimeType, context);
@@ -1080,6 +1100,7 @@ async function processAudioMessage(phoneNumber, audioId, caption, contactName) {
       timestamp: Date.now()
     };
 
+    applyFeeToExpenseData(expenseData, transcription, linkData);
     setPendingProjectSwitchExpense(phoneNumber, userId, expenseData, detectedProject);
 
     const confirmMsg = buildExpenseConfirmationMessage(expenseData);
@@ -1125,6 +1146,7 @@ async function processAudioMessage(phoneNumber, audioId, caption, contactName) {
     timestamp: Date.now()
   };
 
+  applyFeeToExpenseData(expenseData, transcription, linkData);
   await setPendingConfirmation(phoneNumber, userId, expenseData);
 
   const confirmMsg = buildExpenseConfirmationMessage(expenseData);
@@ -1176,7 +1198,8 @@ async function handleTextExpense(phoneNumber, text) {
     categories: providerCats,
     recipients: recipients.map(r => ({ id: r.id, name: r.name, platform: r.platform })),
     paymentMethods: VALID_PAYMENT_METHODS,
-    vendors
+    vendors,
+    managementFeePercent: linkData.managementFeePercent || 0
   };
 
   const result = await geminiHandler.parseTextExpense(text, context);
@@ -1269,6 +1292,7 @@ async function handleTextExpense(phoneNumber, text) {
       timestamp: Date.now()
     };
 
+    applyFeeToExpenseData(expenseData, result, linkData);
     setPendingProjectSwitchExpense(phoneNumber, userId, expenseData, detectedProject);
 
     const confirmMsg = buildExpenseConfirmationMessage(expenseData);
@@ -1314,6 +1338,7 @@ async function handleTextExpense(phoneNumber, text) {
     timestamp: Date.now()
   };
 
+  applyFeeToExpenseData(expenseData, result, linkData);
   await setPendingConfirmation(phoneNumber, userId, expenseData);
 
   const confirmMsg = buildExpenseConfirmationMessage(expenseData);
@@ -1327,6 +1352,11 @@ function buildExpenseConfirmationMessage(data) {
   const typeLabel = getTypeLabel(data.type);
   const formattedAmount = formatAmount(data.amount);
   let msg = `${typeLabel}: ${formattedAmount} - ${data.title}\n`;
+
+  if (data.amountBase && data.managementFeePercent) {
+    const feeAmount = data.amount - data.amountBase;
+    msg += `  Base: ${formatAmount(data.amountBase)} + ${data.managementFeePercent}% gestión (${formatAmount(feeAmount)})\n`;
+  }
 
   if (data.items && data.items.length > 1) {
     msg += data.items.map(i => `  - ${i.name}: ${formatAmount(i.amount)}`).join('\n') + '\n';
@@ -1365,6 +1395,8 @@ async function confirmPendingExpense(phoneNumber, pending) {
     title: data.title,
     description: data.description || '',
     amount: data.amount,
+    amountBase: data.amountBase || null,
+    managementFeePercent: data.managementFeePercent || null,
     category: data.category,
     type: data.type || 'expense',
     installmentPercent: data.installmentPercent ?? null,

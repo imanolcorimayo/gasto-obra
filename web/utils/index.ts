@@ -129,3 +129,8 @@ export const getPaymentMethodLabel = (value: string): string => {
   const method = PAYMENT_METHODS.find(m => m.value === value);
   return method ? method.label : capitalizeFirst(value);
 };
+
+export const getManagementFeeAmount = (e: { amount: number; managementFeePercent?: number | null }): number => {
+  if (!e.managementFeePercent || e.managementFeePercent <= 0) return 0;
+  return e.amount * e.managementFeePercent / (100 + e.managementFeePercent);
+};

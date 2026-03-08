@@ -73,10 +73,26 @@
               :class="form.installmentPercent >= 100 ? 'text-go-success' : 'text-go-info'"
             >
               <template v-if="!form.installmentPercent">Sin pago directo — se descuenta del saldo del cliente</template>
-              <template v-else-if="form.installmentPercent >= 100">Pagado — se genera un cobro automático por {{ form.amount ? formatPrice(parseFloat(form.amount)) : 'el monto' }}</template>
+              <template v-else-if="form.installmentPercent >= 100">Pagado — se genera un cobro automático por {{ formatPrice(totalWithFee) }}</template>
               <template v-else-if="form.amount">
                 <span class="tabular-nums">Parcial — se genera un cobro automático de {{ formatPrice(installmentAmount) }}</span>
               </template>
+            </p>
+          </div>
+
+          <!-- Management fee toggle (expense only, when provider has fee > 0) -->
+          <div v-if="type === 'expense' && managementFeePercent > 0">
+            <label class="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                v-model="form.applyManagementFee"
+                :disabled="isLocked"
+                class="w-4 h-4 rounded border-go-border text-go-primary focus:ring-go-primary/40 disabled:opacity-60"
+              />
+              <span class="text-sm text-go-text">Aplicar gestión ({{ managementFeePercent }}%)</span>
+            </label>
+            <p v-if="form.applyManagementFee && form.amount" class="text-xs text-go-text-muted mt-1 tabular-nums ml-6">
+              {{ formatPrice(parseFloat(form.amount)) }} + {{ managementFeePercent }}% gestión = {{ formatPrice(totalWithFee) }}
             </p>
           </div>
 
@@ -281,7 +297,8 @@ const props = defineProps({
   categories: { type: Array, default: () => [] },
   deliveries: { type: Array, default: () => [] },
   prefill: { type: Object, default: null },
-  isSubmitting: { type: Boolean, default: false }
+  isSubmitting: { type: Boolean, default: false },
+  managementFeePercent: { type: Number, default: 0 }
 });
 
 const recipientStore = useRecipientStore();
@@ -314,14 +331,22 @@ const form = reactive({
   items: [],
   installmentPercent: 100,
   installmentGroupId: null,
-  vendor: ''
+  vendor: '',
+  applyManagementFee: false
 });
 
 const isPartial = computed(() => form.installmentPercent > 0 && form.installmentPercent < 100);
 
+const totalWithFee = computed(() => {
+  const base = parseFloat(form.amount) || 0;
+  if (form.applyManagementFee && props.managementFeePercent > 0) {
+    return Math.round(base * (1 + props.managementFeePercent / 100));
+  }
+  return base;
+});
+
 const installmentAmount = computed(() => {
-  const total = parseFloat(form.amount) || 0;
-  return Math.round(total * form.installmentPercent / 100);
+  return Math.round(totalWithFee.value * form.installmentPercent / 100);
 });
 
 watch(selectedRecipientIdx, (idx) => {
@@ -404,6 +429,7 @@ watch(() => props.show, (show) => {
     form.installmentPercent = p?.installmentPercent ?? 100;
     form.installmentGroupId = p?.installmentGroupId || null;
     form.vendor = p?.vendor || '';
+    form.applyManagementFee = p?.applyManagementFee || false;
     showItems.value = form.items.length > 0;
     selectedRecipientIdx.value = -1;
     if (p?.recipientName && recipientStore.recipients.length > 0) {
@@ -422,9 +448,12 @@ watch(() => props.show, (show) => {
 function handleSubmit() {
   const isProviderExpense = props.type === 'provider_expense';
   const percent = props.type === 'expense' ? form.installmentPercent : null;
+  const hasFee = form.applyManagementFee && props.managementFeePercent > 0 && props.type === 'expense';
+  const baseAmount = parseFloat(form.amount) || 0;
+  const amountWithFee = hasFee ? Math.round(baseAmount * (1 + props.managementFeePercent / 100)) : baseAmount;
   const effectiveAmount = (percent !== null && percent > 0 && percent < 100)
-    ? installmentAmount.value
-    : parseFloat(form.amount);
+    ? Math.round(amountWithFee * percent / 100)
+    : amountWithFee;
   const needsGroup = percent !== null && percent > 0 && percent < 100;
 
   const data = {
@@ -444,7 +473,9 @@ function handleSubmit() {
     items: form.items.length > 0 ? form.items.filter(i => i.name) : null,
     installmentPercent: percent,
     installmentGroupId: needsGroup ? (form.installmentGroupId || crypto.randomUUID()) : null,
-    vendor: form.vendor || null
+    vendor: form.vendor || null,
+    amountBase: hasFee ? baseAmount : null,
+    managementFeePercent: hasFee ? props.managementFeePercent : null
   };
   emit('submit', data);
 }

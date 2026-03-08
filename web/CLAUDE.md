@@ -19,7 +19,7 @@ Nuxt 3 web app for renovation expense management. Providers manage projects and 
 - `/projects` - Project list (card grid)
 - `/projects/new` - Create project form
 - `/projects/[id]` - Project detail with expense history
-- `/settings/whatsapp` - WhatsApp linking
+- `/settings/general` - General settings (WhatsApp linking, management fee)
 
 ### Client (public, no auth)
 - `/view/[token]` - Read-only expense view via shareToken

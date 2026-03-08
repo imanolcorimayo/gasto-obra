@@ -303,6 +303,7 @@
         :deliveries="deliveryStore.deliveries"
         :prefill="createModalPrefill"
         :is-submitting="isCreatingExpense"
+        :management-fee-percent="managementFeePercent"
         @close="showCreateModal = false"
         @submit="handleCreateSubmit"
       />
@@ -327,6 +328,7 @@
         :categories="resolvedCategories"
         :is-saving="isEditingExpense"
         :is-deleting="isDeletingExpense"
+        :management-fee-percent="managementFeePercent"
         @close="showEditModal = false"
         @save="handleEditSave"
         @delete="handleDeleteExpense"
@@ -356,6 +358,7 @@ import { useCategoryStore } from '~/stores/category';
 import { useRecipientStore } from '~/stores/recipient';
 import { useVendorStore } from '~/stores/vendor';
 import { useDeliveryStore } from '~/stores/delivery';
+import { useWhatsappStore } from '~/stores/whatsapp';
 import { formatPrice, formatDate } from '~/utils';
 
 definePageMeta({
@@ -369,6 +372,9 @@ const categoryStore = useCategoryStore();
 const recipientStore = useRecipientStore();
 const vendorStore = useVendorStore();
 const deliveryStore = useDeliveryStore();
+const whatsappStore = useWhatsappStore();
+
+const managementFeePercent = ref(0);
 
 const isLoading = ref(true);
 const project = ref(null);
@@ -446,8 +452,10 @@ onMounted(async () => {
       categoryStore.fetchGlobal(),
       categoryStore.fetchForProject(id),
       recipientStore.fetchAll(),
-      deliveryStore.fetchByProjectId(id)
+      deliveryStore.fetchByProjectId(id),
+      whatsappStore.fetchLinkedAccount()
     ]);
+    managementFeePercent.value = whatsappStore.managementFeePercent;
     // Load all projects for the edit modal's "move" feature
     if (projectStore.projects.length === 0) {
       await projectStore.fetchProjects();
@@ -513,7 +521,8 @@ function handleAddInstallment(expense) {
     installmentGroupId: groupId,
     totalAmount,
     items: expense.items || [],
-    locked: true
+    locked: true,
+    applyManagementFee: expense.managementFeePercent > 0
   });
 }
 
@@ -553,7 +562,9 @@ async function handleCreateSubmit(formData) {
       items: formData.items,
       installmentPercent: formData.installmentPercent ?? null,
       installmentGroupId: formData.installmentGroupId || null,
-      vendor: formData.vendor || null
+      vendor: formData.vendor || null,
+      amountBase: formData.amountBase ?? null,
+      managementFeePercent: formData.managementFeePercent ?? null
     };
 
     const result = await expenseStore.createExpense(data);

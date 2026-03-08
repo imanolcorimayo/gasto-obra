@@ -17,7 +17,7 @@
           >
             Mis Obras (Cliente)
           </NuxtLink>
-          <NuxtLink to="/settings/whatsapp" class="nav-tab" :class="{ 'nav-tab-active': route.path.startsWith('/settings') }">
+          <NuxtLink to="/settings/general" class="nav-tab" :class="{ 'nav-tab-active': route.path.startsWith('/settings') }">
             Configuración
           </NuxtLink>
         </nav>

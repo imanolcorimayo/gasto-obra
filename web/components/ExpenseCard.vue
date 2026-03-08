@@ -81,6 +81,10 @@
         &rarr; {{ expense.recipientName }}
       </span>
 
+      <span v-if="expense.managementFeePercent" class="text-go-text-muted text-xs">
+        incl. {{ expense.managementFeePercent }}% gestión
+      </span>
+
       <span v-if="expense.source === 'whatsapp'" class="text-go-success text-xs">
         WhatsApp
       </span>

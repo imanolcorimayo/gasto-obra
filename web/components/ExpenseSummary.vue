@@ -18,6 +18,11 @@
           <span class="font-display font-bold text-base tabular-nums" :style="{ color: getScopeTypeColor('addition') }">{{ formatPrice(totalAddition) }}</span>
         </div>
       </div>
+      <div v-if="totalManagementFee > 0" class="pl-3 border-l-2 border-go-border-subtle">
+        <span class="text-[10px] font-semibold uppercase tracking-wider text-go-text-muted block mb-0.5">Gestión</span>
+        <span class="font-display font-bold text-base tabular-nums text-go-text-secondary">{{ formatPrice(Math.round(totalManagementFee)) }}</span>
+        <span class="text-[10px] text-go-text-muted block">(incluido en gastos)</span>
+      </div>
       <div v-if="totalPayments > 0">
         <span class="text-[10px] font-semibold uppercase tracking-wider text-go-text-muted block mb-0.5">Pagos recibidos</span>
         <span class="font-display font-bold text-xl tabular-nums text-go-secondary">{{ formatPrice(totalPayments) }}</span>
@@ -79,7 +84,7 @@
 </template>
 
 <script setup>
-import { formatPrice, getCategoryColor, getCategoryLabel, getScopeTypeColor } from '~/utils';
+import { formatPrice, getCategoryColor, getCategoryLabel, getScopeTypeColor, getManagementFeeAmount } from '~/utils';
 
 const props = defineProps({
   expenses: { type: Array, default: () => [] },
@@ -111,6 +116,12 @@ const totalProviderExpenses = computed(() =>
   providerExpensesList.value.reduce((sum, e) => sum + (e.amount || 0), 0)
 );
 
+
+const totalManagementFee = computed(() =>
+  clientExpenses.value
+    .filter(e => e.managementFeePercent)
+    .reduce((sum, e) => sum + getManagementFeeAmount(e), 0)
+);
 
 const balance = computed(() => totalPayments.value - totalExpenses.value);
 
