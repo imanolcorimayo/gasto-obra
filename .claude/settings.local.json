@@ -6,7 +6,8 @@
       "Bash(cp:*)",
       "Bash(npx vue-tsc:*)",
       "Bash(gh issue:*)",
-      "Bash(gh project:*)"
+      "Bash(gh project:*)",
+      "Bash(npx nuxt:*)"
     ]
   }
 }

@@ -65,6 +65,10 @@ export class ProjectSchema extends Schema {
       type: 'string',
       required: false
     },
+    reportNumber: {
+      type: 'string',
+      required: false
+    },
     createdAt: {
       type: 'date',
       required: false

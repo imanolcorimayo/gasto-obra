@@ -13,6 +13,7 @@ export interface Project {
   startDate: any | null;
   estimatedEndDate: any | null;
   clientUserId: string | null;
+  reportNumber: string | null;
   createdAt: any;
   updatedAt: any;
 }

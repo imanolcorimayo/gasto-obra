@@ -59,6 +59,14 @@
 
         <div class="flex gap-2">
           <button
+            @click="handleExportPdf"
+            class="btn-secondary text-sm flex items-center gap-1"
+            :disabled="isExportingPdf"
+          >
+            <MdiFileDocument class="text-base" />
+            {{ isExportingPdf ? 'Generando...' : 'Exportar PDF' }}
+          </button>
+          <button
             @click="showProjectEditModal = true"
             class="btn-secondary text-sm flex items-center gap-1"
           >
@@ -352,6 +360,7 @@ import MdiCheck from '~icons/mdi/check';
 import MdiPlus from '~icons/mdi/plus';
 import MdiPencil from '~icons/mdi/pencil';
 import MdiClose from '~icons/mdi/close';
+import MdiFileDocument from '~icons/mdi/file-document';
 import { useProjectStore } from '~/stores/project';
 import { useExpenseStore } from '~/stores/expense';
 import { useCategoryStore } from '~/stores/category';
@@ -360,6 +369,8 @@ import { useVendorStore } from '~/stores/vendor';
 import { useDeliveryStore } from '~/stores/delivery';
 import { useWhatsappStore } from '~/stores/whatsapp';
 import { formatPrice, formatDate } from '~/utils';
+import { generatePaymentReport, generateReportNumber } from '~/utils/pdfReport';
+import { getCurrentUser } from '~/utils/firebase';
 
 definePageMeta({
   middleware: ['auth']
@@ -398,6 +409,7 @@ const isCreatingDelivery = ref(false);
 const isDeletingDelivery = ref(false);
 const showDetailModal = ref(false);
 const detailExpense = ref(null);
+const isExportingPdf = ref(false);
 
 const resolvedCategories = computed(() => {
   const id = route.params.id;
@@ -486,6 +498,53 @@ async function copyShareLink() {
     setTimeout(() => { copied.value = false; }, 2000);
   } catch {
     useToast('error', 'Error al copiar');
+  }
+}
+
+async function handleExportPdf() {
+  if (!project.value || isExportingPdf.value) return;
+  isExportingPdf.value = true;
+
+  try {
+    // Ensure report number exists on project
+    let reportNumber = project.value.reportNumber;
+    if (!reportNumber) {
+      reportNumber = generateReportNumber();
+      await projectStore.updateProject(project.value.id, { reportNumber });
+      project.value.reportNumber = reportNumber;
+    }
+
+    // Get provider info from Firebase Auth + WhatsApp store
+    const user = getCurrentUser();
+    const provider = {
+      name: user?.displayName || user?.email || 'Proveedor',
+      email: user?.email || '',
+      phone: whatsappStore.linkedAccount?.phoneNumber || null
+    };
+
+    generatePaymentReport({
+      provider,
+      project: {
+        name: project.value.name,
+        clientName: project.value.clientName || '',
+        address: project.value.address || '',
+        description: project.value.description || '',
+        reportNumber,
+        startDate: project.value.startDate?.toDate?.() || project.value.startDate || null,
+        estimatedEndDate: project.value.estimatedEndDate?.toDate?.() || project.value.estimatedEndDate || null,
+        budget: project.value.budget || null,
+      },
+      expenses: expenseStore.expenses,
+      deliveries: deliveryStore.deliveries,
+      categories: resolvedCategories.value,
+    });
+
+    useToast('success', 'PDF generado');
+  } catch (error) {
+    console.error('Error generating PDF:', error);
+    useToast('error', 'Error al generar el PDF');
+  } finally {
+    isExportingPdf.value = false;
   }
 }
 
