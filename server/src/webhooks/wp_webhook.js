@@ -7,9 +7,7 @@ import GeminiHandler from '../handlers/GeminiHandler.js';
 import StorageHandler from '../handlers/StorageHandler.js';
 import { sendWhatsAppMessage, sendWhatsAppButtons, downloadWhatsAppMedia } from '../helpers/whatsapp.js';
 import { compressImage } from '../helpers/compression.js';
-import { createRequire } from 'module';
-const require = createRequire(import.meta.url);
-const pdfParse = require('pdf-parse');
+import { PDFParse } from 'pdf-parse';
 import { formatAmount, capitalizeFirst } from '../helpers/responseFormatter.js';
 import logger from '../../lib/logger.js';
 
@@ -748,13 +746,18 @@ async function processDocumentMessage(phoneNumber, documentId, caption, filename
   }
 
   // Page count check
+  let pdfParser;
   try {
-    const pdfInfo = await pdfParse(pdfBuffer);
-    if (pdfInfo.numpages > MAX_PDF_PAGES) {
-      await sendWhatsAppMessage(phoneNumber, `El documento tiene ${pdfInfo.numpages} paginas. Solo se aceptan PDFs de hasta ${MAX_PDF_PAGES} paginas.`);
+    pdfParser = new PDFParse({ data: pdfBuffer });
+    const doc = await pdfParser.load();
+    if (doc.numPages > MAX_PDF_PAGES) {
+      await pdfParser.destroy();
+      await sendWhatsAppMessage(phoneNumber, `El documento tiene ${doc.numPages} paginas. Solo se aceptan PDFs de hasta ${MAX_PDF_PAGES} paginas.`);
       return;
     }
+    await pdfParser.destroy();
   } catch (error) {
+    if (pdfParser) await pdfParser.destroy().catch(() => {});
     Sentry.captureException(error);
     logger.error('Error parsing PDF for page count', { error });
     await sendWhatsAppMessage(phoneNumber, 'No se pudo leer el PDF. Asegurate de que sea un archivo valido.');

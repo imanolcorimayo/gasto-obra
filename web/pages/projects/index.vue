@@ -44,7 +44,7 @@ import MdiPlus from '~icons/mdi/plus';
 import { useProjectStore } from '~/stores/project';
 import { useExpenseStore } from '~/stores/expense';
 import { collection, query, where, getDocs } from 'firebase/firestore';
-import { getFirestoreInstance } from '~/utils/firebase';
+import { getFirestoreInstance, getCurrentUser } from '~/utils/firebase';
 
 definePageMeta({
   middleware: ['auth']
@@ -62,12 +62,14 @@ onMounted(async () => {
 
   // Fetch expense totals for each project
   const db = getFirestoreInstance();
+  const user = getCurrentUser();
   for (const project of projectStore.projects) {
     try {
       const expensesSnapshot = await getDocs(
         query(
           collection(db, 'expenses'),
-          where('projectId', '==', project.id)
+          where('projectId', '==', project.id),
+          where('providerId', '==', user.uid)
         )
       );
 
