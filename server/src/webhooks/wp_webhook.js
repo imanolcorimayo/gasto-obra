@@ -2,9 +2,11 @@ import '../../lib/instrument.js';
 import 'dotenv/config';
 import express from 'express';
 import * as Sentry from '@sentry/node';
-import { admin, db, COLLECTIONS } from '../config/firebase.js';
+import { admin, db, bucket, COLLECTIONS } from '../config/firebase.js';
 import GeminiHandler from '../handlers/GeminiHandler.js';
+import StorageHandler from '../handlers/StorageHandler.js';
 import { sendWhatsAppMessage, sendWhatsAppButtons, downloadWhatsAppMedia } from '../helpers/whatsapp.js';
+import { compressImage } from '../helpers/compression.js';
 import { formatAmount, capitalizeFirst } from '../helpers/responseFormatter.js';
 import logger from '../../lib/logger.js';
 
@@ -132,6 +134,7 @@ function getTypeLabel(type) {
 const geminiHandler = process.env.GEMINI_API_KEY
   ? new GeminiHandler(process.env.GEMINI_API_KEY)
   : null;
+const storageHandler = new StorageHandler(bucket);
 
 // ============================================
 // Pending Confirmations (2 min auto-confirm)
@@ -540,6 +543,19 @@ async function processImageMessage(phoneNumber, imageId, caption, contactName) {
     return;
   }
 
+  // Compress + upload image to Firebase Storage (non-fatal)
+  let imageUrl = null;
+  try {
+    const compressed = await compressImage(imageData.base64, imageData.mimeType);
+    if (compressed) {
+      const storagePath = storageHandler.generatePath('expenses', 'receipt.jpg');
+      imageUrl = await storageHandler.uploadFile(compressed.buffer, storagePath, compressed.mimeType);
+    }
+  } catch (error) {
+    Sentry.captureException(error);
+    logger.error('Error uploading receipt image', { error });
+  }
+
   const transactionType = resolveTransactionType(receiptData.transactionType) || 'expense';
   const typeDefaults = getTypeDefaults(transactionType);
   const installmentPercent = receiptData.installmentPercent === 100 ? 100 : (typeDefaults.installmentPercent ?? 0);
@@ -603,7 +619,8 @@ async function processImageMessage(phoneNumber, imageId, caption, contactName) {
       linkedExpenseId: null,
       linkedPaymentId: null,
       items,
-      imageUrl: null,
+      imageUrl,
+      audioUrl: null,
       audioTranscription: null,
       originalMessage: `[Imagen] ${caption}`,
       source: 'whatsapp',
@@ -647,7 +664,8 @@ async function processImageMessage(phoneNumber, imageId, caption, contactName) {
     linkedExpenseId: null,
     linkedPaymentId: null,
     items,
-    imageUrl: null,
+    imageUrl,
+    audioUrl: null,
     audioTranscription: null,
     originalMessage: `[Imagen] ${caption}`,
     source: 'whatsapp',
@@ -727,6 +745,18 @@ async function processAudioMessage(phoneNumber, audioId, caption, contactName) {
     return;
   }
 
+  // Upload audio to Firebase Storage (non-fatal)
+  let audioUrl = null;
+  try {
+    const audioBuffer = Buffer.from(audioData.base64, 'base64');
+    const ext = audioData.mimeType === 'audio/ogg' ? 'ogg' : 'audio';
+    const storagePath = storageHandler.generatePath('expenses', `audio.${ext}`);
+    audioUrl = await storageHandler.uploadFile(audioBuffer, storagePath, audioData.mimeType);
+  } catch (error) {
+    Sentry.captureException(error);
+    logger.error('Error uploading audio file', { error });
+  }
+
   const title = transcription.title || 'Gasto por audio';
   const items = Array.isArray(transcription.items) && transcription.items.length > 0
     ? transcription.items.filter(i => i && i.name && i.amount > 0)
@@ -799,6 +829,7 @@ async function processAudioMessage(phoneNumber, audioId, caption, contactName) {
       linkedPaymentId: null,
       items: items || null,
       imageUrl: null,
+      audioUrl,
       audioTranscription: transcription.transcription || null,
       originalMessage: `[Audio] ${caption}`,
       source: 'whatsapp',
@@ -843,6 +874,7 @@ async function processAudioMessage(phoneNumber, audioId, caption, contactName) {
     linkedPaymentId: null,
     items: items || null,
     imageUrl: null,
+    audioUrl,
     audioTranscription: transcription.transcription || null,
     originalMessage: `[Audio] ${caption}`,
     source: 'whatsapp',
@@ -986,6 +1018,7 @@ async function handleTextExpense(phoneNumber, text) {
       linkedPaymentId: null,
       items: items || null,
       imageUrl: null,
+      audioUrl: null,
       audioTranscription: null,
       originalMessage: text,
       source: 'whatsapp',
@@ -1030,6 +1063,7 @@ async function handleTextExpense(phoneNumber, text) {
     linkedPaymentId: null,
     items: items || null,
     imageUrl: null,
+    audioUrl: null,
     audioTranscription: null,
     originalMessage: text,
     source: 'whatsapp',
@@ -1101,6 +1135,7 @@ async function confirmPendingExpense(phoneNumber, pending) {
     linkedPaymentId: data.linkedPaymentId || null,
     items: data.items || null,
     imageUrl: data.imageUrl || null,
+    audioUrl: data.audioUrl || null,
     audioTranscription: data.audioTranscription || null,
     vendor: data.vendor || null,
     originalMessage: data.originalMessage || '',
@@ -1148,6 +1183,7 @@ async function confirmPendingExpense(phoneNumber, pending) {
       linkedPaymentId: null,
       items: null,
       imageUrl: null,
+      audioUrl: null,
       audioTranscription: null,
       vendor: data.vendor || null,
       originalMessage: '',

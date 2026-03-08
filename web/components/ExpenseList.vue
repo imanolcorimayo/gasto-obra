@@ -99,27 +99,30 @@
               <span v-if="row.vendor" class="text-go-text-muted text-xs ml-1">[{{ row.vendor }}]</span>
               <span v-if="row.items" class="text-go-text-muted text-xs ml-1">({{ row.items }} items)</span>
             </td>
-            <td v-if="hasInstallments" class="py-3 px-3 whitespace-nowrap">
-              <div
-                v-if="!row.isPayment && !row.isProvider && row.installmentPercent != null"
-                class="w-16"
-              >
-                <div class="flex items-baseline gap-0.5 mb-0.5">
-                  <span class="text-[10px] tabular-nums font-semibold"
-                    :class="(row.groupPercent || row.installmentPercent) >= 100 ? 'text-go-success' : 'text-go-text'"
-                  >{{ row.groupPercent != null ? row.groupPercent : row.installmentPercent }}%</span>
-                  <span v-if="row.groupPercent != null && row.groupPercent !== row.installmentPercent" class="text-[9px] tabular-nums text-go-text-muted">
-                    (+{{ row.installmentPercent }})
-                  </span>
+            <td v-if="hasInstallments" class="py-3 px-3">
+              <template v-if="!row.isPayment && !row.isProvider && row.installmentPercent != null">
+                <span
+                  v-if="(row.groupPercent ?? row.installmentPercent) === 0"
+                  class="text-[10px] text-go-text-muted leading-tight inline-block w-20"
+                >Descontado del balance</span>
+                <div v-else class="w-16">
+                  <div class="flex items-baseline gap-0.5 mb-0.5">
+                    <span class="text-[10px] tabular-nums font-semibold"
+                      :class="(row.groupPercent || row.installmentPercent) >= 100 ? 'text-go-success' : 'text-go-text'"
+                    >{{ row.groupPercent != null ? row.groupPercent : row.installmentPercent }}%</span>
+                    <span v-if="row.groupPercent != null && row.groupPercent !== row.installmentPercent" class="text-[9px] tabular-nums text-go-text-muted">
+                      (+{{ row.installmentPercent }})
+                    </span>
+                  </div>
+                  <div class="w-full h-1 rounded-full bg-go-surface-alt overflow-hidden">
+                    <div
+                      class="h-full rounded-full transition-all"
+                      :class="(row.groupPercent || row.installmentPercent) >= 100 ? 'bg-go-success' : (row.groupPercent || row.installmentPercent) > 0 ? 'bg-go-primary' : ''"
+                      :style="{ width: Math.min(row.groupPercent != null ? row.groupPercent : row.installmentPercent, 100) + '%' }"
+                    ></div>
+                  </div>
                 </div>
-                <div class="w-full h-1 rounded-full bg-go-surface-alt overflow-hidden">
-                  <div
-                    class="h-full rounded-full transition-all"
-                    :class="(row.groupPercent || row.installmentPercent) >= 100 ? 'bg-go-success' : (row.groupPercent || row.installmentPercent) > 0 ? 'bg-go-primary' : ''"
-                    :style="{ width: Math.min(row.groupPercent != null ? row.groupPercent : row.installmentPercent, 100) + '%' }"
-                  ></div>
-                </div>
-              </div>
+              </template>
             </td>
             <td class="py-3 px-3 whitespace-nowrap">
               <span v-if="row.categoryLabel" class="text-xs text-go-text-muted">{{ row.categoryLabel }}</span>

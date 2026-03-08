@@ -27,9 +27,7 @@ export function useTheme() {
 
   onMounted(() => {
     const saved = localStorage.getItem(STORAGE_KEY) as Theme | null
-    const systemPrefers = window.matchMedia('(prefers-color-scheme: dark)').matches
-    const resolved: Theme = saved ?? (systemPrefers ? 'dark' : 'light')
-    applyTheme(resolved)
+    applyTheme(saved ?? DEFAULT_THEME)
   })
 
   return { currentTheme, isDark, isLight, toggle, applyTheme }

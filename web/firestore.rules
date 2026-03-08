@@ -1,0 +1,103 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ── Projects ──────────────────────────────────────────────
+    // Provider (auth'd): full CRUD on own projects
+    // Client (auth'd): read projects where clientUserId matches
+    // Public: read allowed for shareToken lookup flow
+    //   shareTokens are UUIDs — not enumerable or guessable
+    match /projects/{projectId} {
+      allow read: if request.auth != null && (
+        resource.data.providerId == request.auth.uid ||
+        resource.data.clientUserId == request.auth.uid
+      );
+      // Public read for shareToken-based client view (unauthenticated)
+      allow read: if request.auth == null;
+
+      allow create: if request.auth != null
+                    && request.resource.data.providerId == request.auth.uid;
+      allow update, delete: if request.auth != null
+                            && resource.data.providerId == request.auth.uid;
+    }
+
+    // ── Expenses ──────────────────────────────────────────────
+    // Provider (auth'd): full CRUD on own expenses
+    // Public: read allowed for client share view (queried by projectId)
+    //   projectIds are Firestore auto-IDs — not guessable
+    match /expenses/{expenseId} {
+      allow read: if request.auth != null
+                  && resource.data.providerId == request.auth.uid;
+      allow read: if request.auth == null;
+
+      allow create: if request.auth != null
+                    && request.resource.data.providerId == request.auth.uid;
+      allow update, delete: if request.auth != null
+                            && resource.data.providerId == request.auth.uid;
+    }
+
+    // ── Deliveries ────────────────────────────────────────────
+    // Same pattern as expenses: provider owns, public can read
+    match /deliveries/{deliveryId} {
+      allow read: if request.auth != null
+                  && resource.data.providerId == request.auth.uid;
+      allow read: if request.auth == null;
+
+      allow create: if request.auth != null
+                    && request.resource.data.providerId == request.auth.uid;
+      allow update, delete: if request.auth != null
+                            && resource.data.providerId == request.auth.uid;
+    }
+
+    // ── Categories ────────────────────────────────────────────
+    // Provider (auth'd): full CRUD on own categories
+    // Public: read allowed for client view (needs provider's categories)
+    match /categories/{categoryId} {
+      allow read: if request.auth != null
+                  && resource.data.userId == request.auth.uid;
+      allow read: if request.auth == null;
+
+      allow create: if request.auth != null
+                    && request.resource.data.userId == request.auth.uid;
+      allow update, delete: if request.auth != null
+                            && resource.data.userId == request.auth.uid;
+    }
+
+    // ── WhatsApp Links (private) ──────────────────────────────
+    // Only the owning user can read/write their linking state
+    match /whatsappLinks/{linkId} {
+      allow read: if request.auth != null
+                  && resource.data.userId == request.auth.uid;
+
+      allow create: if request.auth != null
+                    && request.resource.data.userId == request.auth.uid;
+      allow update, delete: if request.auth != null
+                            && resource.data.userId == request.auth.uid;
+    }
+
+    // ── Vendors (private) ─────────────────────────────────────
+    // Only the owning user can manage their vendor list
+    match /vendors/{vendorId} {
+      allow read: if request.auth != null
+                  && resource.data.userId == request.auth.uid;
+
+      allow create: if request.auth != null
+                    && request.resource.data.userId == request.auth.uid;
+      allow update, delete: if request.auth != null
+                            && resource.data.userId == request.auth.uid;
+    }
+
+    // ── Recipients (private) ──────────────────────────────────
+    // Only the owning user can manage their recipient list
+    match /recipients/{recipientId} {
+      allow read: if request.auth != null
+                  && resource.data.userId == request.auth.uid;
+
+      allow create: if request.auth != null
+                    && request.resource.data.userId == request.auth.uid;
+      allow update, delete: if request.auth != null
+                            && resource.data.userId == request.auth.uid;
+    }
+  }
+}

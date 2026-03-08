@@ -5,6 +5,7 @@ import logger from '../../lib/logger.js';
 if (!admin.apps.length) {
   const firebaseConfig = {
     projectId: process.env.FIREBASE_PROJECT_ID,
+    storageBucket: process.env.FIREBASE_STORAGE_BUCKET || `${process.env.FIREBASE_PROJECT_ID}.firebasestorage.app`,
   };
 
   if (process.env.FIREBASE_SERVICE_ACCOUNT) {
@@ -19,6 +20,7 @@ if (!admin.apps.length) {
 }
 
 const db = admin.firestore();
+const bucket = admin.storage().bucket();
 
 const COLLECTIONS = {
   WHATSAPP_LINKS: 'whatsappLinks',
@@ -29,4 +31,4 @@ const COLLECTIONS = {
   VENDORS: 'vendors'
 };
 
-export { admin, db, COLLECTIONS };
+export { admin, db, bucket, COLLECTIONS };

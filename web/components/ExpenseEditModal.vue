@@ -265,13 +265,25 @@
 
         <!-- Footer -->
         <div class="modal-footer flex-col sm:flex-row">
-          <button type="button" @click="$emit('close')" class="btn-secondary order-2 sm:order-1">
-            Cancelar
+          <button
+            type="button"
+            @click="handleDelete"
+            :disabled="isDeleting || isSaving"
+            class="text-go-danger hover:bg-go-danger/10 border border-go-danger/30 rounded-go-md px-3 py-2 text-sm font-medium transition-colors flex items-center justify-center gap-1.5 order-3 sm:order-1 disabled:opacity-50"
+          >
+            <span v-if="isDeleting" class="btn-spinner"></span>
+            <MdiDeleteOutline v-else class="text-base" />
+            {{ isDeleting ? 'Eliminando...' : 'Eliminar' }}
           </button>
-          <button type="submit" :disabled="isSaving" class="btn-primary flex-1 sm:flex-initial flex items-center justify-center gap-2 order-1 sm:order-2">
-            <span v-if="isSaving" class="btn-spinner"></span>
-            {{ isSaving ? 'Guardando...' : 'Guardar' }}
-          </button>
+          <div class="flex-1 flex flex-col sm:flex-row gap-2 order-1 sm:order-2">
+            <button type="button" @click="$emit('close')" class="btn-secondary sm:ml-auto">
+              Cancelar
+            </button>
+            <button type="submit" :disabled="isSaving || isDeleting" class="btn-primary flex items-center justify-center gap-2">
+              <span v-if="isSaving" class="btn-spinner"></span>
+              {{ isSaving ? 'Guardando...' : 'Guardar' }}
+            </button>
+          </div>
         </div>
       </form>
     </div>
@@ -282,6 +294,7 @@
 import MdiChevronDown from '~icons/mdi/chevron-down';
 import MdiPlus from '~icons/mdi/plus';
 import MdiClose from '~icons/mdi/close';
+import MdiDeleteOutline from '~icons/mdi/delete-outline';
 import { DEFAULT_EXPENSE_CATEGORIES, PAYMENT_METHODS, SCOPE_TYPES, getScopeTypeStyles, formatPrice } from '~/utils';
 import { useRecipientStore } from '~/stores/recipient';
 import { useVendorStore } from '~/stores/vendor';
@@ -294,14 +307,15 @@ const props = defineProps({
   expense: { type: Object, default: null },
   projects: { type: Array, default: () => [] },
   categories: { type: Array, default: () => [] },
-  isSaving: { type: Boolean, default: false }
+  isSaving: { type: Boolean, default: false },
+  isDeleting: { type: Boolean, default: false }
 });
 
 const resolvedCategories = computed(() =>
   props.categories.length > 0 ? props.categories : DEFAULT_EXPENSE_CATEGORIES
 );
 
-const emit = defineEmits(['close', 'save']);
+const emit = defineEmits(['close', 'save', 'delete']);
 
 const showItems = ref(false);
 const selectedRecipientIdx = ref(-1);
@@ -419,6 +433,17 @@ function handleSave() {
   const partialCalc = percent !== null && percent > 0 && percent < 100;
   const needsGroup = partialCalc;
 
+  const originalPercent = props.expense?.installmentPercent;
+  const shouldCreatePayment = form.type === 'expense'
+    && originalPercent === 0
+    && percent > 0
+    && !props.expense?.linkedPaymentId;
+
+  const shouldDeletePayment = form.type === 'expense'
+    && originalPercent > 0
+    && percent === 0
+    && !!props.expense?.linkedPaymentId;
+
   const data = {
     title: form.title,
     amount: partialCalc ? editInstallmentAmount.value : parseFloat(form.amount),
@@ -437,6 +462,17 @@ function handleSave() {
     installmentGroupId: needsGroup ? (form.installmentGroupId || crypto.randomUUID()) : null,
     vendor: form.vendor || null
   };
-  emit('save', { id: props.expense.id, data });
+  emit('save', {
+    id: props.expense.id,
+    data,
+    createLinkedPayment: shouldCreatePayment,
+    deleteLinkedPaymentId: shouldDeletePayment ? props.expense.linkedPaymentId : null
+  });
+}
+
+function handleDelete() {
+  const label = form.type === 'payment' ? 'este cobro' : form.type === 'provider_expense' ? 'este gasto propio' : 'este gasto';
+  if (!confirm(`¿Eliminar ${label}? Esta acción no se puede deshacer.`)) return;
+  emit('delete', props.expense);
 }
 </script>

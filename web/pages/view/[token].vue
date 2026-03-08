@@ -16,7 +16,7 @@
       </div>
     </header>
 
-    <div class="max-w-3xl mx-auto px-3 sm:px-6 py-6">
+    <div class="max-w-5xl mx-auto px-3 sm:px-6 py-6">
       <!-- Loading skeleton -->
       <template v-if="isLoading">
         <div class="bg-go-surface border border-go-border rounded-go-xl p-5 mb-6">
@@ -79,43 +79,51 @@
           </div>
         </div>
 
-        <!-- Financial summary strip -->
-        <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-6">
-          <div class="bg-go-bg border border-go-border-subtle rounded-go-xl px-4 py-3">
-            <span class="text-[10px] font-semibold uppercase tracking-wider text-go-text-muted block mb-1">Total gastado</span>
-            <span class="font-display font-bold text-xl tabular-nums text-go-primary">{{ formatPrice(totalExpensesAmount) }}</span>
+        <!-- Details + Summary -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
+          <!-- Left: financial overview -->
+          <div class="flex flex-col gap-4">
+            <!-- Financial summary strip -->
+            <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              <div class="bg-go-bg border border-go-border-subtle rounded-go-xl px-4 py-3">
+                <span class="text-[10px] font-semibold uppercase tracking-wider text-go-text-muted block mb-1">Total gastado</span>
+                <span class="font-display font-bold text-xl tabular-nums text-go-primary">{{ formatPrice(totalExpensesAmount) }}</span>
+              </div>
+              <div class="bg-go-bg border border-go-border-subtle rounded-go-xl px-4 py-3">
+                <span class="text-[10px] font-semibold uppercase tracking-wider text-go-text-muted block mb-1">Total cobrado</span>
+                <span class="font-display font-bold text-xl tabular-nums text-go-secondary">{{ formatPrice(totalPaymentsAmount) }}</span>
+              </div>
+              <div class="bg-go-bg border border-go-border-subtle rounded-go-xl px-4 py-3 col-span-2 sm:col-span-1">
+                <span class="text-[10px] font-semibold uppercase tracking-wider text-go-text-muted block mb-1">Saldo</span>
+                <span
+                  class="font-display font-bold text-xl tabular-nums"
+                  :class="balanceAmount >= 0 ? 'text-go-success' : 'text-go-danger'"
+                >{{ formatPrice(balanceAmount) }}</span>
+              </div>
+            </div>
+
+            <!-- Budget & timeline info -->
+            <div v-if="project.budget || project.startDate || project.estimatedEndDate" class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+              <div v-if="project.budget" class="bg-go-surface rounded-go-md border border-go-border p-3">
+                <span class="text-go-text-muted">Presupuesto:</span>
+                <span class="text-go-text ml-2">{{ formatPrice(project.budget) }}</span>
+              </div>
+              <div v-if="project.startDate || project.estimatedEndDate" class="bg-go-surface rounded-go-md border border-go-border p-3">
+                <span class="text-go-text-muted">Cronograma:</span>
+                <span class="text-go-text ml-2">
+                  {{ project.startDate ? formatDate(project.startDate) : '—' }}
+                  →
+                  {{ project.estimatedEndDate ? formatDate(project.estimatedEndDate) : '—' }}
+                </span>
+              </div>
+            </div>
           </div>
-          <div class="bg-go-bg border border-go-border-subtle rounded-go-xl px-4 py-3">
-            <span class="text-[10px] font-semibold uppercase tracking-wider text-go-text-muted block mb-1">Total cobrado</span>
-            <span class="font-display font-bold text-xl tabular-nums text-go-secondary">{{ formatPrice(totalPaymentsAmount) }}</span>
-          </div>
-          <div class="bg-go-bg border border-go-border-subtle rounded-go-xl px-4 py-3 col-span-2 sm:col-span-1">
-            <span class="text-[10px] font-semibold uppercase tracking-wider text-go-text-muted block mb-1">Saldo</span>
-            <span
-              class="font-display font-bold text-xl tabular-nums"
-              :class="balanceAmount >= 0 ? 'text-go-success' : 'text-go-danger'"
-            >{{ formatPrice(balanceAmount) }}</span>
+
+          <!-- Right: summary -->
+          <div>
+            <ExpenseSummary :expenses="allClientExpenses" :budget="project.budget" :categories="resolvedCategories" />
           </div>
         </div>
-
-        <!-- Budget & timeline info -->
-        <div v-if="project.budget || project.startDate || project.estimatedEndDate" class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6 text-sm">
-          <div v-if="project.budget" class="bg-go-surface rounded-go-md border border-go-border p-3">
-            <span class="text-go-text-muted">Presupuesto:</span>
-            <span class="text-go-text ml-2">{{ formatPrice(project.budget) }}</span>
-          </div>
-          <div v-if="project.startDate || project.estimatedEndDate" class="bg-go-surface rounded-go-md border border-go-border p-3">
-            <span class="text-go-text-muted">Cronograma:</span>
-            <span class="text-go-text ml-2">
-              {{ project.startDate ? formatDate(project.startDate) : '—' }}
-              →
-              {{ project.estimatedEndDate ? formatDate(project.estimatedEndDate) : '—' }}
-            </span>
-          </div>
-        </div>
-
-        <!-- Summary -->
-        <ExpenseSummary :expenses="allClientExpenses" :budget="project.budget" :categories="resolvedCategories" class="mb-6" />
 
         <!-- Expense history -->
         <div class="mb-6">

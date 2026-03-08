@@ -55,6 +55,7 @@ export interface Expense {
   scopeType: ScopeType;
   items: ExpenseItem[] | null;
   imageUrl: string | null;
+  audioUrl: string | null;
   audioTranscription: string | null;
   originalMessage: string;
   paymentMethod: string | null;

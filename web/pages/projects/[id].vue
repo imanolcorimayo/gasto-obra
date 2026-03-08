@@ -9,26 +9,24 @@
         <div class="h-9 w-72 bg-go-surface rounded-go-md skeleton-shimmer"></div>
         <div class="h-4 w-40 bg-go-surface rounded-go-md skeleton-shimmer mt-2"></div>
       </div>
-      <!-- Metadata strip skeleton -->
-      <div class="grid grid-cols-2 lg:flex lg:flex-wrap gap-2 mt-4">
-        <div v-for="n in 4" :key="n" class="bg-go-surface rounded-go-md skeleton-shimmer h-12 w-full lg:w-36"></div>
-      </div>
-      <!-- Share link skeleton -->
-      <div class="h-14 bg-go-surface rounded-go-xl skeleton-shimmer mt-3"></div>
-      <!-- Action bar skeleton -->
-      <div class="flex flex-col sm:flex-row gap-2 mt-4">
-        <div v-for="n in 3" :key="n" class="bg-go-surface rounded-go-md skeleton-shimmer h-10 w-full sm:w-28"></div>
-      </div>
-      <!-- Two-column skeleton -->
-      <div class="mt-8 pt-8 border-t border-go-border-subtle">
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
-          <div class="order-2 lg:order-none">
-            <div v-for="n in 3" :key="n" class="bg-go-surface rounded-go-md skeleton-shimmer h-16 mb-3"></div>
+      <!-- Details + Summary skeleton -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-4">
+        <div class="flex flex-col gap-3">
+          <div class="grid grid-cols-2 gap-2">
+            <div v-for="n in 4" :key="n" class="bg-go-surface rounded-go-md skeleton-shimmer h-12"></div>
           </div>
-          <div class="lg:col-span-2 order-1 lg:order-none">
-            <div v-for="n in 5" :key="n" class="bg-go-surface rounded-go-md skeleton-shimmer h-20 mb-3"></div>
+          <div class="h-14 bg-go-surface rounded-go-xl skeleton-shimmer"></div>
+          <div class="flex flex-col sm:flex-row gap-2">
+            <div v-for="n in 3" :key="n" class="bg-go-surface rounded-go-md skeleton-shimmer h-10 w-full sm:w-28"></div>
           </div>
         </div>
+        <div>
+          <div class="bg-go-surface rounded-go-xl skeleton-shimmer h-64"></div>
+        </div>
+      </div>
+      <!-- Movements skeleton -->
+      <div class="mt-8 pt-8 border-t border-go-border-subtle">
+        <div v-for="n in 5" :key="n" class="bg-go-surface rounded-go-md skeleton-shimmer h-20 mb-3"></div>
       </div>
     </div>
 
@@ -79,36 +77,40 @@
         </div>
       </div>
 
-      <!-- Metadata strip -->
-      <div class="grid grid-cols-2 lg:flex lg:flex-wrap gap-2 mt-4">
-        <div v-if="project.clientName" class="bg-go-surface border border-go-border rounded-go-md px-3 py-2">
-          <span class="text-[10px] uppercase tracking-wider text-go-text-muted block">Cliente</span>
-          <span class="text-sm font-medium text-go-text">{{ project.clientName }}</span>
-        </div>
-        <div v-if="project.address" class="bg-go-surface border border-go-border rounded-go-md px-3 py-2">
-          <span class="text-[10px] uppercase tracking-wider text-go-text-muted block">Dirección</span>
-          <span class="text-sm font-medium text-go-text">{{ project.address }}</span>
-        </div>
-        <div v-if="project.budget" class="bg-go-surface border border-go-border rounded-go-md px-3 py-2">
-          <span class="text-[10px] uppercase tracking-wider text-go-text-muted block">Presupuesto</span>
-          <span class="text-sm font-medium text-go-text">{{ formatPrice(project.budget) }}</span>
-        </div>
-        <div v-if="project.startDate || project.estimatedEndDate" class="bg-go-surface border border-go-border rounded-go-md px-3 py-2">
-          <span class="text-[10px] uppercase tracking-wider text-go-text-muted block">Cronograma</span>
-          <span class="text-sm font-medium text-go-text">
-            {{ project.startDate ? formatDate(project.startDate) : '—' }}
-            →
-            {{ project.estimatedEndDate ? formatDate(project.estimatedEndDate) : '—' }}
-          </span>
-        </div>
-        <div v-if="project.description" class="col-span-2 bg-go-surface border border-go-border rounded-go-md px-3 py-2">
-          <span class="text-[10px] uppercase tracking-wider text-go-text-muted block">Descripción</span>
-          <span class="text-sm font-medium text-go-text">{{ project.description }}</span>
-        </div>
-      </div>
+      <!-- Details + Summary -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-4">
+        <!-- Left: project info + actions -->
+        <div class="flex flex-col gap-3">
+          <!-- Metadata strip -->
+          <div class="grid grid-cols-2 gap-2">
+            <div v-if="project.clientName" class="bg-go-surface border border-go-border rounded-go-md px-3 py-2">
+              <span class="text-[10px] uppercase tracking-wider text-go-text-muted block">Cliente</span>
+              <span class="text-sm font-medium text-go-text">{{ project.clientName }}</span>
+            </div>
+            <div v-if="project.address" class="bg-go-surface border border-go-border rounded-go-md px-3 py-2">
+              <span class="text-[10px] uppercase tracking-wider text-go-text-muted block">Dirección</span>
+              <span class="text-sm font-medium text-go-text">{{ project.address }}</span>
+            </div>
+            <div v-if="project.budget" class="bg-go-surface border border-go-border rounded-go-md px-3 py-2">
+              <span class="text-[10px] uppercase tracking-wider text-go-text-muted block">Presupuesto</span>
+              <span class="text-sm font-medium text-go-text">{{ formatPrice(project.budget) }}</span>
+            </div>
+            <div v-if="project.startDate || project.estimatedEndDate" class="bg-go-surface border border-go-border rounded-go-md px-3 py-2">
+              <span class="text-[10px] uppercase tracking-wider text-go-text-muted block">Cronograma</span>
+              <span class="text-sm font-medium text-go-text">
+                {{ project.startDate ? formatDate(project.startDate) : '—' }}
+                →
+                {{ project.estimatedEndDate ? formatDate(project.estimatedEndDate) : '—' }}
+              </span>
+            </div>
+            <div v-if="project.description" class="col-span-2 bg-go-surface border border-go-border rounded-go-md px-3 py-2">
+              <span class="text-[10px] uppercase tracking-wider text-go-text-muted block">Descripción</span>
+              <span class="text-sm font-medium text-go-text">{{ project.description }}</span>
+            </div>
+          </div>
 
-      <!-- Client share link panel -->
-      <div class="bg-go-bg border border-go-border-subtle rounded-go-xl px-4 py-3 flex items-center gap-3 mt-3">
+          <!-- Client share link panel -->
+          <div class="bg-go-bg border border-go-border-subtle rounded-go-xl px-4 py-3 flex items-center gap-3">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-go-text-muted flex-shrink-0">
           <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
           <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
@@ -126,8 +128,8 @@
         </button>
       </div>
 
-      <!-- Add expense action bar -->
-      <div class="flex flex-col sm:flex-row gap-2 mt-4">
+          <!-- Add expense action bar -->
+          <div class="flex flex-col sm:flex-row gap-2">
         <button
           @click="openCreateModal('expense')"
           class="btn-primary flex items-center justify-center gap-1.5 text-sm w-full sm:w-auto"
@@ -157,86 +159,86 @@
             <span>Gasto propio</span>
             <span class="block text-[11px] opacity-70 font-normal">No cobrable</span>
           </div>
-        </button>
-      </div>
-
-      <!-- Summary + Content -->
-      <div class="mt-8 pt-8 border-t border-go-border-subtle">
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
-          <div class="order-2 lg:order-none lg:sticky lg:top-6 lg:self-start">
-            <ExpenseSummary :expenses="expenseStore.expenses" :budget="project.budget" :categories="resolvedCategories" />
-          </div>
-          <div class="lg:col-span-2 order-1 lg:order-none">
-            <!-- Tab bar -->
-            <div class="flex items-center justify-between mb-4">
-              <div class="flex bg-go-surface border border-go-border rounded-go-md p-0.5 gap-0.5">
-                <button
-                  @click="activeTab = 'movimientos'"
-                  class="px-4 py-1.5 text-sm font-medium rounded-go-sm transition-colors"
-                  :class="activeTab === 'movimientos'
-                    ? 'bg-go-bg text-go-text shadow-sm'
-                    : 'text-go-text-muted hover:text-go-text'"
-                >
-                  Movimientos
-                </button>
-                <button
-                  @click="activeTab = 'entregas'"
-                  class="px-4 py-1.5 text-sm font-medium rounded-go-sm transition-colors"
-                  :class="activeTab === 'entregas'
-                    ? 'bg-go-bg text-go-text shadow-sm'
-                    : 'text-go-text-muted hover:text-go-text'"
-                >
-                  Entregas
-                </button>
-              </div>
-              <button
-                v-if="activeTab === 'entregas'"
-                @click="editingDelivery = null; showDeliveryModal = true"
-                class="btn-primary text-sm flex items-center gap-1.5"
-              >
-                <MdiPlus class="text-base" />
-                Nueva entrega
-              </button>
-            </div>
-
-            <AppLoader v-if="expenseStore.isLoading" text="Cargando gastos..." />
-            <template v-else>
-              <!-- Empty state callout -->
-              <div v-if="expenseStore.expenses.length === 0" class="bg-go-surface border border-go-border-subtle rounded-go-xl p-6 text-center mb-6">
-                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="text-go-primary/50 mx-auto mb-3">
-                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-                </svg>
-                <h4 class="font-display font-semibold text-go-text">Tu obra está lista.</h4>
-                <p class="text-go-text-muted text-sm mt-1">Mandá un gasto por WhatsApp para empezar, o usá el botón + Gasto acá arriba.</p>
-              </div>
-
-              <!-- Movimientos tab -->
-              <ExpenseList
-                v-if="activeTab === 'movimientos'"
-                :expenses="expenseStore.expenses"
-                :editable="true"
-                :categories="resolvedCategories"
-                :loading="expenseStore.isLoading"
-                @edit="openEditModal"
-                @add-installment="handleAddInstallment"
-              />
-
-              <!-- Entregas tab -->
-              <DeliveryList
-                v-if="activeTab === 'entregas'"
-                :deliveries="deliveryStore.deliveries"
-                :expenses="expenseStore.expenses"
-                :editable="true"
-                :is-deleting="isDeletingDelivery"
-                @edit="openDeliveryEditModal"
-                @delete="handleDeleteDelivery"
-                @assign="openDeliveryAssignModal"
-                @edit-expense="openEditModal"
-                @view-unassigned="showUnassignedModal = true"
-              />
-            </template>
+            </button>
           </div>
         </div>
+
+        <!-- Right: summary -->
+        <div class="lg:sticky lg:top-6 lg:self-start">
+          <ExpenseSummary :expenses="expenseStore.expenses" :budget="project.budget" :categories="resolvedCategories" />
+        </div>
+      </div>
+
+      <!-- Movements -->
+      <div class="mt-8 pt-8 border-t border-go-border-subtle">
+        <!-- Tab bar -->
+        <div class="flex items-center justify-between mb-4">
+          <div class="flex bg-go-surface border border-go-border rounded-go-md p-0.5 gap-0.5">
+            <button
+              @click="activeTab = 'movimientos'"
+              class="px-4 py-1.5 text-sm font-medium rounded-go-sm transition-colors"
+              :class="activeTab === 'movimientos'
+                ? 'bg-go-bg text-go-text shadow-sm'
+                : 'text-go-text-muted hover:text-go-text'"
+            >
+              Movimientos
+            </button>
+            <button
+              @click="activeTab = 'entregas'"
+              class="px-4 py-1.5 text-sm font-medium rounded-go-sm transition-colors"
+              :class="activeTab === 'entregas'
+                ? 'bg-go-bg text-go-text shadow-sm'
+                : 'text-go-text-muted hover:text-go-text'"
+            >
+              Entregas
+            </button>
+          </div>
+          <button
+            v-if="activeTab === 'entregas'"
+            @click="editingDelivery = null; showDeliveryModal = true"
+            class="btn-primary text-sm flex items-center gap-1.5"
+          >
+            <MdiPlus class="text-base" />
+            Nueva entrega
+          </button>
+        </div>
+
+        <AppLoader v-if="expenseStore.isLoading" text="Cargando gastos..." />
+        <template v-else>
+          <!-- Empty state callout -->
+          <div v-if="expenseStore.expenses.length === 0" class="bg-go-surface border border-go-border-subtle rounded-go-xl p-6 text-center mb-6">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="text-go-primary/50 mx-auto mb-3">
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+            </svg>
+            <h4 class="font-display font-semibold text-go-text">Tu obra está lista.</h4>
+            <p class="text-go-text-muted text-sm mt-1">Mandá un gasto por WhatsApp para empezar, o usá el botón + Gasto acá arriba.</p>
+          </div>
+
+          <!-- Movimientos tab -->
+          <ExpenseList
+            v-if="activeTab === 'movimientos'"
+            :expenses="expenseStore.expenses"
+            :editable="true"
+            :categories="resolvedCategories"
+            :loading="expenseStore.isLoading"
+            @edit="openEditModal"
+            @add-installment="handleAddInstallment"
+          />
+
+          <!-- Entregas tab -->
+          <DeliveryList
+            v-if="activeTab === 'entregas'"
+            :deliveries="deliveryStore.deliveries"
+            :expenses="expenseStore.expenses"
+            :editable="true"
+            :is-deleting="isDeletingDelivery"
+            @edit="openDeliveryEditModal"
+            @delete="handleDeleteDelivery"
+            @assign="openDeliveryAssignModal"
+            @edit-expense="openEditModal"
+            @view-unassigned="showUnassignedModal = true"
+          />
+        </template>
       </div>
 
       <!-- Delivery create/edit modal -->
@@ -311,8 +313,10 @@
         :projects="projectStore.projects"
         :categories="resolvedCategories"
         :is-saving="isEditingExpense"
+        :is-deleting="isDeletingExpense"
         @close="showEditModal = false"
         @save="handleEditSave"
+        @delete="handleDeleteExpense"
       />
 
       <!-- Edit project modal -->
@@ -370,6 +374,7 @@ const assigningDelivery = ref(null);
 const editingDelivery = ref(null);
 const isCreatingExpense = ref(false);
 const isEditingExpense = ref(false);
+const isDeletingExpense = ref(false);
 const isCreatingDelivery = ref(false);
 const isDeletingDelivery = ref(false);
 
@@ -604,12 +609,46 @@ async function handleProjectEditSave(data) {
   }
 }
 
-async function handleEditSave({ id, data }) {
+async function handleEditSave({ id, data, createLinkedPayment, deleteLinkedPaymentId }) {
   isEditingExpense.value = true;
   try {
     const result = await expenseStore.updateExpense(id, data);
 
     if (result.success) {
+      // Delete linked payment when going from X% to 0% (discount from balance)
+      if (deleteLinkedPaymentId) {
+        await expenseStore.deleteExpense(deleteLinkedPaymentId);
+        await expenseStore.updateExpense(id, { linkedPaymentId: null });
+      }
+
+      // Create linked payment when going from 0% to a higher percentage
+      if (createLinkedPayment) {
+        const paymentData = {
+          projectId: data.projectId || project.value.id,
+          providerId: project.value.providerId,
+          title: `Pago: ${data.title}`,
+          description: '',
+          amount: data.amount,
+          category: 'pago',
+          type: 'payment',
+          paymentMethod: data.paymentMethod,
+          recipientName: data.recipientName,
+          recipientBankInfo: data.recipientBankInfo,
+          recipientPlatform: data.recipientPlatform,
+          recipientCuit: data.recipientCuit,
+          linkedExpenseId: id,
+          items: null,
+          vendor: data.vendor || null
+        };
+
+        const paymentResult = await expenseStore.createExpense(paymentData);
+        if (paymentResult.success) {
+          await expenseStore.updateExpense(id, {
+            linkedPaymentId: paymentResult.data.id
+          });
+        }
+      }
+
       // Auto-add vendor to provider's vendor list
       if (data.vendor) {
         vendorStore.addVendor(data.vendor);
@@ -627,6 +666,34 @@ async function handleEditSave({ id, data }) {
     }
   } finally {
     isEditingExpense.value = false;
+  }
+}
+
+async function handleDeleteExpense(expense) {
+  isDeletingExpense.value = true;
+  try {
+    // Delete linked payment if exists
+    if (expense.linkedPaymentId) {
+      await expenseStore.deleteExpense(expense.linkedPaymentId);
+    }
+
+    // If this is a payment linked to an expense, clear the reference
+    if (expense.linkedExpenseId) {
+      await expenseStore.updateExpense(expense.linkedExpenseId, { linkedPaymentId: null });
+    }
+
+    const deleted = await expenseStore.deleteExpense(expense.id);
+    if (deleted) {
+      useToast('success', 'Registro eliminado');
+      showEditModal.value = false;
+    } else {
+      useToast('error', 'Error al eliminar');
+    }
+  } catch (error) {
+    console.error('Error deleting expense:', error);
+    useToast('error', 'Error al eliminar');
+  } finally {
+    isDeletingExpense.value = false;
   }
 }
 

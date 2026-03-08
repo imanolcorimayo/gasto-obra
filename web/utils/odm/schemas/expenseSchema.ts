@@ -39,6 +39,10 @@ export class ExpenseSchema extends Schema {
       type: 'string',
       required: false
     },
+    audioUrl: {
+      type: 'string',
+      required: false
+    },
     audioTranscription: {
       type: 'string',
       required: false
