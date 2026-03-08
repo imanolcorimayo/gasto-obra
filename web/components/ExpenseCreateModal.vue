@@ -136,6 +136,12 @@
             </div>
           </div>
 
+          <!-- Vendor (expense + provider_expense only) -->
+          <div v-if="type !== 'payment'">
+            <label class="block text-[11px] font-semibold uppercase tracking-wider text-go-text-muted mb-1.5">Comercio</label>
+            <VendorCombobox v-model="form.vendor" :vendors="vendorStore.vendors" :disabled="isLocked" />
+          </div>
+
           <!-- Description (expense + provider_expense only) -->
           <div v-if="type !== 'payment'">
             <label class="block text-[11px] font-semibold uppercase tracking-wider text-go-text-muted mb-1.5">Descripcion</label>
@@ -267,6 +273,7 @@ import MdiPlus from '~icons/mdi/plus';
 import MdiClose from '~icons/mdi/close';
 import { DEFAULT_EXPENSE_CATEGORIES, PAYMENT_METHODS, SCOPE_TYPES, getScopeTypeStyles, formatPrice } from '~/utils';
 import { useRecipientStore } from '~/stores/recipient';
+import { useVendorStore } from '~/stores/vendor';
 
 const props = defineProps({
   show: { type: Boolean, default: false },
@@ -278,6 +285,7 @@ const props = defineProps({
 });
 
 const recipientStore = useRecipientStore();
+const vendorStore = useVendorStore();
 
 const resolvedCategories = computed(() =>
   props.categories.length > 0 ? props.categories : DEFAULT_EXPENSE_CATEGORIES
@@ -305,7 +313,8 @@ const form = reactive({
   deliveryId: null,
   items: [],
   installmentPercent: 100,
-  installmentGroupId: null
+  installmentGroupId: null,
+  vendor: ''
 });
 
 const isPartial = computed(() => form.installmentPercent > 0 && form.installmentPercent < 100);
@@ -394,6 +403,7 @@ watch(() => props.show, (show) => {
     form.items = p?.items?.length ? p.items.map(i => ({ ...i })) : [];
     form.installmentPercent = p?.installmentPercent ?? 100;
     form.installmentGroupId = p?.installmentGroupId || null;
+    form.vendor = p?.vendor || '';
     showItems.value = form.items.length > 0;
     selectedRecipientIdx.value = -1;
     if (p?.recipientName && recipientStore.recipients.length > 0) {
@@ -402,6 +412,9 @@ watch(() => props.show, (show) => {
     }
     if (recipientStore.recipients.length === 0) {
       recipientStore.fetchAll();
+    }
+    if (vendorStore.vendors.length === 0) {
+      vendorStore.fetchAll();
     }
   }
 });
@@ -430,7 +443,8 @@ function handleSubmit() {
     deliveryId: props.type === 'expense' ? (form.deliveryId || null) : null,
     items: form.items.length > 0 ? form.items.filter(i => i.name) : null,
     installmentPercent: percent,
-    installmentGroupId: needsGroup ? (form.installmentGroupId || crypto.randomUUID()) : null
+    installmentGroupId: needsGroup ? (form.installmentGroupId || crypto.randomUUID()) : null,
+    vendor: form.vendor || null
   };
   emit('submit', data);
 }

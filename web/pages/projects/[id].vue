@@ -337,6 +337,7 @@ import { useProjectStore } from '~/stores/project';
 import { useExpenseStore } from '~/stores/expense';
 import { useCategoryStore } from '~/stores/category';
 import { useRecipientStore } from '~/stores/recipient';
+import { useVendorStore } from '~/stores/vendor';
 import { useDeliveryStore } from '~/stores/delivery';
 import { formatPrice, formatDate } from '~/utils';
 
@@ -349,6 +350,7 @@ const projectStore = useProjectStore();
 const expenseStore = useExpenseStore();
 const categoryStore = useCategoryStore();
 const recipientStore = useRecipientStore();
+const vendorStore = useVendorStore();
 const deliveryStore = useDeliveryStore();
 
 const isLoading = ref(true);
@@ -530,7 +532,8 @@ async function handleCreateSubmit(formData) {
       deliveryId: formData.deliveryId || null,
       items: formData.items,
       installmentPercent: formData.installmentPercent ?? null,
-      installmentGroupId: formData.installmentGroupId || null
+      installmentGroupId: formData.installmentGroupId || null,
+      vendor: formData.vendor || null
     };
 
     const result = await expenseStore.createExpense(data);
@@ -552,7 +555,8 @@ async function handleCreateSubmit(formData) {
           recipientPlatform: formData.recipientPlatform,
           recipientCuit: formData.recipientCuit,
           linkedExpenseId: result.data.id,
-          items: null
+          items: null,
+          vendor: formData.vendor || null
         };
 
         const paymentResult = await expenseStore.createExpense(paymentData);
@@ -561,6 +565,11 @@ async function handleCreateSubmit(formData) {
             linkedPaymentId: paymentResult.data.id
           });
         }
+      }
+
+      // Auto-add vendor to provider's vendor list
+      if (formData.vendor) {
+        vendorStore.addVendor(formData.vendor);
       }
 
       const label = formData.type === 'payment' ? 'Cobro registrado' : formData.type === 'provider_expense' ? 'Gasto propio registrado' : 'Gasto agregado';
@@ -601,6 +610,11 @@ async function handleEditSave({ id, data }) {
     const result = await expenseStore.updateExpense(id, data);
 
     if (result.success) {
+      // Auto-add vendor to provider's vendor list
+      if (data.vendor) {
+        vendorStore.addVendor(data.vendor);
+      }
+
       useToast('success', 'Registro actualizado');
       showEditModal.value = false;
 

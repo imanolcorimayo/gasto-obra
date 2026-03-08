@@ -124,6 +124,12 @@
             </div>
           </div>
 
+          <!-- Vendor -->
+          <div v-if="form.type !== 'payment'">
+            <label class="block text-[11px] font-semibold uppercase tracking-wider text-go-text-muted mb-1.5">Comercio</label>
+            <VendorCombobox v-model="form.vendor" :vendors="vendorStore.vendors" />
+          </div>
+
           <!-- Description -->
           <div>
             <label class="block text-[11px] font-semibold uppercase tracking-wider text-go-text-muted mb-1.5">Descripcion</label>
@@ -278,8 +284,10 @@ import MdiPlus from '~icons/mdi/plus';
 import MdiClose from '~icons/mdi/close';
 import { DEFAULT_EXPENSE_CATEGORIES, PAYMENT_METHODS, SCOPE_TYPES, getScopeTypeStyles, formatPrice } from '~/utils';
 import { useRecipientStore } from '~/stores/recipient';
+import { useVendorStore } from '~/stores/vendor';
 
 const recipientStore = useRecipientStore();
+const vendorStore = useVendorStore();
 
 const props = defineProps({
   show: { type: Boolean, default: false },
@@ -327,7 +335,8 @@ const form = reactive({
   items: [],
   projectId: '',
   installmentPercent: 100,
-  installmentGroupId: null
+  installmentGroupId: null,
+  vendor: ''
 });
 
 // Lock background scroll
@@ -356,6 +365,7 @@ watch(() => props.expense, (expense) => {
     form.projectId = expense.projectId || '';
     form.installmentPercent = percent;
     form.installmentGroupId = expense.installmentGroupId || null;
+    form.vendor = expense.vendor || '';
     showItems.value = form.items.length > 0;
     showMoveProject.value = false;
 
@@ -424,7 +434,8 @@ function handleSave() {
     items: form.items.length > 0 ? form.items.filter(i => i.name) : null,
     projectId: form.projectId,
     installmentPercent: percent,
-    installmentGroupId: needsGroup ? (form.installmentGroupId || crypto.randomUUID()) : null
+    installmentGroupId: needsGroup ? (form.installmentGroupId || crypto.randomUUID()) : null,
+    vendor: form.vendor || null
   };
   emit('save', { id: props.expense.id, data });
 }

@@ -78,10 +78,6 @@
                   <span class="font-display font-bold text-lg tabular-nums text-go-secondary">{{ formatPrice(totalPayments) }}</span>
                 </div>
 
-                <div v-if="totalPending > 0" class="flex items-center justify-between">
-                  <span class="text-go-text-tertiary text-sm">Pendiente de pago</span>
-                  <span class="font-display font-bold text-lg tabular-nums text-go-danger">{{ formatPrice(totalPending) }}</span>
-                </div>
               </div>
 
               <!-- Budget progress -->
@@ -212,11 +208,6 @@ const totalPayments = computed(() =>
   onlyPayments.value.reduce((sum, e) => sum + (e.amount || 0), 0)
 );
 
-const totalPending = computed(() =>
-  onlyExpenses.value
-    .filter(e => e.installmentPercent === 0)
-    .reduce((sum, e) => sum + (e.amount || 0), 0)
-);
 
 const balance = computed(() => totalPayments.value - totalExpenses.value);
 

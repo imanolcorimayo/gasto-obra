@@ -26,10 +26,6 @@
         <span class="text-[10px] font-semibold uppercase tracking-wider text-go-text-muted block mb-0.5">Gastos propios</span>
         <span class="font-display font-bold text-xl tabular-nums text-go-text-tertiary">{{ formatPrice(totalProviderExpenses) }}</span>
       </div>
-      <div v-if="totalPending > 0">
-        <span class="text-[10px] font-semibold uppercase tracking-wider text-go-text-muted block mb-0.5">Pendiente de pago</span>
-        <span class="font-display font-bold text-xl tabular-nums text-go-danger">{{ formatPrice(totalPending) }}</span>
-      </div>
       <div v-if="totalPayments > 0" class="pt-3 border-t border-go-border">
         <span class="text-[10px] font-semibold uppercase tracking-wider text-go-text-muted block mb-0.5">Saldo</span>
         <span
@@ -115,11 +111,6 @@ const totalProviderExpenses = computed(() =>
   providerExpensesList.value.reduce((sum, e) => sum + (e.amount || 0), 0)
 );
 
-const totalPending = computed(() =>
-  clientExpenses.value
-    .filter(e => e.installmentPercent === 0)
-    .reduce((sum, e) => sum + (e.amount || 0), 0)
-);
 
 const balance = computed(() => totalPayments.value - totalExpenses.value);
 

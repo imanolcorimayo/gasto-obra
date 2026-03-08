@@ -96,6 +96,7 @@
             <td class="py-3 pr-3 text-go-text-muted text-xs tabular-nums whitespace-nowrap">{{ row.date }}</td>
             <td class="py-3 pr-3 text-go-text">
               <span>{{ row.title }}</span>
+              <span v-if="row.vendor" class="text-go-text-muted text-xs ml-1">[{{ row.vendor }}]</span>
               <span v-if="row.items" class="text-go-text-muted text-xs ml-1">({{ row.items }} items)</span>
             </td>
             <td v-if="hasInstallments" class="py-3 px-3 whitespace-nowrap">
@@ -298,6 +299,7 @@ const tableRows = computed(() => {
       expense: e,
       date: formatDateShort(e),
       title: e.title,
+      vendor: e.vendor || null,
       items: e.items?.length || 0,
       scopeType: e.scopeType || 'original',
       categoryLabel: getCategoryLabel(e.category || 'otros', resolvedCategories.value),

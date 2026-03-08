@@ -25,7 +25,8 @@ const COLLECTIONS = {
   PROJECTS: 'projects',
   EXPENSES: 'expenses',
   CATEGORIES: 'categories',
-  RECIPIENTS: 'recipients'
+  RECIPIENTS: 'recipients',
+  VENDORS: 'vendors'
 };
 
 export { admin, db, COLLECTIONS };

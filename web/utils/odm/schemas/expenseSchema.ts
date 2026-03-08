@@ -105,6 +105,11 @@ export class ExpenseSchema extends Schema {
       type: 'string',
       required: false
     },
+    vendor: {
+      type: 'string',
+      required: false,
+      maxLength: 100
+    },
     source: {
       type: 'string',
       required: true,

@@ -93,7 +93,8 @@ async function sendDailySummaries() {
       expenseLines += todayExpenses
         .map(e => {
           const cat = e.category ? ` (${capitalizeFirst(e.category)})` : '';
-          return `  ${formatAmount(e.amount)} - ${e.title}${cat}`;
+          const vendorTag = e.vendor ? ` [${e.vendor}]` : '';
+          return `  ${formatAmount(e.amount)} - ${e.title}${cat}${vendorTag}`;
         })
         .join('\n');
     }

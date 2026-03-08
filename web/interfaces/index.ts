@@ -29,6 +29,12 @@ export interface RecipientDoc extends Recipient {
   userId: string;
 }
 
+export interface VendorDoc {
+  id: string;
+  userId: string;
+  name: string;
+}
+
 export type ExpenseType = 'expense' | 'payment' | 'provider_expense';
 export type ScopeType = 'original' | 'addition';
 
@@ -61,6 +67,7 @@ export interface Expense {
   deliveryId: string | null;
   installmentPercent: number | null;
   installmentGroupId: string | null;
+  vendor: string | null;
   source: 'whatsapp' | 'web';
   date: any;
   createdAt: any;

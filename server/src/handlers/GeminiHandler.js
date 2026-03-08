@@ -112,7 +112,7 @@ class GeminiHandler {
     return { error: 'unavailable' };
   }
 
-  async parseReceiptImage(imageBase64, mimeType = 'image/jpeg', { caption = '', activeProjects = [], categories = null, recipients = [], paymentMethods = [] } = {}) {
+  async parseReceiptImage(imageBase64, mimeType = 'image/jpeg', { caption = '', activeProjects = [], categories = null, recipients = [], paymentMethods = [], vendors = [] } = {}) {
     const projectList = activeProjects.length > 0
       ? `\nProyectos activos (usa el ID exacto si el usuario menciona uno en el texto):\n${activeProjects.map(p => `- ID: "${p.id}", Nombre: "${p.name}", Tag: "#${p.tag}"`).join('\n')}`
       : '';
@@ -123,6 +123,10 @@ class GeminiHandler {
 
     const methodList = paymentMethods.length > 0
       ? `\nMetodos de pago validos: ${paymentMethods.join(', ')}`
+      : '';
+
+    const vendorList = vendors.length > 0
+      ? `\nComercio/proveedores conocidos del usuario: ${vendors.map(v => v.name).join(', ')}`
       : '';
 
     const captionBlock = caption
@@ -141,16 +145,19 @@ ${captionBlock}
 - "paymentMethod": debe ser EXACTAMENTE uno de los metodos validos, o null
 - "recipientId": debe ser EXACTAMENTE uno de los IDs listados, o null
 - "projectId": debe ser EXACTAMENTE uno de los IDs listados, o null
+- "vendor": nombre del comercio/local donde se compro. Si coincide con un comercio conocido, usa el nombre exacto de la lista
 Si no podes extraer algun campo, usa null.
 ${projectList}
 ${recipientList}
-${methodList}`;
+${methodList}
+${vendorList}`;
 
     const schema = {
       type: 'object',
       properties: {
         transactionType: { type: 'string', enum: ['expense', 'payment'] },
         storeName: { type: 'string', nullable: true },
+        vendor: { type: 'string', nullable: true },
         items: {
           type: 'array',
           items: {
@@ -194,6 +201,7 @@ ${methodList}`;
     try {
       const parsed = JSON.parse(text);
       parsed.installmentPercent = parseInt(parsed.installmentPercent, 10) || 0;
+      parsed.vendor = parsed.vendor || parsed.storeName || null;
       return parsed;
     } catch (error) {
       logger.error('Error parsing receipt JSON', { error });
@@ -201,7 +209,7 @@ ${methodList}`;
     }
   }
 
-  async transcribeAudio(audioBase64, mimeType = 'audio/ogg', { activeProjects = [], categories = null, recipients = [], paymentMethods = [] } = {}) {
+  async transcribeAudio(audioBase64, mimeType = 'audio/ogg', { activeProjects = [], categories = null, recipients = [], paymentMethods = [], vendors = [] } = {}) {
     const projectList = activeProjects.length > 0
       ? `\nProyectos activos (usa el ID exacto si el usuario menciona uno):\n${activeProjects.map(p => `- ID: "${p.id}", Nombre: "${p.name}", Tag: "#${p.tag}"`).join('\n')}`
       : '';
@@ -218,12 +226,17 @@ ${methodList}`;
       ? `\nMetodos de pago validos: ${paymentMethods.join(', ')}`
       : '\nMetodos de pago validos: transferencia, efectivo, tarjeta, mercadopago';
 
+    const vendorList = vendors.length > 0
+      ? `\nComercio/proveedores conocidos del usuario: ${vendors.map(v => v.name).join(', ')}`
+      : '';
+
     const prompt = `Transcribi este audio en español argentino. El audio describe un gasto de obra, un pago recibido, o un gasto propio del proveedor.
 Extrae la informacion en formato JSON.
 ${projectList}
 ${recipientList}
 ${categoryList}
 ${methodList}
+${vendorList}
 
 Reglas importantes:
 - "transactionType": detecta el tipo segun lo que dice la persona:
@@ -239,6 +252,7 @@ Reglas importantes:
 - "paymentMethod": debe ser EXACTAMENTE uno de los metodos validos, o null si no se menciona
 - "recipientId": debe ser EXACTAMENTE uno de los IDs de destinatarios listados, o null si no se menciona
 - "projectId": debe ser EXACTAMENTE uno de los IDs de proyectos listados si el usuario menciona un proyecto, o null
+- "vendor": nombre del comercio/local donde se compro. Si coincide con un comercio conocido, usa el nombre exacto de la lista
 Si no podes extraer algun campo, usa null.`;
 
     const schema = {
@@ -264,7 +278,8 @@ Si no podes extraer algun campo, usa null.`;
         paymentMethod: { type: 'string', nullable: true },
         recipientId: { type: 'string', nullable: true },
         installmentPercent: { type: 'string', enum: ['0', '100'] },
-        projectId: { type: 'string', nullable: true }
+        projectId: { type: 'string', nullable: true },
+        vendor: { type: 'string', nullable: true }
       },
       required: ['transcription', 'transactionType', 'title', 'items', 'totalAmount', 'installmentPercent']
     };
@@ -298,7 +313,7 @@ Si no podes extraer algun campo, usa null.`;
     }
   }
 
-  async parseTextExpense(text, { activeProjects = [], categories = null, recipients = [], paymentMethods = [] } = {}) {
+  async parseTextExpense(text, { activeProjects = [], categories = null, recipients = [], paymentMethods = [], vendors = [] } = {}) {
     const projectList = activeProjects.length > 0
       ? `\nProyectos activos (usa el ID exacto si el usuario menciona uno):\n${activeProjects.map(p => `- ID: "${p.id}", Nombre: "${p.name}", Tag: "#${p.tag}"`).join('\n')}`
       : '';
@@ -315,6 +330,10 @@ Si no podes extraer algun campo, usa null.`;
       ? `\nMetodos de pago validos: ${paymentMethods.join(', ')}`
       : '\nMetodos de pago validos: transferencia, efectivo, tarjeta, mercadopago';
 
+    const vendorList = vendors.length > 0
+      ? `\nComercio/proveedores conocidos del usuario: ${vendors.map(v => v.name).join(', ')}`
+      : '';
+
     const prompt = `Analiza este mensaje de un proveedor de obra que describe un gasto, pago, o gasto propio. Extrae la informacion en formato JSON:
 {
   "transactionType": "expense|payment|provider_expense",
@@ -326,7 +345,8 @@ Si no podes extraer algun campo, usa null.`;
   "paymentMethod": "<metodo de pago o null>",
   "recipientId": "<ID del destinatario o null>",
   "installmentPercent": 0,
-  "projectId": "<ID del proyecto si se menciona, o null>"
+  "projectId": "<ID del proyecto si se menciona, o null>",
+  "vendor": "<comercio donde se compro, o null>"
 }
 
 Mensaje: "${text}"
@@ -334,6 +354,7 @@ ${projectList}
 ${recipientList}
 ${categoryList}
 ${methodList}
+${vendorList}
 
 Reglas importantes:
 - "transactionType": detecta el tipo segun lo que dice la persona:
@@ -348,6 +369,7 @@ Reglas importantes:
 - "paymentMethod": debe ser EXACTAMENTE uno de los metodos validos, o null si no se menciona
 - "recipientId": debe ser EXACTAMENTE uno de los IDs de destinatarios listados, o null si no se menciona
 - "projectId": debe ser EXACTAMENTE uno de los IDs de proyectos listados si el usuario menciona un proyecto, o null
+- "vendor": nombre del comercio/local donde se compro. Si coincide con un comercio conocido, usa el nombre exacto de la lista
 Si no podes extraer algun campo, usa null.`;
 
     const schema = {
@@ -372,7 +394,8 @@ Si no podes extraer algun campo, usa null.`;
         paymentMethod: { type: 'string', nullable: true },
         recipientId: { type: 'string', nullable: true },
         installmentPercent: { type: 'string', enum: ['0', '100'] },
-        projectId: { type: 'string', nullable: true }
+        projectId: { type: 'string', nullable: true },
+        vendor: { type: 'string', nullable: true }
       },
       required: ['transactionType', 'title', 'items', 'totalAmount', 'installmentPercent']
     };

@@ -78,6 +78,19 @@ async function getProviderRecipients(userId) {
   }
 }
 
+// Fetch provider's vendors
+async function getProviderVendors(userId) {
+  try {
+    const snap = await db.collection(COLLECTIONS.VENDORS)
+      .where('userId', '==', userId)
+      .get();
+    return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  } catch (error) {
+    logger.error('Error fetching provider vendors', { error });
+    return [];
+  }
+}
+
 // ============================================
 // Transaction Type Helpers
 // ============================================
@@ -500,13 +513,15 @@ async function processImageMessage(phoneNumber, imageId, caption, contactName) {
 
   const providerCats = await getProviderCategories(userId, activeProjectId);
   const recipients = await getProviderRecipients(userId);
+  const vendors = await getProviderVendors(userId);
 
   const context = {
     caption,
     activeProjects: activeProjects.map(p => ({ id: p.id, name: p.name, tag: p.tag })),
     categories: providerCats,
     recipients: recipients.map(r => ({ id: r.id, name: r.name, platform: r.platform })),
-    paymentMethods: VALID_PAYMENT_METHODS
+    paymentMethods: VALID_PAYMENT_METHODS,
+    vendors
   };
 
   const receiptData = await geminiHandler.parseReceiptImage(imageData.base64, imageData.mimeType, context);
@@ -523,6 +538,7 @@ async function processImageMessage(phoneNumber, imageId, caption, contactName) {
   const typeDefaults = getTypeDefaults(transactionType);
   const installmentPercent = receiptData.installmentPercent === 100 ? 100 : (typeDefaults.installmentPercent ?? 0);
 
+  const vendor = receiptData.vendor || receiptData.storeName || null;
   const title = receiptData.storeName || (receiptData.items?.[0]?.name) || 'Ticket';
   const description = receiptData.items
     ? receiptData.items.map(i => typeof i === 'string' ? i : i.name).join(', ')
@@ -577,6 +593,7 @@ async function processImageMessage(phoneNumber, imageId, caption, contactName) {
       recipientBankInfo,
       recipientPlatform,
       recipientCuit,
+      vendor,
       linkedExpenseId: null,
       linkedPaymentId: null,
       items,
@@ -620,6 +637,7 @@ async function processImageMessage(phoneNumber, imageId, caption, contactName) {
     recipientBankInfo,
     recipientPlatform,
     recipientCuit,
+    vendor,
     linkedExpenseId: null,
     linkedPaymentId: null,
     items,
@@ -682,12 +700,14 @@ async function processAudioMessage(phoneNumber, audioId, caption, contactName) {
 
   const providerCats = await getProviderCategories(userId, activeProjectId);
   const recipients = await getProviderRecipients(userId);
+  const vendors = await getProviderVendors(userId);
 
   const context = {
     activeProjects: activeProjects.map(p => ({ id: p.id, name: p.name, tag: p.tag })),
     categories: providerCats,
     recipients: recipients.map(r => ({ id: r.id, name: r.name, platform: r.platform })),
-    paymentMethods: VALID_PAYMENT_METHODS
+    paymentMethods: VALID_PAYMENT_METHODS,
+    vendors
   };
 
   const transcription = await geminiHandler.transcribeAudio(audioData.base64, audioData.mimeType, context);
@@ -720,6 +740,7 @@ async function processAudioMessage(phoneNumber, audioId, caption, contactName) {
   }
 
   // Validate AI fields
+  const vendor = transcription.vendor || null;
   const paymentMethod = VALID_PAYMENT_METHODS.includes(transcription.paymentMethod) ? transcription.paymentMethod : null;
 
   let recipientName = null;
@@ -767,6 +788,7 @@ async function processAudioMessage(phoneNumber, audioId, caption, contactName) {
       recipientBankInfo,
       recipientPlatform,
       recipientCuit,
+      vendor,
       linkedExpenseId: null,
       linkedPaymentId: null,
       items: items || null,
@@ -810,6 +832,7 @@ async function processAudioMessage(phoneNumber, audioId, caption, contactName) {
     recipientBankInfo,
     recipientPlatform,
     recipientCuit,
+    vendor,
     linkedExpenseId: null,
     linkedPaymentId: null,
     items: items || null,
@@ -866,12 +889,14 @@ async function handleTextExpense(phoneNumber, text) {
 
   const providerCats = await getProviderCategories(userId, activeProjectId);
   const recipients = await getProviderRecipients(userId);
+  const vendors = await getProviderVendors(userId);
 
   const context = {
     activeProjects: activeProjects.map(p => ({ id: p.id, name: p.name, tag: p.tag })),
     categories: providerCats,
     recipients: recipients.map(r => ({ id: r.id, name: r.name, platform: r.platform })),
-    paymentMethods: VALID_PAYMENT_METHODS
+    paymentMethods: VALID_PAYMENT_METHODS,
+    vendors
   };
 
   const result = await geminiHandler.parseTextExpense(text, context);
@@ -899,6 +924,7 @@ async function handleTextExpense(phoneNumber, text) {
   const installmentPercent = result.installmentPercent === 100 ? 100 : (typeDefaults.installmentPercent ?? 0);
 
   // Validate AI fields
+  const vendor = result.vendor || null;
   const paymentMethod = VALID_PAYMENT_METHODS.includes(result.paymentMethod) ? result.paymentMethod : null;
 
   let recipientId = null;
@@ -949,6 +975,7 @@ async function handleTextExpense(phoneNumber, text) {
       recipientBankInfo,
       recipientPlatform,
       recipientCuit,
+      vendor,
       linkedExpenseId: null,
       linkedPaymentId: null,
       items: items || null,
@@ -992,6 +1019,7 @@ async function handleTextExpense(phoneNumber, text) {
     recipientBankInfo,
     recipientPlatform,
     recipientCuit,
+    vendor,
     linkedExpenseId: null,
     linkedPaymentId: null,
     items: items || null,
@@ -1026,6 +1054,9 @@ function buildExpenseConfirmationMessage(data) {
 
   if (data.paymentMethod) {
     msg += `\nMetodo: ${capitalizeFirst(data.paymentMethod)}`;
+  }
+  if (data.vendor) {
+    msg += `\nComercio: ${data.vendor}`;
   }
   if (data.recipientName) {
     msg += `\nDestinatario: ${data.recipientName}`;
@@ -1065,6 +1096,7 @@ async function confirmPendingExpense(phoneNumber, pending) {
     items: data.items || null,
     imageUrl: data.imageUrl || null,
     audioTranscription: data.audioTranscription || null,
+    vendor: data.vendor || null,
     originalMessage: data.originalMessage || '',
     source: 'whatsapp',
     date: admin.firestore.FieldValue.serverTimestamp(),
@@ -1072,6 +1104,18 @@ async function confirmPendingExpense(phoneNumber, pending) {
   };
 
   const expenseRef = await db.collection(COLLECTIONS.EXPENSES).add(expenseDoc);
+
+  // Auto-add new vendor to provider's vendor list
+  if (data.vendor) {
+    try {
+      const existingVendors = await getProviderVendors(userId);
+      if (!existingVendors.some(v => v.name.toLowerCase() === data.vendor.toLowerCase())) {
+        await db.collection(COLLECTIONS.VENDORS).add({ userId, name: data.vendor });
+      }
+    } catch (e) {
+      logger.error('Error auto-adding vendor', { error: e });
+    }
+  }
 
   // Create linked payment if fully paid
   if (data.installmentPercent >= 100 && (data.type === 'expense' || !data.type)) {
@@ -1094,6 +1138,7 @@ async function confirmPendingExpense(phoneNumber, pending) {
       items: null,
       imageUrl: null,
       audioTranscription: null,
+      vendor: data.vendor || null,
       originalMessage: '',
       source: 'whatsapp',
       date: admin.firestore.FieldValue.serverTimestamp(),
@@ -1420,7 +1465,8 @@ async function sendWeeklyResumen(phoneNumber, pendingData) {
 
         const title = e.title || 'Sin titulo';
         const category = e.type !== 'payment' && e.category ? ` (${capitalizeFirst(e.category)})` : '';
-        daySection += `  ${prefix}${formatAmount(amount)} - ${title}${category}\n`;
+        const vendorTag = e.vendor ? ` [${e.vendor}]` : '';
+        daySection += `  ${prefix}${formatAmount(amount)} - ${title}${category}${vendorTag}\n`;
       });
       daySection += `  Subtotal: ${formatAmount(subtotal)}`;
       daysWithExpenses.push(daySection);

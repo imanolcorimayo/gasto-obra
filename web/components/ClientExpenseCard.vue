@@ -67,6 +67,10 @@
         {{ getPaymentMethodLabel(expense.paymentMethod) }}
       </span>
 
+      <span v-if="expense.vendor" class="text-go-text-tertiary text-xs">
+        {{ expense.vendor }}
+      </span>
+
       <span v-if="expense.recipientName" class="text-go-text-tertiary text-xs">
         &rarr; {{ expense.recipientName }}{{ expense.recipientPlatform ? ` (${expense.recipientPlatform})` : '' }}
       </span>

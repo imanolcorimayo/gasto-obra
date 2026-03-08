@@ -11,6 +11,9 @@
       <NuxtLink to="/settings/recipients" class="text-sm px-3 py-1.5 rounded-go-md transition-colors text-go-text-tertiary hover:text-go-text hover:bg-go-surface-hover">
         Destinatarios
       </NuxtLink>
+      <NuxtLink to="/settings/vendors" class="text-sm px-3 py-1.5 rounded-go-md transition-colors text-go-text-tertiary hover:text-go-text hover:bg-go-surface-hover">
+        Comercios
+      </NuxtLink>
     </div>
 
     <!-- Page Header -->
