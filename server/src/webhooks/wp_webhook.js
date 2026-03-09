@@ -691,7 +691,7 @@ async function processImageMessage(phoneNumber, imageId, caption, contactName) {
 
   const context = {
     caption,
-    activeProjects: activeProjects.map(p => ({ id: p.id, name: p.name, tag: p.tag })),
+    activeProjects: activeProjects.map(p => ({ id: p.id, name: p.name, tag: p.tag, clientName: p.clientName || null })),
     categories: providerCats,
     recipients: recipients.map(r => ({ id: r.id, name: r.name, platform: r.platform })),
     paymentMethods: VALID_PAYMENT_METHODS,
@@ -925,7 +925,7 @@ async function processDocumentMessage(phoneNumber, documentId, caption, filename
 
   const context = {
     caption,
-    activeProjects: activeProjects.map(p => ({ id: p.id, name: p.name, tag: p.tag })),
+    activeProjects: activeProjects.map(p => ({ id: p.id, name: p.name, tag: p.tag, clientName: p.clientName || null })),
     categories: providerCats,
     recipients: recipients.map(r => ({ id: r.id, name: r.name, platform: r.platform })),
     paymentMethods: VALID_PAYMENT_METHODS,
@@ -1127,7 +1127,7 @@ async function processAudioMessage(phoneNumber, audioId, caption, contactName) {
   const vendors = await getProviderVendors(userId);
 
   const context = {
-    activeProjects: activeProjects.map(p => ({ id: p.id, name: p.name, tag: p.tag })),
+    activeProjects: activeProjects.map(p => ({ id: p.id, name: p.name, tag: p.tag, clientName: p.clientName || null })),
     categories: providerCats,
     recipients: recipients.map(r => ({ id: r.id, name: r.name, platform: r.platform })),
     paymentMethods: VALID_PAYMENT_METHODS,
@@ -1350,7 +1350,7 @@ async function handleTextExpense(phoneNumber, text, skipSupportDetection = false
   const vendors = await getProviderVendors(userId);
 
   const context = {
-    activeProjects: activeProjects.map(p => ({ id: p.id, name: p.name, tag: p.tag })),
+    activeProjects: activeProjects.map(p => ({ id: p.id, name: p.name, tag: p.tag, clientName: p.clientName || null })),
     categories: providerCats,
     recipients: recipients.map(r => ({ id: r.id, name: r.name, platform: r.platform })),
     paymentMethods: VALID_PAYMENT_METHODS,

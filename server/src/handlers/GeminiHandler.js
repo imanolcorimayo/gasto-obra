@@ -129,7 +129,7 @@ class GeminiHandler {
 
   async parseReceiptImage(imageBase64, mimeType = 'image/jpeg', { caption = '', activeProjects = [], categories = null, recipients = [], paymentMethods = [], vendors = [], managementFeePercent = 0 } = {}) {
     const projectList = activeProjects.length > 0
-      ? `\nProyectos activos (usa el ID exacto si el usuario menciona uno en el texto):\n${activeProjects.map(p => `- ID: "${p.id}", Nombre: "${p.name}", Tag: "#${p.tag}"`).join('\n')}`
+      ? `\nProyectos activos (usa el ID exacto si el usuario menciona uno en el texto):\n${activeProjects.map(p => `- ID: "${p.id}", Nombre: "${p.name}", Tag: "#${p.tag}"${p.clientName ? `, Cliente: "${p.clientName}"` : ''}`).join('\n')}`
       : '';
 
     const recipientList = recipients.length > 0
@@ -155,9 +155,10 @@ class GeminiHandler {
     const prompt = `Analiza esta imagen. Puede ser un ticket/factura de compra, un comprobante de transferencia bancaria, o un comprobante de pago.
 ${captionBlock}
 
-- "transactionType": detecta el tipo de imagen:
+- "transactionType": detecta el tipo segun la imagen Y el texto del usuario:
   - "expense" para tickets de compra, facturas, recibos de comercio
   - "payment" para capturas de transferencia bancaria, comprobantes de pago, vouchers de deposito
+  - "payment" tambien si el texto del usuario indica cobro: "me ingresó", "me pagaron", "cobro", "me transfirieron", "me depositaron", "me ingresaron"
 - Cada item debe tener "name" (descripcion corta) y "amount" (precio unitario o subtotal)
 - "paymentMethod" y "recipientId" se pueden extraer de la imagen o del texto del usuario
 - Los campos installmentPercent y projectId se extraen SOLO del texto del usuario, NO de la imagen
@@ -243,7 +244,7 @@ ${vendorList}`;
 
   async transcribeAudio(audioBase64, mimeType = 'audio/ogg', { activeProjects = [], categories = null, recipients = [], paymentMethods = [], vendors = [], managementFeePercent = 0 } = {}) {
     const projectList = activeProjects.length > 0
-      ? `\nProyectos activos (usa el ID exacto si el usuario menciona uno):\n${activeProjects.map(p => `- ID: "${p.id}", Nombre: "${p.name}", Tag: "#${p.tag}"`).join('\n')}`
+      ? `\nProyectos activos (usa el ID exacto si el usuario menciona uno):\n${activeProjects.map(p => `- ID: "${p.id}", Nombre: "${p.name}", Tag: "#${p.tag}"${p.clientName ? `, Cliente: "${p.clientName}"` : ''}`).join('\n')}`
       : '';
 
     const recipientList = recipients.length > 0
@@ -276,10 +277,11 @@ ${vendorList}
 
 Reglas importantes:
 - "transactionType": detecta el tipo segun lo que dice la persona:
-  - "payment" si dice "pago", "cobro", "me pagaron", "me transfirieron", "recibi plata", "me depositaron"
+  - "payment" si dice "pago", "cobro", "me pagaron", "me transfirieron", "recibi plata", "me depositaron", "me ingresó", "me ingresaron", "ingresó plata"
   - "provider_expense" si dice "gasto propio", "gasto mio", "puse de mi bolsillo", "pague yo", "puse yo"
   - "expense" para compras y gastos normales de obra (materiales, herramientas, mano de obra, etc.)
   - Si no estas seguro, usa "expense"
+  - Si menciona el nombre de un cliente conocido de un proyecto junto con un monto (ej: "me ingresó María 50000"), es "payment"
 - "items" es un array con CADA item/gasto mencionado, cada uno con "name" y "amount"
 - "totalAmount" es la suma de todos los amounts de los items
 - Si se menciona un solo gasto, pone un solo item en el array
@@ -364,7 +366,7 @@ Si no podes extraer algun campo, usa null.`;
 
   async parseTextExpense(text, { activeProjects = [], categories = null, recipients = [], paymentMethods = [], vendors = [], managementFeePercent = 0 } = {}) {
     const projectList = activeProjects.length > 0
-      ? `\nProyectos activos (usa el ID exacto si el usuario menciona uno):\n${activeProjects.map(p => `- ID: "${p.id}", Nombre: "${p.name}", Tag: "#${p.tag}"`).join('\n')}`
+      ? `\nProyectos activos (usa el ID exacto si el usuario menciona uno):\n${activeProjects.map(p => `- ID: "${p.id}", Nombre: "${p.name}", Tag: "#${p.tag}"${p.clientName ? `, Cliente: "${p.clientName}"` : ''}`).join('\n')}`
       : '';
 
     const recipientList = recipients.length > 0
@@ -408,10 +410,11 @@ ${vendorList}
 
 Reglas importantes:
 - "transactionType": detecta el tipo segun lo que dice la persona:
-  - "payment" si dice "pago", "cobro", "me pagaron", "me transfirieron", "recibi plata", "me depositaron"
+  - "payment" si dice "pago", "cobro", "me pagaron", "me transfirieron", "recibi plata", "me depositaron", "me ingresó", "me ingresaron", "ingresó plata"
   - "provider_expense" si dice "gasto propio", "gasto mio", "puse de mi bolsillo", "pague yo", "puse yo"
   - "expense" para compras y gastos normales de obra (materiales, herramientas, mano de obra, etc.)
   - Si no estas seguro, usa "expense"
+  - Si menciona el nombre de un cliente conocido de un proyecto junto con un monto (ej: "me ingresó María 50000"), es "payment"
 - "items" es un array con CADA item/gasto mencionado, cada uno con "name" y "amount"
 - "totalAmount" es la suma de todos los amounts de los items
 - Si se menciona un solo gasto, pone un solo item en el array
@@ -485,7 +488,7 @@ Si no podes extraer algun campo, usa null.`;
 
   async parseDocument(pdfBase64, mimeType = 'application/pdf', { caption = '', activeProjects = [], categories = null, recipients = [], paymentMethods = [], vendors = [], managementFeePercent = 0 } = {}) {
     const projectList = activeProjects.length > 0
-      ? `\nProyectos activos (usa el ID exacto si el usuario menciona uno en el texto):\n${activeProjects.map(p => `- ID: "${p.id}", Nombre: "${p.name}", Tag: "#${p.tag}"`).join('\n')}`
+      ? `\nProyectos activos (usa el ID exacto si el usuario menciona uno en el texto):\n${activeProjects.map(p => `- ID: "${p.id}", Nombre: "${p.name}", Tag: "#${p.tag}"${p.clientName ? `, Cliente: "${p.clientName}"` : ''}`).join('\n')}`
       : '';
 
     const recipientList = recipients.length > 0
@@ -507,9 +510,10 @@ Si no podes extraer algun campo, usa null.`;
     const prompt = `Analiza este documento PDF. Puede ser una factura, presupuesto, ticket de compra, o comprobante de pago.
 ${captionBlock}
 
-- "transactionType": detecta el tipo de documento:
+- "transactionType": detecta el tipo segun el documento Y el texto del usuario:
   - "expense" para facturas de compra, presupuestos, recibos de comercio
   - "payment" para comprobantes de transferencia bancaria, recibos de pago, vouchers de deposito
+  - "payment" tambien si el texto del usuario indica cobro: "me ingresó", "me pagaron", "cobro", "me transfirieron", "me depositaron", "me ingresaron"
 - Cada item debe tener "name" (descripcion corta) y "amount" (precio unitario o subtotal)
 - "paymentMethod" y "recipientId" se pueden extraer del documento o del texto del usuario
 - Los campos installmentPercent y projectId se extraen SOLO del texto del usuario, NO del documento
