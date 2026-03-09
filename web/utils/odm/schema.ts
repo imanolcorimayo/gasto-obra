@@ -231,7 +231,7 @@ export abstract class Schema {
         data: this.convertFirestoreDoc(docSnapshot)
       };
     } catch (error) {
-      console.error(`Error buscando ${this.collectionName} por ID:`, error);
+      console.error(`Error in findById(${this.collectionName}, ${id}):`, error);
       return { success: false, error: `Error al buscar documento: ${error}` };
     }
   }
@@ -267,7 +267,7 @@ export abstract class Schema {
 
       return { success: true, data: documents };
     } catch (error) {
-      console.error(`Error buscando ${this.collectionName}:`, error);
+      console.error(`Error in find(${this.collectionName}):`, { where: options.where, userField }, error);
       return { success: false, error: `Error al buscar documentos: ${error}` };
     }
   }
@@ -299,7 +299,7 @@ export abstract class Schema {
 
       return { success: true, data: documents };
     } catch (error) {
-      console.error(`Error buscando ${this.collectionName}:`, error);
+      console.error(`Error in findPublic(${this.collectionName}):`, { where: options.where }, error);
       return { success: false, error: `Error al buscar documentos: ${error}` };
     }
   }

@@ -34,7 +34,13 @@ if (!import.meta.dev) {
 
     const error = args.find((arg) => arg instanceof Error);
     if (error) {
-      Sentry.captureException(error);
+      Sentry.withScope((scope) => {
+        const context = args.filter((a) => a !== error).map((a) =>
+          typeof a === 'object' ? JSON.stringify(a) : String(a)
+        ).join(' ');
+        if (context) scope.setExtra('console.message', context);
+        Sentry.captureException(error);
+      });
     } else {
       Sentry.captureMessage(message, 'error');
     }
