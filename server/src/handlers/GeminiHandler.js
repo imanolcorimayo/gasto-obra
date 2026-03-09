@@ -2,9 +2,9 @@ import * as Sentry from '@sentry/node';
 import logger from '../../lib/logger.js';
 
 const MODELS = [
-  'gemini-3.1-flash-lite-preview',  // 500 RPD — primary
-  'gemini-2.5-flash-lite',          // 20 RPD  — fallback 1
-  'gemini-2.5-flash',               // 20 RPD  — fallback 2
+  'gemini-2.5-flash-lite',          // Stable — primary
+  'gemini-3.1-flash-lite-preview',  // Preview — fallback 1
+  'gemini-2.5-flash',               // Stable — fallback 2
 ];
 
 function vendorSlug(name) {
@@ -40,6 +40,11 @@ class GeminiHandler {
         this._markExhausted(model);
         Sentry.captureMessage('Gemini model exhausted, rotating', { level: 'warning', extra: { model } });
         logger.info('Model exhausted, rotating to next', { model });
+        continue;
+      }
+
+      if (result?.error === 'unavailable_503') {
+        logger.info('Model unavailable (503), rotating to next', { model });
         continue;
       }
 
@@ -89,11 +94,15 @@ class GeminiHandler {
             return { error: 'rate_limit' };
           }
 
-          if (response.status === 503 && attempt < maxRetries) {
-            Sentry.captureMessage('Gemini API 503 - retrying', { level: 'warning', extra: { model, attempt: attempt + 1 } });
-            logger.warn('Gemini API 503, retrying', { model, attempt: attempt + 1, delay: retryDelays[attempt] });
-            await new Promise(r => setTimeout(r, retryDelays[attempt]));
-            continue;
+          if (response.status === 503) {
+            if (attempt < maxRetries) {
+              logger.warn('Gemini API 503, retrying', { model, attempt: attempt + 1, delay: retryDelays[attempt] });
+              await new Promise(r => setTimeout(r, retryDelays[attempt]));
+              continue;
+            }
+            // All retries exhausted for this model — signal to rotate
+            logger.warn('Gemini API 503 persistent, rotating model', { model });
+            return { error: 'unavailable_503' };
           }
 
           const error = new Error(`Gemini API error: ${response.status}`);
