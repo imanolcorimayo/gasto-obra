@@ -25,7 +25,7 @@
         class="flex items-center gap-3 p-3 bg-go-surface border border-go-border rounded-go-md mb-2"
       >
         <div class="bg-go-surface border border-go-border rounded-full w-9 h-9 flex items-center justify-center text-go-text-secondary text-sm font-semibold flex-shrink-0">
-          {{ v.name ? v.name.charAt(0).toUpperCase() : '?' }}
+          {{ typeof v.name === 'string' && v.name ? v.name.charAt(0).toUpperCase() : '?' }}
         </div>
 
         <input
@@ -78,7 +78,7 @@ watch(() => props.modelValue, (val) => {
   }
   skipEmit = true;
   if (val && val.length > 0) {
-    vendors.value = val.map(v => ({ name: v.name || v }));
+    vendors.value = val.map(v => ({ name: typeof v === 'string' ? v : (typeof v.name === 'string' ? v.name : '') }));
   } else {
     vendors.value = [];
   }

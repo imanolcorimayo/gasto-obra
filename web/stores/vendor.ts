@@ -37,7 +37,9 @@ export const useVendorStore = defineStore('vendor', {
       try {
         const result = await getSchema().findAll();
         if (result.success && result.data) {
-          this.vendors = result.data.map((doc: any) => doc.name);
+          this.vendors = result.data
+            .map((doc: any) => doc.name)
+            .filter((name: any): name is string => typeof name === 'string' && name.trim() !== '');
         } else {
           this.error = result.error || 'Error al obtener comercios';
         }

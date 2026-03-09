@@ -9,12 +9,10 @@ service cloud.firestore {
     // Public: read allowed for shareToken lookup flow
     //   shareTokens are UUIDs — not enumerable or guessable
     match /projects/{projectId} {
-      allow read: if request.auth != null && (
-        resource.data.providerId == request.auth.uid ||
-        resource.data.clientUserId == request.auth.uid
-      );
-      // Public read for shareToken-based client view (unauthenticated)
-      allow read: if request.auth == null;
+      // Public read: needed for shareToken-based join/view flows.
+      // Authenticated users who haven't joined yet (not provider or client)
+      // would be denied if we required auth scoping on reads.
+      allow read: if true;
 
       allow create: if request.auth != null
                     && request.resource.data.providerId == request.auth.uid;
@@ -24,12 +22,10 @@ service cloud.firestore {
 
     // ── Expenses ──────────────────────────────────────────────
     // Provider (auth'd): full CRUD on own expenses
-    // Public: read allowed for client share view (queried by projectId)
+    // Read: open (authenticated clients need access via projectId queries)
     //   projectIds are Firestore auto-IDs — not guessable
     match /expenses/{expenseId} {
-      allow read: if request.auth != null
-                  && resource.data.providerId == request.auth.uid;
-      allow read: if request.auth == null;
+      allow read: if true;
 
       allow create: if request.auth != null
                     && request.resource.data.providerId == request.auth.uid;
@@ -38,11 +34,9 @@ service cloud.firestore {
     }
 
     // ── Deliveries ────────────────────────────────────────────
-    // Same pattern as expenses: provider owns, public can read
+    // Same pattern as expenses: provider owns, open read
     match /deliveries/{deliveryId} {
-      allow read: if request.auth != null
-                  && resource.data.providerId == request.auth.uid;
-      allow read: if request.auth == null;
+      allow read: if true;
 
       allow create: if request.auth != null
                     && request.resource.data.providerId == request.auth.uid;
@@ -52,11 +46,9 @@ service cloud.firestore {
 
     // ── Categories ────────────────────────────────────────────
     // Provider (auth'd): full CRUD on own categories
-    // Public: read allowed for client view (needs provider's categories)
+    // Read: open (authenticated clients need provider's categories)
     match /categories/{categoryId} {
-      allow read: if request.auth != null
-                  && resource.data.userId == request.auth.uid;
-      allow read: if request.auth == null;
+      allow read: if true;
 
       allow create: if request.auth != null
                     && request.resource.data.userId == request.auth.uid;
