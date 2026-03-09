@@ -32,6 +32,7 @@ export default defineNuxtConfig({
     '/settings/**': { ssr: false },
     '/view/**': { ssr: false },
     '/client/**': { ssr: false },
+    '/faq': { ssr: false },
   },
 
   runtimeConfig: {

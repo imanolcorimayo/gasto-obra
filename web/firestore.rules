@@ -80,6 +80,13 @@ service cloud.firestore {
                             && resource.data.userId == request.auth.uid;
     }
 
+    // ── FAQ (public, read-only from client) ────────────────────
+    // Written only by server Admin SDK (seed script)
+    match /faq/{faqId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
     // ── Recipients (private) ──────────────────────────────────
     // Only the owning user can manage their recipient list
     match /recipients/{recipientId} {

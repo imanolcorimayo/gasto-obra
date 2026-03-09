@@ -1,0 +1,8 @@
+{
+  "private": true,
+  "name": "gasto-obra",
+  "description": "Expense reporting system for renovation projects",
+  "devDependencies": {
+    "puppeteer": "^24.38.0"
+  }
+}

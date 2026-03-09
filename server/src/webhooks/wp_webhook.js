@@ -8,7 +8,7 @@ import StorageHandler from '../handlers/StorageHandler.js';
 import { sendWhatsAppMessage, sendWhatsAppButtons, downloadWhatsAppMedia } from '../helpers/whatsapp.js';
 import { compressImage } from '../helpers/compression.js';
 import { PDFParse } from 'pdf-parse';
-import { formatAmount, capitalizeFirst } from '../helpers/responseFormatter.js';
+import { formatAmount, capitalizeFirst, stripHtml } from '../helpers/responseFormatter.js';
 import logger from '../../lib/logger.js';
 
 // ============================================
@@ -149,6 +149,35 @@ const geminiHandler = process.env.GEMINI_API_KEY
   ? new GeminiHandler(process.env.GEMINI_API_KEY)
   : null;
 const storageHandler = new StorageHandler(bucket);
+
+// ============================================
+// FAQ Cache (1 hour TTL)
+// ============================================
+const FAQ_CACHE_TTL = 60 * 60 * 1000;
+let faqCache = null; // { data: [...], fetchedAt: timestamp }
+
+async function getFaqData() {
+  if (faqCache && (Date.now() - faqCache.fetchedAt < FAQ_CACHE_TTL)) {
+    return faqCache.data;
+  }
+  try {
+    const snapshot = await db.collection(COLLECTIONS.FAQ).get();
+    const data = snapshot.docs.map(doc => {
+      const d = doc.data();
+      return {
+        topic: d.topic,
+        topicLabel: d.topicLabel,
+        question: d.question,
+        answer: stripHtml(d.answer)
+      };
+    });
+    faqCache = { data, fetchedAt: Date.now() };
+    return data;
+  } catch (error) {
+    logger.error('Error fetching FAQ data', { error });
+    return faqCache?.data || [];
+  }
+}
 
 // ============================================
 // Pending Confirmations (2 min auto-confirm)
@@ -294,6 +323,68 @@ function getPendingResumenSelection(phoneNumber) {
 
 function clearPendingResumenSelection(phoneNumber) {
   pendingResumenSelections.delete(phoneNumber);
+}
+
+// ============================================
+// Pending Support Detection (auto-detected support question)
+// ============================================
+const SUPPORT_TTL = 2 * 60 * 1000;
+const pendingSupportRequests = new Map(); // phoneNumber -> { originalText, timestamp }
+
+function setPendingSupportRequest(phoneNumber, originalText) {
+  const timestamp = Date.now();
+  pendingSupportRequests.set(phoneNumber, { originalText, timestamp });
+  setTimeout(() => {
+    const pending = pendingSupportRequests.get(phoneNumber);
+    if (pending && pending.timestamp === timestamp) {
+      pendingSupportRequests.delete(phoneNumber);
+    }
+  }, SUPPORT_TTL);
+}
+
+function getPendingSupportRequest(phoneNumber) {
+  const pending = pendingSupportRequests.get(phoneNumber);
+  if (!pending) return null;
+  if (Date.now() - pending.timestamp > SUPPORT_TTL) {
+    pendingSupportRequests.delete(phoneNumber);
+    return null;
+  }
+  return pending;
+}
+
+function clearPendingSupportRequest(phoneNumber) {
+  pendingSupportRequests.delete(phoneNumber);
+}
+
+// ============================================
+// Pending AI Support Conversation (waiting for user question after AYUDA)
+// ============================================
+const AI_SUPPORT_CONVO_TTL = 5 * 60 * 1000;
+const pendingAISupportConvos = new Map(); // phoneNumber -> { timestamp }
+
+function setPendingAISupportConvo(phoneNumber) {
+  const timestamp = Date.now();
+  pendingAISupportConvos.set(phoneNumber, { timestamp });
+  setTimeout(() => {
+    const pending = pendingAISupportConvos.get(phoneNumber);
+    if (pending && pending.timestamp === timestamp) {
+      pendingAISupportConvos.delete(phoneNumber);
+    }
+  }, AI_SUPPORT_CONVO_TTL);
+}
+
+function getPendingAISupportConvo(phoneNumber) {
+  const pending = pendingAISupportConvos.get(phoneNumber);
+  if (!pending) return null;
+  if (Date.now() - pending.timestamp > AI_SUPPORT_CONVO_TTL) {
+    pendingAISupportConvos.delete(phoneNumber);
+    return null;
+  }
+  return pending;
+}
+
+function clearPendingAISupportConvo(phoneNumber) {
+  pendingAISupportConvos.delete(phoneNumber);
 }
 
 // ============================================
@@ -472,7 +563,31 @@ async function processMessage(phoneNumber, text, contactName) {
     clearPendingResumenSelection(phoneNumber);
   }
 
-  // 5. VINCULAR
+  // 5. Pending support detection → button response
+  const pendingSupport = getPendingSupportRequest(phoneNumber);
+  if (pendingSupport) {
+    if (normalizedText === 'soporte ai') {
+      clearPendingSupportRequest(phoneNumber);
+      await handleAISupport(phoneNumber, pendingSupport.originalText);
+      return;
+    }
+    if (normalizedText === 'registrar gasto') {
+      clearPendingSupportRequest(phoneNumber);
+      await handleTextExpense(phoneNumber, pendingSupport.originalText, true);
+      return;
+    }
+    clearPendingSupportRequest(phoneNumber);
+  }
+
+  // 6. Pending AI support conversation (user was asked to type question)
+  const pendingAISupport = getPendingAISupportConvo(phoneNumber);
+  if (pendingAISupport) {
+    clearPendingAISupportConvo(phoneNumber);
+    await handleAISupport(phoneNumber, text);
+    return;
+  }
+
+  // 7. VINCULAR
   if (normalizedText.startsWith('vincular ')) {
     const code = text.trim().split(' ')[1]?.toUpperCase();
     await handleLinkCommand(phoneNumber, code, contactName);
@@ -485,13 +600,37 @@ async function processMessage(phoneNumber, text, contactName) {
     return;
   }
 
-  // 7. AYUDA
+  // 9. AYUDA (2-step flow with buttons)
   if (normalizedText === 'ayuda' || normalizedText === 'help') {
-    await sendHelpMessage(phoneNumber);
+    await sendWhatsAppButtons(
+      phoneNumber,
+      '¿En qué te puedo ayudar?',
+      [
+        { id: 'ayuda_comandos', title: 'Comandos' },
+        { id: 'ayuda_soporte', title: 'Soporte AI' }
+      ]
+    );
     return;
   }
 
-  // 8. PROYECTO / PROYECTOS
+  // 9b. AYUDA button responses
+  if (normalizedText === 'comandos') {
+    await sendHelpMessage(phoneNumber);
+    return;
+  }
+  if (normalizedText === 'soporte ai') {
+    const supportReq = getPendingSupportRequest(phoneNumber);
+    if (supportReq) {
+      clearPendingSupportRequest(phoneNumber);
+      await handleAISupport(phoneNumber, supportReq.originalText);
+    } else {
+      setPendingAISupportConvo(phoneNumber);
+      await sendWhatsAppMessage(phoneNumber, 'Escribi tu consulta y te ayudo.');
+    }
+    return;
+  }
+
+  // 10. PROYECTO / PROYECTOS
   if (normalizedText === 'proyecto' || normalizedText === 'proyectos') {
     await handleProyectoCommand(phoneNumber);
     return;
@@ -503,7 +642,7 @@ async function processMessage(phoneNumber, text, contactName) {
     return;
   }
 
-  // 10. Fallback → text expense
+  // 10. Fallback → text expense (support detection happens inside)
   await handleTextExpense(phoneNumber, text);
 }
 
@@ -1160,7 +1299,24 @@ async function processAudioMessage(phoneNumber, audioId, caption, contactName) {
 // Text Message Expense Processing
 // ============================================
 
-async function handleTextExpense(phoneNumber, text) {
+async function handleTextExpense(phoneNumber, text, skipSupportDetection = false) {
+  // Support detection runs BEFORE linking check so unlinked users can get help too
+  if (!skipSupportDetection && geminiHandler) {
+    const supportCheck = await geminiHandler.parseTextExpense(text, {});
+    if (!isGeminiError(supportCheck) && supportCheck?.isSupportQuestion && (!supportCheck.totalAmount || supportCheck.totalAmount === 0)) {
+      setPendingSupportRequest(phoneNumber, text);
+      await sendWhatsAppButtons(
+        phoneNumber,
+        'Parece que tenés una consulta. ¿Querés que te ayude?',
+        [
+          { id: 'support_ai', title: 'Soporte AI' },
+          { id: 'support_expense', title: 'Registrar gasto' }
+        ]
+      );
+      return;
+    }
+  }
+
   const linkDoc = await db.collection(COLLECTIONS.WHATSAPP_LINKS).doc(phoneNumber).get();
   if (!linkDoc.exists || linkDoc.data()?.status !== 'linked') {
     await sendWhatsAppMessage(phoneNumber, 'Este numero no esta vinculado. Envia VINCULAR <codigo> para vincular tu cuenta.');
@@ -1208,6 +1364,7 @@ async function handleTextExpense(phoneNumber, text) {
     await sendWhatsAppMessage(phoneNumber, getGeminiErrorMessage());
     return;
   }
+
   if (!result || !result.totalAmount) {
     await sendWhatsAppMessage(phoneNumber, 'No pude entender el mensaje.\n\nPodes registrar gastos con un texto como:\n- "500 clavos"\n- "1500 cemento y 800 arena"\n- "me pagaron 5000 por transferencia"\n\nTambien podes enviar una *foto*, *audio* o *PDF*.\n\nEscribi *AYUDA* para mas info.');
     return;
@@ -1589,6 +1746,58 @@ Podes incluir metodo de pago (efectivo, transferencia, tarjeta, mercadopago), de
 *AYUDA* - Ver este mensaje`;
 
   await sendWhatsAppMessage(phoneNumber, helpText);
+}
+
+const SUPPORT_PHONE = '5493513467739';
+const SUPPORT_WA_LINK = `https://wa.me/${SUPPORT_PHONE}`;
+
+async function handleAISupport(phoneNumber, question) {
+  if (!geminiHandler) {
+    await sendWhatsAppMessage(phoneNumber, 'El soporte AI no esta disponible en este momento.');
+    return;
+  }
+
+  await sendWhatsAppMessage(phoneNumber, 'Buscando respuesta...');
+
+  const faqData = await getFaqData();
+  if (faqData.length === 0) {
+    await sendWhatsAppMessage(phoneNumber, 'No pude acceder a la informacion de soporte. Intenta mas tarde.');
+    return;
+  }
+
+  const result = await geminiHandler.answerSupportQuestion(question, faqData);
+
+  // Store the query for analytics
+  try {
+    await db.collection(COLLECTIONS.SUPPORT_QUERIES).add({
+      phoneNumber,
+      question,
+      answer: result?.answer || null,
+      noAnswer: result?.noAnswer || false,
+      error: isGeminiError(result) ? result.error : null,
+      createdAt: admin.firestore.FieldValue.serverTimestamp()
+    });
+  } catch (err) {
+    logger.error('Error storing support query', { error: err });
+  }
+
+  if (isGeminiError(result)) {
+    await sendWhatsAppMessage(
+      phoneNumber,
+      `El servicio de soporte no esta disponible.\n\nPodes hablar con soporte directamente: ${SUPPORT_WA_LINK}`
+    );
+    return;
+  }
+
+  if (!result || result.noAnswer) {
+    await sendWhatsAppMessage(
+      phoneNumber,
+      `${result?.answer || 'No encontre una respuesta para tu consulta.'}\n\nSi necesitas mas ayuda, podes hablar con soporte: ${SUPPORT_WA_LINK}`
+    );
+    return;
+  }
+
+  await sendWhatsAppMessage(phoneNumber, result.answer);
 }
 
 async function handleProyectoCommand(phoneNumber) {

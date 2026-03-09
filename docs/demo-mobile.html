@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gasto Obra — Demo Mobile</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Red+Hat+Display:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+  html { font-size: 16px; }
+  body {
+    background: #26211A;
+    color: #F0EBE1;
+    font-family: 'Red Hat Display', sans-serif;
+    overflow: hidden;
+    height: 100vh;
+    width: 100vw;
+  }
+
+  .scene {
+    position: absolute; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .4s ease;
+  }
+  .scene.active { opacity: 1; pointer-events: auto; }
+
+  h1, h2, h3 { font-family: 'Space Grotesk', sans-serif; }
+  .amber { color: #FFAB40; }
+  .green { color: #6B8F71; }
+  .red   { color: #D4544A; }
+
+  .progress {
+    position: fixed; top: 0; left: 0; height: 3px;
+    background: linear-gradient(90deg, #FFAB40, #6B8F71);
+    z-index: 100;
+    width: 0%;
+    transition: width .3s ease;
+  }
+
+  /* ── SCENE 1 — Brand ── */
+  .s1-wrap { text-align: center; padding: 0 24px; }
+  .s1-logo {
+    width: 120px; height: 120px;
+    margin: 0 auto 28px;
+    opacity: 0; transform: scale(.5) rotate(-10deg);
+    animation: logoIn .6s ease forwards;
+    animation-delay: .15s;
+  }
+  .s1-logo img { width: 100%; height: 100%; object-fit: contain; }
+  @keyframes logoIn { to { opacity: 1; transform: scale(1) rotate(0); } }
+
+  .s1-title {
+    font-size: 2.6rem; font-weight: 700;
+    opacity: 0; transform: translateY(20px);
+    animation: fadeUp .5s ease forwards;
+    animation-delay: .4s;
+  }
+  .s1-sub {
+    font-size: 1.15rem; color: #9B9484; margin-top: 12px;
+    opacity: 0; transform: translateY(14px);
+    animation: fadeUp .5s ease forwards;
+    animation-delay: .6s;
+  }
+  @keyframes fadeUp { to { opacity: 1; transform: translateY(0); } }
+
+  /* ── SCENE 2 — WhatsApp ── */
+  .phone {
+    width: 88vw; max-width: 420px;
+    background: #1B2B25;
+    border-radius: 28px;
+    overflow: hidden;
+    box-shadow: 0 20px 60px rgba(0,0,0,.5);
+    transform: scale(.92);
+    animation: phoneIn .4s ease forwards;
+  }
+  @keyframes phoneIn { to { transform: scale(1); } }
+
+  .phone-header {
+    background: #1F352C;
+    padding: 16px 20px;
+    display: flex; align-items: center; gap: 12px;
+    border-bottom: 1px solid #2A4A3A;
+  }
+  .phone-avatar { width: 42px; height: 42px; border-radius: 50%; overflow: hidden; }
+  .phone-avatar img { width: 100%; height: 100%; object-fit: cover; }
+  .phone-name { font-weight: 600; font-size: 16px; color: #E8E0D4; }
+  .phone-status { font-size: 12px; color: #6B8F71; }
+
+  .chat-area {
+    padding: 20px 16px;
+    min-height: 340px;
+    display: flex; flex-direction: column; gap: 12px;
+    background: #0B1612;
+  }
+
+  .bubble {
+    max-width: 85%;
+    padding: 10px 16px;
+    border-radius: 16px;
+    font-size: 15px;
+    line-height: 1.45;
+    opacity: 0; transform: translateY(12px) scale(.95);
+  }
+  .bubble.sent {
+    align-self: flex-end;
+    background: #1C5A3E; color: #E8E0D4;
+    border-bottom-right-radius: 4px;
+  }
+  .bubble.recv {
+    align-self: flex-start;
+    background: #1F352C; color: #E8E0D4;
+    border-bottom-left-radius: 4px;
+  }
+  .bubble.show { animation: bubbleIn .3s ease forwards; }
+  @keyframes bubbleIn { to { opacity: 1; transform: translateY(0) scale(1); } }
+
+  .tag { color: #FFAB40; font-weight: 600; }
+  .cat-badge {
+    display: inline-block;
+    background: rgba(90,143,184,.25); color: #5A8FB8;
+    font-size: 12px; font-weight: 600;
+    padding: 3px 10px; border-radius: 99px; margin-top: 4px;
+  }
+  .amount-badge {
+    display: inline-block;
+    background: rgba(255,171,64,.15); color: #FFAB40;
+    font-size: 12px; font-weight: 600;
+    padding: 3px 10px; border-radius: 99px; margin-top: 4px; margin-left: 4px;
+  }
+
+  .typing-dots { display: flex; gap: 5px; padding: 4px 0; }
+  .typing-dots span {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: #6B8F71;
+    animation: dotBounce .6s ease infinite;
+  }
+  .typing-dots span:nth-child(2) { animation-delay: .15s; }
+  .typing-dots span:nth-child(3) { animation-delay: .3s; }
+  @keyframes dotBounce {
+    0%, 80%, 100% { transform: translateY(0); opacity: .4; }
+    40% { transform: translateY(-6px); opacity: 1; }
+  }
+
+  /* ── SCENE 3 — AI Processing ── */
+  .s3-wrap { text-align: center; padding: 0 24px; }
+  .ai-orb {
+    width: 110px; height: 110px;
+    margin: 0 auto 28px;
+    border-radius: 50%;
+    background: radial-gradient(circle, #FFAB40 0%, transparent 70%);
+    opacity: .8;
+    animation: orbPulse 1s ease infinite;
+  }
+  @keyframes orbPulse {
+    0%, 100% { transform: scale(1); opacity: .8; }
+    50% { transform: scale(1.15); opacity: 1; }
+  }
+  .ai-label {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 14px; font-weight: 600; color: #9B9484;
+    letter-spacing: 2px; text-transform: uppercase;
+    margin-bottom: 24px;
+    opacity: 0; animation: fadeUp .4s ease forwards; animation-delay: .05s;
+  }
+  .parse-lines { display: flex; flex-direction: column; gap: 14px; align-items: center; }
+  .parse-line {
+    display: flex; align-items: center; gap: 12px;
+    font-size: 17px;
+    opacity: 0; transform: translateX(-20px);
+  }
+  .parse-line.show { animation: slideIn .35s ease forwards; }
+  @keyframes slideIn { to { opacity: 1; transform: translateX(0); } }
+  .parse-dot { width: 11px; height: 11px; border-radius: 50%; flex-shrink: 0; }
+  .parse-label { color: #9B9484; }
+  .parse-value { font-weight: 600; }
+
+  /* ── SCENE 4 — Dashboard ── */
+  .dashboard {
+    width: 88vw; max-width: 480px;
+    background: #2C261E;
+    border-radius: 18px;
+    overflow: hidden;
+    box-shadow: 0 20px 60px rgba(0,0,0,.5);
+    transform: scale(.92); opacity: 0;
+    animation: dashIn .4s ease forwards;
+  }
+  @keyframes dashIn { to { transform: scale(1); opacity: 1; } }
+
+  .dash-header {
+    padding: 16px 20px;
+    display: flex; justify-content: space-between; align-items: center;
+    border-bottom: 1px solid #574E42;
+  }
+  .dash-title { font-size: 17px; font-weight: 700; }
+  .dash-tag {
+    background: rgba(255,171,64,.12); color: #FFAB40;
+    font-size: 12px; font-weight: 600;
+    padding: 4px 12px; border-radius: 99px;
+  }
+
+  .dash-cards {
+    display: flex; flex-direction: column;
+    gap: 8px; padding: 14px 20px;
+  }
+  .dash-card {
+    background: #342D24; border-radius: 12px; padding: 12px 14px;
+    display: flex; justify-content: space-between; align-items: center;
+    opacity: 0; transform: translateY(10px);
+  }
+  .dash-card.show { animation: fadeUp .35s ease forwards; }
+  .dash-card-label {
+    font-size: 12px; color: #9B9484;
+    text-transform: uppercase; letter-spacing: .5px;
+  }
+  .dash-card-value {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 20px; font-weight: 700;
+  }
+
+  .dash-list { padding: 0 20px 16px; display: flex; flex-direction: column; gap: 8px; }
+  .dash-row {
+    display: flex; align-items: center;
+    background: #342D24; border-radius: 10px;
+    padding: 11px 14px;
+    border-left: 3px solid transparent;
+    opacity: 0; transform: translateX(-16px);
+  }
+  .dash-row.show { animation: slideIn .35s ease forwards; }
+  .dash-row.expense { border-left-color: #FFAB40; }
+
+  .row-cat {
+    font-size: 11px; font-weight: 600;
+    padding: 2px 8px; border-radius: 99px;
+    margin-right: 10px; white-space: nowrap;
+  }
+  .cat-materiales { background: rgba(90,143,184,.2); color: #5A8FB8; }
+  .cat-herramientas { background: rgba(212,121,61,.2); color: #D4793D; }
+  .cat-mano { background: rgba(168,107,94,.2); color: #A86B5E; }
+  .cat-transporte { background: rgba(191,166,61,.2); color: #BFA63D; }
+
+  .row-desc { flex: 1; font-size: 13px; color: #C4BDB2; }
+  .row-amount {
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 600; font-size: 14px;
+    margin-left: auto; padding-left: 10px; white-space: nowrap;
+  }
+
+  .new-highlight { animation: rowGlow 1s ease; }
+  @keyframes rowGlow {
+    0% { background: rgba(255,171,64,.2); }
+    100% { background: #342D24; }
+  }
+
+  /* ── SCENE 5 — Client View ── */
+  .s5-wrap { display: flex; flex-direction: column; align-items: center; gap: 18px; padding: 0 20px; }
+  .link-bar {
+    display: flex; align-items: center; gap: 10px;
+    background: #342D24; border: 1px solid #574E42;
+    border-radius: 12px; padding: 10px 18px; font-size: 13px;
+    opacity: 0; transform: translateY(10px);
+    animation: fadeUp .4s ease forwards;
+  }
+  .link-url { color: #FFAB40; font-weight: 500; }
+
+  .client-card {
+    width: 100%; max-width: 420px;
+    background: #2C261E; border-radius: 18px;
+    overflow: hidden; box-shadow: 0 12px 40px rgba(0,0,0,.4);
+    opacity: 0; transform: translateY(20px);
+    animation: fadeUp .4s ease forwards; animation-delay: .25s;
+  }
+  .client-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid #574E42;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .client-badge {
+    font-size: 11px; font-weight: 600;
+    background: rgba(107,143,113,.15); color: #6B8F71;
+    padding: 3px 10px; border-radius: 99px;
+  }
+  .client-summary {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 10px; padding: 16px 20px;
+  }
+  .client-stat {
+    background: #342D24; border-radius: 10px; padding: 12px;
+    opacity: 0; transform: scale(.9);
+  }
+  .client-stat.show { animation: popIn .3s ease forwards; }
+  @keyframes popIn { to { opacity: 1; transform: scale(1); } }
+  .client-stat-label { font-size: 11px; color: #9B9484; }
+  .client-stat-value {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 20px; font-weight: 700; margin-top: 4px;
+  }
+
+  /* ── SCENE 6 — Finale ── */
+  .s6-wrap { text-align: center; padding: 0 24px; }
+  .s6-title {
+    font-size: 2.2rem; font-weight: 700; line-height: 1.2;
+    opacity: 0; transform: translateY(16px);
+    animation: fadeUp .4s ease forwards; animation-delay: .1s;
+  }
+  .s6-features {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 14px; margin-top: 28px;
+  }
+  .s6-feat {
+    background: #2C261E; border: 1px solid #574E42;
+    border-radius: 14px; padding: 16px;
+    text-align: center;
+    opacity: 0; transform: translateY(14px);
+  }
+  .s6-feat.show { animation: fadeUp .35s ease forwards; }
+  .s6-feat-icon { font-size: 28px; margin-bottom: 6px; }
+  .s6-feat-text { font-size: 13px; font-weight: 600; color: #C4BDB2; }
+
+  .s6-tagline {
+    margin-top: 28px; font-size: 16px; color: #9B9484;
+    opacity: 0; animation: fadeUp .4s ease forwards; animation-delay: .9s;
+  }
+
+  .replay-btn { display: none; }
+</style>
+</head>
+<body>
+
+<div class="progress" id="progress"></div>
+
+<!-- SCENE 1 — Brand -->
+<div class="scene active" id="s1">
+  <div class="s1-wrap">
+    <div class="s1-logo"><img src="../web/public/img/logo.png" alt="Gasto Obra"></div>
+    <h1 class="s1-title">Gasto <span class="amber">Obra</span></h1>
+    <p class="s1-sub">Cada gasto de tu obra, bajo control.</p>
+  </div>
+</div>
+
+<!-- SCENE 2 — WhatsApp -->
+<div class="scene" id="s2">
+  <div class="phone">
+    <div class="phone-header">
+      <div class="phone-avatar"><img src="../web/public/img/logo.png" alt="GO"></div>
+      <div>
+        <div class="phone-name">Gasto Obra</div>
+        <div class="phone-status">en linea</div>
+      </div>
+    </div>
+    <div class="chat-area" id="chatArea"></div>
+  </div>
+</div>
+
+<!-- SCENE 3 — AI Processing -->
+<div class="scene" id="s3">
+  <div class="s3-wrap">
+    <div class="ai-orb"></div>
+    <p class="ai-label">Procesando con IA</p>
+    <div class="parse-lines" id="parseLines">
+      <div class="parse-line" data-delay="200">
+        <div class="parse-dot" style="background:#FFAB40"></div>
+        <span class="parse-label">Monto</span>
+        <span class="parse-value amber">$45.000</span>
+      </div>
+      <div class="parse-line" data-delay="400">
+        <div class="parse-dot" style="background:#5A8FB8"></div>
+        <span class="parse-label">Categoria</span>
+        <span class="parse-value" style="color:#5A8FB8">Materiales</span>
+      </div>
+      <div class="parse-line" data-delay="600">
+        <div class="parse-dot" style="background:#6B8F71"></div>
+        <span class="parse-label">Proyecto</span>
+        <span class="parse-value green">Depto Flores 3B</span>
+      </div>
+      <div class="parse-line" data-delay="800">
+        <div class="parse-dot" style="background:#C4BDB2"></div>
+        <span class="parse-label">Descripcion</span>
+        <span class="parse-value">3 bolsas de cemento</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SCENE 4 — Dashboard -->
+<div class="scene" id="s4">
+  <div class="dashboard">
+    <div class="dash-header">
+      <h3 class="dash-title">Depto Flores 3B</h3>
+      <span class="dash-tag">#flores3b</span>
+    </div>
+    <div class="dash-cards" id="dashCards">
+      <div class="dash-card" data-delay="100">
+        <div class="dash-card-label">Total gastado</div>
+        <div class="dash-card-value amber">$847.500</div>
+      </div>
+      <div class="dash-card" data-delay="200">
+        <div class="dash-card-label">Cobrado</div>
+        <div class="dash-card-value green">$600.000</div>
+      </div>
+      <div class="dash-card" data-delay="300">
+        <div class="dash-card-label">Balance</div>
+        <div class="dash-card-value red">-$247.500</div>
+      </div>
+    </div>
+    <div class="dash-list" id="dashList">
+      <div class="dash-row expense" data-delay="500">
+        <span class="row-cat cat-herramientas">Herramientas</span>
+        <span class="row-desc">Amoladora Bosch</span>
+        <span class="row-amount amber">$89.000</span>
+      </div>
+      <div class="dash-row expense" data-delay="600">
+        <span class="row-cat cat-mano">Mano de obra</span>
+        <span class="row-desc">Jornada electricista</span>
+        <span class="row-amount amber">$65.000</span>
+      </div>
+      <div class="dash-row expense" data-delay="700">
+        <span class="row-cat cat-transporte">Transporte</span>
+        <span class="row-desc">Flete materiales</span>
+        <span class="row-amount amber">$22.000</span>
+      </div>
+      <div class="dash-row expense new-highlight" data-delay="900" style="animation-delay:.9s">
+        <span class="row-cat cat-materiales">Materiales</span>
+        <span class="row-desc">3 bolsas de cemento — nuevo</span>
+        <span class="row-amount amber">$45.000</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SCENE 5 — Client View -->
+<div class="scene" id="s5">
+  <div class="s5-wrap">
+    <div class="link-bar">
+      <span style="font-size:18px">&#128279;</span>
+      <span style="color:#9B9484">gastoobra.com/view/</span>
+      <span class="link-url">a3xK9m</span>
+    </div>
+    <div class="client-card">
+      <div class="client-header">
+        <h3 style="font-size:16px; font-weight:700">Depto Flores 3B</h3>
+        <span class="client-badge">Vista de cliente</span>
+      </div>
+      <div class="client-summary" id="clientStats">
+        <div class="client-stat" data-delay="300">
+          <div class="client-stat-label">Total gastado</div>
+          <div class="client-stat-value amber">$847.500</div>
+        </div>
+        <div class="client-stat" data-delay="450">
+          <div class="client-stat-label">Total pagado</div>
+          <div class="client-stat-value green">$600.000</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SCENE 6 — Finale -->
+<div class="scene" id="s6">
+  <div class="s6-wrap">
+    <h2 class="s6-title">Sin papel. Sin Excel.<br><span class="amber">Sin olvidos.</span></h2>
+    <div class="s6-features" id="s6Feats">
+      <div class="s6-feat" data-delay="300">
+        <div class="s6-feat-icon">&#128172;</div>
+        <div class="s6-feat-text">WhatsApp</div>
+      </div>
+      <div class="s6-feat" data-delay="450">
+        <div class="s6-feat-icon">&#129302;</div>
+        <div class="s6-feat-text">IA integrada</div>
+      </div>
+      <div class="s6-feat" data-delay="600">
+        <div class="s6-feat-icon">&#128202;</div>
+        <div class="s6-feat-text">Dashboard</div>
+      </div>
+      <div class="s6-feat" data-delay="750">
+        <div class="s6-feat-icon">&#128065;</div>
+        <div class="s6-feat-text">Vista cliente</div>
+      </div>
+    </div>
+    <p class="s6-tagline">Gasto <span class="amber">Obra</span> — Tu obra, bajo control.</p>
+  </div>
+</div>
+
+<script>
+(function() {
+  var scenes = ['s1','s2','s3','s4','s5','s6'];
+  var durations = [1400, 2800, 1800, 2000, 1600, 2400];
+  var currentScene = 0;
+  var totalDuration = durations.reduce(function(a,b){ return a+b; }, 0);
+  var elapsed = 0;
+
+  function showScene(id) {
+    var all = document.querySelectorAll('.scene');
+    for (var i = 0; i < all.length; i++) all[i].classList.remove('active');
+    document.getElementById(id).classList.add('active');
+  }
+
+  function updateProgress() {
+    var pct = Math.min((elapsed / totalDuration) * 100, 100);
+    document.getElementById('progress').style.width = pct + '%';
+  }
+
+  function createBubble(type, contentParts) {
+    var b = document.createElement('div');
+    b.className = 'bubble ' + type;
+    for (var i = 0; i < contentParts.length; i++) {
+      var part = contentParts[i];
+      if (part.tag === 'text') {
+        b.appendChild(document.createTextNode(part.text));
+      } else if (part.tag === 'br') {
+        b.appendChild(document.createElement('br'));
+      } else {
+        var el = document.createElement(part.tag);
+        el.className = part.cls || '';
+        el.textContent = part.text;
+        if (part.style) el.style.cssText = part.style;
+        b.appendChild(el);
+      }
+    }
+    return b;
+  }
+
+  function createTypingBubble() {
+    var b = document.createElement('div');
+    b.className = 'bubble recv show';
+    b.id = 'typingBubble';
+    var dots = document.createElement('div');
+    dots.className = 'typing-dots';
+    for (var i = 0; i < 3; i++) dots.appendChild(document.createElement('span'));
+    b.appendChild(dots);
+    return b;
+  }
+
+  function playChat() {
+    var area = document.getElementById('chatArea');
+    while (area.firstChild) area.removeChild(area.firstChild);
+
+    setTimeout(function() {
+      var b = createBubble('sent', [
+        {tag:'text', text:'Compre 3 bolsas de cemento, 45000'}
+      ]);
+      area.appendChild(b);
+      requestAnimationFrame(function(){ b.classList.add('show'); });
+    }, 300);
+
+    setTimeout(function() {
+      area.appendChild(createTypingBubble());
+    }, 800);
+
+    setTimeout(function() {
+      var old = document.getElementById('typingBubble');
+      if (old) old.parentNode.removeChild(old);
+      var b = createBubble('recv', [
+        {tag:'b', text:'Gasto registrado'},
+        {tag:'br'}, {tag:'br'},
+        {tag:'span', cls:'cat-badge', text:'Materiales'},
+        {tag:'span', cls:'amount-badge', text:'$45.000'},
+        {tag:'br'}, {tag:'br'},
+        {tag:'span', text:'3 bolsas de cemento \u2192 Depto Flores 3B', style:'font-size:12px;color:#9B9484'}
+      ]);
+      area.appendChild(b);
+      requestAnimationFrame(function(){ b.classList.add('show'); });
+    }, 1400);
+  }
+
+  function playParse() {
+    var lines = document.querySelectorAll('#parseLines .parse-line');
+    for (var i = 0; i < lines.length; i++) {
+      lines[i].classList.remove('show');
+      (function(el) {
+        setTimeout(function(){ el.classList.add('show'); }, +el.dataset.delay);
+      })(lines[i]);
+    }
+  }
+
+  function playDash() {
+    var els = document.querySelectorAll('#dashCards .dash-card, #dashList .dash-row');
+    for (var i = 0; i < els.length; i++) {
+      els[i].classList.remove('show');
+      (function(el) {
+        setTimeout(function(){ el.classList.add('show'); }, +el.dataset.delay);
+      })(els[i]);
+    }
+  }
+
+  function playClient() {
+    var els = document.querySelectorAll('#clientStats .client-stat');
+    for (var i = 0; i < els.length; i++) {
+      els[i].classList.remove('show');
+      (function(el) {
+        setTimeout(function(){ el.classList.add('show'); }, +el.dataset.delay);
+      })(els[i]);
+    }
+  }
+
+  function playFinale() {
+    var els = document.querySelectorAll('#s6Feats .s6-feat');
+    for (var i = 0; i < els.length; i++) {
+      els[i].classList.remove('show');
+      (function(el) {
+        setTimeout(function(){ el.classList.add('show'); }, +el.dataset.delay);
+      })(els[i]);
+    }
+  }
+
+  var scenePlayers = [null, playChat, playParse, playDash, playClient, playFinale];
+
+  function advance() {
+    if (currentScene >= scenes.length) { return; }
+    showScene(scenes[currentScene]);
+    if (scenePlayers[currentScene]) scenePlayers[currentScene]();
+
+    var dur = durations[currentScene];
+    var startTime = performance.now();
+    var startElapsed = elapsed;
+
+    function tick(now) {
+      var dt = now - startTime;
+      elapsed = startElapsed + dt;
+      updateProgress();
+      if (dt < dur) requestAnimationFrame(tick);
+    }
+    requestAnimationFrame(tick);
+
+    setTimeout(function() {
+      elapsed = startElapsed + dur;
+      updateProgress();
+      currentScene++;
+      advance();
+    }, dur);
+  }
+
+  advance();
+})();
+</script>
+</body>
+</html>

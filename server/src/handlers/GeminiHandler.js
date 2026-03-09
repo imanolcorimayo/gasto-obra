@@ -412,6 +412,7 @@ Reglas importantes:
 - "projectId": debe ser EXACTAMENTE uno de los IDs de proyectos listados si el usuario menciona un proyecto, o null
 - "vendorId": debe ser EXACTAMENTE uno de los IDs de comercios listados, o null si no coincide con ninguno
 - "vendorName": nombre del comercio/local si se detecta uno nuevo no listado, o null${managementFeePercent > 0 ? '\n- "applyManagementFee": true si dice "con gestión", "con fee", "con comisión". false en caso contrario. Solo aplica a expenses.' : ''}
+- "isSupportQuestion": true SOLO si el mensaje es claramente una pregunta general, saludo, consulta de soporte, o texto sin relacion a un gasto/pago. Ejemplos: "hola", "como funciona esto", "necesito ayuda", "es seguro registrar aca", "que tipos de transacciones hay". false para todo lo que pueda ser un gasto, pago, o gasto propio. En caso de duda, usa false.
 Si no podes extraer algun campo, usa null.`;
 
     const textSchemaProps = {
@@ -436,7 +437,8 @@ Si no podes extraer algun campo, usa null.`;
       installmentPercent: { type: 'string', enum: ['0', '100'] },
       projectId: { type: 'string', nullable: true },
       vendorId: { type: 'string', nullable: true },
-      vendorName: { type: 'string', nullable: true }
+      vendorName: { type: 'string', nullable: true },
+      isSupportQuestion: { type: 'boolean' }
     };
     if (managementFeePercent > 0) {
       textSchemaProps.applyManagementFee = { type: 'boolean' };
@@ -445,7 +447,7 @@ Si no podes extraer algun campo, usa null.`;
     const schema = {
       type: 'object',
       properties: textSchemaProps,
-      required: ['transactionType', 'title', 'items', 'totalAmount', 'installmentPercent']
+      required: ['transactionType', 'title', 'items', 'totalAmount', 'installmentPercent', 'isSupportQuestion']
     };
 
     const responseText = await this.generateContent(prompt, {
@@ -599,6 +601,51 @@ Responde SOLO con el nombre de la categoria en minusculas, sin texto adicional.`
     const normalized = text.trim().toLowerCase();
 
     return validCategories.find(c => normalized.includes(c)) || (validCategories.includes('otros') ? 'otros' : validCategories[validCategories.length - 1]);
+  }
+  async answerSupportQuestion(question, faqEntries) {
+    const faqContext = faqEntries
+      .map(entry => `Tema: ${entry.topicLabel}\nPregunta: ${entry.question}\nRespuesta: ${entry.answer}`)
+      .join('\n\n---\n\n');
+
+    const prompt = `Sos un asistente de soporte de "Gasto Obra", una plataforma de gestión de gastos para obras y refacciones de departamentos en Argentina.
+
+Tu rol es responder consultas de los usuarios usando UNICAMENTE la informacion del FAQ que te paso abajo. No inventes informacion.
+
+Reglas:
+- Responde en español argentino informal (vos, tenes, podes, etc.)
+- Se conciso y claro (maximo 3-4 oraciones)
+- Si la pregunta no se puede responder con el FAQ, responde con "noAnswer": true y en "answer" pone un mensaje amable indicando que no tenes esa informacion
+- No uses formato HTML, solo texto plano y *negritas* para enfasis
+- Si el usuario pregunta sobre precios o costos del servicio, responde con "noAnswer": true
+
+FAQ:
+${faqContext}
+
+Pregunta del usuario: "${question}"`;
+
+    const schema = {
+      type: 'object',
+      properties: {
+        answer: { type: 'string' },
+        noAnswer: { type: 'boolean' }
+      },
+      required: ['answer', 'noAnswer']
+    };
+
+    const responseText = await this.generateContent(prompt, {
+      maxOutputTokens: 500,
+      temperature: 0.3,
+      responseSchema: schema
+    });
+
+    if (typeof responseText !== 'string') return responseText || null;
+
+    try {
+      return JSON.parse(responseText);
+    } catch (error) {
+      logger.error('Error parsing support answer JSON', { error });
+      return null;
+    }
   }
 }
 

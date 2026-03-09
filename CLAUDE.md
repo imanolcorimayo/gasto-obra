@@ -11,7 +11,7 @@ Both packages share the same Firebase project and Firestore database. See each p
 
 - **Provider (Proveedor)**: The service provider doing the renovation work. Has Firebase Auth account, sends expenses via WhatsApp.
 - **Client (Cliente/Dueño)**: The apartment owner. Gets a read-only web link + daily WhatsApp summary. No auth needed.
-- **Project (Proyecto/Obra)**: A renovation project. Has a `#tag` for WhatsApp messages.
+- **Project (Proyecto/Obra)**: A renovation project. Selected via the PROYECTO command in WhatsApp before sending expenses.
 - **Expense (Gasto)**: A single expense entry. Can come from WhatsApp (text, image, audio) or web.
 
 ## Language

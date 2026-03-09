@@ -28,7 +28,9 @@ const COLLECTIONS = {
   EXPENSES: 'expenses',
   CATEGORIES: 'categories',
   RECIPIENTS: 'recipients',
-  VENDORS: 'vendors'
+  VENDORS: 'vendors',
+  FAQ: 'faq',
+  SUPPORT_QUERIES: 'supportQueries'
 };
 
 export { admin, db, bucket, COLLECTIONS };

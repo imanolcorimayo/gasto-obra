@@ -114,7 +114,7 @@
                     <!-- User message -->
                     <div class="flex justify-end">
                       <div class="bg-go-secondary/20 border border-go-secondary/10 rounded-go-lg rounded-tr-sm px-3 py-1.5 max-w-[85%]">
-                        <p class="text-go-text text-xs">gasté 45000 en cemento #flores3b</p>
+                        <p class="text-go-text text-xs">Compre 3 bolsas de cemento, 45000</p>
                         <p class="text-go-text-tertiary text-[9px] text-right mt-0.5">10:32</p>
                       </div>
                     </div>
@@ -134,7 +134,7 @@
                           </div>
                           <div class="flex justify-between gap-4">
                             <span class="text-go-text-tertiary">Proyecto</span>
-                            <span>#flores3b</span>
+                            <span>Depto Flores 3B</span>
                           </div>
                         </div>
                         <p class="text-go-text-tertiary text-[9px] text-right mt-1">10:32</p>

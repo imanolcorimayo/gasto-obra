@@ -37,7 +37,7 @@ server/
 ### WhatsApp Webhook (`src/webhooks/wp_webhook.js`)
 - Express server receiving WhatsApp Business API webhooks
 - Account linking via verification codes
-- Parses expense messages: `$500 Clavos #flores3b`
+- Parses expense messages (free-form text, images, audio) using Gemini AI
 - Handles receipt images (Gemini Vision) and audio (Gemini transcription)
 - Commands: VINCULAR, DESVINCULAR, AYUDA, PROYECTO, RESUMEN
 
@@ -51,7 +51,7 @@ server/
 materiales, herramientas, transporte, mano de obra, comida, otros
 
 ## WhatsApp Message Format
-`$<amount> <title> #<projectTag> d:<description> c:<category>`
+Free-form text parsed by Gemini AI. Users send natural language messages like "500 clavos", "me pagaron 5000 por transferencia", "gasto propio 2000 almuerzo". AI extracts amount, title, category, transaction type, payment method, recipient, vendor, and project from context. No structured format required.
 
 ## Environment Variables
 See `.env.example`

@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "node --watch src/webhooks/wp_webhook.js",
     "start": "node src/webhooks/wp_webhook.js",
-    "daily-summary": "node src/scripts/send-daily-summary.js"
+    "daily-summary": "node src/scripts/send-daily-summary.js",
+    "seed-faq": "node src/scripts/seed-faq.js"
   },
   "dependencies": {
     "@sentry/node": "^10.42.0",
