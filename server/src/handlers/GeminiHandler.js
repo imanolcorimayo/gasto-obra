@@ -615,25 +615,46 @@ Responde SOLO con el nombre de la categoria en minusculas, sin texto adicional.`
 
     return validCategories.find(c => normalized.includes(c)) || (validCategories.includes('otros') ? 'otros' : validCategories[validCategories.length - 1]);
   }
-  async answerSupportQuestion(question, faqEntries) {
+  async answerSupportQuestion(question, faqEntries, conversationHistory = []) {
     const faqContext = faqEntries
       .map(entry => `Tema: ${entry.topicLabel}\nPregunta: ${entry.question}\nRespuesta: ${entry.answer}`)
       .join('\n\n---\n\n');
 
+    let historyBlock = '';
+    if (conversationHistory.length > 0) {
+      const recent = conversationHistory.slice(-3);
+      historyBlock = '\nConversacion previa:\n' +
+        recent.map(qa => `Usuario: ${qa.question}\nAsistente: ${qa.answer}`).join('\n\n') +
+        '\n';
+    }
+
     const prompt = `Sos un asistente de soporte de "Gasto Obra", una plataforma de gestión de gastos para obras y refacciones de departamentos en Argentina.
 
-Tu rol es responder consultas de los usuarios usando UNICAMENTE la informacion del FAQ que te paso abajo. No inventes informacion.
+Contexto de la plataforma:
+- Gasto Obra esta pensada para que profesionales de obra (arquitectos, gestores, maestros mayores de obra) puedan registrar y gestionar los gastos de sus proyectos e informar a sus clientes de forma transparente. En la plataforma, a este rol lo llamamos "profesional" o "tecnico".
+- El usuario con el que estas hablando es un profesional/tecnico. Es la unica persona que puede registrar transacciones (gastos, pagos, gastos propios) en el proyecto. Lo hace enviando mensajes por WhatsApp (texto, fotos, audios o PDFs).
+- El cliente (dueño del departamento) solo puede visualizar los gastos a traves de un link que le comparte el profesional. No tiene cuenta ni puede registrar nada.
+- Cada profesional puede tener multiples proyectos activos. Usa el comando *PROYECTO* para elegir en cual registrar.
+- Por ahora, solo un profesional puede estar asignado a cada proyecto. Si necesitan que mas de una persona registre gastos, deben contactar a soporte.
+- Comandos disponibles por WhatsApp: *VINCULAR* (vincular cuenta), *DESVINCULAR*, *PROYECTO* (cambiar proyecto activo), *RESUMEN* (ver resumen del proyecto), *AYUDA*.
+
+Tu rol es responder consultas de los usuarios usando UNICAMENTE la informacion del FAQ y el contexto de arriba. No inventes informacion.
 
 Reglas:
 - Responde en español argentino informal (vos, tenes, podes, etc.)
 - Se conciso y claro (maximo 3-4 oraciones)
-- Si la pregunta no se puede responder con el FAQ, responde con "noAnswer": true y en "answer" pone un mensaje amable indicando que no tenes esa informacion
+- Si la pregunta no se puede responder con el FAQ ni el contexto, responde con "noAnswer": true y en "answer" pone un mensaje amable indicando que no tenes esa informacion
 - No uses formato HTML, solo texto plano y *negritas* para enfasis
 - Si el usuario pregunta sobre precios o costos del servicio, responde con "noAnswer": true
+- Siempre referite a la plataforma como "Gasto Obra"
+- Se amable y empatico. Si el usuario esta frustrado, reconoce su situacion antes de responder
+- Nunca prometas funcionalidades futuras ni des informacion que no esta en el FAQ
+- Usa un tono cercano y profesional, como un compañero de trabajo que te ayuda
+- Cuando hables del usuario, referite a el como "vos" o "el profesional/tecnico". Evita usar "proveedor"
 
 FAQ:
 ${faqContext}
-
+${historyBlock}
 Pregunta del usuario: "${question}"`;
 
     const schema = {

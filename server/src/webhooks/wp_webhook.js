@@ -357,34 +357,92 @@ function clearPendingSupportRequest(phoneNumber) {
 }
 
 // ============================================
-// Pending AI Support Conversation (waiting for user question after AYUDA)
+// AI Support Sessions (persistent multi-turn support)
 // ============================================
-const AI_SUPPORT_CONVO_TTL = 5 * 60 * 1000;
-const pendingAISupportConvos = new Map(); // phoneNumber -> { timestamp }
+const AI_SUPPORT_SESSION_TTL = 5 * 60 * 1000;   // 5 min auto-end
+const AI_SUPPORT_WARNING_TTL = 2 * 60 * 1000;    // 2 min warning
+const pendingAISupportSessions = new Map();
+// phoneNumber → {
+//   timestamp,
+//   previousQA: [{ question, answer }],
+//   lastQueryId: string|null,
+//   warningTimerId: number,
+//   expiryTimerId: number
+// }
 
-function setPendingAISupportConvo(phoneNumber) {
-  const timestamp = Date.now();
-  pendingAISupportConvos.set(phoneNumber, { timestamp });
-  setTimeout(() => {
-    const pending = pendingAISupportConvos.get(phoneNumber);
-    if (pending && pending.timestamp === timestamp) {
-      pendingAISupportConvos.delete(phoneNumber);
-    }
-  }, AI_SUPPORT_CONVO_TTL);
+function createAISupportSession(phoneNumber) {
+  clearAISupportSession(phoneNumber);
+  const session = {
+    timestamp: Date.now(),
+    previousQA: [],
+    lastQueryId: null,
+    warningTimerId: null,
+    expiryTimerId: null
+  };
+  pendingAISupportSessions.set(phoneNumber, session);
+  resetSessionTimers(phoneNumber);
+  return session;
 }
 
-function getPendingAISupportConvo(phoneNumber) {
-  const pending = pendingAISupportConvos.get(phoneNumber);
-  if (!pending) return null;
-  if (Date.now() - pending.timestamp > AI_SUPPORT_CONVO_TTL) {
-    pendingAISupportConvos.delete(phoneNumber);
-    return null;
+function getAISupportSession(phoneNumber) {
+  return pendingAISupportSessions.get(phoneNumber) || null;
+}
+
+function clearAISupportSession(phoneNumber) {
+  const session = pendingAISupportSessions.get(phoneNumber);
+  if (session) {
+    if (session.warningTimerId) clearTimeout(session.warningTimerId);
+    if (session.expiryTimerId) clearTimeout(session.expiryTimerId);
+    pendingAISupportSessions.delete(phoneNumber);
   }
-  return pending;
 }
 
-function clearPendingAISupportConvo(phoneNumber) {
-  pendingAISupportConvos.delete(phoneNumber);
+function resetSessionTimers(phoneNumber) {
+  const session = pendingAISupportSessions.get(phoneNumber);
+  if (!session) return;
+
+  if (session.warningTimerId) clearTimeout(session.warningTimerId);
+  if (session.expiryTimerId) clearTimeout(session.expiryTimerId);
+
+  session.warningTimerId = setTimeout(async () => {
+    const current = pendingAISupportSessions.get(phoneNumber);
+    if (current === session) {
+      try {
+        await sendWhatsAppMessage(phoneNumber, 'El soporte se cerrará en 3 minutos.');
+      } catch (err) {
+        logger.error('Error sending session warning', { error: err });
+      }
+    }
+  }, AI_SUPPORT_WARNING_TTL);
+
+  session.expiryTimerId = setTimeout(() => {
+    const current = pendingAISupportSessions.get(phoneNumber);
+    if (current === session) {
+      pendingAISupportSessions.delete(phoneNumber);
+    }
+  }, AI_SUPPORT_SESSION_TTL);
+}
+
+// ============================================
+// Support Rate Limiting
+// ============================================
+const supportRateLimits = new Map(); // phoneNumber → { count, resetAt }
+const SUPPORT_RATE_LIMIT = 10;
+const SUPPORT_RATE_WINDOW = 60 * 60 * 1000; // 1 hour
+
+function checkSupportRateLimit(phoneNumber) {
+  const now = Date.now();
+  const entry = supportRateLimits.get(phoneNumber);
+
+  if (!entry || now >= entry.resetAt) {
+    supportRateLimits.set(phoneNumber, { count: 1, resetAt: now + SUPPORT_RATE_WINDOW });
+    return true;
+  }
+
+  if (entry.count >= SUPPORT_RATE_LIMIT) return false;
+
+  entry.count++;
+  return true;
 }
 
 // ============================================
@@ -568,10 +626,11 @@ async function processMessage(phoneNumber, text, contactName) {
   if (pendingSupport) {
     if (normalizedText === 'soporte ai') {
       clearPendingSupportRequest(phoneNumber);
-      await handleAISupport(phoneNumber, pendingSupport.originalText);
+      const session = createAISupportSession(phoneNumber);
+      await handleAISupport(phoneNumber, pendingSupport.originalText, session);
       return;
     }
-    if (normalizedText === 'registrar gasto') {
+    if (normalizedText === 'registrar' || normalizedText === 'registrar gasto') {
       clearPendingSupportRequest(phoneNumber);
       await handleTextExpense(phoneNumber, pendingSupport.originalText, true);
       return;
@@ -579,11 +638,21 @@ async function processMessage(phoneNumber, text, contactName) {
     clearPendingSupportRequest(phoneNumber);
   }
 
-  // 6. Pending AI support conversation (user was asked to type question)
-  const pendingAISupport = getPendingAISupportConvo(phoneNumber);
-  if (pendingAISupport) {
-    clearPendingAISupportConvo(phoneNumber);
-    await handleAISupport(phoneNumber, text);
+  // 6. Active AI support session
+  const activeSession = getAISupportSession(phoneNumber);
+  if (activeSession) {
+    if (['listo, gracias', 'listo gracias', 'listo'].includes(normalizedText)) {
+      clearAISupportSession(phoneNumber);
+      await sendWhatsAppMessage(phoneNumber, 'Listo! Si necesitas algo mas, escribi *AYUDA* cuando quieras.');
+      return;
+    }
+    if (normalizedText === 'otra consulta') {
+      resetSessionTimers(phoneNumber);
+      await sendWhatsAppMessage(phoneNumber, 'Escribi tu consulta y te ayudo.');
+      return;
+    }
+    // Any other text → treat as support question
+    await handleAISupport(phoneNumber, text, activeSession);
     return;
   }
 
@@ -622,9 +691,10 @@ async function processMessage(phoneNumber, text, contactName) {
     const supportReq = getPendingSupportRequest(phoneNumber);
     if (supportReq) {
       clearPendingSupportRequest(phoneNumber);
-      await handleAISupport(phoneNumber, supportReq.originalText);
+      const session = createAISupportSession(phoneNumber);
+      await handleAISupport(phoneNumber, supportReq.originalText, session);
     } else {
-      setPendingAISupportConvo(phoneNumber);
+      createAISupportSession(phoneNumber);
       await sendWhatsAppMessage(phoneNumber, 'Escribi tu consulta y te ayudo.');
     }
     return;
@@ -1300,23 +1370,6 @@ async function processAudioMessage(phoneNumber, audioId, caption, contactName) {
 // ============================================
 
 async function handleTextExpense(phoneNumber, text, skipSupportDetection = false) {
-  // Support detection runs BEFORE linking check so unlinked users can get help too
-  if (!skipSupportDetection && geminiHandler) {
-    const supportCheck = await geminiHandler.parseTextExpense(text, {});
-    if (!isGeminiError(supportCheck) && supportCheck?.isSupportQuestion && (!supportCheck.totalAmount || supportCheck.totalAmount === 0)) {
-      setPendingSupportRequest(phoneNumber, text);
-      await sendWhatsAppButtons(
-        phoneNumber,
-        'Parece que tenés una consulta. ¿Querés que te ayude?',
-        [
-          { id: 'support_ai', title: 'Soporte AI' },
-          { id: 'support_expense', title: 'Registrar gasto' }
-        ]
-      );
-      return;
-    }
-  }
-
   const linkDoc = await db.collection(COLLECTIONS.WHATSAPP_LINKS).doc(phoneNumber).get();
   if (!linkDoc.exists || linkDoc.data()?.status !== 'linked') {
     await sendWhatsAppMessage(phoneNumber, 'Este numero no esta vinculado. Envia VINCULAR <codigo> para vincular tu cuenta.');
@@ -1359,6 +1412,20 @@ async function handleTextExpense(phoneNumber, text, skipSupportDetection = false
   };
 
   const result = await geminiHandler.parseTextExpense(text, context);
+
+  // Support detection on the single Gemini call result
+  if (!skipSupportDetection && !isGeminiError(result) && result?.isSupportQuestion && (!result.totalAmount || result.totalAmount === 0)) {
+    setPendingSupportRequest(phoneNumber, text);
+    await sendWhatsAppButtons(
+      phoneNumber,
+      'Parece que tenés una consulta. ¿Querés que te ayude?',
+      [
+        { id: 'support_ai', title: 'Soporte AI' },
+        { id: 'support_expense', title: 'Registrar' }
+      ]
+    );
+    return;
+  }
 
   if (isGeminiError(result)) {
     await sendWhatsAppMessage(phoneNumber, getGeminiErrorMessage());
@@ -1751,7 +1818,17 @@ Podes incluir metodo de pago (efectivo, transferencia, tarjeta, mercadopago), de
 const SUPPORT_PHONE = '5493513467739';
 const SUPPORT_WA_LINK = `https://wa.me/${SUPPORT_PHONE}`;
 
-async function handleAISupport(phoneNumber, question) {
+async function handleAISupport(phoneNumber, question, session = null) {
+  // Rate limit check
+  if (!checkSupportRateLimit(phoneNumber)) {
+    clearAISupportSession(phoneNumber);
+    await sendWhatsAppMessage(
+      phoneNumber,
+      `Alcanzaste el límite de consultas por hora.\n\nPodes hablar con soporte directamente: ${SUPPORT_WA_LINK}`
+    );
+    return;
+  }
+
   if (!geminiHandler) {
     await sendWhatsAppMessage(phoneNumber, 'El soporte AI no esta disponible en este momento.');
     return;
@@ -1765,23 +1842,28 @@ async function handleAISupport(phoneNumber, question) {
     return;
   }
 
-  const result = await geminiHandler.answerSupportQuestion(question, faqData);
+  const conversationHistory = session?.previousQA?.slice(-3) || [];
+  const result = await geminiHandler.answerSupportQuestion(question, faqData, conversationHistory);
 
-  // Store the query for analytics
+  // Store the query for analytics with parentQueryId chain
+  let queryDocId = null;
   try {
-    await db.collection(COLLECTIONS.SUPPORT_QUERIES).add({
+    const queryDoc = await db.collection(COLLECTIONS.SUPPORT_QUERIES).add({
       phoneNumber,
       question,
       answer: result?.answer || null,
       noAnswer: result?.noAnswer || false,
       error: isGeminiError(result) ? result.error : null,
+      parentQueryId: session?.lastQueryId || null,
       createdAt: admin.firestore.FieldValue.serverTimestamp()
     });
+    queryDocId = queryDoc.id;
   } catch (err) {
     logger.error('Error storing support query', { error: err });
   }
 
   if (isGeminiError(result)) {
+    clearAISupportSession(phoneNumber);
     await sendWhatsAppMessage(
       phoneNumber,
       `El servicio de soporte no esta disponible.\n\nPodes hablar con soporte directamente: ${SUPPORT_WA_LINK}`
@@ -1790,14 +1872,38 @@ async function handleAISupport(phoneNumber, question) {
   }
 
   if (!result || result.noAnswer) {
+    // Keep session active on noAnswer so user can ask something else
     await sendWhatsAppMessage(
       phoneNumber,
       `${result?.answer || 'No encontre una respuesta para tu consulta.'}\n\nSi necesitas mas ayuda, podes hablar con soporte: ${SUPPORT_WA_LINK}`
     );
+    // Update session with this Q&A
+    if (session) {
+      session.previousQA.push({ question, answer: result?.answer || '' });
+      session.lastQueryId = queryDocId;
+      resetSessionTimers(phoneNumber);
+    }
+    await sendWhatsAppButtons(phoneNumber, '¿Necesitas algo mas?', [
+      { id: 'support_otra', title: 'Otra consulta' },
+      { id: 'support_listo', title: 'Listo, gracias' }
+    ]);
     return;
   }
 
   await sendWhatsAppMessage(phoneNumber, result.answer);
+
+  // Update/create session
+  if (!session) {
+    session = createAISupportSession(phoneNumber);
+  }
+  session.previousQA.push({ question, answer: result.answer });
+  session.lastQueryId = queryDocId;
+  resetSessionTimers(phoneNumber);
+
+  await sendWhatsAppButtons(phoneNumber, '¿Necesitas algo mas?', [
+    { id: 'support_otra', title: 'Otra consulta' },
+    { id: 'support_listo', title: 'Listo, gracias' }
+  ]);
 }
 
 async function handleProyectoCommand(phoneNumber) {
