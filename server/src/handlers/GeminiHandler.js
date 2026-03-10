@@ -159,11 +159,15 @@ ${captionBlock}
   - "expense" para tickets de compra, facturas, recibos de comercio
   - "payment" para capturas de transferencia bancaria, comprobantes de pago, vouchers de deposito
   - "payment" tambien si el texto del usuario indica cobro: "me ingresó", "me pagaron", "cobro", "me transfirieron", "me depositaron", "me ingresaron"
+  - "provider_expense" si el texto del usuario dice "gasto propio", "gasto mio", "puse de mi bolsillo", "pague yo", "puse yo"
 - IMPORTANTE: Los documentos argentinos usan punto (.) como separador de miles. Por ejemplo, "49.350" = 49350, "7.600" = 7600, "302.641" = 302641. NO interpretar el punto como separador decimal. Los montos deben ser numeros enteros o con centavos separados por coma (,).
-- Cada item debe tener "name" (descripcion corta) y "amount" (precio unitario o subtotal)
+- Cada item debe tener "name" y "amount":
+  - "name": descripcion corta y legible. Si la cantidad es mayor a 1, incluir la cantidad al final con el formato " | x<cantidad> u". Ejemplos: "Bolsa Cemento 25kg Holcim | x10 u", "Arena Lavada x MT | x2 u". Si es 1 unidad, no agregar cantidad.
+  - "amount": SIEMPRE usar el SUBTOTAL de la linea (cantidad x precio unitario), NUNCA el precio unitario solo. Si el comprobante muestra columnas de cantidad, precio unitario y subtotal, usar el valor de subtotal.
+- "totalAmount": Si el comprobante tiene un total impreso, usar ese valor exacto. Si NO hay total impreso, sumar los subtotales de todos los items.
 - "paymentMethod" y "recipientId" se pueden extraer de la imagen o del texto del usuario
 - Los campos installmentPercent y projectId se extraen SOLO del texto del usuario, NO de la imagen
-- "installmentPercent": usa "100" SOLO si el texto dice "pagado por el cliente", "el cliente pago", "ya esta pago". Caso contrario usa "0"
+- "installmentPercent": usa "100" SOLO si el TEXTO DEL USUARIO dice "pagado por el cliente", "el cliente pago", "ya esta pago". Caso contrario usa "0". IMPORTANTE: Si la imagen/ticket dice "PAGADO", "CANCELADO", "ABONADO" o similar, eso NO cuenta — es solo el estado del comprobante, no significa que el cliente haya pagado. Solo el texto del usuario determina este campo.
 - "paymentMethod": debe ser EXACTAMENTE uno de los metodos validos, o null
 - "recipientId": debe ser EXACTAMENTE uno de los IDs listados, o null
 - "projectId": debe ser EXACTAMENTE uno de los IDs listados, o null
@@ -176,7 +180,7 @@ ${methodList}
 ${vendorList}`;
 
     const schemaProps = {
-      transactionType: { type: 'string', enum: ['expense', 'payment'] },
+      transactionType: { type: 'string', enum: ['expense', 'payment', 'provider_expense'] },
       vendorId: { type: 'string', nullable: true },
       vendorName: { type: 'string', nullable: true },
       items: {
@@ -515,11 +519,15 @@ ${captionBlock}
   - "expense" para facturas de compra, presupuestos, recibos de comercio
   - "payment" para comprobantes de transferencia bancaria, recibos de pago, vouchers de deposito
   - "payment" tambien si el texto del usuario indica cobro: "me ingresó", "me pagaron", "cobro", "me transfirieron", "me depositaron", "me ingresaron"
+  - "provider_expense" si el texto del usuario dice "gasto propio", "gasto mio", "puse de mi bolsillo", "pague yo", "puse yo"
 - IMPORTANTE: Los documentos argentinos usan punto (.) como separador de miles. Por ejemplo, "49.350" = 49350, "7.600" = 7600, "302.641" = 302641. NO interpretar el punto como separador decimal. Los montos deben ser numeros enteros o con centavos separados por coma (,).
-- Cada item debe tener "name" (descripcion corta) y "amount" (precio unitario o subtotal)
+- Cada item debe tener "name" y "amount":
+  - "name": descripcion corta y legible. Si la cantidad es mayor a 1, incluir la cantidad al final con el formato " | x<cantidad> u". Ejemplos: "Bolsa Cemento 25kg Holcim | x10 u", "Arena Lavada x MT | x2 u". Si es 1 unidad, no agregar cantidad.
+  - "amount": SIEMPRE usar el SUBTOTAL de la linea (cantidad x precio unitario), NUNCA el precio unitario solo. Si el comprobante muestra columnas de cantidad, precio unitario y subtotal, usar el valor de subtotal.
+- "totalAmount": Si el documento tiene un total impreso, usar ese valor exacto. Si NO hay total impreso, sumar los subtotales de todos los items.
 - "paymentMethod" y "recipientId" se pueden extraer del documento o del texto del usuario
 - Los campos installmentPercent y projectId se extraen SOLO del texto del usuario, NO del documento
-- "installmentPercent": usa "100" SOLO si el texto dice "pagado por el cliente", "el cliente pago", "ya esta pago". Caso contrario usa "0"
+- "installmentPercent": usa "100" SOLO si el TEXTO DEL USUARIO dice "pagado por el cliente", "el cliente pago", "ya esta pago". Caso contrario usa "0". IMPORTANTE: Si el documento dice "PAGADO", "CANCELADO", "ABONADO" o similar, eso NO cuenta — es solo el estado del comprobante, no significa que el cliente haya pagado. Solo el texto del usuario determina este campo.
 - "paymentMethod": debe ser EXACTAMENTE uno de los metodos validos, o null
 - "recipientId": debe ser EXACTAMENTE uno de los IDs listados, o null
 - "projectId": debe ser EXACTAMENTE uno de los IDs listados, o null
@@ -532,7 +540,7 @@ ${methodList}
 ${vendorList}`;
 
     const docSchemaProps = {
-      transactionType: { type: 'string', enum: ['expense', 'payment'] },
+      transactionType: { type: 'string', enum: ['expense', 'payment', 'provider_expense'] },
       vendorId: { type: 'string', nullable: true },
       vendorName: { type: 'string', nullable: true },
       items: {

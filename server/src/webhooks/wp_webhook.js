@@ -143,6 +143,17 @@ function applyFeeToExpenseData(expenseData, aiResult, linkData) {
   }
 }
 
+// Check if items sum matches totalAmount and return warning if mismatch
+function checkItemsTotalMismatch(items, totalAmount) {
+  if (!items || items.length <= 1 || !totalAmount) return null;
+  const itemsSum = items.reduce((sum, i) => sum + (i.amount || 0), 0);
+  if (itemsSum === 0) return null;
+  const diff = Math.abs(totalAmount - itemsSum);
+  // Allow small rounding tolerance (1 unit)
+  if (diff <= 1) return null;
+  return { itemsSum, totalAmount, diff };
+}
+
 // ============================================
 // Gemini Handler
 // ============================================
@@ -1007,6 +1018,8 @@ async function processImageMessage(phoneNumber, imageId, caption, contactName) {
     ? receiptData.items.map(i => typeof i === 'string' ? { name: i, amount: 0 } : { name: i.name || '', amount: i.amount || 0 })
     : null;
 
+  const mismatch = checkItemsTotalMismatch(items, receiptData.totalAmount);
+
   // Project switching detection
   const isProjectSwitch = detectedProjectId && detectedProjectId !== activeProjectId;
 
@@ -1043,7 +1056,7 @@ async function processImageMessage(phoneNumber, imageId, caption, contactName) {
     applyFeeToExpenseData(expenseData, receiptData, linkData);
     setPendingProjectSwitchExpense(phoneNumber, userId, expenseData, detectedProject);
 
-    const confirmMsg = buildExpenseConfirmationMessage(expenseData);
+    const confirmMsg = buildExpenseConfirmationMessage(expenseData, mismatch);
     const switchBody = `${confirmMsg}\nEste gasto se guardaria en *${detectedProject.name}* (no tu proyecto activo).\n\nSi queres guardar automaticamente a este proyecto, usa el comando *PROYECTO*.`;
     await sendWhatsAppButtons(phoneNumber, switchBody, [
       { id: 'confirm_yes', title: 'Si' },
@@ -1089,7 +1102,7 @@ async function processImageMessage(phoneNumber, imageId, caption, contactName) {
   applyFeeToExpenseData(expenseData, receiptData, linkData);
   await setPendingConfirmation(phoneNumber, userId, expenseData);
 
-  const confirmMsg = buildExpenseConfirmationMessage(expenseData);
+  const confirmMsg = buildExpenseConfirmationMessage(expenseData, mismatch);
   await sendWhatsAppButtons(phoneNumber, confirmMsg, [
     { id: 'confirm_yes', title: 'Si' },
     { id: 'confirm_no', title: 'No' }
@@ -1231,6 +1244,8 @@ async function processDocumentMessage(phoneNumber, documentId, caption, filename
     ? documentResult.items.map(i => typeof i === 'string' ? { name: i, amount: 0 } : { name: i.name || '', amount: i.amount || 0 })
     : null;
 
+  const mismatch = checkItemsTotalMismatch(items, documentResult.totalAmount);
+
   // Project switching detection
   const isProjectSwitch = detectedProjectId && detectedProjectId !== activeProjectId;
 
@@ -1268,7 +1283,7 @@ async function processDocumentMessage(phoneNumber, documentId, caption, filename
     applyFeeToExpenseData(expenseData, documentResult, linkData);
     setPendingProjectSwitchExpense(phoneNumber, userId, expenseData, detectedProject);
 
-    const confirmMsg = buildExpenseConfirmationMessage(expenseData);
+    const confirmMsg = buildExpenseConfirmationMessage(expenseData, mismatch);
     const switchBody = `${confirmMsg}\nEste gasto se guardaria en *${detectedProject.name}* (no tu proyecto activo).\n\nSi queres guardar automaticamente a este proyecto, usa el comando *PROYECTO*.`;
     await sendWhatsAppButtons(phoneNumber, switchBody, [
       { id: 'confirm_yes', title: 'Si' },
@@ -1315,7 +1330,7 @@ async function processDocumentMessage(phoneNumber, documentId, caption, filename
   applyFeeToExpenseData(expenseData, documentResult, linkData);
   await setPendingConfirmation(phoneNumber, userId, expenseData);
 
-  const confirmMsg = buildExpenseConfirmationMessage(expenseData);
+  const confirmMsg = buildExpenseConfirmationMessage(expenseData, mismatch);
   await sendWhatsAppButtons(phoneNumber, confirmMsg, [
     { id: 'confirm_yes', title: 'Si' },
     { id: 'confirm_no', title: 'No' }
@@ -1729,7 +1744,7 @@ async function handleTextExpense(phoneNumber, text, skipSupportDetection = false
   ]);
 }
 
-function buildExpenseConfirmationMessage(data) {
+function buildExpenseConfirmationMessage(data, mismatch = null) {
   const typeLabel = getTypeLabel(data.type);
   const formattedAmount = formatAmount(data.amount);
   let msg = `${typeLabel}: ${formattedAmount} - ${data.title}\n`;
@@ -1756,6 +1771,10 @@ function buildExpenseConfirmationMessage(data) {
   }
   if (data.installmentPercent >= 100) {
     msg += `\nEstado: Pagado`;
+  }
+
+  if (mismatch) {
+    msg += `\n\n⚠️ La suma de items (${formatAmount(mismatch.itemsSum)}) no coincide con el total del comprobante (${formatAmount(mismatch.totalAmount)}). Diferencia: ${formatAmount(mismatch.diff)}. Verifica que los montos sean correctos.`;
   }
 
   return msg;

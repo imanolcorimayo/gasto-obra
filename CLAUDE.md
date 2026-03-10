@@ -18,6 +18,10 @@ Both packages share the same Firebase project and Firestore database. See each p
 
 All user-facing text is in **Spanish (Argentine)**. Currency: ARS with `es-AR` locale.
 
+## AI Image/PDF Analysis
+
+`/docs/conflictive-reports/` contains real receipt images that caused parsing issues, with `notes.md` documenting each problem and its fix/status. Use this folder as reference when working on AI prompting improvements.
+
 ## GitHub CLI (gh)
 
 Remote uses custom SSH alias `github-corimayo`, so `gh` commands need `--repo imanolcorimayo/gasto-obra` flag.
