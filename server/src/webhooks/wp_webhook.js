@@ -446,6 +446,178 @@ function checkSupportRateLimit(phoneNumber) {
 }
 
 // ============================================
+// Onboarding Flow (unlinked users)
+// ============================================
+const ONBOARDING_TTL = 10 * 60 * 1000; // 10 minutes
+const INACTIVE_THRESHOLD = 7 * 24 * 60 * 60 * 1000; // 7 days
+const pendingOnboarding = new Map(); // phoneNumber → { step, startedAt, data }
+
+// Cleanup expired onboarding states every 60 seconds
+setInterval(() => {
+  const now = Date.now();
+  for (const [phone, state] of pendingOnboarding.entries()) {
+    if (now - state.startedAt > ONBOARDING_TTL) {
+      pendingOnboarding.delete(phone);
+    }
+  }
+}, 60 * 1000);
+
+function getOnboardingState(phoneNumber) {
+  const state = pendingOnboarding.get(phoneNumber);
+  if (!state) return null;
+  if (Date.now() - state.startedAt > ONBOARDING_TTL) {
+    pendingOnboarding.delete(phoneNumber);
+    return null;
+  }
+  return state;
+}
+
+function clearOnboarding(phoneNumber) {
+  pendingOnboarding.delete(phoneNumber);
+}
+
+async function startOnboarding(phoneNumber) {
+  const state = { step: 'role_selection', startedAt: Date.now(), data: {} };
+  pendingOnboarding.set(phoneNumber, state);
+
+  await sendWhatsAppButtons(
+    phoneNumber,
+    '¡Hola! 👋 Soy el bot de Gasto Obra. Veo que tu número no está vinculado todavía.\n\n¿Sos proveedor o cliente?',
+    [
+      { id: 'onboarding_provider', title: 'Soy proveedor' },
+      { id: 'onboarding_client', title: 'Soy cliente' }
+    ]
+  );
+}
+
+async function handleOnboardingStep(phoneNumber, text) {
+  const state = getOnboardingState(phoneNumber);
+  if (!state) return false;
+
+  const normalizedText = text.trim().toLowerCase();
+
+  if (state.step === 'role_selection') {
+    if (['soy proveedor', 'proveedor'].includes(normalizedText)) {
+      state.step = 'provider_instructions';
+      state.startedAt = Date.now();
+
+      await sendWhatsAppMessage(
+        phoneNumber,
+        `Para vincular tu cuenta como proveedor:\n` +
+        `1. Ingresá a ${APP_URL} y registrate con Google\n` +
+        `2. Andá a Configuración → WhatsApp\n` +
+        `3. Copiá el código de vinculación\n` +
+        `4. Mandame el código acá con: VINCULAR [código]\n\n` +
+        `¿Necesitás ayuda con algún paso?`
+      );
+      return true;
+    }
+
+    if (['soy cliente', 'cliente'].includes(normalizedText)) {
+      clearOnboarding(phoneNumber);
+
+      await sendWhatsAppMessage(
+        phoneNumber,
+        'Como cliente, no necesitás vincular tu cuenta. Tu proveedor te va a compartir un link para que puedas ver los gastos de tu obra.\n\n' +
+        'Si tu proveedor ya te pasó un link, podés acceder directamente desde ahí. Si tenés alguna duda, decile a tu proveedor que te comparta el enlace desde la app.'
+      );
+      return true;
+    }
+
+    // Unrecognized input → reprompt
+    await sendWhatsAppButtons(
+      phoneNumber,
+      'No entendí tu respuesta. ¿Sos proveedor o cliente?',
+      [
+        { id: 'onboarding_provider', title: 'Soy proveedor' },
+        { id: 'onboarding_client', title: 'Soy cliente' }
+      ]
+    );
+    return true;
+  }
+
+  if (state.step === 'provider_instructions') {
+    // If they send VINCULAR, let it fall through to normal command handling
+    if (normalizedText.startsWith('vincular ')) {
+      clearOnboarding(phoneNumber);
+      return false; // Let processMessage handle the VINCULAR command
+    }
+
+    // Any other message → helpful reminder
+    await sendWhatsAppMessage(
+      phoneNumber,
+      `Todavía no vinculaste tu cuenta. Seguí estos pasos:\n` +
+      `1. Ingresá a ${APP_URL} y registrate con Google\n` +
+      `2. Andá a Configuración → WhatsApp\n` +
+      `3. Copiá el código de vinculación\n` +
+      `4. Mandame el código acá con: VINCULAR [código]\n\n` +
+      `Si ya tenés el código, mandame: VINCULAR [código]`
+    );
+    return true;
+  }
+
+  return false;
+}
+
+/**
+ * Check if a phone number is linked. If not, starts onboarding.
+ * Returns the link data if linked, or null if unlinked (onboarding started).
+ * Also sends a returning user welcome if inactive for 7+ days.
+ */
+async function checkLinkedOrOnboard(phoneNumber) {
+  const linkDoc = await db.collection(COLLECTIONS.WHATSAPP_LINKS).doc(phoneNumber).get();
+  if (linkDoc.exists && linkDoc.data()?.status === 'linked') {
+    const linkData = linkDoc.data();
+
+    // Check for returning user (inactive 7+ days)
+    const lastActivity = linkData.lastActivity?.toDate();
+    const now = new Date();
+    if (!lastActivity || (now - lastActivity) > INACTIVE_THRESHOLD) {
+      await sendReturningUserWelcome(phoneNumber, linkData);
+    } else {
+      // Update lastActivity silently
+      db.collection(COLLECTIONS.WHATSAPP_LINKS).doc(phoneNumber).update({
+        lastActivity: admin.firestore.FieldValue.serverTimestamp()
+      }).catch(err => logger.error('Error updating lastActivity', { error: err }));
+    }
+
+    return linkData;
+  }
+  // Not linked — start onboarding if not already in progress
+  if (!getOnboardingState(phoneNumber)) {
+    await startOnboarding(phoneNumber);
+  } else {
+    await handleOnboardingStep(phoneNumber, '');
+  }
+  return null;
+}
+
+// ============================================
+// Returning User Welcome
+// ============================================
+
+async function sendReturningUserWelcome(phoneNumber, linkData) {
+  const userId = linkData.userId;
+  const activeProjectId = linkData.activeProjectId || null;
+  const projects = await getActiveProjects(userId);
+
+  if (projects.length === 0) {
+    await sendWhatsAppMessage(phoneNumber, `¡Hola! Todavía no tenés proyectos. Creá uno desde la app en ${APP_URL}`);
+  } else if (projects.length === 1) {
+    await sendWhatsAppMessage(phoneNumber, `¡Hola! Estás trabajando en *${projects[0].name}*. Contame qué gastaste.`);
+  } else {
+    const activeProject = activeProjectId ? projects.find(p => p.id === activeProjectId) : null;
+    const projectName = activeProject ? activeProject.name : projects[0].name;
+    await sendWhatsAppMessage(phoneNumber, `¡Hola! Tenés ${projects.length} proyectos activos. Tu proyecto actual es *${projectName}*. Podés cambiar con PROYECTO.`);
+  }
+
+  // Update lastActivity
+  await db.collection(COLLECTIONS.WHATSAPP_LINKS).doc(phoneNumber).update({
+    lastActivity: admin.firestore.FieldValue.serverTimestamp()
+  });
+}
+
+// ============================================
 // Middleware
 // ============================================
 app.use(express.json());
@@ -656,20 +828,28 @@ async function processMessage(phoneNumber, text, contactName) {
     return;
   }
 
-  // 7. VINCULAR
+  // 7. Onboarding flow (unlinked users)
+  const onboardingState = getOnboardingState(phoneNumber);
+  if (onboardingState) {
+    const handled = await handleOnboardingStep(phoneNumber, text);
+    if (handled) return;
+    // If not handled (e.g. VINCULAR during onboarding), fall through
+  }
+
+  // 8. VINCULAR
   if (normalizedText.startsWith('vincular ')) {
     const code = text.trim().split(' ')[1]?.toUpperCase();
     await handleLinkCommand(phoneNumber, code, contactName);
     return;
   }
 
-  // 6. DESVINCULAR
+  // 9. DESVINCULAR
   if (normalizedText === 'desvincular') {
     await handleUnlinkCommand(phoneNumber);
     return;
   }
 
-  // 9. AYUDA (2-step flow with buttons)
+  // 10. AYUDA (2-step flow with buttons)
   if (normalizedText === 'ayuda' || normalizedText === 'help') {
     await sendWhatsAppButtons(
       phoneNumber,
@@ -721,13 +901,9 @@ async function processMessage(phoneNumber, text, contactName) {
 // ============================================
 
 async function processImageMessage(phoneNumber, imageId, caption, contactName) {
-  const linkDoc = await db.collection(COLLECTIONS.WHATSAPP_LINKS).doc(phoneNumber).get();
-  if (!linkDoc.exists || linkDoc.data()?.status !== 'linked') {
-    await sendWhatsAppMessage(phoneNumber, 'Este numero no esta vinculado. Envia VINCULAR <codigo> para vincular tu cuenta.');
-    return;
-  }
+  const linkData = await checkLinkedOrOnboard(phoneNumber);
+  if (!linkData) return;
 
-  const linkData = linkDoc.data();
   const userId = linkData.userId;
   const activeProjectId = linkData.activeProjectId || null;
 
@@ -929,13 +1105,9 @@ const MAX_PDF_SIZE = 5 * 1024 * 1024; // 5MB
 const MAX_PDF_PAGES = 5;
 
 async function processDocumentMessage(phoneNumber, documentId, caption, filename, contactName) {
-  const linkDoc = await db.collection(COLLECTIONS.WHATSAPP_LINKS).doc(phoneNumber).get();
-  if (!linkDoc.exists || linkDoc.data()?.status !== 'linked') {
-    await sendWhatsAppMessage(phoneNumber, 'Este numero no esta vinculado. Envia VINCULAR <codigo> para vincular tu cuenta.');
-    return;
-  }
+  const linkData = await checkLinkedOrOnboard(phoneNumber);
+  if (!linkData) return;
 
-  const linkData = linkDoc.data();
   const userId = linkData.userId;
   const activeProjectId = linkData.activeProjectId || null;
 
@@ -1158,13 +1330,9 @@ async function processDocumentMessage(phoneNumber, documentId, caption, filename
 // ============================================
 
 async function processAudioMessage(phoneNumber, audioId, caption, contactName) {
-  const linkDoc = await db.collection(COLLECTIONS.WHATSAPP_LINKS).doc(phoneNumber).get();
-  if (!linkDoc.exists || linkDoc.data()?.status !== 'linked') {
-    await sendWhatsAppMessage(phoneNumber, 'Este numero no esta vinculado. Envia VINCULAR <codigo> para vincular tu cuenta.');
-    return;
-  }
+  const linkData = await checkLinkedOrOnboard(phoneNumber);
+  if (!linkData) return;
 
-  const linkData = linkDoc.data();
   const userId = linkData.userId;
   const activeProjectId = linkData.activeProjectId || null;
 
@@ -1370,13 +1538,9 @@ async function processAudioMessage(phoneNumber, audioId, caption, contactName) {
 // ============================================
 
 async function handleTextExpense(phoneNumber, text, skipSupportDetection = false) {
-  const linkDoc = await db.collection(COLLECTIONS.WHATSAPP_LINKS).doc(phoneNumber).get();
-  if (!linkDoc.exists || linkDoc.data()?.status !== 'linked') {
-    await sendWhatsAppMessage(phoneNumber, 'Este numero no esta vinculado. Envia VINCULAR <codigo> para vincular tu cuenta.');
-    return;
-  }
+  const linkData = await checkLinkedOrOnboard(phoneNumber);
+  if (!linkData) return;
 
-  const linkData = linkDoc.data();
   const userId = linkData.userId;
   const activeProjectId = linkData.activeProjectId || null;
 
@@ -1907,14 +2071,9 @@ async function handleAISupport(phoneNumber, question, session = null) {
 }
 
 async function handleProyectoCommand(phoneNumber) {
-  const linkDoc = await db.collection(COLLECTIONS.WHATSAPP_LINKS).doc(phoneNumber).get();
+  const linkData = await checkLinkedOrOnboard(phoneNumber);
+  if (!linkData) return;
 
-  if (!linkDoc.exists || linkDoc.data()?.status !== 'linked') {
-    await sendWhatsAppMessage(phoneNumber, 'Este numero no esta vinculado a ninguna cuenta.');
-    return;
-  }
-
-  const linkData = linkDoc.data();
   const userId = linkData.userId;
   const activeProjectId = linkData.activeProjectId || null;
 
@@ -1949,14 +2108,9 @@ async function handleProyectoCommand(phoneNumber) {
 }
 
 async function handleResumenCommand(phoneNumber) {
-  const linkDoc = await db.collection(COLLECTIONS.WHATSAPP_LINKS).doc(phoneNumber).get();
+  const linkData = await checkLinkedOrOnboard(phoneNumber);
+  if (!linkData) return;
 
-  if (!linkDoc.exists || linkDoc.data()?.status !== 'linked') {
-    await sendWhatsAppMessage(phoneNumber, 'Este numero no esta vinculado a ninguna cuenta.');
-    return;
-  }
-
-  const linkData = linkDoc.data();
   const userId = linkData.userId;
 
   const project = await resolveProject(userId, linkData.activeProjectId);
