@@ -1,12 +1,17 @@
 <template>
-  <div class="min-h-screen bg-go-surface-primary py-12 px-4 sm:px-6 lg:px-8">
-    <div class="max-w-3xl mx-auto">
-      <h1 class="text-3xl font-bold text-go-text-primary mb-8">Politica de Privacidad</h1>
-      <p class="text-go-text-secondary mb-4">Ultima actualizacion: 6 de marzo de 2026</p>
+  <div class="min-h-screen bg-go-bg flex flex-col">
+    <LandingNavbar />
+
+    <!-- Spacer for fixed navbar -->
+    <div class="h-16"></div>
+
+    <div class="max-w-3xl mx-auto px-4 sm:px-6 py-8 flex-1 w-full">
+      <h1 class="font-display font-bold text-3xl text-go-text mb-1">Política de Privacidad</h1>
+      <p class="text-go-text-secondary text-sm mb-8">Ultima actualizacion: 6 de marzo de 2026</p>
 
       <div class="space-y-8 text-go-text-secondary leading-relaxed">
         <section>
-          <h2 class="text-xl font-semibold text-go-text-primary mb-3">1. Responsables</h2>
+          <h2 class="text-xl font-semibold text-go-text mb-3">1. Responsables</h2>
           <p>
             Gasto Obra es operado por Andrea Lopez Palomeque e Imanol Corimayo
             (en adelante, "nosotros"). Esta politica describe como recopilamos,
@@ -16,7 +21,7 @@
         </section>
 
         <section>
-          <h2 class="text-xl font-semibold text-go-text-primary mb-3">2. Informacion que recopilamos</h2>
+          <h2 class="text-xl font-semibold text-go-text mb-3">2. Informacion que recopilamos</h2>
           <ul class="list-disc pl-6 space-y-2">
             <li>
               <strong>Datos de cuenta:</strong> nombre, numero de telefono y
@@ -39,7 +44,7 @@
         </section>
 
         <section>
-          <h2 class="text-xl font-semibold text-go-text-primary mb-3">3. Como usamos la informacion</h2>
+          <h2 class="text-xl font-semibold text-go-text mb-3">3. Como usamos la informacion</h2>
           <ul class="list-disc pl-6 space-y-2">
             <li>Registrar y organizar gastos de obras y remodelaciones.</li>
             <li>Enviar resumenes diarios de gastos a los clientes via WhatsApp.</li>
@@ -49,7 +54,7 @@
         </section>
 
         <section>
-          <h2 class="text-xl font-semibold text-go-text-primary mb-3">4. Servicios de terceros</h2>
+          <h2 class="text-xl font-semibold text-go-text mb-3">4. Servicios de terceros</h2>
           <p>Utilizamos los siguientes servicios de terceros:</p>
           <ul class="list-disc pl-6 space-y-2 mt-2">
             <li><strong>Meta (WhatsApp Business API):</strong> para enviar y recibir mensajes.</li>
@@ -63,7 +68,7 @@
         </section>
 
         <section>
-          <h2 class="text-xl font-semibold text-go-text-primary mb-3">5. Almacenamiento y seguridad</h2>
+          <h2 class="text-xl font-semibold text-go-text mb-3">5. Almacenamiento y seguridad</h2>
           <p>
             Los datos se almacenan en servidores de Google Firebase. Utilizamos
             medidas de seguridad estandar de la industria para proteger la
@@ -73,7 +78,7 @@
         </section>
 
         <section>
-          <h2 class="text-xl font-semibold text-go-text-primary mb-3">6. Retencion de datos</h2>
+          <h2 class="text-xl font-semibold text-go-text mb-3">6. Retencion de datos</h2>
           <p>
             Conservamos los datos mientras la cuenta del usuario este activa o
             mientras sea necesario para prestar el servicio. Los usuarios pueden
@@ -82,7 +87,7 @@
         </section>
 
         <section>
-          <h2 class="text-xl font-semibold text-go-text-primary mb-3">7. Derechos de los usuarios</h2>
+          <h2 class="text-xl font-semibold text-go-text mb-3">7. Derechos de los usuarios</h2>
           <p>Los usuarios tienen derecho a:</p>
           <ul class="list-disc pl-6 space-y-2 mt-2">
             <li>Acceder a sus datos personales.</li>
@@ -93,18 +98,18 @@
         </section>
 
         <section>
-          <h2 class="text-xl font-semibold text-go-text-primary mb-3">8. Contacto</h2>
+          <h2 class="text-xl font-semibold text-go-text mb-3">8. Contacto</h2>
           <p>
             Para consultas sobre privacidad o para ejercer tus derechos, podes
             contactarnos por correo electronico a
-            <a href="mailto:imanolcorimayo@gmail.com" class="text-go-accent-primary underline">
+            <a href="mailto:imanolcorimayo@gmail.com" class="text-go-primary underline">
               imanolcorimayo@gmail.com
             </a>.
           </p>
         </section>
 
         <section>
-          <h2 class="text-xl font-semibold text-go-text-primary mb-3">9. Cambios en esta politica</h2>
+          <h2 class="text-xl font-semibold text-go-text mb-3">9. Cambios en esta politica</h2>
           <p>
             Podemos actualizar esta politica periodicamente. Cualquier cambio
             sera publicado en esta pagina con la fecha de actualizacion
@@ -113,6 +118,8 @@
         </section>
       </div>
     </div>
+
+    <LandingFooter />
   </div>
 </template>
 

@@ -1,33 +1,20 @@
 <template>
   <div class="bg-go-bg min-h-screen">
-    <!-- ═══ NAVBAR ═══ -->
-    <nav
-      ref="navRef"
-      class="fixed top-0 left-0 right-0 z-50 transition-all duration-300"
-      :class="scrolled ? 'bg-go-bg/95 backdrop-blur-md border-b border-go-border-subtle' : 'bg-transparent border-b border-transparent'"
-    >
-      <div class="max-w-6xl mx-auto px-5 h-16 flex items-center justify-between">
-        <img src="/img/logo-horizontal.svg" alt="Gasto Obra" class="h-7" />
-        <div class="flex items-center gap-2">
-          <button
-            @click="toggleTheme"
-            class="p-2 rounded-lg text-go-text-tertiary hover:text-go-text hover:bg-go-surface-hover transition-colors duration-200"
-            :aria-label="isDark ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'"
-            :title="isDark ? 'Modo claro' : 'Modo oscuro'"
-          >
-            <MdiSun v-if="isDark" class="text-lg" />
-            <MdiMoon v-else class="text-lg" />
-          </button>
-          <button
-            @click="handleLogin"
-            :disabled="isLoading"
-            class="px-4 py-2 rounded-go-md border border-go-border text-go-text-secondary text-sm font-medium hover:border-go-primary hover:text-go-primary transition-colors"
-          >
-            Ingresar
-          </button>
+    <!-- Auth-check overlay -->
+    <Transition name="fade">
+      <div
+        v-if="isCheckingAuth"
+        class="fixed inset-0 z-[60] bg-go-bg flex flex-col items-center justify-center gap-4"
+      >
+        <img src="/img/logo-horizontal.svg" alt="Gasto Obra" class="h-8 opacity-80" />
+        <div class="flex items-center gap-2 text-go-text-secondary text-sm">
+          <span class="w-4 h-4 border-2 border-go-primary/30 border-t-go-primary rounded-full animate-spin"></span>
+          Verificando sesión...
         </div>
       </div>
-    </nav>
+    </Transition>
+
+    <LandingNavbar :show-login="true" :login-loading="isLoading" @login="handleLogin" />
 
     <!-- ═══ HERO ═══ -->
     <section class="min-h-screen flex items-center relative overflow-hidden">
@@ -275,26 +262,13 @@
     </section>
 
     <!-- ═══ FOOTER ═══ -->
-    <footer class="bg-go-bg-elevated border-t border-go-border-subtle">
-      <div class="max-w-6xl mx-auto px-5 py-8 flex flex-col sm:flex-row items-center justify-between gap-4">
-        <span class="font-display text-go-text-secondary text-sm">
-          gasto<span class="text-go-primary">obra</span>
-        </span>
-        <span class="text-go-text-muted text-xs">
-          &copy; 2026 Gasto Obra
-        </span>
-      </div>
-    </footer>
+    <LandingFooter />
   </div>
 </template>
 
 <script setup>
-import MdiSun from '~icons/mdi/white-balance-sunny';
-import MdiMoon from '~icons/mdi/moon-waning-crescent';
 import { signInWithGoogle, getCurrentUserAsync } from '~/utils/firebase';
 import { useProjectStore } from '~/stores/project';
-
-const { isDark, toggle: toggleTheme } = useTheme();
 
 definePageMeta({
   layout: 'landing'
@@ -304,9 +278,19 @@ useHead({
   title: 'Gasto Obra - Control de gastos de obra'
 });
 
+useSeoMeta({
+  description: 'Registrá los gastos de tu obra desde WhatsApp. Tu cliente los ve en tiempo real desde el navegador. Sin papel, sin Excel, sin olvidos.',
+  ogTitle: 'Gasto Obra - Control de gastos de obra',
+  ogDescription: 'Registrá los gastos de tu obra desde WhatsApp. Tu cliente los ve en tiempo real desde el navegador.',
+  ogType: 'website',
+  ogImage: '/img/logo.png',
+  twitterCard: 'summary',
+  twitterTitle: 'Gasto Obra - Control de gastos de obra',
+  twitterDescription: 'Registrá los gastos de tu obra desde WhatsApp. Tu cliente los ve en tiempo real.',
+});
+
 const isLoading = ref(false);
-const scrolled = ref(false);
-const navRef = ref(null);
+const isCheckingAuth = ref(true);
 const heroTextRef = ref(null);
 const heroPhoneRef = ref(null);
 const featuresRef = ref(null);
@@ -314,19 +298,11 @@ const howRef = ref(null);
 const stepsRef = ref(null);
 
 onMounted(async () => {
-  // Navbar scroll effect
-  const onScroll = () => {
-    scrolled.value = window.scrollY > 20;
-  };
-  window.addEventListener('scroll', onScroll, { passive: true });
-  onUnmounted(() => window.removeEventListener('scroll', onScroll));
-
   // Scroll-triggered animations
   const observer = new IntersectionObserver(
     (entries) => {
       entries.forEach((entry) => {
         if (entry.isIntersecting) {
-          // Animate the target and all landing-fade-up children
           const targets = entry.target.classList.contains('landing-fade-up')
             ? [entry.target]
             : entry.target.querySelectorAll('.landing-fade-up');
@@ -350,10 +326,12 @@ onMounted(async () => {
     if (ref.value) observer.observe(ref.value);
   });
 
-  // Redirect if already logged in
+  // Check auth and redirect if logged in
   const user = await getCurrentUserAsync();
   if (user) {
     await redirectUser(user);
+  } else {
+    isCheckingAuth.value = false;
   }
 });
 
@@ -427,5 +405,13 @@ async function handleLogin() {
   .landing-float {
     animation: none;
   }
+}
+
+/* Auth-check overlay transition */
+.fade-leave-active {
+  transition: opacity 0.3s ease;
+}
+.fade-leave-to {
+  opacity: 0;
 }
 </style>

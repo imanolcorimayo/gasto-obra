@@ -1,19 +1,11 @@
 <template>
-  <div class="min-h-screen bg-go-bg">
-    <!-- Branded mini-header -->
-    <header class="bg-go-bg border-b border-go-border px-4 py-3 flex items-center justify-between">
-      <NuxtLink to="/" class="font-display font-bold text-go-text">gasto<span class="text-go-primary">obra</span></NuxtLink>
-      <button
-        @click="toggleTheme"
-        class="p-1.5 rounded-lg text-go-text-tertiary hover:text-go-text hover:bg-go-surface-hover transition-colors duration-200"
-        :aria-label="isDark ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'"
-      >
-        <MdiSun v-if="isDark" class="text-base" />
-        <MdiMoon v-else class="text-base" />
-      </button>
-    </header>
+  <div class="min-h-screen bg-go-bg flex flex-col">
+    <LandingNavbar />
 
-    <div class="max-w-3xl mx-auto px-4 sm:px-6 py-8">
+    <!-- Spacer for fixed navbar -->
+    <div class="h-16"></div>
+
+    <div class="max-w-3xl mx-auto px-4 sm:px-6 py-8 flex-1 w-full">
       <h1 class="font-display font-bold text-3xl text-go-text mb-1">Preguntas frecuentes</h1>
       <p class="text-go-text-secondary text-sm mb-8">Todo lo que necesitás saber sobre Gasto Obra.</p>
 
@@ -62,19 +54,29 @@
         </section>
       </div>
     </div>
+
+    <LandingFooter />
   </div>
 </template>
 
 <script setup lang="ts">
 import { FaqSchema } from '~/utils/odm/schemas/faqSchema'
-import MdiSun from '~icons/mdi/weather-sunny'
-import MdiMoon from '~icons/mdi/weather-night'
 import MdiChevronDown from '~icons/mdi/chevron-down'
 
 definePageMeta({ layout: 'landing' })
+
 useHead({ title: 'Preguntas frecuentes — Gasto Obra' })
 
-const { isDark, toggle: toggleTheme } = useTheme()
+useSeoMeta({
+  description: 'Respondemos las dudas más comunes sobre Gasto Obra: cómo registrar gastos por WhatsApp, compartir con clientes, categorías, reportes y más.',
+  ogTitle: 'Preguntas frecuentes — Gasto Obra',
+  ogDescription: 'Respondemos las dudas más comunes sobre Gasto Obra: cómo registrar gastos por WhatsApp, compartir con clientes y más.',
+  ogType: 'website',
+  ogImage: '/img/logo.png',
+  twitterCard: 'summary',
+  twitterTitle: 'Preguntas frecuentes — Gasto Obra',
+  twitterDescription: 'Respondemos las dudas más comunes sobre Gasto Obra.',
+})
 
 interface FaqItem {
   id: string

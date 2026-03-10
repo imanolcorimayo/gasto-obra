@@ -1,0 +1,11 @@
+User-agent: *
+Allow: /
+Allow: /faq
+Allow: /privacy
+Disallow: /projects
+Disallow: /projects/
+Disallow: /settings/
+Disallow: /client/
+Disallow: /view/
+
+Sitemap: https://gastoobra.com/sitemap.xml

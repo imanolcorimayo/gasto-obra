@@ -27,12 +27,13 @@ export default defineNuxtConfig({
 
   routeRules: {
     '/': { prerender: true },
+    '/faq': { prerender: true },
+    '/privacy': { prerender: true },
     '/projects': { ssr: false },
     '/projects/**': { ssr: false },
     '/settings/**': { ssr: false },
     '/view/**': { ssr: false },
     '/client/**': { ssr: false },
-    '/faq': { ssr: false },
   },
 
   runtimeConfig: {
