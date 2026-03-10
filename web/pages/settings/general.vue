@@ -207,7 +207,7 @@ const whatsappNumber = config.public.whatsappNumber;
 const botPhoneConfigured = computed(() => !!(whatsappNumber || '').replace(/\D/g, ''));
 const whatsappUrl = computed(() => {
   const digits = (whatsappNumber || '').replace(/\D/g, '');
-  return `https://wa.me/${digits}`;
+  return `https://wa.me/${digits}?text=AYUDA`;
 });
 
 const waitingConfirmation = ref(false);
