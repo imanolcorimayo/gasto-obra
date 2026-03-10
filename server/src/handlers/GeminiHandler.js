@@ -159,6 +159,7 @@ ${captionBlock}
   - "expense" para tickets de compra, facturas, recibos de comercio
   - "payment" para capturas de transferencia bancaria, comprobantes de pago, vouchers de deposito
   - "payment" tambien si el texto del usuario indica cobro: "me ingresó", "me pagaron", "cobro", "me transfirieron", "me depositaron", "me ingresaron"
+- IMPORTANTE: Los documentos argentinos usan punto (.) como separador de miles. Por ejemplo, "49.350" = 49350, "7.600" = 7600, "302.641" = 302641. NO interpretar el punto como separador decimal. Los montos deben ser numeros enteros o con centavos separados por coma (,).
 - Cada item debe tener "name" (descripcion corta) y "amount" (precio unitario o subtotal)
 - "paymentMethod" y "recipientId" se pueden extraer de la imagen o del texto del usuario
 - Los campos installmentPercent y projectId se extraen SOLO del texto del usuario, NO de la imagen
@@ -514,6 +515,7 @@ ${captionBlock}
   - "expense" para facturas de compra, presupuestos, recibos de comercio
   - "payment" para comprobantes de transferencia bancaria, recibos de pago, vouchers de deposito
   - "payment" tambien si el texto del usuario indica cobro: "me ingresó", "me pagaron", "cobro", "me transfirieron", "me depositaron", "me ingresaron"
+- IMPORTANTE: Los documentos argentinos usan punto (.) como separador de miles. Por ejemplo, "49.350" = 49350, "7.600" = 7600, "302.641" = 302641. NO interpretar el punto como separador decimal. Los montos deben ser numeros enteros o con centavos separados por coma (,).
 - Cada item debe tener "name" (descripcion corta) y "amount" (precio unitario o subtotal)
 - "paymentMethod" y "recipientId" se pueden extraer del documento o del texto del usuario
 - Los campos installmentPercent y projectId se extraen SOLO del texto del usuario, NO del documento
