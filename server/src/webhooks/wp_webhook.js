@@ -1,5 +1,6 @@
 import '../../lib/instrument.js';
 import 'dotenv/config';
+import crypto from 'crypto';
 import express from 'express';
 import * as Sentry from '@sentry/node';
 import { admin, db, bucket, COLLECTIONS } from '../config/firebase.js';
@@ -905,17 +906,15 @@ async function processImageMessage(phoneNumber, imageId, caption, contactName) {
   if (!linkData) return;
 
   const userId = linkData.userId;
-  const activeProjectId = linkData.activeProjectId || null;
-
-  const activeProjects = await getActiveProjects(userId);
-  if (activeProjects.length === 0) {
-    await sendWhatsAppMessage(phoneNumber, 'No tenes proyectos activos.\n\nCrea uno desde la app web.');
-    return;
-  }
+  let activeProjectId = linkData.activeProjectId || null;
+  let activeProjects;
 
   if (!activeProjectId) {
-    await sendWhatsAppMessage(phoneNumber, 'No tenes un proyecto activo. Envia *PROYECTO* para seleccionar uno.');
-    return;
+    const result = await autoSelectProject(userId, phoneNumber);
+    activeProjectId = result.project.id;
+    activeProjects = result.activeProjects;
+  } else {
+    activeProjects = await getActiveProjects(userId);
   }
 
   if (!geminiHandler) {
@@ -1109,17 +1108,15 @@ async function processDocumentMessage(phoneNumber, documentId, caption, filename
   if (!linkData) return;
 
   const userId = linkData.userId;
-  const activeProjectId = linkData.activeProjectId || null;
-
-  const activeProjects = await getActiveProjects(userId);
-  if (activeProjects.length === 0) {
-    await sendWhatsAppMessage(phoneNumber, 'No tenes proyectos activos.\n\nCrea uno desde la app web.');
-    return;
-  }
+  let activeProjectId = linkData.activeProjectId || null;
+  let activeProjects;
 
   if (!activeProjectId) {
-    await sendWhatsAppMessage(phoneNumber, 'No tenes un proyecto activo. Envia *PROYECTO* para seleccionar uno.');
-    return;
+    const result = await autoSelectProject(userId, phoneNumber);
+    activeProjectId = result.project.id;
+    activeProjects = result.activeProjects;
+  } else {
+    activeProjects = await getActiveProjects(userId);
   }
 
   if (!geminiHandler) {
@@ -1334,17 +1331,15 @@ async function processAudioMessage(phoneNumber, audioId, caption, contactName) {
   if (!linkData) return;
 
   const userId = linkData.userId;
-  const activeProjectId = linkData.activeProjectId || null;
-
-  const activeProjects = await getActiveProjects(userId);
-  if (activeProjects.length === 0) {
-    await sendWhatsAppMessage(phoneNumber, 'No tenes proyectos activos.\n\nCrea uno desde la app web.');
-    return;
-  }
+  let activeProjectId = linkData.activeProjectId || null;
+  let activeProjects;
 
   if (!activeProjectId) {
-    await sendWhatsAppMessage(phoneNumber, 'No tenes un proyecto activo. Envia *PROYECTO* para seleccionar uno.');
-    return;
+    const result = await autoSelectProject(userId, phoneNumber);
+    activeProjectId = result.project.id;
+    activeProjects = result.activeProjects;
+  } else {
+    activeProjects = await getActiveProjects(userId);
   }
 
   if (!geminiHandler) {
@@ -1542,17 +1537,15 @@ async function handleTextExpense(phoneNumber, text, skipSupportDetection = false
   if (!linkData) return;
 
   const userId = linkData.userId;
-  const activeProjectId = linkData.activeProjectId || null;
-
-  const activeProjects = await getActiveProjects(userId);
-  if (activeProjects.length === 0) {
-    await sendWhatsAppMessage(phoneNumber, 'No tenes proyectos activos.\n\nCrea uno desde la app web.');
-    return;
-  }
+  let activeProjectId = linkData.activeProjectId || null;
+  let activeProjects;
 
   if (!activeProjectId) {
-    await sendWhatsAppMessage(phoneNumber, 'No tenes un proyecto activo. Envia *PROYECTO* para seleccionar uno.');
-    return;
+    const autoResult = await autoSelectProject(userId, phoneNumber);
+    activeProjectId = autoResult.project.id;
+    activeProjects = autoResult.activeProjects;
+  } else {
+    activeProjects = await getActiveProjects(userId);
   }
 
   if (!geminiHandler) {
@@ -2080,15 +2073,10 @@ async function handleProyectoCommand(phoneNumber) {
   try {
     const projects = await getActiveProjects(userId);
 
-    if (projects.length === 0) {
-      await sendWhatsAppMessage(phoneNumber, 'No tenes proyectos activos.\n\nCrea uno desde la app web.');
-      return;
-    }
-
-    // Auto-select if only 1 project
-    if (projects.length === 1) {
-      await db.collection(COLLECTIONS.WHATSAPP_LINKS).doc(phoneNumber).update({ activeProjectId: projects[0].id });
-      await sendWhatsAppMessage(phoneNumber, `Proyecto activo: *${projects[0].name}* (${projects[0].tag})`);
+    // 0 or 1 project → auto-select (creates default if none exist)
+    if (projects.length <= 1) {
+      const result = await autoSelectProject(userId, phoneNumber);
+      await sendWhatsAppMessage(phoneNumber, `Proyecto activo: *${result.project.name}* (${result.project.tag})`);
       return;
     }
 
@@ -2113,10 +2101,10 @@ async function handleResumenCommand(phoneNumber) {
 
   const userId = linkData.userId;
 
-  const project = await resolveProject(userId, linkData.activeProjectId);
+  let project = await resolveProject(userId, linkData.activeProjectId);
   if (!project) {
-    await sendWhatsAppMessage(phoneNumber, 'No tenes un proyecto activo. Envia *PROYECTO* para seleccionar uno.');
-    return;
+    const result = await autoSelectProject(userId, phoneNumber);
+    project = result.project;
   }
 
   try {
@@ -2311,6 +2299,51 @@ async function getActiveProjects(userId) {
     .get();
 
   return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+}
+
+/**
+ * Auto-selects a project when none is active:
+ * - 0 projects → creates a default one
+ * - 1 project → selects it
+ * - N projects → selects the most recent by createdAt
+ * Returns { project, activeProjects } or null on error.
+ */
+async function autoSelectProject(userId, phoneNumber) {
+  let projects = await getActiveProjects(userId);
+
+  // No projects → create a default one
+  if (projects.length === 0) {
+    const projectData = {
+      name: 'Mi Obra',
+      tag: 'miobra',
+      providerId: userId,
+      status: 'active',
+      shareToken: crypto.randomUUID(),
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      updatedAt: admin.firestore.FieldValue.serverTimestamp()
+    };
+    const ref = await db.collection(COLLECTIONS.PROJECTS).add(projectData);
+    const created = { id: ref.id, ...projectData };
+    projects = [created];
+    logger.info('Auto-created default project', { userId, projectId: ref.id });
+  }
+
+  // Pick project: only one → that one; multiple → most recent
+  let selected;
+  if (projects.length === 1) {
+    selected = projects[0];
+  } else {
+    selected = [...projects].sort((a, b) => {
+      const aTime = a.createdAt?.toMillis?.() || a.createdAt?._seconds * 1000 || 0;
+      const bTime = b.createdAt?.toMillis?.() || b.createdAt?._seconds * 1000 || 0;
+      return bTime - aTime;
+    })[0];
+  }
+
+  // Persist selection
+  await db.collection(COLLECTIONS.WHATSAPP_LINKS).doc(phoneNumber).update({ activeProjectId: selected.id });
+
+  return { project: selected, activeProjects: projects };
 }
 
 // ============================================
