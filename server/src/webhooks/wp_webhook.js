@@ -635,11 +635,12 @@ async function prepareExpenseContext(phoneNumber) {
   let activeProjectId = linkData.activeProjectId || null;
   let activeProjects;
   let projectAutoCreated = false;
+  let resolvedProject = null;
 
   // Validate activeProjectId is still an active project
   if (activeProjectId) {
-    const valid = await resolveProject(userId, activeProjectId);
-    if (!valid) activeProjectId = null;
+    resolvedProject = await resolveProject(userId, activeProjectId);
+    if (!resolvedProject) activeProjectId = null;
   }
 
   if (!activeProjectId) {
@@ -647,6 +648,7 @@ async function prepareExpenseContext(phoneNumber) {
     activeProjectId = result.project.id;
     activeProjects = result.activeProjects;
     projectAutoCreated = result.autoCreated;
+    resolvedProject = result.project;
 
     if (projectAutoCreated) {
       await sendWhatsAppMessage(phoneNumber, 'No tenés un proyecto creado. Creando uno automáticamente...');
@@ -668,11 +670,12 @@ async function prepareExpenseContext(phoneNumber) {
     managementFeePercent: linkData.managementFeePercent || 0
   };
 
-  return { linkData, userId, activeProjectId, activeProjects, providerCats, recipients, vendors, aiContext, projectAutoCreated };
+  return { linkData, userId, activeProjectId, activeProjects, resolvedProject, providerCats, recipients, vendors, aiContext, projectAutoCreated };
 }
 
 async function processExpenseResult({
   phoneNumber, userId, activeProjectId, activeProjects,
+  resolvedProject: preResolvedProject,
   aiResult, linkData, providerCats, recipients,
   mediaUrls, originalMessage, defaultTitle,
   useAITitle = false, useAIDescription = false,
@@ -802,8 +805,9 @@ async function processExpenseResult({
     return;
   }
 
-  const project = await resolveProject(userId, activeProjectId);
+  const project = preResolvedProject || await resolveProject(userId, activeProjectId);
   if (!project) {
+    logger.warn('Project resolution failed after prepareExpenseContext', { userId, activeProjectId });
     await sendWhatsAppMessage(phoneNumber, 'No tenés un proyecto activo. Enviá *PROYECTO* para seleccionar uno.');
     return;
   }
