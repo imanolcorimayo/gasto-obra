@@ -342,7 +342,7 @@ async function sendReturningUserWelcome(phoneNumber, linkData) {
   const projects = await getActiveProjects(userId);
 
   if (projects.length === 0) {
-    await sendWhatsAppMessage(phoneNumber, `¡Hola! Todavía no tenés proyectos. Creá uno desde la app en ${APP_URL}`);
+    // Don't send "no projects" message — prepareExpenseContext will auto-create and notify
   } else if (projects.length === 1) {
     await sendWhatsAppMessage(phoneNumber, `¡Hola! Estás trabajando en *${projects[0].name}*. Contame qué gastaste.`);
   } else {
@@ -634,11 +634,23 @@ async function prepareExpenseContext(phoneNumber) {
   const userId = linkData.userId;
   let activeProjectId = linkData.activeProjectId || null;
   let activeProjects;
+  let projectAutoCreated = false;
+
+  // Validate activeProjectId is still an active project
+  if (activeProjectId) {
+    const valid = await resolveProject(userId, activeProjectId);
+    if (!valid) activeProjectId = null;
+  }
 
   if (!activeProjectId) {
     const result = await autoSelectProject(userId, phoneNumber);
     activeProjectId = result.project.id;
     activeProjects = result.activeProjects;
+    projectAutoCreated = result.autoCreated;
+
+    if (projectAutoCreated) {
+      await sendWhatsAppMessage(phoneNumber, 'No tenés un proyecto creado. Creando uno automáticamente...');
+    }
   } else {
     activeProjects = await getActiveProjects(userId);
   }
@@ -656,7 +668,7 @@ async function prepareExpenseContext(phoneNumber) {
     managementFeePercent: linkData.managementFeePercent || 0
   };
 
-  return { linkData, userId, activeProjectId, activeProjects, providerCats, recipients, vendors, aiContext };
+  return { linkData, userId, activeProjectId, activeProjects, providerCats, recipients, vendors, aiContext, projectAutoCreated };
 }
 
 async function processExpenseResult({
@@ -665,7 +677,8 @@ async function processExpenseResult({
   mediaUrls, originalMessage, defaultTitle,
   useAITitle = false, useAIDescription = false,
   filterItems = false, sumItemAmounts = false,
-  trustAICategory = false, checkMismatch = false
+  trustAICategory = false, checkMismatch = false,
+  projectAutoCreated = false
 }) {
   const transactionType = resolveTransactionType(aiResult.transactionType) || 'expense';
   const typeDefaults = getTypeDefaults(transactionType);
@@ -761,7 +774,8 @@ async function processExpenseResult({
     ...mediaUrls,
     originalMessage,
     source: 'whatsapp',
-    timestamp: Date.now()
+    timestamp: Date.now(),
+    projectAutoCreated
   };
 
   // Project switching
@@ -1197,6 +1211,13 @@ async function confirmPendingExpense(phoneNumber, pending) {
     phoneNumber,
     `${typeLabel}!\n\n*${data.title}*\n${formattedAmount}\n${data.projectName} - ${capitalizeFirst(data.category)}\n${data.description ? `_${data.description}_` : ''}`
   );
+
+  if (data.projectAutoCreated) {
+    await sendWhatsAppMessage(
+      phoneNumber,
+      `Se creó un proyecto automáticamente. Entrá a ${APP_URL} y completá los datos para una mejor experiencia.`
+    );
+  }
 }
 
 // ============================================
@@ -1261,7 +1282,7 @@ async function handleResumenCommand(phoneNumber) {
 
     setPendingResumenSelection(phoneNumber, { project, expenses });
 
-    const body = `📊 *Resumen - ${project.name}*\n\nSelecciona una opcion:\n1️⃣ *Global* - Resumen completo del proyecto\n2️⃣ *Semanal* - Gastos de esta semana dia por dia`;
+    const body = `📊 *Resumen - ${project.name}*\n\nSeleccioná una opción:\n1️⃣ *Global* - Resumen completo del proyecto\n2️⃣ *Semanal* - Gastos de esta semana día por día`;
     const buttons = [
       { id: 'resumen_global', title: 'Global' },
       { id: 'resumen_semanal', title: 'Semanal' },

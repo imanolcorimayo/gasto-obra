@@ -24,9 +24,12 @@ export async function resolveProject(userId, activeProjectId) {
 export async function autoSelectProject(userId, phoneNumber) {
   let projects = await getActiveProjects(userId);
 
+  let autoCreated = false;
+
   if (projects.length === 0) {
+    autoCreated = true;
     const projectData = {
-      name: 'Mi Obra',
+      name: 'Mi Obra (completar datos)',
       tag: 'miobra',
       providerId: userId,
       status: 'active',
@@ -53,5 +56,5 @@ export async function autoSelectProject(userId, phoneNumber) {
 
   await db.collection(COLLECTIONS.WHATSAPP_LINKS).doc(phoneNumber).update({ activeProjectId: selected.id });
 
-  return { project: selected, activeProjects: projects };
+  return { project: selected, activeProjects: projects, autoCreated };
 }
