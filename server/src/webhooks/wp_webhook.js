@@ -110,7 +110,7 @@ function isGeminiError(result) {
 }
 
 function getGeminiErrorMessage() {
-  return `El servicio de procesamiento no esta disponible en este momento.\n\nPodes registrar el gasto desde la app web: ${APP_URL}\n\nIntenta nuevamente en unos minutos.`;
+  return `El servicio de procesamiento no está disponible en este momento.\n\nPodés registrar el gasto desde la app web: ${APP_URL}\n\nIntentá nuevamente en unos minutos.`;
 }
 
 function resolveTransactionType(aiType) {
@@ -722,7 +722,7 @@ app.post('/webhook', async (req, res) => {
       logger.info('Document message received', { from, contactName, filename, documentMimeType });
 
       if (documentMimeType !== 'application/pdf') {
-        await sendWhatsAppMessage(from, 'Solo se aceptan documentos PDF. Para otros formatos, envia una foto del documento.');
+        await sendWhatsAppMessage(from, 'Solo se aceptan documentos PDF. Para otros formatos, enviá una foto del documento.');
       } else {
         await processDocumentMessage(from, documentId, caption, filename, contactName);
       }
@@ -827,12 +827,12 @@ async function processMessage(phoneNumber, text, contactName) {
   if (activeSession) {
     if (['listo, gracias', 'listo gracias', 'listo'].includes(normalizedText)) {
       clearAISupportSession(phoneNumber);
-      await sendWhatsAppMessage(phoneNumber, 'Listo! Si necesitas algo mas, escribi *AYUDA* cuando quieras.');
+      await sendWhatsAppMessage(phoneNumber, '¡Listo! Si necesitás algo más, escribí *AYUDA* cuando quieras.');
       return;
     }
     if (normalizedText === 'otra consulta') {
       resetSessionTimers(phoneNumber);
-      await sendWhatsAppMessage(phoneNumber, 'Escribi tu consulta y te ayudo.');
+      await sendWhatsAppMessage(phoneNumber, 'Escribí tu consulta y te ayudo.');
       return;
     }
     // Any other text → treat as support question
@@ -887,7 +887,7 @@ async function processMessage(phoneNumber, text, contactName) {
       await handleAISupport(phoneNumber, supportReq.originalText, session);
     } else {
       createAISupportSession(phoneNumber);
-      await sendWhatsAppMessage(phoneNumber, 'Escribi tu consulta y te ayudo.');
+      await sendWhatsAppMessage(phoneNumber, 'Escribí tu consulta y te ayudo.');
     }
     return;
   }
@@ -929,7 +929,7 @@ async function processImageMessage(phoneNumber, imageId, caption, contactName) {
   }
 
   if (!geminiHandler) {
-    await sendWhatsAppMessage(phoneNumber, 'El procesamiento de imagenes no esta disponible.');
+    await sendWhatsAppMessage(phoneNumber, 'El procesamiento de imágenes no está disponible.');
     return;
   }
 
@@ -937,7 +937,7 @@ async function processImageMessage(phoneNumber, imageId, caption, contactName) {
 
   const imageData = await downloadWhatsAppMedia(imageId);
   if (!imageData) {
-    await sendWhatsAppMessage(phoneNumber, 'Error al descargar la imagen. Intenta nuevamente.');
+    await sendWhatsAppMessage(phoneNumber, 'Error al descargar la imagen. Intentá nuevamente.');
     return;
   }
 
@@ -961,7 +961,7 @@ async function processImageMessage(phoneNumber, imageId, caption, contactName) {
     return;
   }
   if (!receiptData || !receiptData.totalAmount) {
-    await sendWhatsAppMessage(phoneNumber, 'No pude leer el ticket. Intenta con una foto mas clara o registra el gasto manualmente.');
+    await sendWhatsAppMessage(phoneNumber, 'No pude leer el ticket. Intentá con una foto más clara o registrá el gasto manualmente.');
     return;
   }
 
@@ -1057,9 +1057,9 @@ async function processImageMessage(phoneNumber, imageId, caption, contactName) {
     setPendingProjectSwitchExpense(phoneNumber, userId, expenseData, detectedProject);
 
     const confirmMsg = buildExpenseConfirmationMessage(expenseData, mismatch);
-    const switchBody = `${confirmMsg}\nEste gasto se guardaria en *${detectedProject.name}* (no tu proyecto activo).\n\nSi queres guardar automaticamente a este proyecto, usa el comando *PROYECTO*.`;
+    const switchBody = `${confirmMsg}\nEste gasto se guardaría en *${detectedProject.name}* (no tu proyecto activo).\n\nSi querés guardar automáticamente a este proyecto, usá el comando *PROYECTO*.`;
     await sendWhatsAppButtons(phoneNumber, switchBody, [
-      { id: 'confirm_yes', title: 'Si' },
+      { id: 'confirm_yes', title: 'Sí' },
       { id: 'confirm_no', title: 'No' }
     ]);
     return;
@@ -1067,7 +1067,7 @@ async function processImageMessage(phoneNumber, imageId, caption, contactName) {
 
   const project = await resolveProject(userId, activeProjectId);
   if (!project) {
-    await sendWhatsAppMessage(phoneNumber, 'No tenes un proyecto activo. Envia *PROYECTO* para seleccionar uno.');
+    await sendWhatsAppMessage(phoneNumber, 'No tenés un proyecto activo. Enviá *PROYECTO* para seleccionar uno.');
     return;
   }
 
@@ -1133,7 +1133,7 @@ async function processDocumentMessage(phoneNumber, documentId, caption, filename
   }
 
   if (!geminiHandler) {
-    await sendWhatsAppMessage(phoneNumber, 'El procesamiento de documentos no esta disponible.');
+    await sendWhatsAppMessage(phoneNumber, 'El procesamiento de documentos no está disponible.');
     return;
   }
 
@@ -1141,14 +1141,14 @@ async function processDocumentMessage(phoneNumber, documentId, caption, filename
 
   const documentData = await downloadWhatsAppMedia(documentId);
   if (!documentData) {
-    await sendWhatsAppMessage(phoneNumber, 'Error al descargar el documento. Intenta nuevamente.');
+    await sendWhatsAppMessage(phoneNumber, 'Error al descargar el documento. Intentá nuevamente.');
     return;
   }
 
   // Size check
   const pdfBuffer = Buffer.from(documentData.base64, 'base64');
   if (pdfBuffer.length > MAX_PDF_SIZE) {
-    await sendWhatsAppMessage(phoneNumber, `El documento es muy grande (${(pdfBuffer.length / 1024 / 1024).toFixed(1)} MB). El maximo es ${MAX_PDF_SIZE / 1024 / 1024} MB.`);
+    await sendWhatsAppMessage(phoneNumber, `El documento es muy grande (${(pdfBuffer.length / 1024 / 1024).toFixed(1)} MB). El máximo es ${MAX_PDF_SIZE / 1024 / 1024} MB.`);
     return;
   }
 
@@ -1159,7 +1159,7 @@ async function processDocumentMessage(phoneNumber, documentId, caption, filename
     const doc = await pdfParser.load();
     if (doc.numPages > MAX_PDF_PAGES) {
       await pdfParser.destroy();
-      await sendWhatsAppMessage(phoneNumber, `El documento tiene ${doc.numPages} paginas. Solo se aceptan PDFs de hasta ${MAX_PDF_PAGES} paginas.`);
+      await sendWhatsAppMessage(phoneNumber, `El documento tiene ${doc.numPages} páginas. Solo se aceptan PDFs de hasta ${MAX_PDF_PAGES} páginas.`);
       return;
     }
     await pdfParser.destroy();
@@ -1167,7 +1167,7 @@ async function processDocumentMessage(phoneNumber, documentId, caption, filename
     if (pdfParser) await pdfParser.destroy().catch(() => {});
     Sentry.captureException(error);
     logger.error('Error parsing PDF for page count', { error });
-    await sendWhatsAppMessage(phoneNumber, 'No se pudo leer el PDF. Asegurate de que sea un archivo valido.');
+    await sendWhatsAppMessage(phoneNumber, 'No se pudo leer el PDF. Asegurate de que sea un archivo válido.');
     return;
   }
 
@@ -1191,7 +1191,7 @@ async function processDocumentMessage(phoneNumber, documentId, caption, filename
     return;
   }
   if (!documentResult || !documentResult.totalAmount) {
-    await sendWhatsAppMessage(phoneNumber, 'No pude leer el documento. Intenta con una foto del mismo o registra el gasto manualmente.');
+    await sendWhatsAppMessage(phoneNumber, 'No pude leer el documento. Intentá con una foto del mismo o registrá el gasto manualmente.');
     return;
   }
 
@@ -1284,9 +1284,9 @@ async function processDocumentMessage(phoneNumber, documentId, caption, filename
     setPendingProjectSwitchExpense(phoneNumber, userId, expenseData, detectedProject);
 
     const confirmMsg = buildExpenseConfirmationMessage(expenseData, mismatch);
-    const switchBody = `${confirmMsg}\nEste gasto se guardaria en *${detectedProject.name}* (no tu proyecto activo).\n\nSi queres guardar automaticamente a este proyecto, usa el comando *PROYECTO*.`;
+    const switchBody = `${confirmMsg}\nEste gasto se guardaría en *${detectedProject.name}* (no tu proyecto activo).\n\nSi querés guardar automáticamente a este proyecto, usá el comando *PROYECTO*.`;
     await sendWhatsAppButtons(phoneNumber, switchBody, [
-      { id: 'confirm_yes', title: 'Si' },
+      { id: 'confirm_yes', title: 'Sí' },
       { id: 'confirm_no', title: 'No' }
     ]);
     return;
@@ -1294,7 +1294,7 @@ async function processDocumentMessage(phoneNumber, documentId, caption, filename
 
   const project = await resolveProject(userId, activeProjectId);
   if (!project) {
-    await sendWhatsAppMessage(phoneNumber, 'No tenes un proyecto activo. Envia *PROYECTO* para seleccionar uno.');
+    await sendWhatsAppMessage(phoneNumber, 'No tenés un proyecto activo. Enviá *PROYECTO* para seleccionar uno.');
     return;
   }
 
@@ -1358,7 +1358,7 @@ async function processAudioMessage(phoneNumber, audioId, caption, contactName) {
   }
 
   if (!geminiHandler) {
-    await sendWhatsAppMessage(phoneNumber, 'El procesamiento de audio no esta disponible.');
+    await sendWhatsAppMessage(phoneNumber, 'El procesamiento de audio no está disponible.');
     return;
   }
 
@@ -1366,7 +1366,7 @@ async function processAudioMessage(phoneNumber, audioId, caption, contactName) {
 
   const audioData = await downloadWhatsAppMedia(audioId);
   if (!audioData) {
-    await sendWhatsAppMessage(phoneNumber, 'Error al descargar el audio. Intenta nuevamente.');
+    await sendWhatsAppMessage(phoneNumber, 'Error al descargar el audio. Intentá nuevamente.');
     return;
   }
 
@@ -1390,7 +1390,7 @@ async function processAudioMessage(phoneNumber, audioId, caption, contactName) {
     return;
   }
   if (!transcription || (!transcription.totalAmount && !transcription.items?.length && !transcription.title)) {
-    await sendWhatsAppMessage(phoneNumber, 'No pude entender el audio. Intenta nuevamente o envia una foto del ticket.');
+    await sendWhatsAppMessage(phoneNumber, 'No pude entender el audio. Intentá nuevamente o enviá una foto del ticket.');
     return;
   }
 
@@ -1420,7 +1420,7 @@ async function processAudioMessage(phoneNumber, audioId, caption, contactName) {
   const installmentPercent = transcription.installmentPercent === 100 ? 100 : (typeDefaults.installmentPercent ?? 0);
 
   if (amount <= 0) {
-    await sendWhatsAppMessage(phoneNumber, `Transcripcion: "${transcription.transcription}"\n\nNo pude determinar el monto. Envia una foto del ticket.`);
+    await sendWhatsAppMessage(phoneNumber, `Transcripción: "${transcription.transcription}"\n\nNo pude determinar el monto. Enviá una foto del ticket.`);
     return;
   }
 
@@ -1491,9 +1491,9 @@ async function processAudioMessage(phoneNumber, audioId, caption, contactName) {
     setPendingProjectSwitchExpense(phoneNumber, userId, expenseData, detectedProject);
 
     const confirmMsg = buildExpenseConfirmationMessage(expenseData);
-    const switchBody = `${confirmMsg}\nEste gasto se guardaria en *${detectedProject.name}* (no tu proyecto activo).\n\nSi queres guardar automaticamente a este proyecto, usa el comando *PROYECTO*.`;
+    const switchBody = `${confirmMsg}\nEste gasto se guardaría en *${detectedProject.name}* (no tu proyecto activo).\n\nSi querés guardar automáticamente a este proyecto, usá el comando *PROYECTO*.`;
     await sendWhatsAppButtons(phoneNumber, switchBody, [
-      { id: 'confirm_yes', title: 'Si' },
+      { id: 'confirm_yes', title: 'Sí' },
       { id: 'confirm_no', title: 'No' }
     ]);
     return;
@@ -1501,7 +1501,7 @@ async function processAudioMessage(phoneNumber, audioId, caption, contactName) {
 
   const project = await resolveProject(userId, activeProjectId);
   if (!project) {
-    await sendWhatsAppMessage(phoneNumber, 'No tenes un proyecto activo. Envia *PROYECTO* para seleccionar uno.');
+    await sendWhatsAppMessage(phoneNumber, 'No tenés un proyecto activo. Enviá *PROYECTO* para seleccionar uno.');
     return;
   }
 
@@ -1564,7 +1564,7 @@ async function handleTextExpense(phoneNumber, text, skipSupportDetection = false
   }
 
   if (!geminiHandler) {
-    await sendWhatsAppMessage(phoneNumber, 'El procesamiento de texto no esta disponible.');
+    await sendWhatsAppMessage(phoneNumber, 'El procesamiento de texto no está disponible.');
     return;
   }
 
@@ -1605,7 +1605,7 @@ async function handleTextExpense(phoneNumber, text, skipSupportDetection = false
   }
 
   if (!result || !result.totalAmount) {
-    await sendWhatsAppMessage(phoneNumber, 'No pude entender el mensaje.\n\nPodes registrar gastos con un texto como:\n- "500 clavos"\n- "1500 cemento y 800 arena"\n- "me pagaron 5000 por transferencia"\n\nTambien podes enviar una *foto*, *audio* o *PDF*.\n\nEscribi *AYUDA* para mas info.');
+    await sendWhatsAppMessage(phoneNumber, 'No pude entender el mensaje.\n\nPodés registrar gastos con un texto como:\n- "500 clavos"\n- "1500 cemento y 800 arena"\n- "me pagaron 5000 por transferencia"\n\nTambién podés enviar una *foto*, *audio* o *PDF*.\n\nEscribí *AYUDA* para más info.');
     return;
   }
 
@@ -1692,9 +1692,9 @@ async function handleTextExpense(phoneNumber, text, skipSupportDetection = false
     setPendingProjectSwitchExpense(phoneNumber, userId, expenseData, detectedProject);
 
     const confirmMsg = buildExpenseConfirmationMessage(expenseData);
-    const switchBody = `${confirmMsg}\nEste gasto se guardaria en *${detectedProject.name}* (no tu proyecto activo).\n\nSi queres guardar automaticamente a este proyecto, usa el comando *PROYECTO*.`;
+    const switchBody = `${confirmMsg}\nEste gasto se guardaría en *${detectedProject.name}* (no tu proyecto activo).\n\nSi querés guardar automáticamente a este proyecto, usá el comando *PROYECTO*.`;
     await sendWhatsAppButtons(phoneNumber, switchBody, [
-      { id: 'confirm_yes', title: 'Si' },
+      { id: 'confirm_yes', title: 'Sí' },
       { id: 'confirm_no', title: 'No' }
     ]);
     return;
@@ -1702,7 +1702,7 @@ async function handleTextExpense(phoneNumber, text, skipSupportDetection = false
 
   const project = await resolveProject(userId, activeProjectId);
   if (!project) {
-    await sendWhatsAppMessage(phoneNumber, 'No tenes un proyecto activo. Envia *PROYECTO* para seleccionar uno.');
+    await sendWhatsAppMessage(phoneNumber, 'No tenés un proyecto activo. Enviá *PROYECTO* para seleccionar uno.');
     return;
   }
 
@@ -1761,7 +1761,7 @@ function buildExpenseConfirmationMessage(data, mismatch = null) {
   msg += `${capitalizeFirst(data.category)} - ${data.projectName}`;
 
   if (data.paymentMethod) {
-    msg += `\nMetodo: ${capitalizeFirst(data.paymentMethod)}`;
+    msg += `\nMétodo: ${capitalizeFirst(data.paymentMethod)}`;
   }
   if (data.vendor) {
     msg += `\nComercio: ${data.vendor}`;
@@ -1887,7 +1887,7 @@ async function confirmPendingExpense(phoneNumber, pending) {
 
 async function handleLinkCommand(phoneNumber, code, contactName) {
   if (!code) {
-    await sendWhatsAppMessage(phoneNumber, 'Formato incorrecto. Usa: VINCULAR <codigo>\n\nEjemplo: VINCULAR ABC123');
+    await sendWhatsAppMessage(phoneNumber, 'Formato incorrecto. Usá: VINCULAR <código>\n\nEjemplo: VINCULAR ABC123');
     return;
   }
 
@@ -1895,14 +1895,14 @@ async function handleLinkCommand(phoneNumber, code, contactName) {
     const codeDoc = await db.collection(COLLECTIONS.WHATSAPP_LINKS).doc(code).get();
 
     if (!codeDoc.exists) {
-      await sendWhatsAppMessage(phoneNumber, 'Codigo no encontrado o expirado. Genera un nuevo codigo desde la app.');
+      await sendWhatsAppMessage(phoneNumber, 'Código no encontrado o expirado. Generá un nuevo código desde la app.');
       return;
     }
 
     const codeData = codeDoc.data();
 
     if (codeData.status !== 'pending') {
-      await sendWhatsAppMessage(phoneNumber, 'Codigo no valido. Genera un nuevo codigo desde la app.');
+      await sendWhatsAppMessage(phoneNumber, 'Código no válido. Generá un nuevo código desde la app.');
       return;
     }
 
@@ -1913,7 +1913,7 @@ async function handleLinkCommand(phoneNumber, code, contactName) {
 
     if (diffMinutes > 10) {
       await db.collection(COLLECTIONS.WHATSAPP_LINKS).doc(code).delete();
-      await sendWhatsAppMessage(phoneNumber, 'El codigo ha expirado. Genera un nuevo codigo desde la app.');
+      await sendWhatsAppMessage(phoneNumber, 'El código ha expirado. Generá un nuevo código desde la app.');
       return;
     }
 
@@ -1940,13 +1940,13 @@ async function handleLinkCommand(phoneNumber, code, contactName) {
     if (activeProjects.length === 1) {
       message += `Proyecto activo: *${activeProjects[0].name}* (${activeProjects[0].tag})\n\n`;
     }
-    message += 'Envia una foto, audio o PDF para registrar gastos.\nEnvia *PROYECTO* para cambiar de proyecto.\nEscribi *AYUDA* para mas info.';
+    message += 'Enviá una foto, audio o PDF para registrar gastos.\nEnviá *PROYECTO* para cambiar de proyecto.\nEscribí *AYUDA* para más info.';
 
     await sendWhatsAppMessage(phoneNumber, message);
   } catch (error) {
     Sentry.captureException(error);
     logger.error('Error linking account', { error });
-    await sendWhatsAppMessage(phoneNumber, 'Error al vincular la cuenta. Intenta nuevamente.');
+    await sendWhatsAppMessage(phoneNumber, 'Error al vincular la cuenta. Intentá nuevamente.');
   }
 }
 
@@ -1955,17 +1955,17 @@ async function handleUnlinkCommand(phoneNumber) {
     const linkDoc = await db.collection(COLLECTIONS.WHATSAPP_LINKS).doc(phoneNumber).get();
 
     if (!linkDoc.exists || linkDoc.data()?.status !== 'linked') {
-      await sendWhatsAppMessage(phoneNumber, 'Este numero no esta vinculado a ninguna cuenta.');
+      await sendWhatsAppMessage(phoneNumber, 'Este número no está vinculado a ninguna cuenta.');
       return;
     }
 
     await db.collection(COLLECTIONS.WHATSAPP_LINKS).doc(phoneNumber).delete();
 
-    await sendWhatsAppMessage(phoneNumber, 'Cuenta desvinculada exitosamente. Ya no se registraran gastos desde este numero.');
+    await sendWhatsAppMessage(phoneNumber, 'Cuenta desvinculada exitosamente. Ya no se registrarán gastos desde este número.');
   } catch (error) {
     Sentry.captureException(error);
     logger.error('Error unlinking account', { error });
-    await sendWhatsAppMessage(phoneNumber, 'Error al desvincular la cuenta. Intenta nuevamente.');
+    await sendWhatsAppMessage(phoneNumber, 'Error al desvincular la cuenta. Intentá nuevamente.');
   }
 }
 
@@ -1973,7 +1973,7 @@ async function sendHelpMessage(phoneNumber) {
   const helpText = `*Gasto Obra - Ayuda*
 
 *Registrar gastos:*
-Envia un *texto*, *foto*, *audio* o *PDF* y se registra en tu proyecto activo.
+Enviá un *texto*, *foto*, *audio* o *PDF* y se registra en tu proyecto activo.
 
 *Ejemplos de texto:*
 - "500 clavos"
@@ -1981,7 +1981,7 @@ Envia un *texto*, *foto*, *audio* o *PDF* y se registra en tu proyecto activo.
 - "me pagaron 5000 por transferencia"
 - "2000 pintura pagado por el cliente"
 
-Podes incluir metodo de pago (efectivo, transferencia, tarjeta, mercadopago), destinatario, o mencionar otro proyecto en el mensaje.
+Podés incluir método de pago (efectivo, transferencia, tarjeta, mercadopago), destinatario, o mencionar otro proyecto en el mensaje.
 
 *Comandos:*
 *PROYECTO* - Seleccionar proyecto activo
@@ -2000,13 +2000,13 @@ async function handleAISupport(phoneNumber, question, session = null) {
     clearAISupportSession(phoneNumber);
     await sendWhatsAppMessage(
       phoneNumber,
-      `Alcanzaste el límite de consultas por hora.\n\nPodes hablar con soporte directamente: ${SUPPORT_WA_LINK}`
+      `Alcanzaste el límite de consultas por hora.\n\nPodés hablar con soporte directamente: ${SUPPORT_WA_LINK}`
     );
     return;
   }
 
   if (!geminiHandler) {
-    await sendWhatsAppMessage(phoneNumber, 'El soporte AI no esta disponible en este momento.');
+    await sendWhatsAppMessage(phoneNumber, 'El soporte AI no está disponible en este momento.');
     return;
   }
 
@@ -2014,7 +2014,7 @@ async function handleAISupport(phoneNumber, question, session = null) {
 
   const faqData = await getFaqData();
   if (faqData.length === 0) {
-    await sendWhatsAppMessage(phoneNumber, 'No pude acceder a la informacion de soporte. Intenta mas tarde.');
+    await sendWhatsAppMessage(phoneNumber, 'No pude acceder a la información de soporte. Intentá más tarde.');
     return;
   }
 
@@ -2042,7 +2042,7 @@ async function handleAISupport(phoneNumber, question, session = null) {
     clearAISupportSession(phoneNumber);
     await sendWhatsAppMessage(
       phoneNumber,
-      `El servicio de soporte no esta disponible.\n\nPodes hablar con soporte directamente: ${SUPPORT_WA_LINK}`
+      `El servicio de soporte no está disponible.\n\nPodés hablar con soporte directamente: ${SUPPORT_WA_LINK}`
     );
     return;
   }
@@ -2051,7 +2051,7 @@ async function handleAISupport(phoneNumber, question, session = null) {
     // Keep session active on noAnswer so user can ask something else
     await sendWhatsAppMessage(
       phoneNumber,
-      `${result?.answer || 'No encontre una respuesta para tu consulta.'}\n\nSi necesitas mas ayuda, podes hablar con soporte: ${SUPPORT_WA_LINK}`
+      `${result?.answer || 'No encontré una respuesta para tu consulta.'}\n\nSi necesitás más ayuda, podés hablar con soporte: ${SUPPORT_WA_LINK}`
     );
     // Update session with this Q&A
     if (session) {
@@ -2059,7 +2059,7 @@ async function handleAISupport(phoneNumber, question, session = null) {
       session.lastQueryId = queryDocId;
       resetSessionTimers(phoneNumber);
     }
-    await sendWhatsAppButtons(phoneNumber, '¿Necesitas algo mas?', [
+    await sendWhatsAppButtons(phoneNumber, '¿Necesitás algo más?', [
       { id: 'support_otra', title: 'Otra consulta' },
       { id: 'support_listo', title: 'Listo, gracias' }
     ]);
@@ -2076,7 +2076,7 @@ async function handleAISupport(phoneNumber, question, session = null) {
   session.lastQueryId = queryDocId;
   resetSessionTimers(phoneNumber);
 
-  await sendWhatsAppButtons(phoneNumber, '¿Necesitas algo mas?', [
+  await sendWhatsAppButtons(phoneNumber, '¿Necesitás algo más?', [
     { id: 'support_otra', title: 'Otra consulta' },
     { id: 'support_listo', title: 'Listo, gracias' }
   ]);
@@ -2099,7 +2099,7 @@ async function handleProyectoCommand(phoneNumber) {
       return;
     }
 
-    let message = 'Estos son tus proyectos, manda el numero que queres seleccionar:\n\n';
+    let message = 'Estos son tus proyectos, mandá el número que querés seleccionar:\n\n';
     projects.forEach((p, i) => {
       const active = p.id === activeProjectId ? ' (Actualmente activo)' : '';
       message += `${i + 1}. ${p.name} - ${p.tag}${active}\n`;
@@ -2142,7 +2142,7 @@ async function handleResumenCommand(phoneNumber) {
     // Cache data and show menu
     setPendingResumenSelection(phoneNumber, { project, expenses });
 
-    const body = `📊 *Resumen - ${project.name}*\n\nSelecciona una opcion:\n1️⃣ *Global* - Resumen completo del proyecto\n2️⃣ *Semanal* - Gastos de esta semana dia por dia`;
+    const body = `📊 *Resumen - ${project.name}*\n\nSeleccioná una opción:\n1️⃣ *Global* - Resumen completo del proyecto\n2️⃣ *Semanal* - Gastos de esta semana día por día`;
     const buttons = [
       { id: 'resumen_global', title: 'Global' },
       { id: 'resumen_semanal', title: 'Semanal' },
@@ -2187,7 +2187,7 @@ async function sendGlobalResumen(phoneNumber, pendingData) {
   if (project.clientName) message += `\nCliente: ${project.clientName}`;
 
   message += `\n\n*${clientExpenses.length} gastos registrados*`;
-  message += `\n\n*Por categoria:*\n${categoryLines}`;
+  message += `\n\n*Por categoría:*\n${categoryLines}`;
   message += `\n\n*Total gastos:* ${formatAmount(totalExpenses)}`;
   message += `\n*Pagos recibidos:* ${formatAmount(totalPayments)}`;
   message += `\n*Saldo:* ${formatAmount(balance)}`;
@@ -2197,7 +2197,7 @@ async function sendGlobalResumen(phoneNumber, pendingData) {
   }
 
   message += `\n\n🔗 Ver detalle: ${APP_URL}`;
-  message += `\n\n_Podes compartir este mensaje con tu cliente_`;
+  message += `\n\n_Podés compartir este mensaje con tu cliente_`;
 
   await sendWhatsAppMessage(phoneNumber, message);
 }
@@ -2208,7 +2208,7 @@ function getARTDate(date) {
   return new Date(utcTime + artOffset * 60000);
 }
 
-const DAY_NAMES = ['Domingo', 'Lunes', 'Martes', 'Miercoles', 'Jueves', 'Viernes', 'Sabado'];
+const DAY_NAMES = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
 
 async function sendWeeklyResumen(phoneNumber, pendingData) {
   const { project, expenses } = pendingData;
@@ -2262,7 +2262,7 @@ async function sendWeeklyResumen(phoneNumber, pendingData) {
         if (e.type === 'payment') prefix = '💰 ';
         else if (e.type === 'provider_expense') prefix = '👤 ';
 
-        const title = e.title || 'Sin titulo';
+        const title = e.title || 'Sin título';
         const category = e.type !== 'payment' && e.category ? ` (${capitalizeFirst(e.category)})` : '';
         const vendorTag = e.vendor ? ` [${e.vendor}]` : '';
         daySection += `  ${prefix}${formatAmount(amount)} - ${title}${category}${vendorTag}\n`;
@@ -2287,11 +2287,11 @@ async function sendWeeklyResumen(phoneNumber, pendingData) {
 
   message += `\n\n*Total de la semana:* ${formatAmount(weekTotal)}`;
   message += `\n\n🔗 Ver detalle: ${APP_URL}`;
-  message += `\n\n_Podes compartir este mensaje con tu cliente_`;
+  message += `\n\n_Podés compartir este mensaje con tu cliente_`;
 
   // WhatsApp message length safety
   if (message.length > 3800) {
-    message = message.substring(0, 3750) + '\n... (ver mas en la app)';
+    message = message.substring(0, 3750) + '\n... (ver más en la app)';
   }
 
   await sendWhatsAppMessage(phoneNumber, message);

@@ -6,7 +6,7 @@
         Volver a proyectos
       </NuxtLink>
       <h1 class="text-[28px] font-bold tracking-tight mt-2">Nuevo Proyecto</h1>
-      <p class="text-go-text-tertiary text-sm mt-1">Crea un nuevo proyecto de obra o refaccion</p>
+      <p class="text-go-text-tertiary text-sm mt-1">Creá un nuevo proyecto de obra o refacción</p>
     </div>
 
     <div class="max-w-xl mx-auto">

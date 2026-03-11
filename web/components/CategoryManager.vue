@@ -42,7 +42,7 @@
         class="text-sm text-go-primary hover:text-go-primary/80 flex items-center gap-1"
       >
         <MdiPlus class="text-base" />
-        Agregar categoria
+        Agregar categoría
       </button>
       <button
         type="button"

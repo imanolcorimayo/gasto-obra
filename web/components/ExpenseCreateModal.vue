@@ -18,14 +18,14 @@
           <!-- Title -->
           <div>
             <label class="block text-[11px] font-semibold uppercase tracking-wider text-go-text-muted mb-1.5">
-              {{ type === 'payment' ? 'Concepto' : 'Titulo' }}
+              {{ type === 'payment' ? 'Concepto' : 'Título' }}
             </label>
             <input
               v-model="form.title"
               type="text"
               required
               :disabled="isLocked"
-              :placeholder="type === 'payment' ? 'Concepto del pago' : 'Titulo del gasto'"
+              :placeholder="type === 'payment' ? 'Concepto del pago' : 'Título del gasto'"
               class="w-full bg-go-bg border border-go-border rounded-go-md px-3 py-2.5 text-sm text-go-text placeholder-go-text-muted focus:outline-none focus:ring-2 focus:ring-go-primary/40 focus:border-go-primary transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
             />
           </div>
@@ -137,7 +137,7 @@
 
           <!-- Category (expense + provider_expense only) -->
           <div v-if="type !== 'payment'">
-            <label class="block text-[11px] font-semibold uppercase tracking-wider text-go-text-muted mb-1.5">Categoria</label>
+            <label class="block text-[11px] font-semibold uppercase tracking-wider text-go-text-muted mb-1.5">Categoría</label>
             <div class="relative">
               <select
                 v-model="form.category"
@@ -160,7 +160,7 @@
 
           <!-- Description (expense + provider_expense only) -->
           <div v-if="type !== 'payment'">
-            <label class="block text-[11px] font-semibold uppercase tracking-wider text-go-text-muted mb-1.5">Descripcion</label>
+            <label class="block text-[11px] font-semibold uppercase tracking-wider text-go-text-muted mb-1.5">Descripción</label>
             <textarea
               v-model="form.description"
               rows="2"

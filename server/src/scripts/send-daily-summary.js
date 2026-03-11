@@ -111,24 +111,24 @@ async function sendDailySummaries() {
     // Build message
     const viewUrl = `${APP_URL}/view/${project.shareToken}`;
 
-    let message = `*Resumen del dia - ${project.name}*
+    let message = `*Resumen del día - ${project.name}*
 Fecha: ${dateFormatted}
 
 ${expenseLines}`;
 
     if (todayExpenseTotal > 0) {
-      message += `\n\n*Total gastos del dia:* ${formatAmount(todayExpenseTotal)}`;
+      message += `\n\n*Total gastos del día:* ${formatAmount(todayExpenseTotal)}`;
     }
 
     const todayFeeTotal = todayExpenses
       .filter(e => e.managementFeePercent > 0)
       .reduce((sum, e) => sum + (e.amount * e.managementFeePercent / (100 + e.managementFeePercent)), 0);
     if (todayFeeTotal > 0) {
-      message += `\n*Gestión del dia:* ${formatAmount(Math.round(todayFeeTotal))} (incluido en gastos)`;
+      message += `\n*Gestión del día:* ${formatAmount(Math.round(todayFeeTotal))} (incluido en gastos)`;
     }
 
     if (todayPaymentTotal > 0) {
-      message += `\n*Pagos del dia:* ${formatAmount(todayPaymentTotal)}`;
+      message += `\n*Pagos del día:* ${formatAmount(todayPaymentTotal)}`;
     }
 
     // Calculate pending amounts

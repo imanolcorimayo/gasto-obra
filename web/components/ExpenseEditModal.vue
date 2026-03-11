@@ -54,7 +54,7 @@
 
           <!-- Title -->
           <div>
-            <label class="block text-[11px] font-semibold uppercase tracking-wider text-go-text-muted mb-1.5">Titulo</label>
+            <label class="block text-[11px] font-semibold uppercase tracking-wider text-go-text-muted mb-1.5">Título</label>
             <input
               v-model="form.title"
               type="text"
@@ -125,7 +125,7 @@
 
           <!-- Category (hidden for payments) -->
           <div v-if="form.type !== 'payment'">
-            <label class="block text-[11px] font-semibold uppercase tracking-wider text-go-text-muted mb-1.5">Categoria</label>
+            <label class="block text-[11px] font-semibold uppercase tracking-wider text-go-text-muted mb-1.5">Categoría</label>
             <div class="relative">
               <select
                 v-model="form.category"
@@ -147,7 +147,7 @@
 
           <!-- Description -->
           <div>
-            <label class="block text-[11px] font-semibold uppercase tracking-wider text-go-text-muted mb-1.5">Descripcion</label>
+            <label class="block text-[11px] font-semibold uppercase tracking-wider text-go-text-muted mb-1.5">Descripción</label>
             <textarea
               v-model="form.description"
               rows="2"
