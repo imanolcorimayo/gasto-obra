@@ -92,6 +92,7 @@
             v-for="row in tableRows"
             :key="row.id"
             class="border-b border-go-border-subtle hover:bg-go-surface/50 transition-colors cursor-pointer"
+            :class="row.hasItemsMismatch ? 'bg-amber-500/8 dark:bg-amber-500/10' : ''"
             @click="$emit('viewDetail', row.expense)"
           >
             <td class="py-3 pr-3 text-go-text-muted text-xs tabular-nums whitespace-nowrap">{{ row.date }}</td>
@@ -99,6 +100,7 @@
               <span>{{ row.title }}</span>
               <span v-if="row.vendor" class="text-go-text-muted text-xs ml-1">[{{ row.vendor }}]</span>
               <span v-if="row.items" class="text-go-text-muted text-xs ml-1">({{ row.items }} items)</span>
+              <MdiAlertCircle v-if="row.hasItemsMismatch" class="inline-block text-amber-500 text-sm ml-1 align-text-bottom" title="La suma de items no coincide con el total" />
             </td>
             <td v-if="hasInstallments" class="py-3 px-3">
               <template v-if="!row.isPayment && !row.isProvider && row.installmentPercent != null">
@@ -176,6 +178,7 @@
 <script setup>
 import MdiPencil from '~icons/mdi/pencil';
 import MdiCashPlus from '~icons/mdi/cash-plus';
+import MdiAlertCircle from '~icons/mdi/alert-circle';
 import { DEFAULT_EXPENSE_CATEGORIES, formatPrice, getScopeTypeStyles, getCategoryLabel } from '~/utils';
 
 const props = defineProps({
@@ -298,6 +301,14 @@ const tableRows = computed(() => {
     if (isPayment) balance += amount;
     else if (!isProvider) balance -= amount;
 
+    // Check items vs total mismatch
+    let hasItemsMismatch = false;
+    if (e.items && e.items.length > 1) {
+      const itemsSum = e.items.reduce((sum, i) => sum + (i.amount || 0), 0);
+      const total = e.amountBase || amount;
+      if (itemsSum > 0 && Math.abs(total - itemsSum) > 1) hasItemsMismatch = true;
+    }
+
     return {
       id: e.id,
       expense: e,
@@ -305,6 +316,7 @@ const tableRows = computed(() => {
       title: e.title,
       vendor: e.vendor || null,
       items: e.items?.length || 0,
+      hasItemsMismatch,
       scopeType: e.scopeType || 'original',
       categoryLabel: getCategoryLabel(e.category || 'otros', resolvedCategories.value),
       isPayment,

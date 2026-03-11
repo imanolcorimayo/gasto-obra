@@ -28,10 +28,10 @@
           </span>
           <span
             v-if="expense.type === 'expense' && expense.installmentPercent != null && expense.installmentPercent < 100"
-            class="text-[11px] font-semibold px-2 py-0.5 rounded-go-sm tabular-nums"
-            :class="expense.installmentPercent === 0 ? 'bg-go-danger-muted text-go-danger' : 'bg-go-info/15 text-go-info'"
+            class="text-[11px] font-semibold px-2 py-0.5 rounded-go-sm"
+            :class="expense.installmentPercent === 0 ? 'bg-go-danger-muted text-go-danger' : 'bg-go-info/15 text-go-info tabular-nums'"
           >
-            {{ expense.installmentPercent }}%
+            {{ expense.installmentPercent === 0 ? 'Descontado del balance' : `${expense.installmentPercent}%` }}
           </span>
         </div>
         <p v-if="expense.description" class="text-go-text-tertiary text-sm mt-1">{{ expense.description }}</p>

@@ -36,7 +36,7 @@
             v-if="!isPayment && expense.installmentPercent != null"
             class="text-[11px] font-semibold px-2 py-0.5 rounded-go-sm tabular-nums"
             :class="expense.installmentPercent >= 100 ? 'bg-go-success/15 text-go-success' : expense.installmentPercent === 0 ? 'bg-go-danger-muted text-go-danger' : 'bg-go-info/15 text-go-info'"
-          >{{ expense.installmentPercent }}% pagado</span>
+          >{{ expense.installmentPercent === 0 ? 'Descontado del balance' : `${expense.installmentPercent}% pagado` }}</span>
         </div>
 
         <!-- 2. Title + Amount + Date -->
@@ -71,15 +71,24 @@
         <p v-if="expense.description" class="text-sm text-go-text-secondary leading-relaxed">{{ expense.description }}</p>
 
         <!-- 4. Items breakdown -->
-        <div v-if="expense.items && expense.items.length" class="border border-go-border-subtle rounded-go-md overflow-hidden">
-          <div
-            v-for="(item, idx) in expense.items"
-            :key="idx"
-            class="flex items-center justify-between px-3 py-2 text-sm"
-            :class="idx > 0 ? 'border-t border-go-border-subtle' : ''"
-          >
-            <span class="text-go-text">{{ item.name }}</span>
-            <span v-if="item.amount" class="tabular-nums text-go-text-secondary font-medium ml-3">{{ formatPrice(item.amount) }}</span>
+        <div v-if="expense.items && expense.items.length">
+          <div class="border border-go-border-subtle rounded-go-md overflow-hidden">
+            <div
+              v-for="(item, idx) in expense.items"
+              :key="idx"
+              class="flex items-center justify-between px-3 py-2 text-sm"
+              :class="idx > 0 ? 'border-t border-go-border-subtle' : ''"
+            >
+              <span class="text-go-text">{{ item.name }}</span>
+              <span v-if="item.amount" class="tabular-nums text-go-text-secondary font-medium ml-3">{{ formatPrice(item.amount) }}</span>
+            </div>
+          </div>
+          <div v-if="itemsTotalMismatch" class="flex items-start gap-2 mt-3 p-3 rounded-go-md bg-amber-50 dark:bg-amber-950/30 border border-amber-300 dark:border-amber-700">
+            <MdiAlertCircleOutline class="text-lg text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+            <div class="text-sm text-amber-800 dark:text-amber-300">
+              <span class="font-semibold">La suma de items no coincide con el total</span>
+              <p class="mt-0.5 text-xs text-amber-700 dark:text-amber-400">Items: {{ formatPrice(itemsTotalMismatch.itemsSum) }} · Total: {{ formatPrice(itemsTotalMismatch.total) }} · Diferencia: {{ formatPrice(itemsTotalMismatch.diff) }}</p>
+            </div>
           </div>
         </div>
 
@@ -263,6 +272,7 @@ import MdiClose from '~icons/mdi/close';
 import MdiPencil from '~icons/mdi/pencil';
 import MdiChevronDown from '~icons/mdi/chevron-down';
 import MdiFilePdfBox from '~icons/mdi/file-pdf-box';
+import MdiAlertCircleOutline from '~icons/mdi/alert-circle-outline';
 import MdiOpenInNew from '~icons/mdi/open-in-new';
 import { formatPrice, getCategoryLabel, getPaymentMethodLabel, getScopeTypeStyles, getManagementFeeAmount, TRANSACTION_TYPES } from '~/utils';
 
@@ -301,6 +311,17 @@ const amountColorClass = computed(() => {
   if (isPayment.value) return 'text-go-secondary';
   if (isProvider.value) return 'text-go-text-tertiary';
   return 'text-go-primary';
+});
+
+const itemsTotalMismatch = computed(() => {
+  const e = props.expense;
+  if (!e?.items || e.items.length <= 1) return null;
+  const itemsSum = e.items.reduce((sum, i) => sum + (i.amount || 0), 0);
+  if (itemsSum === 0) return null;
+  const total = e.amountBase || e.amount;
+  const diff = Math.abs(total - itemsSum);
+  if (diff <= 1) return null;
+  return { itemsSum, total, diff };
 });
 
 const formattedDate = computed(() => {

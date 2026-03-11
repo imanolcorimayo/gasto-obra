@@ -118,55 +118,59 @@
           </div>
 
           <!-- Client share link panel -->
-          <div class="bg-go-bg border border-go-border-subtle rounded-go-xl px-4 py-3 flex items-center gap-3">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-go-text-muted flex-shrink-0">
-          <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
-          <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
-        </svg>
-        <div class="flex-1 min-w-0">
-          <span class="text-go-text-muted text-xs block">Link para el cliente</span>
-          <span class="font-mono text-xs text-go-text truncate block">/view/{{ project.shareToken }}</span>
-        </div>
-        <button
-          @click="copyShareLink"
-          class="text-go-text-muted hover:text-go-primary transition-colors flex-shrink-0 p-1"
-        >
-          <MdiContentCopy v-if="!copied" class="text-base" />
-          <MdiCheck v-else class="text-base text-go-success" />
-        </button>
-      </div>
+          <button
+            @click="copyShareLink"
+            class="w-full bg-go-bg-elevated border border-go-border rounded-go-xl px-4 py-3.5 flex items-center gap-3 hover:border-go-secondary transition-colors group active:scale-[0.99]"
+          >
+            <div class="w-9 h-9 rounded-go-md bg-go-secondary/15 flex items-center justify-center flex-shrink-0">
+              <MdiCheck v-if="copied" class="text-go-success text-lg" />
+              <MdiLinkVariant v-else class="text-go-secondary text-lg" />
+            </div>
+            <div class="flex-1 min-w-0 text-left">
+              <span class="font-display font-semibold text-sm text-go-text block">Link para el cliente</span>
+              <span class="text-xs text-go-text-tertiary">Compartí este link con el dueño</span>
+            </div>
+            <div
+              class="flex-shrink-0 px-3 py-1.5 rounded-go-md text-xs font-semibold transition-colors"
+              :class="copied
+                ? 'bg-go-success/15 text-go-success'
+                : 'bg-go-secondary/10 text-go-secondary group-hover:bg-go-secondary/20'"
+            >
+              {{ copied ? 'Copiado' : 'Copiar' }}
+            </div>
+          </button>
 
           <!-- Add expense action bar -->
           <div class="flex flex-col sm:flex-row gap-2">
-        <button
-          @click="openCreateModal('expense')"
-          class="btn-primary flex items-center justify-center gap-1.5 text-sm w-full sm:w-auto"
-        >
-          <MdiPlus class="text-base" />
-          <div class="text-left">
-            <span>Gasto</span>
-            <span class="block text-[11px] opacity-70 font-normal">Cobrable al cliente</span>
-          </div>
-        </button>
-        <button
-          @click="openCreateModal('payment')"
-          class="border border-go-secondary text-go-secondary hover:bg-go-secondary/10 rounded-go-md px-4 py-2 text-sm font-medium transition-colors flex items-center justify-center gap-1.5 w-full sm:w-auto active:scale-[0.97]"
-        >
-          <MdiPlus class="text-base" />
-          <div class="text-left">
-            <span>Cobro</span>
-            <span class="block text-[11px] opacity-70 font-normal">Ingreso recibido</span>
-          </div>
-        </button>
-        <button
-          @click="openCreateModal('provider_expense')"
-          class="btn-secondary text-sm flex items-center justify-center gap-1.5 w-full sm:w-auto"
-        >
-          <MdiPlus class="text-base" />
-          <div class="text-left">
-            <span>Gasto propio</span>
-            <span class="block text-[11px] opacity-70 font-normal">No cobrable</span>
-          </div>
+            <button
+              @click="openCreateModal('expense')"
+              class="btn-primary flex items-center justify-center gap-2 text-sm w-full sm:w-auto"
+            >
+              <MdiPlus class="text-base" />
+              <div class="text-left">
+                <span>Gasto</span>
+                <span class="block text-[11px] opacity-70 font-normal">Cobrable al cliente</span>
+              </div>
+            </button>
+            <button
+              @click="openCreateModal('payment')"
+              class="bg-go-secondary text-white hover:bg-go-secondary-hover rounded-go-md px-5 py-2.5 text-sm font-semibold transition-all duration-150 flex items-center justify-center gap-2 w-full sm:w-auto active:scale-[0.97]"
+            >
+              <MdiPlus class="text-base" />
+              <div class="text-left">
+                <span>Cobro</span>
+                <span class="block text-[11px] opacity-70 font-normal">Ingreso recibido</span>
+              </div>
+            </button>
+            <button
+              @click="openCreateModal('provider_expense')"
+              class="bg-go-surface border border-go-border text-go-text-tertiary hover:text-go-text-secondary hover:bg-go-surface-hover rounded-go-md px-5 py-2.5 text-sm font-medium transition-all duration-150 flex items-center justify-center gap-2 w-full sm:w-auto active:scale-[0.97]"
+            >
+              <MdiPlus class="text-base" />
+              <div class="text-left">
+                <span>Gasto propio</span>
+                <span class="block text-[11px] opacity-70 font-normal">No cobrable</span>
+              </div>
             </button>
           </div>
         </div>
@@ -355,7 +359,7 @@
 
 <script setup>
 import MdiArrowLeft from '~icons/mdi/arrow-left';
-import MdiContentCopy from '~icons/mdi/content-copy';
+import MdiLinkVariant from '~icons/mdi/link-variant';
 import MdiCheck from '~icons/mdi/check';
 import MdiPlus from '~icons/mdi/plus';
 import MdiPencil from '~icons/mdi/pencil';
