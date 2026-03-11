@@ -102,10 +102,10 @@
 
             <!-- Category breakdown -->
             <div class="bg-go-surface border border-go-border rounded-go-xl p-5">
-              <h3 class="font-display font-semibold text-go-text mb-4">Desglose por categoria</h3>
+              <h3 class="font-display font-semibold text-go-text mb-4">Desglose por categoría</h3>
 
               <div v-if="categoryBreakdown.length === 0" class="text-go-text-muted text-sm">
-                No hay gastos registrados todavia.
+                No hay gastos registrados todavía.
               </div>
 
               <div v-else class="flex flex-col gap-2">

@@ -120,12 +120,12 @@ export const useWhatsappStore = defineStore('whatsapp', {
           this.codeExpiresAt = new Date(Date.now() + 10 * 60 * 1000);
           return { success: true, code: result.code };
         } else {
-          this.error = result.error || 'Error al generar el codigo';
+          this.error = result.error || 'Error al generar el código';
           return { success: false, error: this.error };
         }
       } catch (error) {
         console.error('Error generating code:', error);
-        this.error = 'Error al generar el codigo';
+        this.error = 'Error al generar el código';
         return { success: false, error: this.error };
       } finally {
         this.isGenerating = false;

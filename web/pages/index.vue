@@ -722,7 +722,7 @@ async function handleLogin() {
     }
   } catch (error) {
     console.error('Login error:', error);
-    useToast('error', 'Error al iniciar sesion');
+    useToast('error', 'Error al iniciar sesión');
   } finally {
     isLoading.value = false;
   }

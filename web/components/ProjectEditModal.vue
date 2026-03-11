@@ -21,13 +21,13 @@
 
         <!-- Project Categories Section -->
         <div class="mt-6 pt-6 border-t border-go-border">
-          <h4 class="text-[10px] font-semibold uppercase tracking-wider text-go-text-muted/60 mb-3">Categorias del proyecto</h4>
+          <h4 class="text-[10px] font-semibold uppercase tracking-wider text-go-text-muted/60 mb-3">Categorías del proyecto</h4>
 
           <div class="flex items-center gap-3 p-3 bg-go-surface rounded-go-md border border-go-border mb-4">
             <label class="flex items-center justify-between cursor-pointer flex-1">
               <div>
-                <span class="text-sm text-go-text">Usar categorias especificas para este proyecto</span>
-                <p class="text-xs text-go-text-muted mt-0.5">Si esta desactivado, se usan tus categorias globales</p>
+                <span class="text-sm text-go-text">Usar categorías específicas para este proyecto</span>
+                <p class="text-xs text-go-text-muted mt-0.5">Si está desactivado, se usan tus categorías globales</p>
               </div>
               <button
                 type="button"
@@ -44,9 +44,9 @@
           </div>
 
           <div v-if="!useProjectCategories" class="text-sm text-go-text-tertiary">
-            Se usan tus categorias globales.
+            Se usan tus categorías globales.
             <NuxtLink to="/settings/categories" class="text-go-primary hover:text-go-primary/80">
-              Configurar categorias globales
+              Configurar categorías globales
             </NuxtLink>
           </div>
 
@@ -59,7 +59,7 @@
               class="mt-4 btn-primary w-full text-sm flex items-center justify-center gap-2"
             >
               <span v-if="isSavingCategories" class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
-              Guardar categorias
+              Guardar categorías
             </button>
           </div>
         </div>
@@ -156,16 +156,16 @@ async function handleSaveCategories() {
     if (useProjectCategories.value) {
       const result = await categoryStore.saveForProject(props.project.id, projectCategories.value);
       if (result.success) {
-        useToast('success', 'Categorias del proyecto guardadas');
+        useToast('success', 'Categorías del proyecto guardadas');
       } else {
-        useToast('error', result.error || 'Error al guardar categorias');
+        useToast('error', result.error || 'Error al guardar categorías');
       }
     } else {
       const result = await categoryStore.removeProjectOverride(props.project.id);
       if (result.success) {
-        useToast('success', 'Se usaran las categorias globales');
+        useToast('success', 'Se usarán las categorías globales');
       } else {
-        useToast('error', result.error || 'Error al eliminar categorias');
+        useToast('error', result.error || 'Error al eliminar categorías');
       }
     }
   } finally {

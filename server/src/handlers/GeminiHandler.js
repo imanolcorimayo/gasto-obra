@@ -137,7 +137,7 @@ class GeminiHandler {
       : '';
 
     const methodList = paymentMethods.length > 0
-      ? `\nMetodos de pago validos: ${paymentMethods.join(', ')}`
+      ? `\nMétodos de pago válidos: ${paymentMethods.join(', ')}`
       : '';
 
     const vendorList = vendors.length > 0
@@ -145,7 +145,7 @@ class GeminiHandler {
       : '';
 
     const captionBlock = caption
-      ? `\n\nEl usuario envio este texto junto con la imagen: "${caption}"`
+      ? `\n\nEl usuario envió este texto junto con la imagen: "${caption}"`
       : '';
 
     const feeBlock = managementFeePercent > 0
@@ -158,11 +158,11 @@ ${captionBlock}
 - "transactionType": detecta el tipo segun la imagen Y el texto del usuario:
   - "expense" para tickets de compra, facturas, recibos de comercio
   - "payment" para capturas de transferencia bancaria, comprobantes de pago, vouchers de deposito
-  - "payment" tambien si el texto del usuario indica cobro: "me ingresó", "me pagaron", "cobro", "me transfirieron", "me depositaron", "me ingresaron"
+  - "payment" también si el texto del usuario indica cobro: "me ingresó", "me pagaron", "cobro", "me transfirieron", "me depositaron", "me ingresaron"
   - "provider_expense" si el texto del usuario dice "gasto propio", "gasto mio", "puse de mi bolsillo", "pague yo", "puse yo"
 - IMPORTANTE: Los documentos argentinos usan punto (.) como separador de miles. Por ejemplo, "49.350" = 49350, "7.600" = 7600, "302.641" = 302641. NO interpretar el punto como separador decimal. Los montos deben ser numeros enteros o con centavos separados por coma (,).
 - Cada item debe tener "name" y "amount":
-  - "name": descripcion corta y legible. Si la cantidad es mayor a 1, incluir la cantidad al final con el formato " | x<cantidad> u". Ejemplos: "Bolsa Cemento 25kg Holcim | x10 u", "Arena Lavada x MT | x2 u". Si es 1 unidad, no agregar cantidad.
+  - "name": descripción corta y legible. Si la cantidad es mayor a 1, incluir la cantidad al final con el formato " | x<cantidad> u". Ejemplos: "Bolsa Cemento 25kg Holcim | x10 u", "Arena Lavada x MT | x2 u". Si es 1 unidad, no agregar cantidad.
   - "amount": SIEMPRE usar el SUBTOTAL de la linea (cantidad x precio unitario), NUNCA el precio unitario solo. Si el comprobante muestra columnas de cantidad, precio unitario y subtotal, usar el valor de subtotal.
 - "totalAmount": Si el comprobante tiene un total impreso, usar ese valor exacto. Si NO hay total impreso, sumar los subtotales de todos los items.
 - "paymentMethod" y "recipientId" se pueden extraer de la imagen o del texto del usuario
@@ -173,7 +173,7 @@ ${captionBlock}
 - "projectId": debe ser EXACTAMENTE uno de los IDs listados, o null
 - "vendorId": debe ser EXACTAMENTE uno de los IDs de comercios listados, o null si no coincide con ninguno
 - "vendorName": nombre del comercio/local si se detecta uno nuevo no listado, o null${feeBlock}
-Si no podes extraer algun campo, usa null.
+Si no podés extraer algún campo, usa null.
 ${projectList}
 ${recipientList}
 ${methodList}
@@ -257,12 +257,12 @@ ${vendorList}`;
       : '';
 
     const categoryList = categories
-      ? `\nCategorias validas: ${categories.join(', ')}`
-      : '\nCategorias validas: materiales, herramientas, transporte, mano de obra, comida, otros';
+      ? `\nCategorías válidas: ${categories.join(', ')}`
+      : '\nCategorías válidas: materiales, herramientas, transporte, mano de obra, comida, otros';
 
     const methodList = paymentMethods.length > 0
-      ? `\nMetodos de pago validos: ${paymentMethods.join(', ')}`
-      : '\nMetodos de pago validos: transferencia, efectivo, tarjeta, mercadopago';
+      ? `\nMétodos de pago válidos: ${paymentMethods.join(', ')}`
+      : '\nMétodos de pago válidos: transferencia, efectivo, tarjeta, mercadopago';
 
     const vendorList = vendors.length > 0
       ? `\nComercio/proveedores conocidos (usa el ID exacto si coincide):\n${vendors.map(v => `- ID: "${v.id}", Nombre: "${v.name}"`).join('\n')}`
@@ -272,8 +272,8 @@ ${vendorList}`;
       ? `\n- "applyManagementFee": true si dice "con gestión", "con fee", "con comisión". false en caso contrario. Solo aplica a expenses.`
       : '';
 
-    const prompt = `Transcribi este audio en español argentino. El audio describe un gasto de obra, un pago recibido, o un gasto propio del proveedor.
-Extrae la informacion en formato JSON.
+    const prompt = `Transcribí este audio en español argentino. El audio describe un gasto de obra, un pago recibido, o un gasto propio del proveedor.
+Extrae la información en formato JSON.
 ${projectList}
 ${recipientList}
 ${categoryList}
@@ -297,7 +297,7 @@ Reglas importantes:
 - "projectId": debe ser EXACTAMENTE uno de los IDs de proyectos listados si el usuario menciona un proyecto, o null
 - "vendorId": debe ser EXACTAMENTE uno de los IDs de comercios listados, o null si no coincide con ninguno
 - "vendorName": nombre del comercio/local si se detecta uno nuevo no listado, o null${feeRule}
-Si no podes extraer algun campo, usa null.`;
+Si no podés extraer algún campo, usa null.`;
 
     const audioSchemaProps = {
       transcription: { type: 'string' },
@@ -379,24 +379,24 @@ Si no podes extraer algun campo, usa null.`;
       : '';
 
     const categoryList = categories
-      ? `\nCategorias validas: ${categories.join(', ')}`
-      : '\nCategorias validas: materiales, herramientas, transporte, mano de obra, comida, otros';
+      ? `\nCategorías válidas: ${categories.join(', ')}`
+      : '\nCategorías válidas: materiales, herramientas, transporte, mano de obra, comida, otros';
 
     const methodList = paymentMethods.length > 0
-      ? `\nMetodos de pago validos: ${paymentMethods.join(', ')}`
-      : '\nMetodos de pago validos: transferencia, efectivo, tarjeta, mercadopago';
+      ? `\nMétodos de pago válidos: ${paymentMethods.join(', ')}`
+      : '\nMétodos de pago válidos: transferencia, efectivo, tarjeta, mercadopago';
 
     const vendorList = vendors.length > 0
       ? `\nComercio/proveedores conocidos (usa el ID exacto si coincide):\n${vendors.map(v => `- ID: "${v.id}", Nombre: "${v.name}"`).join('\n')}`
       : '';
 
-    const prompt = `Analiza este mensaje de un proveedor de obra que describe un gasto, pago, o gasto propio. Extrae la informacion en formato JSON:
+    const prompt = `Analiza este mensaje de un proveedor de obra que describe un gasto, pago, o gasto propio. Extrae la información en formato JSON:
 {
   "transactionType": "expense|payment|provider_expense",
   "title": "titulo corto",
   "items": [{"name": "item", "amount": 123.45}],
   "totalAmount": 1234.56,
-  "description": "descripcion adicional",
+  "description": "descripción adicional",
   "category": "<de las categorias validas>",
   "paymentMethod": "<metodo de pago o null>",
   "recipientId": "<ID del destinatario o null>",
@@ -430,7 +430,7 @@ Reglas importantes:
 - "vendorId": debe ser EXACTAMENTE uno de los IDs de comercios listados, o null si no coincide con ninguno
 - "vendorName": nombre del comercio/local si se detecta uno nuevo no listado, o null${managementFeePercent > 0 ? '\n- "applyManagementFee": true si dice "con gestión", "con fee", "con comisión". false en caso contrario. Solo aplica a expenses.' : ''}
 - "isSupportQuestion": true SOLO si el mensaje es claramente una pregunta general, saludo, consulta de soporte, o texto sin relacion a un gasto/pago. Ejemplos: "hola", "como funciona esto", "necesito ayuda", "es seguro registrar aca", "que tipos de transacciones hay". false para todo lo que pueda ser un gasto, pago, o gasto propio. En caso de duda, usa false.
-Si no podes extraer algun campo, usa null.`;
+Si no podés extraer algún campo, usa null.`;
 
     const textSchemaProps = {
       transactionType: { type: 'string', enum: ['expense', 'payment', 'provider_expense'] },
@@ -501,7 +501,7 @@ Si no podes extraer algun campo, usa null.`;
       : '';
 
     const methodList = paymentMethods.length > 0
-      ? `\nMetodos de pago validos: ${paymentMethods.join(', ')}`
+      ? `\nMétodos de pago válidos: ${paymentMethods.join(', ')}`
       : '';
 
     const vendorList = vendors.length > 0
@@ -509,7 +509,7 @@ Si no podes extraer algun campo, usa null.`;
       : '';
 
     const captionBlock = caption
-      ? `\n\nEl usuario envio este texto junto con el documento: "${caption}"`
+      ? `\n\nEl usuario envió este texto junto con el documento: "${caption}"`
       : '';
 
     const prompt = `Analiza este documento PDF. Puede ser una factura, presupuesto, ticket de compra, o comprobante de pago.
@@ -518,11 +518,11 @@ ${captionBlock}
 - "transactionType": detecta el tipo segun el documento Y el texto del usuario:
   - "expense" para facturas de compra, presupuestos, recibos de comercio
   - "payment" para comprobantes de transferencia bancaria, recibos de pago, vouchers de deposito
-  - "payment" tambien si el texto del usuario indica cobro: "me ingresó", "me pagaron", "cobro", "me transfirieron", "me depositaron", "me ingresaron"
+  - "payment" también si el texto del usuario indica cobro: "me ingresó", "me pagaron", "cobro", "me transfirieron", "me depositaron", "me ingresaron"
   - "provider_expense" si el texto del usuario dice "gasto propio", "gasto mio", "puse de mi bolsillo", "pague yo", "puse yo"
 - IMPORTANTE: Los documentos argentinos usan punto (.) como separador de miles. Por ejemplo, "49.350" = 49350, "7.600" = 7600, "302.641" = 302641. NO interpretar el punto como separador decimal. Los montos deben ser numeros enteros o con centavos separados por coma (,).
 - Cada item debe tener "name" y "amount":
-  - "name": descripcion corta y legible. Si la cantidad es mayor a 1, incluir la cantidad al final con el formato " | x<cantidad> u". Ejemplos: "Bolsa Cemento 25kg Holcim | x10 u", "Arena Lavada x MT | x2 u". Si es 1 unidad, no agregar cantidad.
+  - "name": descripción corta y legible. Si la cantidad es mayor a 1, incluir la cantidad al final con el formato " | x<cantidad> u". Ejemplos: "Bolsa Cemento 25kg Holcim | x10 u", "Arena Lavada x MT | x2 u". Si es 1 unidad, no agregar cantidad.
   - "amount": SIEMPRE usar el SUBTOTAL de la linea (cantidad x precio unitario), NUNCA el precio unitario solo. Si el comprobante muestra columnas de cantidad, precio unitario y subtotal, usar el valor de subtotal.
 - "totalAmount": Si el documento tiene un total impreso, usar ese valor exacto. Si NO hay total impreso, sumar los subtotales de todos los items.
 - "paymentMethod" y "recipientId" se pueden extraer del documento o del texto del usuario
@@ -533,7 +533,7 @@ ${captionBlock}
 - "projectId": debe ser EXACTAMENTE uno de los IDs listados, o null
 - "vendorId": debe ser EXACTAMENTE uno de los IDs de comercios listados, o null si no coincide con ninguno
 - "vendorName": nombre del comercio/local si se detecta uno nuevo no listado, o null${managementFeePercent > 0 ? '\n- "applyManagementFee": true si el texto dice "con gestión", "con fee", "con comisión". false en caso contrario. Solo aplica a expenses.' : ''}
-Si no podes extraer algun campo, usa null.
+Si no podés extraer algún campo, usa null.
 ${projectList}
 ${recipientList}
 ${methodList}
@@ -610,12 +610,12 @@ ${vendorList}`;
     const validCategories = categories || ['materiales', 'herramientas', 'transporte', 'mano de obra', 'comida', 'otros'];
     const categoryList = validCategories.map(c => `- ${c}`).join('\n');
 
-    const prompt = `Clasifica el siguiente gasto de obra/refaccion de departamento en una de estas categorias:
+    const prompt = `Clasifica el siguiente gasto de obra/refacción de departamento en una de estas categorías:
 ${categoryList}
 
-Gasto: "${title}"${description ? `\nDescripcion: "${description}"` : ''}
+Gasto: "${title}"${description ? `\nDescripción: "${description}"` : ''}
 
-Responde SOLO con el nombre de la categoria en minusculas, sin texto adicional.`;
+Responde SOLO con el nombre de la categoría en minúsculas, sin texto adicional.`;
 
     const text = await this.generateContent(prompt, { maxOutputTokens: 50, temperature: 0.2 });
 
@@ -633,7 +633,7 @@ Responde SOLO con el nombre de la categoria en minusculas, sin texto adicional.`
     let historyBlock = '';
     if (conversationHistory.length > 0) {
       const recent = conversationHistory.slice(-3);
-      historyBlock = '\nConversacion previa:\n' +
+      historyBlock = '\nConversación previa:\n' +
         recent.map(qa => `Usuario: ${qa.question}\nAsistente: ${qa.answer}`).join('\n\n') +
         '\n';
     }
@@ -641,26 +641,26 @@ Responde SOLO con el nombre de la categoria en minusculas, sin texto adicional.`
     const prompt = `Sos un asistente de soporte de "Gasto Obra", una plataforma de gestión de gastos para obras y refacciones de departamentos en Argentina.
 
 Contexto de la plataforma:
-- Gasto Obra esta pensada para que profesionales de obra (arquitectos, gestores, maestros mayores de obra) puedan registrar y gestionar los gastos de sus proyectos e informar a sus clientes de forma transparente. En la plataforma, a este rol lo llamamos "profesional" o "tecnico".
-- El usuario con el que estas hablando es un profesional/tecnico. Es la unica persona que puede registrar transacciones (gastos, pagos, gastos propios) en el proyecto. Lo hace enviando mensajes por WhatsApp (texto, fotos, audios o PDFs).
-- El cliente (dueño del departamento) solo puede visualizar los gastos a traves de un link que le comparte el profesional. No tiene cuenta ni puede registrar nada.
-- Cada profesional puede tener multiples proyectos activos. Usa el comando *PROYECTO* para elegir en cual registrar.
-- Por ahora, solo un profesional puede estar asignado a cada proyecto. Si necesitan que mas de una persona registre gastos, deben contactar a soporte.
+- Gasto Obra está pensada para que profesionales de obra (arquitectos, gestores, maestros mayores de obra) puedan registrar y gestionar los gastos de sus proyectos e informar a sus clientes de forma transparente. En la plataforma, a este rol lo llamamos "profesional" o "técnico".
+- El usuario con el que estás hablando es un profesional/técnico. Es la única persona que puede registrar transacciones (gastos, pagos, gastos propios) en el proyecto. Lo hace enviando mensajes por WhatsApp (texto, fotos, audios o PDFs).
+- El cliente (dueño del departamento) solo puede visualizar los gastos a través de un link que le comparte el profesional. No tiene cuenta ni puede registrar nada.
+- Cada profesional puede tener múltiples proyectos activos. Usá el comando *PROYECTO* para elegir en cuál registrar.
+- Por ahora, solo un profesional puede estar asignado a cada proyecto. Si necesitan que más de una persona registre gastos, deben contactar a soporte.
 - Comandos disponibles por WhatsApp: *VINCULAR* (vincular cuenta), *DESVINCULAR*, *PROYECTO* (cambiar proyecto activo), *RESUMEN* (ver resumen del proyecto), *AYUDA*.
 
-Tu rol es responder consultas de los usuarios usando UNICAMENTE la informacion del FAQ y el contexto de arriba. No inventes informacion.
+Tu rol es responder consultas de los usuarios usando ÚNICAMENTE la información del FAQ y el contexto de arriba. No inventes información.
 
 Reglas:
-- Responde en español argentino informal (vos, tenes, podes, etc.)
-- Se conciso y claro (maximo 3-4 oraciones)
-- Si la pregunta no se puede responder con el FAQ ni el contexto, responde con "noAnswer": true y en "answer" pone un mensaje amable indicando que no tenes esa informacion
+- Responde en español argentino informal (vos, tenés, podés, etc.)
+- Sé conciso y claro (máximo 3-4 oraciones)
+- Si la pregunta no se puede responder con el FAQ ni el contexto, responde con "noAnswer": true y en "answer" pone un mensaje amable indicando que no tenés esa información
 - No uses formato HTML, solo texto plano y *negritas* para enfasis
 - Si el usuario pregunta sobre precios o costos del servicio, responde con "noAnswer": true
 - Siempre referite a la plataforma como "Gasto Obra"
-- Se amable y empatico. Si el usuario esta frustrado, reconoce su situacion antes de responder
-- Nunca prometas funcionalidades futuras ni des informacion que no esta en el FAQ
+- Sé amable y empático. Si el usuario está frustrado, reconocé su situación antes de responder
+- Nunca prometas funcionalidades futuras ni des información que no está en el FAQ
 - Usa un tono cercano y profesional, como un compañero de trabajo que te ayuda
-- Cuando hables del usuario, referite a el como "vos" o "el profesional/tecnico". Evita usar "proveedor"
+- Cuando hables del usuario, referite a él como "vos" o "el profesional/técnico". Evita usar "proveedor"
 
 FAQ:
 ${faqContext}

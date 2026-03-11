@@ -5,7 +5,7 @@
       <svg class="w-10 h-10 text-go-text-muted/30 mx-auto mb-3" viewBox="0 0 24 24" fill="currentColor">
         <path d="M18.36 9L18.96 12H5.04L5.64 9H18.36M20 4H4V6H20V4M20 7H4L3 12V14H4V20H14V14H18V20H20V14H21V12L20 7M6 18V14H12V18H6Z" />
       </svg>
-      <p class="font-display text-go-text-secondary">Sin comercios todavia</p>
+      <p class="font-display text-go-text-secondary">Sin comercios todavía</p>
       <p class="text-go-text-muted text-sm mt-1">Agrega comercios o proveedores donde compras seguido.</p>
       <button
         type="button"

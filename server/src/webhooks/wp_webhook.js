@@ -114,7 +114,7 @@ function isGeminiError(result) {
 }
 
 function getGeminiErrorMessage() {
-  return `El servicio de procesamiento no esta disponible en este momento.\n\nPodes registrar el gasto desde la app web: ${APP_URL}\n\nIntenta nuevamente en unos minutos.`;
+  return `El servicio de procesamiento no está disponible en este momento.\n\nPodés registrar el gasto desde la app web: ${APP_URL}\n\nIntentá nuevamente en unos minutos.`;
 }
 
 function resolveTransactionType(aiType) {
@@ -440,7 +440,7 @@ app.post('/webhook', async (req, res) => {
       logger.info('Document message received', { from, contactName, filename, documentMimeType });
 
       if (documentMimeType !== 'application/pdf') {
-        await sendWhatsAppMessage(from, 'Solo se aceptan documentos PDF. Para otros formatos, envia una foto del documento.');
+        await sendWhatsAppMessage(from, 'Solo se aceptan documentos PDF. Para otros formatos, enviá una foto del documento.');
       } else {
         await processDocumentMessage(from, documentId, caption, filename, contactName);
       }
@@ -544,12 +544,12 @@ async function processMessage(phoneNumber, text, contactName) {
   if (activeSession) {
     if (['listo, gracias', 'listo gracias', 'listo'].includes(normalizedText)) {
       clearAISupportSession(phoneNumber);
-      await sendWhatsAppMessage(phoneNumber, 'Listo! Si necesitas algo mas, escribi *AYUDA* cuando quieras.');
+      await sendWhatsAppMessage(phoneNumber, '¡Listo! Si necesitás algo más, escribí *AYUDA* cuando quieras.');
       return;
     }
     if (normalizedText === 'otra consulta') {
       resetSessionTimers(phoneNumber);
-      await sendWhatsAppMessage(phoneNumber, 'Escribi tu consulta y te ayudo.');
+      await sendWhatsAppMessage(phoneNumber, 'Escribí tu consulta y te ayudo.');
       return;
     }
     await handleAISupport(phoneNumber, text, activeSession, { geminiHandler, getFaqData });
@@ -602,7 +602,7 @@ async function processMessage(phoneNumber, text, contactName) {
       await handleAISupport(phoneNumber, supportReq.originalText, session, { geminiHandler, getFaqData });
     } else {
       createAISupportSession(phoneNumber);
-      await sendWhatsAppMessage(phoneNumber, 'Escribi tu consulta y te ayudo.');
+      await sendWhatsAppMessage(phoneNumber, 'Escribí tu consulta y te ayudo.');
     }
     return;
   }
@@ -780,9 +780,9 @@ async function processExpenseResult({
     setPendingProjectSwitchExpense(phoneNumber, userId, expenseData, detectedProject);
 
     const confirmMsg = buildExpenseConfirmationMessage(expenseData, mismatch);
-    const switchBody = `${confirmMsg}\nEste gasto se guardaria en *${detectedProject.name}* (no tu proyecto activo).\n\nSi queres guardar automaticamente a este proyecto, usa el comando *PROYECTO*.`;
+    const switchBody = `${confirmMsg}\nEste gasto se guardaría en *${detectedProject.name}* (no tu proyecto activo).\n\nSi querés guardar automáticamente a este proyecto, usá el comando *PROYECTO*.`;
     await sendWhatsAppButtons(phoneNumber, switchBody, [
-      { id: 'confirm_yes', title: 'Si' },
+      { id: 'confirm_yes', title: 'Sí' },
       { id: 'confirm_no', title: 'No' }
     ]);
     return;
@@ -790,7 +790,7 @@ async function processExpenseResult({
 
   const project = await resolveProject(userId, activeProjectId);
   if (!project) {
-    await sendWhatsAppMessage(phoneNumber, 'No tenes un proyecto activo. Envia *PROYECTO* para seleccionar uno.');
+    await sendWhatsAppMessage(phoneNumber, 'No tenés un proyecto activo. Enviá *PROYECTO* para seleccionar uno.');
     return;
   }
 
@@ -806,7 +806,7 @@ async function processExpenseResult({
 
   const confirmMsg = buildExpenseConfirmationMessage(expenseData, mismatch);
   await sendWhatsAppButtons(phoneNumber, confirmMsg, [
-    { id: 'confirm_yes', title: 'Si' },
+    { id: 'confirm_yes', title: 'Sí' },
     { id: 'confirm_no', title: 'No' }
   ]);
 }
@@ -820,7 +820,7 @@ async function processImageMessage(phoneNumber, imageId, caption, contactName) {
   if (!ctx) return;
 
   if (!geminiHandler) {
-    await sendWhatsAppMessage(phoneNumber, 'El procesamiento de imagenes no esta disponible.');
+    await sendWhatsAppMessage(phoneNumber, 'El procesamiento de imágenes no está disponible.');
     return;
   }
 
@@ -828,7 +828,7 @@ async function processImageMessage(phoneNumber, imageId, caption, contactName) {
 
   const imageData = await downloadWhatsAppMedia(imageId);
   if (!imageData) {
-    await sendWhatsAppMessage(phoneNumber, 'Error al descargar la imagen. Intenta nuevamente.');
+    await sendWhatsAppMessage(phoneNumber, 'Error al descargar la imagen. Intentá nuevamente.');
     return;
   }
 
@@ -840,7 +840,7 @@ async function processImageMessage(phoneNumber, imageId, caption, contactName) {
     return;
   }
   if (!receiptData || !receiptData.totalAmount) {
-    await sendWhatsAppMessage(phoneNumber, 'No pude leer el ticket. Intenta con una foto mas clara o registra el gasto manualmente.');
+    await sendWhatsAppMessage(phoneNumber, 'No pude leer el ticket. Intentá con una foto más clara o registrá el gasto manualmente.');
     return;
   }
 
@@ -877,7 +877,7 @@ async function processDocumentMessage(phoneNumber, documentId, caption, filename
   if (!ctx) return;
 
   if (!geminiHandler) {
-    await sendWhatsAppMessage(phoneNumber, 'El procesamiento de documentos no esta disponible.');
+    await sendWhatsAppMessage(phoneNumber, 'El procesamiento de documentos no está disponible.');
     return;
   }
 
@@ -885,13 +885,13 @@ async function processDocumentMessage(phoneNumber, documentId, caption, filename
 
   const documentData = await downloadWhatsAppMedia(documentId);
   if (!documentData) {
-    await sendWhatsAppMessage(phoneNumber, 'Error al descargar el documento. Intenta nuevamente.');
+    await sendWhatsAppMessage(phoneNumber, 'Error al descargar el documento. Intentá nuevamente.');
     return;
   }
 
   const pdfBuffer = Buffer.from(documentData.base64, 'base64');
   if (pdfBuffer.length > MAX_PDF_SIZE) {
-    await sendWhatsAppMessage(phoneNumber, `El documento es muy grande (${(pdfBuffer.length / 1024 / 1024).toFixed(1)} MB). El maximo es ${MAX_PDF_SIZE / 1024 / 1024} MB.`);
+    await sendWhatsAppMessage(phoneNumber, `El documento es muy grande (${(pdfBuffer.length / 1024 / 1024).toFixed(1)} MB). El máximo es ${MAX_PDF_SIZE / 1024 / 1024} MB.`);
     return;
   }
 
@@ -901,7 +901,7 @@ async function processDocumentMessage(phoneNumber, documentId, caption, filename
     const doc = await pdfParser.load();
     if (doc.numPages > MAX_PDF_PAGES) {
       await pdfParser.destroy();
-      await sendWhatsAppMessage(phoneNumber, `El documento tiene ${doc.numPages} paginas. Solo se aceptan PDFs de hasta ${MAX_PDF_PAGES} paginas.`);
+      await sendWhatsAppMessage(phoneNumber, `El documento tiene ${doc.numPages} páginas. Solo se aceptan PDFs de hasta ${MAX_PDF_PAGES} páginas.`);
       return;
     }
     await pdfParser.destroy();
@@ -909,7 +909,7 @@ async function processDocumentMessage(phoneNumber, documentId, caption, filename
     if (pdfParser) await pdfParser.destroy().catch(() => {});
     Sentry.captureException(error);
     logger.error('Error parsing PDF for page count', { error });
-    await sendWhatsAppMessage(phoneNumber, 'No se pudo leer el PDF. Asegurate de que sea un archivo valido.');
+    await sendWhatsAppMessage(phoneNumber, 'No se pudo leer el PDF. Asegurate de que sea un archivo válido.');
     return;
   }
 
@@ -921,7 +921,7 @@ async function processDocumentMessage(phoneNumber, documentId, caption, filename
     return;
   }
   if (!documentResult || !documentResult.totalAmount) {
-    await sendWhatsAppMessage(phoneNumber, 'No pude leer el documento. Intenta con una foto del mismo o registra el gasto manualmente.');
+    await sendWhatsAppMessage(phoneNumber, 'No pude leer el documento. Intentá con una foto del mismo o registrá el gasto manualmente.');
     return;
   }
 
@@ -952,7 +952,7 @@ async function processAudioMessage(phoneNumber, audioId, caption, contactName) {
   if (!ctx) return;
 
   if (!geminiHandler) {
-    await sendWhatsAppMessage(phoneNumber, 'El procesamiento de audio no esta disponible.');
+    await sendWhatsAppMessage(phoneNumber, 'El procesamiento de audio no está disponible.');
     return;
   }
 
@@ -960,7 +960,7 @@ async function processAudioMessage(phoneNumber, audioId, caption, contactName) {
 
   const audioData = await downloadWhatsAppMedia(audioId);
   if (!audioData) {
-    await sendWhatsAppMessage(phoneNumber, 'Error al descargar el audio. Intenta nuevamente.');
+    await sendWhatsAppMessage(phoneNumber, 'Error al descargar el audio. Intentá nuevamente.');
     return;
   }
 
@@ -971,7 +971,7 @@ async function processAudioMessage(phoneNumber, audioId, caption, contactName) {
     return;
   }
   if (!transcription || (!transcription.totalAmount && !transcription.items?.length && !transcription.title)) {
-    await sendWhatsAppMessage(phoneNumber, 'No pude entender el audio. Intenta nuevamente o envia una foto del ticket.');
+    await sendWhatsAppMessage(phoneNumber, 'No pude entender el audio. Intentá nuevamente o enviá una foto del ticket.');
     return;
   }
 
@@ -994,7 +994,7 @@ async function processAudioMessage(phoneNumber, audioId, caption, contactName) {
     : (transcription.totalAmount || 0);
 
   if (preAmount <= 0) {
-    await sendWhatsAppMessage(phoneNumber, `Transcripcion: "${transcription.transcription}"\n\nNo pude determinar el monto. Envia una foto del ticket.`);
+    await sendWhatsAppMessage(phoneNumber, `Transcripción: "${transcription.transcription}"\n\nNo pude determinar el monto. Enviá una foto del ticket.`);
     return;
   }
 
@@ -1018,7 +1018,7 @@ async function handleTextExpense(phoneNumber, text, skipSupportDetection = false
   if (!ctx) return;
 
   if (!geminiHandler) {
-    await sendWhatsAppMessage(phoneNumber, 'El procesamiento de texto no esta disponible.');
+    await sendWhatsAppMessage(phoneNumber, 'El procesamiento de texto no está disponible.');
     return;
   }
 
@@ -1045,7 +1045,7 @@ async function handleTextExpense(phoneNumber, text, skipSupportDetection = false
   }
 
   if (!result || !result.totalAmount) {
-    await sendWhatsAppMessage(phoneNumber, 'No pude entender el mensaje.\n\nPodes registrar gastos con un texto como:\n- "500 clavos"\n- "1500 cemento y 800 arena"\n- "me pagaron 5000 por transferencia"\n\nTambien podes enviar una *foto*, *audio* o *PDF*.\n\nEscribi *AYUDA* para mas info.');
+    await sendWhatsAppMessage(phoneNumber, 'No pude entender el mensaje.\n\nPodés registrar gastos con un texto como:\n- "500 clavos"\n- "1500 cemento y 800 arena"\n- "me pagaron 5000 por transferencia"\n\nTambién podés enviar una *foto*, *audio* o *PDF*.\n\nEscribí *AYUDA* para más info.');
     return;
   }
 
@@ -1081,7 +1081,7 @@ function buildExpenseConfirmationMessage(data, mismatch = null) {
   msg += `${capitalizeFirst(data.category)} - ${data.projectName}`;
 
   if (data.paymentMethod) {
-    msg += `\nMetodo: ${capitalizeFirst(data.paymentMethod)}`;
+    msg += `\nMétodo: ${capitalizeFirst(data.paymentMethod)}`;
   }
   if (data.vendor) {
     msg += `\nComercio: ${data.vendor}`;
@@ -1094,7 +1094,7 @@ function buildExpenseConfirmationMessage(data, mismatch = null) {
   }
 
   if (mismatch) {
-    msg += `\n\n⚠️ La suma de items (${formatAmount(mismatch.itemsSum)}) no coincide con el total del comprobante (${formatAmount(mismatch.totalAmount)}). Diferencia: ${formatAmount(mismatch.diff)}. Verifica que los montos sean correctos.`;
+    msg += `\n\n⚠️ La suma de items (${formatAmount(mismatch.itemsSum)}) no coincide con el total del comprobante (${formatAmount(mismatch.totalAmount)}). Diferencia: ${formatAmount(mismatch.diff)}. Verificá que los montos sean correctos.`;
   }
 
   return msg;
@@ -1219,7 +1219,7 @@ async function handleProyectoCommand(phoneNumber) {
       return;
     }
 
-    let message = 'Estos son tus proyectos, manda el numero que queres seleccionar:\n\n';
+    let message = 'Estos son tus proyectos, mandá el número que querés seleccionar:\n\n';
     projects.forEach((p, i) => {
       const active = p.id === activeProjectId ? ' (Actualmente activo)' : '';
       message += `${i + 1}. ${p.name} - ${p.tag}${active}\n`;

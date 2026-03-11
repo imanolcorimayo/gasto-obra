@@ -230,7 +230,7 @@ async function handleLinkWhatsApp() {
 }
 
 async function handleUnlink() {
-  if (!confirm('Estas seguro de desvincular tu WhatsApp?')) return;
+  if (!confirm('¿Estás seguro de desvincular tu WhatsApp?')) return;
 
   isUnlinking.value = true;
   try {

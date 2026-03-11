@@ -17,7 +17,7 @@ function isGeminiError(result) {
 
 export async function handleLinkCommand(phoneNumber, code, contactName) {
   if (!code) {
-    await sendWhatsAppMessage(phoneNumber, 'Formato incorrecto. Usa: VINCULAR <codigo>\n\nEjemplo: VINCULAR ABC123');
+    await sendWhatsAppMessage(phoneNumber, 'Formato incorrecto. Usá: VINCULAR <código>\n\nEjemplo: VINCULAR ABC123');
     return;
   }
 
@@ -25,14 +25,14 @@ export async function handleLinkCommand(phoneNumber, code, contactName) {
     const codeDoc = await db.collection(COLLECTIONS.WHATSAPP_LINKS).doc(code).get();
 
     if (!codeDoc.exists) {
-      await sendWhatsAppMessage(phoneNumber, 'Codigo no encontrado o expirado. Genera un nuevo codigo desde la app.');
+      await sendWhatsAppMessage(phoneNumber, 'Código no encontrado o expirado. Generá un nuevo código desde la app.');
       return;
     }
 
     const codeData = codeDoc.data();
 
     if (codeData.status !== 'pending') {
-      await sendWhatsAppMessage(phoneNumber, 'Codigo no valido. Genera un nuevo codigo desde la app.');
+      await sendWhatsAppMessage(phoneNumber, 'Código no válido. Generá un nuevo código desde la app.');
       return;
     }
 
@@ -42,7 +42,7 @@ export async function handleLinkCommand(phoneNumber, code, contactName) {
 
     if (diffMinutes > 10) {
       await db.collection(COLLECTIONS.WHATSAPP_LINKS).doc(code).delete();
-      await sendWhatsAppMessage(phoneNumber, 'El codigo ha expirado. Genera un nuevo codigo desde la app.');
+      await sendWhatsAppMessage(phoneNumber, 'El código ha expirado. Generá un nuevo código desde la app.');
       return;
     }
 
@@ -67,13 +67,13 @@ export async function handleLinkCommand(phoneNumber, code, contactName) {
     if (activeProjects.length === 1) {
       message += `Proyecto activo: *${activeProjects[0].name}* (${activeProjects[0].tag})\n\n`;
     }
-    message += 'Envia una foto, audio o PDF para registrar gastos.\nEnvia *PROYECTO* para cambiar de proyecto.\nEscribi *AYUDA* para mas info.';
+    message += 'Enviá una foto, audio o PDF para registrar gastos.\nEnviá *PROYECTO* para cambiar de proyecto.\nEscribí *AYUDA* para más info.';
 
     await sendWhatsAppMessage(phoneNumber, message);
   } catch (error) {
     Sentry.captureException(error);
     logger.error('Error linking account', { error });
-    await sendWhatsAppMessage(phoneNumber, 'Error al vincular la cuenta. Intenta nuevamente.');
+    await sendWhatsAppMessage(phoneNumber, 'Error al vincular la cuenta. Intentá nuevamente.');
   }
 }
 
@@ -82,17 +82,17 @@ export async function handleUnlinkCommand(phoneNumber) {
     const linkDoc = await db.collection(COLLECTIONS.WHATSAPP_LINKS).doc(phoneNumber).get();
 
     if (!linkDoc.exists || linkDoc.data()?.status !== 'linked') {
-      await sendWhatsAppMessage(phoneNumber, 'Este numero no esta vinculado a ninguna cuenta.');
+      await sendWhatsAppMessage(phoneNumber, 'Este número no está vinculado a ninguna cuenta.');
       return;
     }
 
     await db.collection(COLLECTIONS.WHATSAPP_LINKS).doc(phoneNumber).delete();
 
-    await sendWhatsAppMessage(phoneNumber, 'Cuenta desvinculada exitosamente. Ya no se registraran gastos desde este numero.');
+    await sendWhatsAppMessage(phoneNumber, 'Cuenta desvinculada exitosamente. Ya no se registrarán gastos desde este número.');
   } catch (error) {
     Sentry.captureException(error);
     logger.error('Error unlinking account', { error });
-    await sendWhatsAppMessage(phoneNumber, 'Error al desvincular la cuenta. Intenta nuevamente.');
+    await sendWhatsAppMessage(phoneNumber, 'Error al desvincular la cuenta. Intentá nuevamente.');
   }
 }
 
@@ -100,7 +100,7 @@ export async function sendHelpMessage(phoneNumber) {
   const helpText = `*Gasto Obra - Ayuda*
 
 *Registrar gastos:*
-Envia un *texto*, *foto*, *audio* o *PDF* y se registra en tu proyecto activo.
+Enviá un *texto*, *foto*, *audio* o *PDF* y se registra en tu proyecto activo.
 
 *Ejemplos de texto:*
 - "500 clavos"
@@ -108,7 +108,7 @@ Envia un *texto*, *foto*, *audio* o *PDF* y se registra en tu proyecto activo.
 - "me pagaron 5000 por transferencia"
 - "2000 pintura pagado por el cliente"
 
-Podes incluir metodo de pago (efectivo, transferencia, tarjeta, mercadopago), destinatario, o mencionar otro proyecto en el mensaje.
+Podés incluir método de pago (efectivo, transferencia, tarjeta, mercadopago), destinatario, o mencionar otro proyecto en el mensaje.
 
 *Comandos:*
 *PROYECTO* - Seleccionar proyecto activo
@@ -123,13 +123,13 @@ export async function handleAISupport(phoneNumber, question, session, { geminiHa
     clearAISupportSession(phoneNumber);
     await sendWhatsAppMessage(
       phoneNumber,
-      `Alcanzaste el límite de consultas por hora.\n\nPodes hablar con soporte directamente: ${SUPPORT_WA_LINK}`
+      `Alcanzaste el límite de consultas por hora.\n\nPodés hablar con soporte directamente: ${SUPPORT_WA_LINK}`
     );
     return;
   }
 
   if (!geminiHandler) {
-    await sendWhatsAppMessage(phoneNumber, 'El soporte AI no esta disponible en este momento.');
+    await sendWhatsAppMessage(phoneNumber, 'El soporte AI no está disponible en este momento.');
     return;
   }
 
@@ -137,7 +137,7 @@ export async function handleAISupport(phoneNumber, question, session, { geminiHa
 
   const faqData = await getFaqData();
   if (faqData.length === 0) {
-    await sendWhatsAppMessage(phoneNumber, 'No pude acceder a la informacion de soporte. Intenta mas tarde.');
+    await sendWhatsAppMessage(phoneNumber, 'No pude acceder a la información de soporte. Intentá más tarde.');
     return;
   }
 
@@ -164,7 +164,7 @@ export async function handleAISupport(phoneNumber, question, session, { geminiHa
     clearAISupportSession(phoneNumber);
     await sendWhatsAppMessage(
       phoneNumber,
-      `El servicio de soporte no esta disponible.\n\nPodes hablar con soporte directamente: ${SUPPORT_WA_LINK}`
+      `El servicio de soporte no está disponible.\n\nPodés hablar con soporte directamente: ${SUPPORT_WA_LINK}`
     );
     return;
   }
@@ -172,14 +172,14 @@ export async function handleAISupport(phoneNumber, question, session, { geminiHa
   if (!result || result.noAnswer) {
     await sendWhatsAppMessage(
       phoneNumber,
-      `${result?.answer || 'No encontre una respuesta para tu consulta.'}\n\nSi necesitas mas ayuda, podes hablar con soporte: ${SUPPORT_WA_LINK}`
+      `${result?.answer || 'No encontré una respuesta para tu consulta.'}\n\nSi necesitás más ayuda, podés hablar con soporte: ${SUPPORT_WA_LINK}`
     );
     if (session) {
       session.previousQA.push({ question, answer: result?.answer || '' });
       session.lastQueryId = queryDocId;
       resetSessionTimers(phoneNumber);
     }
-    await sendWhatsAppButtons(phoneNumber, '¿Necesitas algo mas?', [
+    await sendWhatsAppButtons(phoneNumber, '¿Necesitás algo más?', [
       { id: 'support_otra', title: 'Otra consulta' },
       { id: 'support_listo', title: 'Listo, gracias' }
     ]);
@@ -195,7 +195,7 @@ export async function handleAISupport(phoneNumber, question, session, { geminiHa
   session.lastQueryId = queryDocId;
   resetSessionTimers(phoneNumber);
 
-  await sendWhatsAppButtons(phoneNumber, '¿Necesitas algo mas?', [
+  await sendWhatsAppButtons(phoneNumber, '¿Necesitás algo más?', [
     { id: 'support_otra', title: 'Otra consulta' },
     { id: 'support_listo', title: 'Listo, gracias' }
   ]);

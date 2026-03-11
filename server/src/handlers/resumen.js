@@ -9,7 +9,7 @@ function getARTDate(date) {
   return new Date(utcTime + artOffset * 60000);
 }
 
-const DAY_NAMES = ['Domingo', 'Lunes', 'Martes', 'Miercoles', 'Jueves', 'Viernes', 'Sabado'];
+const DAY_NAMES = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
 
 export async function sendGlobalResumen(phoneNumber, pendingData) {
   const { project, expenses } = pendingData;
@@ -38,7 +38,7 @@ export async function sendGlobalResumen(phoneNumber, pendingData) {
   if (project.clientName) message += `\nCliente: ${project.clientName}`;
 
   message += `\n\n*${clientExpenses.length} gastos registrados*`;
-  message += `\n\n*Por categoria:*\n${categoryLines}`;
+  message += `\n\n*Por categoría:*\n${categoryLines}`;
   message += `\n\n*Total gastos:* ${formatAmount(totalExpenses)}`;
   message += `\n*Pagos recibidos:* ${formatAmount(totalPayments)}`;
   message += `\n*Saldo:* ${formatAmount(balance)}`;
@@ -48,7 +48,7 @@ export async function sendGlobalResumen(phoneNumber, pendingData) {
   }
 
   message += `\n\n🔗 Ver detalle: ${APP_URL}`;
-  message += `\n\n_Podes compartir este mensaje con tu cliente_`;
+  message += `\n\n_Podés compartir este mensaje con tu cliente_`;
 
   await sendWhatsAppMessage(phoneNumber, message);
 }
@@ -101,7 +101,7 @@ export async function sendWeeklyResumen(phoneNumber, pendingData) {
         if (e.type === 'payment') prefix = '💰 ';
         else if (e.type === 'provider_expense') prefix = '👤 ';
 
-        const title = e.title || 'Sin titulo';
+        const title = e.title || 'Sin título';
         const category = e.type !== 'payment' && e.category ? ` (${capitalizeFirst(e.category)})` : '';
         const vendorTag = e.vendor ? ` [${e.vendor}]` : '';
         daySection += `  ${prefix}${formatAmount(amount)} - ${title}${category}${vendorTag}\n`;
@@ -126,10 +126,10 @@ export async function sendWeeklyResumen(phoneNumber, pendingData) {
 
   message += `\n\n*Total de la semana:* ${formatAmount(weekTotal)}`;
   message += `\n\n🔗 Ver detalle: ${APP_URL}`;
-  message += `\n\n_Podes compartir este mensaje con tu cliente_`;
+  message += `\n\n_Podés compartir este mensaje con tu cliente_`;
 
   if (message.length > 3800) {
-    message = message.substring(0, 3750) + '\n... (ver mas en la app)';
+    message = message.substring(0, 3750) + '\n... (ver más en la app)';
   }
 
   await sendWhatsAppMessage(phoneNumber, message);

@@ -25,7 +25,7 @@
           @input="normalizeTag"
         />
       </div>
-      <p class="text-[11px] text-go-text-muted mt-1">Solo letras y numeros, sin espacios.</p>
+      <p class="text-[11px] text-go-text-muted mt-1">Solo letras y números, sin espacios.</p>
     </div>
 
     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -65,7 +65,7 @@
     </div>
 
     <div>
-      <label class="block text-[11px] font-semibold uppercase tracking-wider text-go-text-muted mb-1.5">Direccion</label>
+      <label class="block text-[11px] font-semibold uppercase tracking-wider text-go-text-muted mb-1.5">Dirección</label>
       <input
         v-model="form.address"
         type="text"
@@ -75,7 +75,7 @@
     </div>
 
     <div>
-      <label class="block text-[11px] font-semibold uppercase tracking-wider text-go-text-muted mb-1.5">Descripcion</label>
+      <label class="block text-[11px] font-semibold uppercase tracking-wider text-go-text-muted mb-1.5">Descripción</label>
       <textarea
         v-model="form.description"
         rows="3"
@@ -99,14 +99,14 @@
       </div>
 
       <div>
-        <label class="block text-[11px] font-semibold uppercase tracking-wider text-go-text-muted mb-1.5">Telefono del cliente</label>
+        <label class="block text-[11px] font-semibold uppercase tracking-wider text-go-text-muted mb-1.5">Teléfono del cliente</label>
         <input
           v-model="form.clientPhone"
           type="tel"
           placeholder="5491155512345"
           class="w-full bg-go-bg border border-go-border rounded-go-md px-3 py-2.5 text-sm text-go-text placeholder-go-text-muted focus:outline-none focus:ring-2 focus:ring-go-primary/40 focus:border-go-primary transition-colors"
         />
-        <p class="text-[11px] text-go-text-muted mt-1">Para enviar resumenes diarios por WhatsApp</p>
+        <p class="text-[11px] text-go-text-muted mt-1">Para enviar resúmenes diarios por WhatsApp</p>
       </div>
     </div>
 

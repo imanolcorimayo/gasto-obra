@@ -4,7 +4,7 @@
       <div class="modal-header">
         <div>
           <h3 class="font-display font-semibold text-base text-go-text">{{ isEdit ? 'Editar entrega' : 'Nueva entrega' }}</h3>
-          <p class="text-go-text-muted text-xs mt-0.5">{{ isEdit ? `${delivery.number}° Entrega` : 'Crea una entrega para agrupar gastos' }}</p>
+          <p class="text-go-text-muted text-xs mt-0.5">{{ isEdit ? `${delivery.number}° Entrega` : 'Creá una entrega para agrupar gastos' }}</p>
         </div>
         <button @click="$emit('close')" class="modal-close">
           <MdiClose class="text-xl" />
@@ -34,12 +34,12 @@
           </div>
 
           <div>
-            <label class="block text-[11px] font-semibold uppercase tracking-wider text-go-text-muted mb-1.5">Descripcion</label>
-            <p class="text-[11px] text-go-text-muted mb-1.5">Detalle adicional que aparece debajo del titulo de la entrega</p>
+            <label class="block text-[11px] font-semibold uppercase tracking-wider text-go-text-muted mb-1.5">Descripción</label>
+            <p class="text-[11px] text-go-text-muted mb-1.5">Detalle adicional que aparece debajo del título de la entrega</p>
             <input
               v-model="form.description"
               type="text"
-              placeholder="Ej: Materiales semana 1, Demolicion baño"
+              placeholder="Ej: Materiales semana 1, Demolición baño"
               maxlength="200"
               class="w-full bg-go-bg border border-go-border rounded-go-md px-3 py-2.5 text-sm text-go-text placeholder-go-text-muted focus:outline-none focus:ring-2 focus:ring-go-primary/40 focus:border-go-primary transition-colors"
             />

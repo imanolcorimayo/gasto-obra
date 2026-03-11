@@ -37,15 +37,15 @@
           <p class="text-go-text-muted text-sm mb-6">Ingresa con Google para acceder a tu historial personalizado.</p>
           <button @click="signIn" class="btn-primary w-full flex items-center justify-center gap-2">
             <MdiGoogle class="text-lg" />
-            Iniciar sesion con Google
+            Iniciar sesión con Google
           </button>
-          <p class="text-go-text-muted text-xs text-center mt-3">Tambien podes ver la obra sin cuenta desde el link original.</p>
+          <p class="text-go-text-muted text-xs text-center mt-3">También podés ver la obra sin cuenta desde el link original.</p>
         </div>
 
         <!-- Authenticated - ready to join -->
         <div v-else>
           <p class="text-go-text-secondary text-sm mb-1">
-            Sesion iniciada como
+            Sesión iniciada como
           </p>
           <p class="text-go-text font-medium text-sm mb-4">{{ user.email }}</p>
           <button
@@ -63,7 +63,7 @@
       <div v-else class="text-center py-4">
         <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="mx-auto text-go-text-muted/30 mb-4"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
         <h2 class="font-display text-xl font-semibold text-go-text-secondary">Proyecto no encontrado</h2>
-        <p class="text-go-text-muted text-sm mt-1">El link puede ser invalido o el proyecto ya no esta disponible.</p>
+        <p class="text-go-text-muted text-sm mt-1">El link puede ser inválido o el proyecto ya no está disponible.</p>
       </div>
     </div>
   </div>
@@ -125,7 +125,7 @@ async function signIn() {
     }
   } catch (error) {
     console.error('Error signing in:', error);
-    useToast('error', 'Error al iniciar sesion');
+    useToast('error', 'Error al iniciar sesión');
   }
 }
 

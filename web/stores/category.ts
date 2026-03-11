@@ -45,11 +45,11 @@ export const useCategoryStore = defineStore('category', {
         if (result.success && result.data) {
           this.globalCategories = result.data.map(docToCategory);
         } else {
-          this.error = result.error || 'Error al obtener categorias globales';
+          this.error = result.error || 'Error al obtener categorías globales';
         }
       } catch (error) {
         console.error('Error fetching global categories:', error);
-        this.error = 'Error al obtener categorias globales';
+        this.error = 'Error al obtener categorías globales';
       } finally {
         this.isLoading = false;
       }
@@ -63,11 +63,11 @@ export const useCategoryStore = defineStore('category', {
         if (result.success && result.data) {
           this.projectCategoriesMap[projectId] = result.data.map(docToCategory);
         } else {
-          this.error = result.error || 'Error al obtener categorias del proyecto';
+          this.error = result.error || 'Error al obtener categorías del proyecto';
         }
       } catch (error) {
         console.error('Error fetching project categories:', error);
-        this.error = 'Error al obtener categorias del proyecto';
+        this.error = 'Error al obtener categorías del proyecto';
       }
     },
 
@@ -107,12 +107,12 @@ export const useCategoryStore = defineStore('category', {
           this.globalCategories = categories;
           return { success: true };
         } else {
-          this.error = result.error || 'Error al guardar categorias';
+          this.error = result.error || 'Error al guardar categorías';
           return { success: false, error: this.error };
         }
       } catch (error) {
         console.error('Error saving global categories:', error);
-        this.error = 'Error al guardar categorias';
+        this.error = 'Error al guardar categorías';
         return { success: false, error: this.error };
       } finally {
         this.isLoading = false;
@@ -129,12 +129,12 @@ export const useCategoryStore = defineStore('category', {
           this.projectCategoriesMap[projectId] = categories;
           return { success: true };
         } else {
-          this.error = result.error || 'Error al guardar categorias del proyecto';
+          this.error = result.error || 'Error al guardar categorías del proyecto';
           return { success: false, error: this.error };
         }
       } catch (error) {
         console.error('Error saving project categories:', error);
-        this.error = 'Error al guardar categorias del proyecto';
+        this.error = 'Error al guardar categorías del proyecto';
         return { success: false, error: this.error };
       } finally {
         this.isLoading = false;
@@ -151,12 +151,12 @@ export const useCategoryStore = defineStore('category', {
           delete this.projectCategoriesMap[projectId];
           return { success: true };
         } else {
-          this.error = result.error || 'Error al eliminar categorias del proyecto';
+          this.error = result.error || 'Error al eliminar categorías del proyecto';
           return { success: false, error: this.error };
         }
       } catch (error) {
         console.error('Error removing project categories:', error);
-        this.error = 'Error al eliminar categorias del proyecto';
+        this.error = 'Error al eliminar categorías del proyecto';
         return { success: false, error: this.error };
       } finally {
         this.isLoading = false;

@@ -39,7 +39,7 @@ export class Validator {
           errors.push({ field: fieldName, message: `${fieldName} debe tener al menos ${definition.minLength} caracteres`, value });
         }
         if (definition.pattern && !definition.pattern.test(value)) {
-          errors.push({ field: fieldName, message: `${fieldName} tiene un formato invalido`, value });
+          errors.push({ field: fieldName, message: `${fieldName} tiene un formato inválido`, value });
         }
         break;
 
