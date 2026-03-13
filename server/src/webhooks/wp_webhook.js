@@ -134,8 +134,8 @@ function getTypeLabel(type) {
   return 'Gasto';
 }
 
-function applyFeeToExpenseData(expenseData, aiResult, linkData) {
-  const feePercent = linkData.managementFeePercent || 0;
+function applyFeeToExpenseData(expenseData, aiResult, providerData) {
+  const feePercent = providerData.managementFeePercent || 0;
   if (feePercent > 0 && aiResult.applyManagementFee && expenseData.type === 'expense') {
     expenseData.amountBase = expenseData.amount;
     expenseData.managementFeePercent = feePercent;
@@ -637,6 +637,10 @@ async function prepareExpenseContext(phoneNumber) {
   let projectAutoCreated = false;
   let resolvedProject = null;
 
+  // Read provider profile for management fee
+  const providerDoc = await db.collection(COLLECTIONS.PROVIDERS).doc(userId).get();
+  const providerData = providerDoc.exists ? providerDoc.data() : {};
+
   // Validate activeProjectId is still an active project
   if (activeProjectId) {
     resolvedProject = await resolveProject(userId, activeProjectId);
@@ -667,16 +671,16 @@ async function prepareExpenseContext(phoneNumber) {
     recipients: recipients.map(r => ({ id: r.id, name: r.name, platform: r.platform })),
     paymentMethods: VALID_PAYMENT_METHODS,
     vendors,
-    managementFeePercent: linkData.managementFeePercent || 0
+    managementFeePercent: providerData.managementFeePercent || 0
   };
 
-  return { linkData, userId, activeProjectId, activeProjects, resolvedProject, providerCats, recipients, vendors, aiContext, projectAutoCreated };
+  return { linkData, providerData, userId, activeProjectId, activeProjects, resolvedProject, providerCats, recipients, vendors, aiContext, projectAutoCreated };
 }
 
 async function processExpenseResult({
   phoneNumber, userId, activeProjectId, activeProjects,
   resolvedProject: preResolvedProject,
-  aiResult, linkData, providerCats, recipients,
+  aiResult, linkData, providerData, providerCats, recipients,
   mediaUrls, originalMessage, defaultTitle,
   useAITitle = false, useAIDescription = false,
   filterItems = false, sumItemAmounts = false,
@@ -793,7 +797,7 @@ async function processExpenseResult({
       projectName: detectedProject.name,
     };
 
-    applyFeeToExpenseData(expenseData, aiResult, linkData);
+    applyFeeToExpenseData(expenseData, aiResult, providerData);
     setPendingProjectSwitchExpense(phoneNumber, userId, expenseData, detectedProject);
 
     const confirmMsg = buildExpenseConfirmationMessage(expenseData, mismatch);
@@ -819,7 +823,7 @@ async function processExpenseResult({
     projectName: project.name,
   };
 
-  applyFeeToExpenseData(expenseData, aiResult, linkData);
+  applyFeeToExpenseData(expenseData, aiResult, providerData);
   await setPendingConfirmation(phoneNumber, userId, expenseData);
 
   const confirmMsg = buildExpenseConfirmationMessage(expenseData, mismatch);

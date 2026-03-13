@@ -46,6 +46,7 @@ export default defineNuxtConfig({
       firebaseAppId: process.env.FIREBASE_APP_ID,
       whatsappNumber: process.env.WHATSAPP_NUMBER,
       sentryDsn: process.env.NUXT_PUBLIC_SENTRY_DSN,
+      apiBase: process.env.NUXT_PUBLIC_API_BASE || 'http://localhost:4002',
     }
   },
 

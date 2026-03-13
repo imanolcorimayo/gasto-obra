@@ -24,6 +24,7 @@ const bucket = admin.storage().bucket();
 
 const COLLECTIONS = {
   WHATSAPP_LINKS: 'whatsappLinks',
+  PROVIDERS: 'providers',
   PROJECTS: 'projects',
   EXPENSES: 'expenses',
   CATEGORIES: 'categories',

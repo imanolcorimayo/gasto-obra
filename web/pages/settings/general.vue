@@ -147,7 +147,7 @@
     </div>
 
     <!-- Management Fee Section -->
-    <div v-if="linkedAccount" class="mt-10 pt-8 border-t border-go-border">
+    <div class="mt-10 pt-8 border-t border-go-border">
       <div class="mb-6">
         <h2 class="font-display font-bold text-xl text-go-text">Gestión</h2>
         <p class="text-go-text-muted text-sm mt-1">Porcentaje que cobrás como gestión sobre compras de materiales u otros gastos de obra.</p>
@@ -169,7 +169,7 @@
           </div>
           <button
             @click="handleSaveFee"
-            :disabled="isSavingFee || feePercent === whatsappStore.managementFeePercent"
+            :disabled="isSavingFee || feePercent === providerStore.managementFeePercent"
             class="btn-primary text-sm disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <span v-if="isSavingFee" class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin inline-block"></span>
@@ -190,6 +190,7 @@ import MdiLinkOff from '~icons/mdi/link-off';
 import MdiCheck from '~icons/mdi/check';
 import MdiInformation from '~icons/mdi/information';
 import { useWhatsappStore } from '~/stores/whatsapp';
+import { useProviderStore } from '~/stores/provider';
 
 definePageMeta({
   middleware: ['auth']
@@ -200,6 +201,7 @@ useHead({
 });
 
 const whatsappStore = useWhatsappStore();
+const providerStore = useProviderStore();
 const { linkedAccount, pendingCode, isLoading, isGenerating } = storeToRefs(whatsappStore);
 
 const config = useRuntimeConfig();
@@ -261,7 +263,7 @@ async function handleSaveFee() {
   feePercent.value = val;
   isSavingFee.value = true;
   try {
-    const result = await whatsappStore.saveManagementFee(val);
+    const result = await providerStore.saveManagementFee(val);
     if (result.success) {
       useToast('success', 'Porcentaje de gestión guardado');
     } else {
@@ -273,8 +275,11 @@ async function handleSaveFee() {
 }
 
 onMounted(async () => {
-  await whatsappStore.fetchLinkedAccount();
-  feePercent.value = whatsappStore.managementFeePercent;
+  await Promise.all([
+    whatsappStore.fetchLinkedAccount(),
+    providerStore.fetchOrCreate()
+  ]);
+  feePercent.value = providerStore.managementFeePercent;
 
   // If there's a valid pending code, show waiting state
   const pendingResult = await whatsappStore.fetchPendingCode();
