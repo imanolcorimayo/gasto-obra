@@ -1,5 +1,6 @@
 import '../../lib/instrument.js';
 import 'dotenv/config';
+import crypto from 'crypto';
 import express from 'express';
 import * as Sentry from '@sentry/node';
 import { admin, db, bucket, COLLECTIONS } from '../config/firebase.js';
@@ -30,6 +31,7 @@ const app = express();
 const PORT = process.env.PORT || 4001;
 const VERIFY_TOKEN = process.env.WP_VERIFY_TOKEN || 'gasto_obra_verify';
 const APP_URL = process.env.APP_URL || 'https://gasto-obra.web.app';
+const META_APP_SECRET = process.env.META_APP_SECRET;
 
 // ============================================
 // Default expense categories
@@ -359,7 +361,36 @@ async function sendReturningUserWelcome(phoneNumber, linkData) {
 // ============================================
 // Middleware
 // ============================================
-app.use(express.json());
+app.use(express.json({
+  verify: (req, _res, buf) => {
+    req.rawBody = buf;
+  }
+}));
+
+function verifyWebhookSignature(req, res, next) {
+  if (!META_APP_SECRET) {
+    logger.warn('META_APP_SECRET not configured — skipping signature verification');
+    return next();
+  }
+
+  const signature = req.headers['x-hub-signature-256'];
+  if (!signature) {
+    logger.warn('Webhook request without signature', { ip: req.ip });
+    return res.sendStatus(401);
+  }
+
+  const expectedSignature = 'sha256=' + crypto
+    .createHmac('sha256', META_APP_SECRET)
+    .update(req.rawBody)
+    .digest('hex');
+
+  if (!crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expectedSignature))) {
+    logger.warn('Webhook signature mismatch', { ip: req.ip });
+    return res.sendStatus(401);
+  }
+
+  next();
+}
 
 app.use((req, res, next) => {
   const start = Date.now();
@@ -398,7 +429,7 @@ app.get('/webhook', (req, res) => {
   return res.sendStatus(403);
 });
 
-app.post('/webhook', async (req, res) => {
+app.post('/webhook', verifyWebhookSignature, async (req, res) => {
   logger.debug('Incoming webhook', { body: req.body });
 
   res.sendStatus(200);
