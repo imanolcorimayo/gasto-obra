@@ -19,7 +19,7 @@
     <!-- Page Header -->
     <div class="mb-8">
       <h1 class="font-display font-bold text-2xl text-go-text">General</h1>
-      <p class="text-go-text-muted text-sm mt-1">Configurá tu cuenta de WhatsApp y porcentaje de gestión.</p>
+      <p class="text-go-text-muted text-sm mt-1">Tu perfil, porcentaje de gestión y cuenta de WhatsApp.</p>
     </div>
 
     <!-- Loading State -->
@@ -34,153 +34,215 @@
       </div>
     </div>
 
-    <!-- Linked Successfully -->
-    <div v-else-if="linkedAccount" class="space-y-6">
-      <!-- Success Banner -->
-      <div class="bg-go-surface border border-go-success/40 rounded-go-xl p-5 flex items-start gap-4">
-        <div class="bg-go-success/20 rounded-full p-2 shrink-0">
-          <MdiCheck class="text-go-success text-lg" />
-        </div>
-        <div>
-          <h2 class="font-display font-semibold text-go-text">WhatsApp vinculado</h2>
-          <p class="text-go-text-muted text-sm mt-0.5">
-            +{{ formatPhoneNumber(linkedAccount.phoneNumber) }}
-            <span v-if="linkedAccount.contactName"> · {{ linkedAccount.contactName }}</span>
-          </p>
-        </div>
-      </div>
-
-      <!-- Account Details (directly on page bg) -->
-      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div>
-          <span class="text-[11px] font-semibold uppercase tracking-wider text-go-text-muted block mb-1">Teléfono</span>
-          <span class="text-sm text-go-text font-mono">+{{ formatPhoneNumber(linkedAccount.phoneNumber) }}</span>
-        </div>
-        <div v-if="linkedAccount.contactName">
-          <span class="text-[11px] font-semibold uppercase tracking-wider text-go-text-muted block mb-1">Contacto</span>
-          <span class="text-sm text-go-text">{{ linkedAccount.contactName }}</span>
-        </div>
-        <div v-if="linkedAccount.linkedAt">
-          <span class="text-[11px] font-semibold uppercase tracking-wider text-go-text-muted block mb-1">Vinculado</span>
-          <span class="text-sm text-go-text">{{ formatTimestamp(linkedAccount.linkedAt) }}</span>
-        </div>
-      </div>
-
-      <!-- Info: AYUDA -->
-      <div class="bg-go-surface border border-go-border rounded-go-xl p-4 flex items-start gap-3">
-        <MdiInformation class="text-go-primary text-lg shrink-0 mt-0.5" />
-        <div>
-          <p class="text-sm text-go-text-secondary">
-            Para más información sobre cómo usar el bot, enviá <span class="font-mono font-semibold text-go-primary">AYUDA</span> por WhatsApp.
-          </p>
-          <a :href="whatsappUrl" target="_blank" class="btn-primary text-sm inline-flex items-center gap-2 mt-3">
-            <MdiWhatsapp class="text-base" />
-            Abrir WhatsApp
-          </a>
-        </div>
-      </div>
-
-      <!-- Unlink -->
-      <div class="flex justify-end">
-        <button
-          @click="handleUnlink"
-          :disabled="isUnlinking"
-          class="btn-danger text-sm flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          <span v-if="isUnlinking" class="btn-spinner"></span>
-          <MdiLinkOff v-else class="text-base" />
-          {{ isUnlinking ? 'Desvinculando...' : 'Desvincular cuenta' }}
-        </button>
-      </div>
-    </div>
-
-    <!-- Not Linked -->
-    <div v-else class="bg-go-surface border border-go-border rounded-go-xl p-6 max-w-lg mx-auto text-center">
-      <!-- Waiting for confirmation after redirect -->
-      <template v-if="waitingConfirmation">
-        <div class="flex justify-center mb-5">
-          <div class="w-12 h-12 border-2 border-[#25D366] border-t-transparent rounded-full animate-spin"></div>
-        </div>
-        <h2 class="font-display font-semibold text-xl text-go-text">Esperando confirmación...</h2>
-        <p class="text-go-text-muted text-sm mt-2 mb-6 leading-relaxed">
-          ¿Enviaste el mensaje en WhatsApp? La vinculación se confirmará automáticamente.
-        </p>
-        <button
-          @click="handleLinkWhatsApp"
-          :disabled="isGenerating"
-          class="text-go-text-muted text-sm hover:text-go-text underline"
-        >
-          Reintentar
-        </button>
-      </template>
-
-      <!-- Initial state -->
-      <template v-else>
-        <div class="flex justify-center mb-5">
-          <MdiWhatsapp class="w-12 h-12 text-[#25D366]" />
-        </div>
-        <h2 class="font-display font-semibold text-xl text-go-text">Vinculá tu WhatsApp</h2>
-        <p class="text-go-text-muted text-sm mt-2 mb-6 leading-relaxed">
-          Vinculá tu cuenta de WhatsApp para registrar gastos enviando mensajes de texto, fotos de tickets o audios.
-        </p>
-
-        <!-- Bot phone not configured -->
-        <div v-if="!botPhoneConfigured" class="text-go-warning text-sm">
-          Número del bot no configurado. Contactá al administrador.
+    <template v-else>
+      <!-- ═══ Section 1: Perfil ═══ -->
+      <div>
+        <div class="mb-6">
+          <h2 class="font-display font-bold text-xl text-go-text">Perfil</h2>
+          <p class="text-go-text-muted text-sm mt-1">Información de tu empresa o actividad profesional.</p>
         </div>
 
-        <!-- CTA button -->
-        <button
-          v-else
-          @click="handleLinkWhatsApp"
-          :disabled="isGenerating"
-          class="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-go-md text-white font-semibold bg-[#25D366] hover:bg-[#20bd5a] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          <span v-if="isGenerating" class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
-          <MdiWhatsapp v-else class="text-lg" />
-          {{ isGenerating ? 'Generando...' : 'Vincular por WhatsApp' }}
-        </button>
-        <p v-if="botPhoneConfigured" class="text-go-text-muted text-xs mt-3">
-          Se abrirá WhatsApp con un mensaje listo para enviar
-        </p>
-      </template>
-    </div>
-
-    <!-- Management Fee Section -->
-    <div class="mt-10 pt-8 border-t border-go-border">
-      <div class="mb-6">
-        <h2 class="font-display font-bold text-xl text-go-text">Gestión</h2>
-        <p class="text-go-text-muted text-sm mt-1">Porcentaje que cobrás como gestión sobre compras de materiales u otros gastos de obra.</p>
-      </div>
-
-      <div class="bg-go-surface border border-go-border rounded-go-xl p-5">
-        <label class="block text-[11px] font-semibold uppercase tracking-wider text-go-text-muted mb-1.5">Porcentaje de gestión</label>
-        <div class="flex items-center gap-3">
-          <div class="flex">
-            <input
-              v-model.number="feePercent"
-              type="number"
-              min="0"
-              max="100"
-              step="1"
-              class="w-24 bg-go-bg border border-go-border rounded-l-go-md px-3 py-2.5 text-lg font-display font-semibold tabular-nums text-go-text focus:outline-none focus:ring-2 focus:ring-go-primary/40 focus:border-go-primary transition-colors"
-            />
-            <span class="bg-go-surface border border-go-border border-l-0 rounded-r-go-md px-3 py-2.5 text-go-text-muted text-sm">%</span>
+        <div class="bg-go-surface border border-go-border rounded-go-xl p-5">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-[11px] font-semibold uppercase tracking-wider text-go-text-muted mb-1.5">Nombre completo</label>
+              <input
+                v-model="profileForm.displayName"
+                type="text"
+                class="w-full bg-go-bg border border-go-border rounded-go-md px-3 py-2.5 text-sm text-go-text focus:outline-none focus:ring-2 focus:ring-go-primary/40 focus:border-go-primary transition-colors"
+              />
+            </div>
+            <div>
+              <label class="block text-[11px] font-semibold uppercase tracking-wider text-go-text-muted mb-1.5">Email</label>
+              <div class="cursor-not-allowed">
+                <input
+                  :value="providerStore.email"
+                  type="email"
+                  disabled
+                  class="w-full bg-go-surface-alt border border-go-border rounded-go-md px-3 py-2.5 text-sm text-go-text-muted pointer-events-none"
+                />
+              </div>
+            </div>
+            <div>
+              <label class="block text-[11px] font-semibold uppercase tracking-wider text-go-text-muted mb-1.5">Razón social</label>
+              <input
+                v-model="profileForm.businessName"
+                type="text"
+                placeholder="Opcional"
+                class="w-full bg-go-bg border border-go-border rounded-go-md px-3 py-2.5 text-sm text-go-text placeholder:text-go-text-muted/50 focus:outline-none focus:ring-2 focus:ring-go-primary/40 focus:border-go-primary transition-colors"
+              />
+            </div>
+            <div>
+              <label class="block text-[11px] font-semibold uppercase tracking-wider text-go-text-muted mb-1.5">CUIT / CUIL</label>
+              <input
+                v-model="profileForm.cuit"
+                type="text"
+                placeholder="Opcional"
+                class="w-full bg-go-bg border border-go-border rounded-go-md px-3 py-2.5 text-sm text-go-text placeholder:text-go-text-muted/50 focus:outline-none focus:ring-2 focus:ring-go-primary/40 focus:border-go-primary transition-colors"
+              />
+            </div>
+            <div>
+              <label class="block text-[11px] font-semibold uppercase tracking-wider text-go-text-muted mb-1.5">Rubro</label>
+              <input
+                v-model="profileForm.industry"
+                type="text"
+                placeholder="Opcional"
+                class="w-full bg-go-bg border border-go-border rounded-go-md px-3 py-2.5 text-sm text-go-text placeholder:text-go-text-muted/50 focus:outline-none focus:ring-2 focus:ring-go-primary/40 focus:border-go-primary transition-colors"
+              />
+            </div>
+            <div>
+              <label class="block text-[11px] font-semibold uppercase tracking-wider text-go-text-muted mb-1.5">Contacto adicional</label>
+              <input
+                v-model="profileForm.additionalContact"
+                type="text"
+                placeholder="Opcional"
+                class="w-full bg-go-bg border border-go-border rounded-go-md px-3 py-2.5 text-sm text-go-text placeholder:text-go-text-muted/50 focus:outline-none focus:ring-2 focus:ring-go-primary/40 focus:border-go-primary transition-colors"
+              />
+            </div>
           </div>
-          <button
-            @click="handleSaveFee"
-            :disabled="isSavingFee || feePercent === providerStore.managementFeePercent"
-            class="btn-primary text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <span v-if="isSavingFee" class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin inline-block"></span>
-            <template v-else>Guardar</template>
-          </button>
+          <div class="mt-5">
+            <button
+              @click="handleSaveProfile"
+              :disabled="isSavingProfile || !profileDirty"
+              class="btn-primary text-sm w-full sm:w-auto sm:ml-auto sm:block disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <span v-if="isSavingProfile" class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin inline-block"></span>
+              <template v-else>Guardar</template>
+            </button>
+          </div>
         </div>
-        <p class="text-xs text-go-text-muted mt-2">
-          Si es mayor a 0%, al cargar un gasto podrás aplicar este porcentaje. Se incluye en el monto total.
-        </p>
       </div>
-    </div>
+
+      <!-- ═══ Section 2: Gestión ═══ -->
+      <div class="mt-10 pt-8 border-t border-go-border">
+        <div class="mb-6">
+          <h2 class="font-display font-bold text-xl text-go-text">Gestión</h2>
+          <p class="text-go-text-muted text-sm mt-1">Porcentaje que cobrás como gestión sobre compras de materiales u otros gastos de obra.</p>
+        </div>
+
+        <div class="bg-go-surface border border-go-border rounded-go-xl p-5">
+          <label class="block text-[11px] font-semibold uppercase tracking-wider text-go-text-muted mb-1.5">Porcentaje de gestión</label>
+          <div class="flex flex-col sm:flex-row sm:items-center gap-3">
+            <div class="flex w-full sm:w-auto">
+              <input
+                v-model.number="feePercent"
+                type="number"
+                min="0"
+                max="100"
+                step="1"
+                class="w-full sm:w-24 bg-go-bg border border-go-border rounded-l-go-md px-3 py-2.5 text-lg font-display font-semibold tabular-nums text-go-text focus:outline-none focus:ring-2 focus:ring-go-primary/40 focus:border-go-primary transition-colors"
+              />
+              <span class="bg-go-surface border border-go-border border-l-0 rounded-r-go-md px-3 py-2.5 text-go-text-muted text-sm">%</span>
+            </div>
+            <button
+              @click="handleSaveFee"
+              :disabled="isSavingFee || feePercent === providerStore.managementFeePercent"
+              class="btn-primary text-sm w-full sm:w-auto disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <span v-if="isSavingFee" class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin inline-block"></span>
+              <template v-else>Guardar</template>
+            </button>
+          </div>
+          <p class="text-xs text-go-text-muted mt-2">
+            Si es mayor a 0%, al cargar un gasto podrás aplicar este porcentaje. Se incluye en el monto total.
+          </p>
+        </div>
+      </div>
+
+      <!-- ═══ Section 3: WhatsApp ═══ -->
+      <div class="mt-10 pt-8 border-t border-go-border">
+        <div class="mb-6">
+          <h2 class="font-display font-bold text-xl text-go-text">WhatsApp</h2>
+          <p class="text-go-text-muted text-sm mt-1">Vinculá tu cuenta para registrar gastos por mensaje.</p>
+        </div>
+
+        <!-- Linked state — compact single row -->
+        <div v-if="linkedAccount" class="bg-go-surface border border-go-border rounded-go-xl p-5 space-y-4">
+          <div class="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
+            <div class="flex items-center gap-3 min-w-0">
+              <div class="bg-go-success/20 rounded-full p-1.5 shrink-0">
+                <MdiCheck class="text-go-success text-base" />
+              </div>
+              <div class="min-w-0">
+                <span class="font-display font-semibold text-go-text text-sm">WhatsApp vinculado</span>
+                <p class="text-go-text-muted text-xs truncate">
+                  +{{ formatPhoneNumber(linkedAccount.phoneNumber) }}
+                  <span v-if="linkedAccount.contactName"> · {{ linkedAccount.contactName }}</span>
+                  <span v-if="linkedAccount.linkedAt"> · {{ formatTimestamp(linkedAccount.linkedAt) }}</span>
+                </p>
+              </div>
+            </div>
+            <a :href="whatsappUrl" target="_blank" class="btn-primary text-sm inline-flex items-center justify-center gap-2 w-full sm:w-48 sm:ml-auto shrink-0">
+              <MdiWhatsapp class="text-base" />
+              Abrir WhatsApp
+            </a>
+          </div>
+          <div class="flex sm:justify-end">
+            <button
+              @click="handleUnlink"
+              :disabled="isUnlinking"
+              class="btn-danger text-sm flex items-center justify-center gap-2 w-full sm:w-48 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <span v-if="isUnlinking" class="btn-spinner"></span>
+              <MdiLinkOff v-else class="text-base" />
+              {{ isUnlinking ? 'Desvinculando...' : 'Desvincular cuenta' }}
+            </button>
+          </div>
+        </div>
+
+        <!-- Not linked state -->
+        <div v-else class="bg-go-surface border border-go-border rounded-go-xl p-6 max-w-lg mx-auto text-center">
+          <!-- Waiting for confirmation after redirect -->
+          <template v-if="waitingConfirmation">
+            <div class="flex justify-center mb-5">
+              <div class="w-12 h-12 border-2 border-[#25D366] border-t-transparent rounded-full animate-spin"></div>
+            </div>
+            <h2 class="font-display font-semibold text-xl text-go-text">Esperando confirmación...</h2>
+            <p class="text-go-text-muted text-sm mt-2 mb-6 leading-relaxed">
+              ¿Enviaste el mensaje en WhatsApp? La vinculación se confirmará automáticamente.
+            </p>
+            <button
+              @click="handleLinkWhatsApp"
+              :disabled="isGenerating"
+              class="text-go-text-muted text-sm hover:text-go-text underline"
+            >
+              Reintentar
+            </button>
+          </template>
+
+          <!-- Initial state -->
+          <template v-else>
+            <div class="flex justify-center mb-5">
+              <MdiWhatsapp class="w-12 h-12 text-[#25D366]" />
+            </div>
+            <h2 class="font-display font-semibold text-xl text-go-text">Vinculá tu WhatsApp</h2>
+            <p class="text-go-text-muted text-sm mt-2 mb-6 leading-relaxed">
+              Vinculá tu cuenta de WhatsApp para registrar gastos enviando mensajes de texto, fotos de tickets o audios.
+            </p>
+
+            <!-- Bot phone not configured -->
+            <div v-if="!botPhoneConfigured" class="text-go-warning text-sm">
+              Número del bot no configurado. Contactá al administrador.
+            </div>
+
+            <!-- CTA button -->
+            <button
+              v-else
+              @click="handleLinkWhatsApp"
+              :disabled="isGenerating"
+              class="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-go-md text-white font-semibold bg-[#25D366] hover:bg-[#20bd5a] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <span v-if="isGenerating" class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+              <MdiWhatsapp v-else class="text-lg" />
+              {{ isGenerating ? 'Generando...' : 'Vincular por WhatsApp' }}
+            </button>
+            <p v-if="botPhoneConfigured" class="text-go-text-muted text-xs mt-3">
+              Se abrirá WhatsApp con un mensaje listo para enviar
+            </p>
+          </template>
+        </div>
+      </div>
+    </template>
   </div>
 </template>
 
@@ -188,7 +250,6 @@
 import MdiWhatsapp from '~icons/mdi/whatsapp';
 import MdiLinkOff from '~icons/mdi/link-off';
 import MdiCheck from '~icons/mdi/check';
-import MdiInformation from '~icons/mdi/information';
 import { useWhatsappStore } from '~/stores/whatsapp';
 import { useProviderStore } from '~/stores/provider';
 
@@ -216,6 +277,44 @@ const waitingConfirmation = ref(false);
 const isUnlinking = ref(false);
 const feePercent = ref(0);
 const isSavingFee = ref(false);
+
+// Profile form
+const profileForm = reactive({
+  displayName: '',
+  businessName: '',
+  cuit: '',
+  industry: '',
+  additionalContact: ''
+});
+const isSavingProfile = ref(false);
+
+const profileDirty = computed(() => {
+  return profileForm.displayName !== providerStore.displayName
+    || profileForm.businessName !== providerStore.businessName
+    || profileForm.cuit !== providerStore.cuit
+    || profileForm.industry !== providerStore.industry
+    || profileForm.additionalContact !== providerStore.additionalContact;
+});
+
+async function handleSaveProfile() {
+  isSavingProfile.value = true;
+  try {
+    const result = await providerStore.saveProfile({
+      displayName: profileForm.displayName,
+      businessName: profileForm.businessName,
+      cuit: profileForm.cuit,
+      industry: profileForm.industry,
+      additionalContact: profileForm.additionalContact
+    });
+    if (result.success) {
+      useToast('success', 'Perfil guardado');
+    } else {
+      useToast('error', result.error || 'Error al guardar el perfil');
+    }
+  } finally {
+    isSavingProfile.value = false;
+  }
+}
 
 async function handleLinkWhatsApp() {
   const result = await whatsappStore.generateCode();
@@ -280,6 +379,13 @@ onMounted(async () => {
     providerStore.fetchOrCreate()
   ]);
   feePercent.value = providerStore.managementFeePercent;
+
+  // Populate profile form from store
+  profileForm.displayName = providerStore.displayName;
+  profileForm.businessName = providerStore.businessName;
+  profileForm.cuit = providerStore.cuit;
+  profileForm.industry = providerStore.industry;
+  profileForm.additionalContact = providerStore.additionalContact;
 
   // If there's a valid pending code, show waiting state
   const pendingResult = await whatsappStore.fetchPendingCode();
