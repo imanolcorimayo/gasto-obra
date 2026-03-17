@@ -93,7 +93,7 @@
         </div>
 
         <!-- 5. Image -->
-        <div v-if="expense.imageUrl" class="relative">
+        <div v-if="expense.imageUrl" class="relative group">
           <div
             v-show="thumbLoading"
             class="w-full h-48 rounded-go-md border border-go-border skeleton-shimmer bg-go-bg flex items-center justify-center"
@@ -108,21 +108,59 @@
             @load="thumbLoading = false"
             @click="imageLoading = true; showImageViewer = true"
           />
+          <button
+            v-show="!thumbLoading"
+            class="absolute top-2 right-2 w-8 h-8 flex items-center justify-center rounded-full bg-black/50 text-white/80 hover:text-white hover:bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity"
+            title="Descargar imagen"
+            @click.stop="downloadFile(expense.imageUrl, 'comprobante.jpg')"
+          >
+            <MdiDownload class="text-sm" />
+          </button>
         </div>
 
         <!-- Image viewer overlay -->
         <Teleport to="body">
           <div
             v-if="showImageViewer"
-            class="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 backdrop-blur-sm cursor-zoom-out"
-            @click="showImageViewer = false"
+            class="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 backdrop-blur-sm"
+            @click="closeImageViewer"
           >
-            <button
-              class="absolute top-4 right-4 text-white/70 hover:text-white transition-colors z-10"
-              @click.stop="showImageViewer = false"
-            >
-              <MdiClose class="text-2xl" />
-            </button>
+            <!-- Toolbar -->
+            <div class="absolute top-4 right-4 flex items-center gap-2 z-10">
+              <button
+                class="w-9 h-9 flex items-center justify-center rounded-full bg-white/10 text-white/70 hover:text-white hover:bg-white/20 transition-colors"
+                title="Descargar imagen"
+                @click.stop="downloadFile(expense.imageUrl, 'comprobante.jpg')"
+              >
+                <MdiDownload class="text-lg" />
+              </button>
+              <button
+                class="w-9 h-9 flex items-center justify-center rounded-full bg-white/10 text-white/70 hover:text-white hover:bg-white/20 transition-colors"
+                @click.stop="closeImageViewer"
+              >
+                <MdiClose class="text-xl" />
+              </button>
+            </div>
+
+            <!-- Zoom controls -->
+            <div class="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-2 z-10">
+              <button
+                class="w-9 h-9 flex items-center justify-center rounded-full bg-white/10 text-white/70 hover:text-white hover:bg-white/20 transition-colors"
+                title="Alejar"
+                @click.stop="zoomOut"
+              >
+                <MdiMagnifyMinus class="text-lg" />
+              </button>
+              <span class="text-xs text-white/60 tabular-nums w-12 text-center">{{ Math.round(zoomScale * 100) }}%</span>
+              <button
+                class="w-9 h-9 flex items-center justify-center rounded-full bg-white/10 text-white/70 hover:text-white hover:bg-white/20 transition-colors"
+                title="Acercar"
+                @click.stop="zoomIn"
+              >
+                <MdiMagnifyPlus class="text-lg" />
+              </button>
+            </div>
+
             <!-- Skeleton placeholder -->
             <div
               v-show="imageLoading"
@@ -138,19 +176,29 @@
             </div>
             <img
               v-show="!imageLoading"
+              ref="viewerImageRef"
               :src="showImageViewer ? expense.imageUrl : undefined"
               alt="Comprobante"
-              class="max-w-[90vw] max-h-[90vh] object-contain rounded-go-md cursor-default"
+              class="max-w-[90vw] max-h-[90vh] object-contain rounded-go-md select-none"
+              :class="zoomScale > 1 ? 'cursor-grab active:cursor-grabbing' : 'cursor-default'"
+              :style="{ transform: `scale(${zoomScale}) translate(${panX / zoomScale}px, ${panY / zoomScale}px)`, transition: isPanning ? 'none' : 'transform 0.2s ease' }"
+              draggable="false"
               @click.stop
               @load="imageLoading = false"
+              @dblclick.stop="toggleZoom"
+              @wheel.prevent.stop="onWheel"
+              @pointerdown.stop="onPointerDown"
+              @touchstart.stop="onTouchStart"
+              @touchmove.prevent.stop="onTouchMove"
+              @touchend.stop="onTouchEnd"
             />
           </div>
         </Teleport>
 
         <!-- 5b. PDF document -->
-        <div v-if="expense.fileUrl">
+        <div v-if="expense.fileUrl" class="flex items-center gap-2">
           <a :href="expense.fileUrl" target="_blank" rel="noopener"
-             class="flex items-center gap-3 border border-go-border-subtle rounded-go-md p-3 hover:bg-go-surface-alt transition-colors">
+             class="flex-1 flex items-center gap-3 border border-go-border-subtle rounded-go-md p-3 hover:bg-go-surface-alt transition-colors">
             <MdiFilePdfBox class="text-2xl text-red-500 shrink-0" />
             <div class="flex-1 min-w-0">
               <span class="text-sm font-medium text-go-text">Documento PDF</span>
@@ -158,6 +206,13 @@
             </div>
             <MdiOpenInNew class="text-base text-go-text-muted" />
           </a>
+          <button
+            class="shrink-0 w-10 h-10 flex items-center justify-center border border-go-border-subtle rounded-go-md text-go-text-muted hover:text-go-text hover:bg-go-surface-alt transition-colors"
+            title="Descargar PDF"
+            @click="downloadFile(expense.fileUrl, 'documento.pdf')"
+          >
+            <MdiDownload class="text-lg" />
+          </button>
         </div>
 
         <!-- 6. Audio player -->
@@ -180,6 +235,14 @@
                 ? 'bg-go-primary text-white'
                 : 'bg-go-surface border border-go-border text-go-text-muted hover:text-go-text'"
             >{{ rate }}x</button>
+            <button
+              class="ml-auto px-2.5 py-1 text-xs font-medium rounded-go-sm bg-go-surface border border-go-border text-go-text-muted hover:text-go-text transition-colors flex items-center gap-1"
+              title="Descargar audio"
+              @click="downloadFile(expense.audioUrl, 'audio.ogg')"
+            >
+              <MdiDownload class="text-sm" />
+              Descargar
+            </button>
           </div>
         </div>
 
@@ -274,6 +337,9 @@ import MdiChevronDown from '~icons/mdi/chevron-down';
 import MdiFilePdfBox from '~icons/mdi/file-pdf-box';
 import MdiAlertCircleOutline from '~icons/mdi/alert-circle-outline';
 import MdiOpenInNew from '~icons/mdi/open-in-new';
+import MdiDownload from '~icons/mdi/download';
+import MdiMagnifyPlus from '~icons/mdi/magnify-plus-outline';
+import MdiMagnifyMinus from '~icons/mdi/magnify-minus-outline';
 import { formatPrice, getCategoryLabel, getPaymentMethodLabel, getScopeTypeStyles, getManagementFeeAmount, TRANSACTION_TYPES } from '~/utils';
 
 const props = defineProps({
@@ -292,6 +358,19 @@ const showOriginal = ref(false);
 const showImageViewer = ref(false);
 const imageLoading = ref(true);
 const thumbLoading = ref(true);
+
+// Image viewer zoom/pan state
+const viewerImageRef = ref(null);
+const zoomScale = ref(1);
+const panX = ref(0);
+const panY = ref(0);
+const isPanning = ref(false);
+const panStart = ref({ x: 0, y: 0 });
+const panOrigin = ref({ x: 0, y: 0 });
+
+// Pinch-to-zoom state
+const lastTouchDist = ref(0);
+const lastTouchCenter = ref({ x: 0, y: 0 });
 
 const isPayment = computed(() => props.expense?.type === 'payment');
 const isProvider = computed(() => props.expense?.type === 'provider_expense');
@@ -347,6 +426,7 @@ watch(() => props.show, (val) => {
     thumbLoading.value = true;
     imageLoading.value = true;
     playbackRate.value = 1;
+    resetZoomState();
   }
 });
 
@@ -360,6 +440,142 @@ function setPlaybackRate(rate) {
   playbackRate.value = rate;
   if (audioRef.value) {
     audioRef.value.playbackRate = rate;
+  }
+}
+
+// --- Image viewer: zoom / pan / download ---
+
+const MIN_ZOOM = 1;
+const MAX_ZOOM = 5;
+
+function resetZoomState() {
+  zoomScale.value = 1;
+  panX.value = 0;
+  panY.value = 0;
+  isPanning.value = false;
+  lastTouchDist.value = 0;
+}
+
+function closeImageViewer() {
+  showImageViewer.value = false;
+  resetZoomState();
+}
+
+function zoomIn() {
+  zoomScale.value = Math.min(MAX_ZOOM, zoomScale.value + 0.5);
+  if (zoomScale.value === MIN_ZOOM) { panX.value = 0; panY.value = 0; }
+}
+
+function zoomOut() {
+  zoomScale.value = Math.max(MIN_ZOOM, zoomScale.value - 0.5);
+  if (zoomScale.value === MIN_ZOOM) { panX.value = 0; panY.value = 0; }
+}
+
+function toggleZoom() {
+  if (zoomScale.value > MIN_ZOOM) {
+    zoomScale.value = MIN_ZOOM;
+    panX.value = 0;
+    panY.value = 0;
+  } else {
+    zoomScale.value = 2.5;
+  }
+}
+
+function onWheel(e) {
+  const delta = e.deltaY > 0 ? -0.25 : 0.25;
+  zoomScale.value = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, zoomScale.value + delta));
+  if (zoomScale.value === MIN_ZOOM) { panX.value = 0; panY.value = 0; }
+}
+
+// Mouse/pointer panning
+function onPointerDown(e) {
+  if (zoomScale.value <= MIN_ZOOM) return;
+  isPanning.value = true;
+  panStart.value = { x: e.clientX, y: e.clientY };
+  panOrigin.value = { x: panX.value, y: panY.value };
+
+  const onMove = (ev) => {
+    panX.value = panOrigin.value.x + (ev.clientX - panStart.value.x);
+    panY.value = panOrigin.value.y + (ev.clientY - panStart.value.y);
+  };
+  const onUp = () => {
+    isPanning.value = false;
+    window.removeEventListener('pointermove', onMove);
+    window.removeEventListener('pointerup', onUp);
+  };
+  window.addEventListener('pointermove', onMove);
+  window.addEventListener('pointerup', onUp);
+}
+
+// Touch: pinch-to-zoom + pan
+function getTouchDist(touches) {
+  const dx = touches[0].clientX - touches[1].clientX;
+  const dy = touches[0].clientY - touches[1].clientY;
+  return Math.sqrt(dx * dx + dy * dy);
+}
+
+function getTouchCenter(touches) {
+  return {
+    x: (touches[0].clientX + touches[1].clientX) / 2,
+    y: (touches[0].clientY + touches[1].clientY) / 2
+  };
+}
+
+function onTouchStart(e) {
+  if (e.touches.length === 2) {
+    lastTouchDist.value = getTouchDist(e.touches);
+    lastTouchCenter.value = getTouchCenter(e.touches);
+    isPanning.value = true;
+  } else if (e.touches.length === 1 && zoomScale.value > MIN_ZOOM) {
+    isPanning.value = true;
+    panStart.value = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+    panOrigin.value = { x: panX.value, y: panY.value };
+  }
+}
+
+function onTouchMove(e) {
+  if (e.touches.length === 2) {
+    const dist = getTouchDist(e.touches);
+    if (lastTouchDist.value > 0) {
+      const scaleDelta = dist / lastTouchDist.value;
+      zoomScale.value = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, zoomScale.value * scaleDelta));
+      if (zoomScale.value === MIN_ZOOM) { panX.value = 0; panY.value = 0; }
+    }
+    lastTouchDist.value = dist;
+
+    const center = getTouchCenter(e.touches);
+    if (zoomScale.value > MIN_ZOOM) {
+      panX.value += center.x - lastTouchCenter.value.x;
+      panY.value += center.y - lastTouchCenter.value.y;
+    }
+    lastTouchCenter.value = center;
+  } else if (e.touches.length === 1 && zoomScale.value > MIN_ZOOM) {
+    panX.value = panOrigin.value.x + (e.touches[0].clientX - panStart.value.x);
+    panY.value = panOrigin.value.y + (e.touches[0].clientY - panStart.value.y);
+  }
+}
+
+function onTouchEnd() {
+  isPanning.value = false;
+  lastTouchDist.value = 0;
+}
+
+// Download helper (works with cross-origin Firebase Storage URLs)
+async function downloadFile(url, filename) {
+  try {
+    const response = await fetch(url);
+    const blob = await response.blob();
+    const blobUrl = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = blobUrl;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(blobUrl);
+  } catch {
+    // Fallback: open in new tab
+    window.open(url, '_blank');
   }
 }
 </script>
