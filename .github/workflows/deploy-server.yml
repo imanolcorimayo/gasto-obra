@@ -1,4 +1,4 @@
-name: Deploy Server to Render
+name: Deploy Server to DigitalOcean
 
 on:
   push:
@@ -11,7 +11,15 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Trigger Render Deploy Hook
-        env:
-          DEPLOY_HOOK: ${{ secrets.RENDER_DEPLOY_HOOK }}
-        run: curl -s "$DEPLOY_HOOK"
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.DO_HOST }}
+          username: root
+          key: ${{ secrets.DO_SSH_KEY }}
+          script: |
+            cd /var/www/gasto-obra
+            git pull origin main
+            cd server
+            npm install --production
+            pm2 restart gasto-obra-webhook
