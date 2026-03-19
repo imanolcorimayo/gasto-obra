@@ -13,6 +13,67 @@ function vendorSlug(name) {
     .replace(/[^a-z0-9\s]/g, '').replace(/\s+/g, ' ');
 }
 
+/**
+ * Parse a localized amount string handling both Argentine (dot=thousands, comma=decimal)
+ * and US (comma=thousands, dot=decimal) formats.
+ *
+ * Rules:
+ * - Both "." and "," present → last separator is the decimal one
+ * - Single separator with 3 digits after → thousands (except "0.xxx" → decimal)
+ * - Single separator with 1-2 digits after → decimal
+ * - Multiple dots or commas → all are thousands separators
+ */
+function parseLocalizedAmount(raw) {
+  if (typeof raw === 'number') return raw;
+  if (typeof raw !== 'string') return 0;
+
+  const str = raw.replace(/[^0-9.,]/g, '');
+  if (!str) return 0;
+
+  const hasComma = str.includes(',');
+  const hasDot = str.includes('.');
+
+  if (hasComma && hasDot) {
+    const lastComma = str.lastIndexOf(',');
+    const lastDot = str.lastIndexOf('.');
+    if (lastComma > lastDot) {
+      // 1.500,50 → Argentine
+      return parseFloat(str.replace(/\./g, '').replace(',', '.')) || 0;
+    }
+    // 1,500.50 → US
+    return parseFloat(str.replace(/,/g, '')) || 0;
+  }
+
+  if (hasComma) {
+    if ((str.match(/,/g) || []).length > 1) return parseFloat(str.replace(/,/g, '')) || 0;
+    const afterComma = str.split(',').pop();
+    if (afterComma.length === 3) return parseFloat(str.replace(/,/g, '')) || 0;
+    return parseFloat(str.replace(',', '.')) || 0;
+  }
+
+  if (hasDot) {
+    if ((str.match(/\./g) || []).length > 1) return parseFloat(str.replace(/\./g, '')) || 0;
+    const parts = str.split('.');
+    const beforeDot = parts[0];
+    const afterDot = parts[1];
+    if (afterDot.length === 3 && beforeDot !== '0') return parseFloat(str.replace(/\./g, '')) || 0;
+    return parseFloat(str) || 0;
+  }
+
+  return parseFloat(str) || 0;
+}
+
+function normalizeAmounts(parsed) {
+  if (Array.isArray(parsed.items)) {
+    parsed.items = parsed.items.map(i => ({
+      ...i,
+      amount: parseLocalizedAmount(i.amount)
+    }));
+  }
+  parsed.totalAmount = parseLocalizedAmount(parsed.totalAmount);
+  return parsed;
+}
+
 class GeminiHandler {
   constructor(apiKey) {
     this.apiKey = apiKey;
@@ -160,11 +221,11 @@ ${captionBlock}
   - "payment" para capturas de transferencia bancaria, comprobantes de pago, vouchers de deposito
   - "payment" también si el texto del usuario indica cobro: "me ingresó", "me pagaron", "cobro", "me transfirieron", "me depositaron", "me ingresaron"
   - "provider_expense" si el texto del usuario dice "gasto propio", "gasto mio", "puse de mi bolsillo", "pague yo", "puse yo"
-- IMPORTANTE: Los documentos argentinos usan punto (.) como separador de miles. Por ejemplo, "49.350" = 49350, "7.600" = 7600, "302.641" = 302641. NO interpretar el punto como separador decimal. Los montos deben ser numeros enteros o con centavos separados por coma (,).
+- IMPORTANTE: Devolver "amount" y "totalAmount" como STRINGS con el formato EXACTO tal como aparece en el comprobante (ej: "49.350", "7.600", "1.500,50"). NO convertir a numero. Nosotros lo parseamos despues.
 - Cada item debe tener "name" y "amount":
   - "name": descripción corta y legible. Si la cantidad es mayor a 1, incluir la cantidad al final con el formato " | x<cantidad> u". Ejemplos: "Bolsa Cemento 25kg Holcim | x10 u", "Arena Lavada x MT | x2 u". Si es 1 unidad, no agregar cantidad.
-  - "amount": SIEMPRE usar el SUBTOTAL de la linea (cantidad x precio unitario), NUNCA el precio unitario solo. Si el comprobante muestra columnas de cantidad, precio unitario y subtotal, usar el valor de subtotal.
-- "totalAmount": Si el comprobante tiene un total impreso, usar ese valor exacto. Si NO hay total impreso, sumar los subtotales de todos los items.
+  - "amount": SIEMPRE usar el SUBTOTAL de la linea (cantidad x precio unitario), NUNCA el precio unitario solo. Si el comprobante muestra columnas de cantidad, precio unitario y subtotal, usar el valor de subtotal. Devolver como string.
+- "totalAmount": Si el comprobante tiene un total impreso, usar ese valor exacto como string. Si NO hay total impreso, sumar los subtotales de todos los items y devolver como string.
 - "paymentMethod" y "recipientId" se pueden extraer de la imagen o del texto del usuario
 - Los campos installmentPercent y projectId se extraen SOLO del texto del usuario, NO de la imagen
 - "installmentPercent": usa "100" SOLO si el TEXTO DEL USUARIO dice "pagado por el cliente", "el cliente pago", "ya esta pago". Caso contrario usa "0". IMPORTANTE: Si la imagen/ticket dice "PAGADO", "CANCELADO", "ABONADO" o similar, eso NO cuenta — es solo el estado del comprobante, no significa que el cliente haya pagado. Solo el texto del usuario determina este campo.
@@ -189,12 +250,12 @@ ${vendorList}`;
           type: 'object',
           properties: {
             name: { type: 'string' },
-            amount: { type: 'number' }
+            amount: { type: 'string' }
           },
           required: ['name', 'amount']
         }
       },
-      totalAmount: { type: 'number' },
+      totalAmount: { type: 'string' },
       date: { type: 'string', nullable: true },
       paymentMethod: { type: 'string', nullable: true },
       recipientId: { type: 'string', nullable: true },
@@ -232,6 +293,7 @@ ${vendorList}`;
 
     try {
       const parsed = JSON.parse(text);
+      normalizeAmounts(parsed);
       parsed.installmentPercent = parseInt(parsed.installmentPercent, 10) || 0;
       // Resolve vendor: prefer matched vendorId, fall back to vendorName
       if (parsed.vendorId && vendors.length > 0) {
@@ -520,11 +582,11 @@ ${captionBlock}
   - "payment" para comprobantes de transferencia bancaria, recibos de pago, vouchers de deposito
   - "payment" también si el texto del usuario indica cobro: "me ingresó", "me pagaron", "cobro", "me transfirieron", "me depositaron", "me ingresaron"
   - "provider_expense" si el texto del usuario dice "gasto propio", "gasto mio", "puse de mi bolsillo", "pague yo", "puse yo"
-- IMPORTANTE: Los documentos argentinos usan punto (.) como separador de miles. Por ejemplo, "49.350" = 49350, "7.600" = 7600, "302.641" = 302641. NO interpretar el punto como separador decimal. Los montos deben ser numeros enteros o con centavos separados por coma (,).
+- IMPORTANTE: Devolver "amount" y "totalAmount" como STRINGS con el formato EXACTO tal como aparece en el documento (ej: "49.350", "7.600", "1.500,50"). NO convertir a numero. Nosotros lo parseamos despues.
 - Cada item debe tener "name" y "amount":
   - "name": descripción corta y legible. Si la cantidad es mayor a 1, incluir la cantidad al final con el formato " | x<cantidad> u". Ejemplos: "Bolsa Cemento 25kg Holcim | x10 u", "Arena Lavada x MT | x2 u". Si es 1 unidad, no agregar cantidad.
-  - "amount": SIEMPRE usar el SUBTOTAL de la linea (cantidad x precio unitario), NUNCA el precio unitario solo. Si el comprobante muestra columnas de cantidad, precio unitario y subtotal, usar el valor de subtotal.
-- "totalAmount": Si el documento tiene un total impreso, usar ese valor exacto. Si NO hay total impreso, sumar los subtotales de todos los items.
+  - "amount": SIEMPRE usar el SUBTOTAL de la linea (cantidad x precio unitario), NUNCA el precio unitario solo. Si el comprobante muestra columnas de cantidad, precio unitario y subtotal, usar el valor de subtotal. Devolver como string.
+- "totalAmount": Si el documento tiene un total impreso, usar ese valor exacto como string. Si NO hay total impreso, sumar los subtotales de todos los items y devolver como string.
 - "paymentMethod" y "recipientId" se pueden extraer del documento o del texto del usuario
 - Los campos installmentPercent y projectId se extraen SOLO del texto del usuario, NO del documento
 - "installmentPercent": usa "100" SOLO si el TEXTO DEL USUARIO dice "pagado por el cliente", "el cliente pago", "ya esta pago". Caso contrario usa "0". IMPORTANTE: Si el documento dice "PAGADO", "CANCELADO", "ABONADO" o similar, eso NO cuenta — es solo el estado del comprobante, no significa que el cliente haya pagado. Solo el texto del usuario determina este campo.
@@ -549,12 +611,12 @@ ${vendorList}`;
           type: 'object',
           properties: {
             name: { type: 'string' },
-            amount: { type: 'number' }
+            amount: { type: 'string' }
           },
           required: ['name', 'amount']
         }
       },
-      totalAmount: { type: 'number' },
+      totalAmount: { type: 'string' },
       date: { type: 'string', nullable: true },
       paymentMethod: { type: 'string', nullable: true },
       recipientId: { type: 'string', nullable: true },
@@ -592,6 +654,7 @@ ${vendorList}`;
 
     try {
       const parsed = JSON.parse(text);
+      normalizeAmounts(parsed);
       parsed.installmentPercent = parseInt(parsed.installmentPercent, 10) || 0;
       if (parsed.vendorId && vendors.length > 0) {
         const matched = vendors.find(v => v.id === parsed.vendorId);
