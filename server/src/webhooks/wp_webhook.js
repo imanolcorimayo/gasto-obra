@@ -413,6 +413,10 @@ app.get('/health', (req, res) => {
   res.sendStatus(200);
 });
 
+app.get('/test-deploy', (req, res) => {
+  res.json({ status: 'ok', deployed: 'digitalocean', timestamp: new Date().toISOString() });
+});
+
 app.get('/webhook', (req, res) => {
   const mode = req.query['hub.mode'];
   const token = req.query['hub.verify_token'];
