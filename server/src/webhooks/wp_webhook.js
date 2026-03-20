@@ -19,8 +19,10 @@ import {
   setPendingResumenSelection, getPendingResumenSelection, clearPendingResumenSelection,
   setPendingSupportRequest, getPendingSupportRequest, clearPendingSupportRequest,
   createAISupportSession, getAISupportSession, clearAISupportSession, resetSessionTimers,
-  getOnboardingState, clearOnboarding, setOnboardingState
+  getOnboardingState, clearOnboarding, setOnboardingState,
+  checkMessageRateLimit
 } from '../helpers/pendingState.js';
+import { normalizePhoneNumber } from '../helpers/phone.js';
 import { getActiveProjects, resolveProject, autoSelectProject } from '../helpers/projects.js';
 import { sendGlobalResumen, sendWeeklyResumen } from '../handlers/resumen.js';
 import { handleLinkCommand, handleUnlinkCommand, sendHelpMessage, handleAISupport } from '../handlers/commands.js';
@@ -324,9 +326,9 @@ async function checkLinkedOrOnboard(phoneNumber) {
     if (!lastActivity || (now - lastActivity) > INACTIVE_THRESHOLD) {
       await sendReturningUserWelcome(phoneNumber, linkData);
     } else {
-      db.collection(COLLECTIONS.WHATSAPP_LINKS).doc(phoneNumber).update({
+      await db.collection(COLLECTIONS.WHATSAPP_LINKS).doc(phoneNumber).update({
         lastActivity: admin.firestore.FieldValue.serverTimestamp()
-      }).catch(err => logger.error('Error updating lastActivity', { error: err }));
+      });
     }
 
     return linkData;
@@ -447,8 +449,21 @@ app.post('/webhook', verifyWebhookSignature, async (req, res) => {
     if (!value?.messages?.[0]) return;
 
     const message = value.messages[0];
-    const from = message.from;
+    const rawFrom = message.from;
+
+    if (!rawFrom || typeof rawFrom !== 'string' || !/^\d{10,15}$/.test(rawFrom)) {
+      logger.warn('Invalid phone number in webhook', { from: rawFrom });
+      return;
+    }
+
+    const from = normalizePhoneNumber(rawFrom);
     const contactName = value.contacts?.[0]?.profile?.name || 'Usuario';
+
+    if (!checkMessageRateLimit(from)) {
+      logger.warn('Rate limit exceeded', { from });
+      Sentry.captureMessage('Rate limit exceeded', { level: 'warning', extra: { from } });
+      return;
+    }
 
     if (message.type === 'text') {
       const messageText = message.text?.body || '';
@@ -1202,7 +1217,7 @@ async function confirmPendingExpense(phoneNumber, pending) {
       const newSlug = vendorSlug(data.vendor);
       const match = existingVendors.find(v => vendorSlug(v.name) === newSlug);
       if (match) {
-        expenseRef.update({ vendor: match.name });
+        await expenseRef.update({ vendor: match.name });
       } else {
         await db.collection(COLLECTIONS.VENDORS).add({ userId, name: data.vendor });
       }

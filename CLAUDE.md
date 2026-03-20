@@ -22,6 +22,10 @@ All user-facing text is in **Spanish (Argentine)**. Currency: ARS with `es-AR` l
 
 `/docs/conflictive-reports/` contains real receipt images that caused parsing issues, with `notes.md` documenting each problem and its fix/status. Use this folder as reference when working on AI prompting improvements.
 
+## Dependencies Policy
+
+Avoid adding libraries for things that can be done with plain JS. Input validation, rate limiting, and similar utilities should use simple guard clauses and native code — no zod, joi, express-rate-limit, etc.
+
 ## GitHub CLI (gh)
 
 Remote uses custom SSH alias `github-corimayo`, so `gh` commands need `--repo imanolcorimayo/gasto-obra` flag.

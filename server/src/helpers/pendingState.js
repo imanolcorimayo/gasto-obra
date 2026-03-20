@@ -232,6 +232,28 @@ export function checkSupportRateLimit(phoneNumber) {
 }
 
 // ============================================
+// Message Rate Limiting (per phone number)
+// ============================================
+const messageRateLimits = new Map();
+const MESSAGE_RATE_LIMIT = 20;
+const MESSAGE_RATE_WINDOW = 60 * 1000;
+
+export function checkMessageRateLimit(phoneNumber) {
+  const now = Date.now();
+  const entry = messageRateLimits.get(phoneNumber);
+
+  if (!entry || now >= entry.resetAt) {
+    messageRateLimits.set(phoneNumber, { count: 1, resetAt: now + MESSAGE_RATE_WINDOW });
+    return true;
+  }
+
+  if (entry.count >= MESSAGE_RATE_LIMIT) return false;
+
+  entry.count++;
+  return true;
+}
+
+// ============================================
 // Onboarding State
 // ============================================
 const ONBOARDING_TTL = 10 * 60 * 1000;
