@@ -1,0 +1,26 @@
+        <!-- Header -->
+        <div class="header">
+          <img src="https://go-api.wiseutils.com/static/img/logo.png" alt="Gasto Obra" class="header-logo">
+          <h1>{{Project_Name}}</h1>
+          <p>Resumen del {{Date}}</p>
+        </div>
+
+        <!-- Today -->
+        <div class="content">
+          <h2 class="section-title">Movimientos de hoy</h2>
+          <table class="data-table">
+            {{Today_Rows}}
+          </table>
+
+          <hr class="divider">
+
+          <h2 class="section-title">Balance del proyecto</h2>
+          <table class="data-table">
+            {{Stats_Rows}}
+          </table>
+        </div>
+
+        <!-- CTA -->
+        <div class="cta-wrap">
+          <a href="{{View_Url}}" class="cta">Ver detalle completo</a>
+        </div>

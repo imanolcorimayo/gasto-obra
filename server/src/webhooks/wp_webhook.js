@@ -1,5 +1,6 @@
 import '../../lib/instrument.js';
 import 'dotenv/config';
+import { execFileSync } from 'child_process';
 import crypto from 'crypto';
 import express from 'express';
 import * as Sentry from '@sentry/node';
@@ -1343,5 +1344,7 @@ Sentry.setupExpressErrorHandler(app);
 // Start Server
 // ============================================
 app.listen(PORT, () => {
-  logger.info('Server started', { port: PORT, verifyToken: VERIFY_TOKEN });
+  let version = 'unknown';
+  try { version = execFileSync('git', ['rev-parse', '--short', 'HEAD']).toString().trim(); } catch {}
+  logger.info('Server started', { port: PORT, verifyToken: VERIFY_TOKEN, version });
 });
