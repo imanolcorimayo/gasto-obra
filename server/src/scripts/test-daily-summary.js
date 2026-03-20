@@ -48,8 +48,8 @@ async function getClientEmail(clientUserId) {
 function buildSummaryMessage({ role, project, dateFormatted, todayExpenses, todayPayments, todayProviderExpenses, todayExpenseTotal, todayPaymentTotal, todayProviderExpenseTotal, accumulatedExpenses, accumulatedPayments, accumulatedProviderExpenses, balance, pendingTotal, viewUrl }) {
   const txCount = todayExpenses.length + todayPayments.length + (role === 'provider' ? todayProviderExpenses.length : 0);
 
-  let message = `*${project.name}* - ${dateFormatted}\n`;
-  message += `Se registraron *${txCount} movimiento${txCount > 1 ? 's' : ''}* hoy:\n`;
+  let message = `*${project.name}* - Semana ${dateFormatted}\n`;
+  message += `Se registraron *${txCount} movimiento${txCount > 1 ? 's' : ''}* esta semana:\n`;
 
   if (todayExpenseTotal > 0) {
     message += `\n  Gastos: *${formatAmount(todayExpenseTotal)}*`;
@@ -80,16 +80,20 @@ function buildSummaryMessage({ role, project, dateFormatted, todayExpenses, toda
 async function testDailySummaries() {
   logger.info('Starting TEST daily summary generation');
 
+  // Weekly summary: Monday to Friday (cron runs Friday 10 AM ART)
   const now = new Date();
   const artOffset = -3 * 60;
   const utcNow = now.getTime() + now.getTimezoneOffset() * 60000;
   const artNow = new Date(utcNow + artOffset * 60000);
 
-  const todayStart = new Date(artNow.getFullYear(), artNow.getMonth(), artNow.getDate());
-  const todayEnd = new Date(artNow.getFullYear(), artNow.getMonth(), artNow.getDate(), 23, 59, 59);
+  // Monday of this week (go back to day 1 of the week)
+  const dayOfWeek = artNow.getDay(); // 0=Sun, 1=Mon, ..., 5=Fri
+  const mondayOffset = dayOfWeek === 0 ? 6 : dayOfWeek - 1; // days since Monday
+  const weekStart = new Date(artNow.getFullYear(), artNow.getMonth(), artNow.getDate() - mondayOffset);
+  const weekEnd = new Date(artNow.getFullYear(), artNow.getMonth(), artNow.getDate() - 1, 23, 59, 59); // yesterday (Thursday)
 
-  const todayStartUTC = new Date(todayStart.getTime() - artOffset * 60000);
-  const todayEndUTC = new Date(todayEnd.getTime() - artOffset * 60000);
+  const todayStartUTC = new Date(weekStart.getTime() - artOffset * 60000);
+  const todayEndUTC = new Date(weekEnd.getTime() - artOffset * 60000);
 
   const projectsSnapshot = await db
     .collection('projects')
@@ -101,7 +105,8 @@ async function testDailySummaries() {
     return;
   }
 
-  const dateFormatted = `${String(artNow.getDate()).padStart(2, '0')}/${String(artNow.getMonth() + 1).padStart(2, '0')}/${artNow.getFullYear()}`;
+  const fmtDate = (d) => `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}`;
+  const dateFormatted = `${fmtDate(weekStart)} al ${fmtDate(weekEnd)}`;
 
   console.log(`\n=== Daily Summary Test - ${dateFormatted} ===\n`);
   console.log(`Found ${projectsSnapshot.size} active projects\n`);
@@ -189,30 +194,45 @@ async function testDailySummaries() {
 
     // Build email template variables
     function buildEmailVars(role) {
-      const todayRows = [];
-      if (todayExpenseTotal > 0) todayRows.push(row('Gastos', formatAmount(todayExpenseTotal)));
-      if (todayPaymentTotal > 0) todayRows.push(row('Pagos', formatAmount(todayPaymentTotal)));
-      if (role === 'provider' && todayProviderExpenseTotal > 0) todayRows.push(row('Gastos propios', formatAmount(todayProviderExpenseTotal)));
+      const blocks = [];
+
+      if (todayExpenseTotal > 0) {
+        blocks.push(highlightBox(
+          todayExpenses.length > 1 ? '🧱' : '🛒',
+          `Se registraron <span class="amount">${formatAmount(todayExpenseTotal)}</span> en gastos esta semana`
+        ));
+      }
+      if (todayPaymentTotal > 0) {
+        blocks.push(highlightBox('💰', `Ingresaron <span class="amount">${formatAmount(todayPaymentTotal)}</span> en pagos`));
+      }
+      if (role === 'provider' && todayProviderExpenseTotal > 0) {
+        blocks.push(highlightBox('🧾', `Gastos propios por <span class="amount">${formatAmount(todayProviderExpenseTotal)}</span>`));
+      }
 
       const statsRows = [];
-      statsRows.push(row('Total acumulado', formatAmount(accumulatedExpenses)));
-      if (role === 'provider' && accumulatedProviderExpenses > 0) statsRows.push(row('Gastos propios acum.', formatAmount(accumulatedProviderExpenses)));
+      statsRows.push(statRow('Total acumulado', formatAmount(accumulatedExpenses)));
+      if (role === 'provider' && accumulatedProviderExpenses > 0) statsRows.push(statRow('Gastos propios acum.', formatAmount(accumulatedProviderExpenses)));
       if (accumulatedPayments > 0) {
-        statsRows.push(row('Total pagos', formatAmount(accumulatedPayments)));
+        statsRows.push(statRow('Total pagos', formatAmount(accumulatedPayments)));
         const balanceColor = balance >= 0 ? '#3E9954' : '#C74840';
         statsRows.push(`<tr><td class="label">Saldo</td><td class="value" style="color: ${balanceColor};">${formatAmount(balance)}</td></tr>`);
       }
 
       return {
         Project_Name: project.name,
+        Address: project.address || '',
         Date: dateFormatted,
-        Today_Rows: todayRows.join(''),
+        Today_Blocks: blocks.join(''),
         Stats_Rows: statsRows.join(''),
         View_Url: viewUrl
       };
     }
 
-    function row(label, value) {
+    function highlightBox(emoji, text) {
+      return `<div class="highlight-box"><div class="emoji">${emoji}</div><div class="text">${text}</div></div>`;
+    }
+
+    function statRow(label, value) {
       return `<tr><td class="label">${label}</td><td class="value">${value}</td></tr>`;
     }
 
@@ -223,7 +243,7 @@ async function testDailySummaries() {
       if (clientEmail) {
         console.log(`  Sending email to ${MY_EMAIL} (original: ${clientEmail})...`);
         const vars = buildEmailVars('client');
-        const result = await resendHandler.sendEmail(MY_EMAIL, `${project.name} — Resumen ${dateFormatted}`, 'daily-summary', vars);
+        const result = await resendHandler.sendEmail(MY_EMAIL, `${project.name} — Resumen semanal ${dateFormatted}`, 'daily-summary', vars);
         console.log(`  ${result.success ? 'SENT' : 'FAILED'}: ${result.emailId || result.error}`);
       } else if (clientPhone) {
         if (isMyPhone(clientPhone)) {

@@ -2,25 +2,27 @@
         <div class="header">
           <img src="https://go-api.wiseutils.com/static/img/logo.png" alt="Gasto Obra" class="header-logo">
           <h1>{{Project_Name}}</h1>
-          <p>Resumen del {{Date}}</p>
+          <p class="subtitle">{{Address}}</p>
+          <p class="subtitle" style="margin-top: 2px;">Resumen semanal</p>
         </div>
 
-        <!-- Today -->
+        <!-- Content -->
         <div class="content">
-          <h2 class="section-title">Movimientos de hoy</h2>
-          <table class="data-table">
-            {{Today_Rows}}
-          </table>
+          <div class="date-badge">
+            <span>{{Date}}</span>
+          </div>
+
+          {{Today_Blocks}}
 
           <hr class="divider">
 
-          <h2 class="section-title">Balance del proyecto</h2>
-          <table class="data-table">
+          <h2 class="stats-title">Balance general</h2>
+          <table class="stats-table">
             {{Stats_Rows}}
           </table>
         </div>
 
         <!-- CTA -->
         <div class="cta-wrap">
-          <a href="{{View_Url}}" class="cta">Ver detalle completo</a>
+          <a href="{{View_Url}}" style="display: inline-block; background: linear-gradient(135deg, #E99A35, #FFAB40); color: #FFFFFF !important; padding: 13px 32px; border-radius: 10px; text-decoration: none; font-weight: 700; font-size: 14px; mso-padding-alt: 0;">Ver detalle completo</a>
         </div>
