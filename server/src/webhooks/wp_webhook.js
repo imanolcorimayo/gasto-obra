@@ -316,10 +316,33 @@ async function handleOnboardingStep(phoneNumber, text) {
   return false;
 }
 
-async function checkLinkedOrOnboard(phoneNumber) {
+async function findLinkDoc(phoneNumber) {
   const linkDoc = await db.collection(COLLECTIONS.WHATSAPP_LINKS).doc(phoneNumber).get();
   if (linkDoc.exists && linkDoc.data()?.status === 'linked') {
-    const linkData = linkDoc.data();
+    return { doc: linkDoc, needsMigration: false };
+  }
+  // Fallback: try legacy 549 format for numbers normalized from 549→54
+  if (phoneNumber.startsWith('54') && phoneNumber.length === 12) {
+    const legacyPhone = '549' + phoneNumber.slice(2);
+    const legacyDoc = await db.collection(COLLECTIONS.WHATSAPP_LINKS).doc(legacyPhone).get();
+    if (legacyDoc.exists && legacyDoc.data()?.status === 'linked') {
+      return { doc: legacyDoc, needsMigration: true, legacyPhone };
+    }
+  }
+  return null;
+}
+
+async function checkLinkedOrOnboard(phoneNumber) {
+  const result = await findLinkDoc(phoneNumber);
+  if (result) {
+    const linkData = result.doc.data();
+
+    // Migrate legacy phone key to normalized format
+    if (result.needsMigration) {
+      logger.info('Migrating whatsappLink to normalized phone', { from: result.legacyPhone, to: phoneNumber });
+      await db.collection(COLLECTIONS.WHATSAPP_LINKS).doc(phoneNumber).set({ ...linkData, phoneNumber });
+      await db.collection(COLLECTIONS.WHATSAPP_LINKS).doc(result.legacyPhone).delete();
+    }
 
     const lastActivity = linkData.lastActivity?.toDate();
     const now = new Date();
