@@ -217,7 +217,7 @@ export const useProjectStore = defineStore('project', {
       this.error = null;
 
       try {
-        const result = await getSchema().update(projectId, { clientUserId });
+        const result = await getSchema().joinProject(projectId, clientUserId);
 
         if (result.success) {
           if (this.currentProject?.id === projectId) {

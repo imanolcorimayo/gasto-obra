@@ -10,6 +10,7 @@
         <tr class="border-b border-go-border">
           <th class="text-[10px] font-semibold uppercase tracking-wider text-go-text-muted text-left pb-2 pr-3">Fecha</th>
           <th class="text-[10px] font-semibold uppercase tracking-wider text-go-text-muted text-left pb-2 pr-3">Concepto</th>
+          <th class="pb-2 w-6"></th>
           <th class="text-[10px] font-semibold uppercase tracking-wider text-go-text-muted text-right pb-2 pl-3">Gasto</th>
           <th class="text-[10px] font-semibold uppercase tracking-wider text-go-text-muted text-right pb-2 pl-3">Pago</th>
           <th class="text-[10px] font-semibold uppercase tracking-wider text-go-text-muted text-right pb-2 pl-3">Saldo</th>
@@ -31,6 +32,9 @@
               class="text-[10px] font-medium px-1.5 py-0.5 rounded-go-sm ml-1.5 align-middle"
               :style="getScopeTypeStyles('addition')"
             >Agregado</span>
+          </td>
+          <td class="py-3 text-center">
+            <MdiPaperclip v-if="row.hasAttachment" class="text-sm text-go-text-muted" title="Tiene adjuntos" />
           </td>
           <td class="py-3 pl-3 text-right whitespace-nowrap">
             <span v-if="row.expense" class="tabular-nums font-medium text-go-primary">{{ formatPrice(row.expense) }}</span>
@@ -58,6 +62,7 @@
 </template>
 
 <script setup>
+import MdiPaperclip from '~icons/mdi/paperclip';
 import { formatPrice, getScopeTypeStyles } from '~/utils';
 
 const props = defineProps({
@@ -106,6 +111,7 @@ const rows = computed(() => {
       expense: isPayment ? null : amount,
       payment: isPayment ? amount : null,
       balance,
+      hasAttachment: !!(e.imageUrl || e.fileUrl || e.audioUrl),
       rawExpense: e
     };
   });

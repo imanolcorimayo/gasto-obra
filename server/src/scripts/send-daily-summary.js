@@ -14,18 +14,19 @@ const APP_URL = process.env.APP_URL || 'https://gasto-obra.web.app';
 async function sendDailySummaries() {
   logger.info('Starting daily summary generation');
 
-  // Get today's date range (ART timezone)
+  // Summarize yesterday's activity (cron runs at 10 AM ART)
   const now = new Date();
   const artOffset = -3 * 60; // ART is UTC-3
   const utcNow = now.getTime() + now.getTimezoneOffset() * 60000;
   const artNow = new Date(utcNow + artOffset * 60000);
 
-  const todayStart = new Date(artNow.getFullYear(), artNow.getMonth(), artNow.getDate());
-  const todayEnd = new Date(artNow.getFullYear(), artNow.getMonth(), artNow.getDate(), 23, 59, 59);
+  const yesterday = new Date(artNow.getFullYear(), artNow.getMonth(), artNow.getDate() - 1);
+  const yesterdayStart = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate());
+  const yesterdayEnd = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate(), 23, 59, 59);
 
   // Convert back to UTC for Firestore query
-  const todayStartUTC = new Date(todayStart.getTime() - artOffset * 60000);
-  const todayEndUTC = new Date(todayEnd.getTime() - artOffset * 60000);
+  const todayStartUTC = new Date(yesterdayStart.getTime() - artOffset * 60000);
+  const todayEndUTC = new Date(yesterdayEnd.getTime() - artOffset * 60000);
 
   // Get all active projects
   const projectsSnapshot = await db
@@ -38,7 +39,7 @@ async function sendDailySummaries() {
     return;
   }
 
-  const dateFormatted = `${String(artNow.getDate()).padStart(2, '0')}/${String(artNow.getMonth() + 1).padStart(2, '0')}/${artNow.getFullYear()}`;
+  const dateFormatted = `${String(yesterday.getDate()).padStart(2, '0')}/${String(yesterday.getMonth() + 1).padStart(2, '0')}/${yesterday.getFullYear()}`;
 
   for (const projectDoc of projectsSnapshot.docs) {
     const project = projectDoc.data();

@@ -372,6 +372,7 @@ import { useRecipientStore } from '~/stores/recipient';
 import { useVendorStore } from '~/stores/vendor';
 import { useDeliveryStore } from '~/stores/delivery';
 import { useWhatsappStore } from '~/stores/whatsapp';
+import { useProviderStore } from '~/stores/provider';
 import { formatPrice, formatDate } from '~/utils';
 import { generatePaymentReport, generateReportNumber } from '~/utils/pdfReport';
 import { getCurrentUser } from '~/utils/firebase';
@@ -388,6 +389,7 @@ const recipientStore = useRecipientStore();
 const vendorStore = useVendorStore();
 const deliveryStore = useDeliveryStore();
 const whatsappStore = useWhatsappStore();
+const providerStore = useProviderStore();
 
 const managementFeePercent = ref(0);
 
@@ -469,9 +471,10 @@ onMounted(async () => {
       categoryStore.fetchForProject(id),
       recipientStore.fetchAll(),
       deliveryStore.fetchByProjectId(id),
-      whatsappStore.fetchLinkedAccount()
+      whatsappStore.fetchLinkedAccount(),
+      providerStore.fetchOrCreate()
     ]);
-    managementFeePercent.value = whatsappStore.managementFeePercent;
+    managementFeePercent.value = providerStore.managementFeePercent;
     // Load all projects for the edit modal's "move" feature
     if (projectStore.projects.length === 0) {
       await projectStore.fetchProjects();

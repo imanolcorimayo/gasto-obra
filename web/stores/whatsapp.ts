@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia';
-import { collection, query, where, onSnapshot, doc, updateDoc, type Unsubscribe } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, type Unsubscribe } from 'firebase/firestore';
 import { getFirestoreInstance, getCurrentUser } from '~/utils/firebase';
 import { WhatsappLinkSchema } from '~/utils/odm/schemas/whatsappLinkSchema';
 
@@ -19,7 +19,6 @@ interface WhatsappState {
   isLoading: boolean;
   isGenerating: boolean;
   error: string | null;
-  managementFeePercent: number;
 }
 
 let whatsappSchema: WhatsappLinkSchema | null = null;
@@ -39,13 +38,11 @@ export const useWhatsappStore = defineStore('whatsapp', {
     codeExpiresAt: null,
     isLoading: false,
     isGenerating: false,
-    error: null,
-    managementFeePercent: 0
+    error: null
   }),
 
   getters: {
     isLinked: (state) => !!state.linkedAccount,
-    hasManagementFee: (state) => state.managementFeePercent > 0,
     hasValidCode: (state) => {
       if (!state.pendingCode || !state.codeExpiresAt) return false;
       return new Date() < state.codeExpiresAt;
@@ -66,10 +63,8 @@ export const useWhatsappStore = defineStore('whatsapp', {
             ...link,
             phoneNumber: link.id
           } as LinkedAccount;
-          this.managementFeePercent = link.managementFeePercent ?? 0;
         } else {
           this.linkedAccount = null;
-          this.managementFeePercent = 0;
         }
 
         return true;
@@ -178,11 +173,9 @@ export const useWhatsappStore = defineStore('whatsapp', {
             id: snapshot.docs[0].id,
             phoneNumber: snapshot.docs[0].id
           } as LinkedAccount;
-          this.managementFeePercent = docData.managementFeePercent ?? 0;
           this.clearPendingCode();
         } else {
           this.linkedAccount = null;
-          this.managementFeePercent = 0;
         }
       });
     },
@@ -191,21 +184,6 @@ export const useWhatsappStore = defineStore('whatsapp', {
       if (unsubscribeLink) {
         unsubscribeLink();
         unsubscribeLink = null;
-      }
-    },
-
-    async saveManagementFee(percent: number) {
-      if (!this.linkedAccount) return { success: false, error: 'No hay cuenta vinculada' };
-
-      try {
-        const db = getFirestoreInstance();
-        const docRef = doc(db, 'whatsappLinks', this.linkedAccount.phoneNumber);
-        await updateDoc(docRef, { managementFeePercent: percent });
-        this.managementFeePercent = percent;
-        return { success: true };
-      } catch (error) {
-        console.error('Error saving management fee:', error);
-        return { success: false, error: 'Error al guardar el porcentaje de gestión' };
       }
     },
 

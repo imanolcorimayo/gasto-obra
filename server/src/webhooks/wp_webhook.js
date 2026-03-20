@@ -1,5 +1,7 @@
 import '../../lib/instrument.js';
 import 'dotenv/config';
+import { execFileSync } from 'child_process';
+import crypto from 'crypto';
 import express from 'express';
 import * as Sentry from '@sentry/node';
 import { admin, db, bucket, COLLECTIONS } from '../config/firebase.js';
@@ -17,8 +19,10 @@ import {
   setPendingResumenSelection, getPendingResumenSelection, clearPendingResumenSelection,
   setPendingSupportRequest, getPendingSupportRequest, clearPendingSupportRequest,
   createAISupportSession, getAISupportSession, clearAISupportSession, resetSessionTimers,
-  getOnboardingState, clearOnboarding, setOnboardingState
+  getOnboardingState, clearOnboarding, setOnboardingState,
+  checkMessageRateLimit
 } from '../helpers/pendingState.js';
+import { normalizePhoneNumber } from '../helpers/phone.js';
 import { getActiveProjects, resolveProject, autoSelectProject } from '../helpers/projects.js';
 import { sendGlobalResumen, sendWeeklyResumen } from '../handlers/resumen.js';
 import { handleLinkCommand, handleUnlinkCommand, sendHelpMessage, handleAISupport } from '../handlers/commands.js';
@@ -30,6 +34,7 @@ const app = express();
 const PORT = process.env.PORT || 4001;
 const VERIFY_TOKEN = process.env.WP_VERIFY_TOKEN || 'gasto_obra_verify';
 const APP_URL = process.env.APP_URL || 'https://gasto-obra.web.app';
+const META_APP_SECRET = process.env.META_APP_SECRET;
 
 // ============================================
 // Default expense categories
@@ -134,8 +139,8 @@ function getTypeLabel(type) {
   return 'Gasto';
 }
 
-function applyFeeToExpenseData(expenseData, aiResult, linkData) {
-  const feePercent = linkData.managementFeePercent || 0;
+function applyFeeToExpenseData(expenseData, aiResult, providerData) {
+  const feePercent = providerData.managementFeePercent || 0;
   if (feePercent > 0 && aiResult.applyManagementFee && expenseData.type === 'expense') {
     expenseData.amountBase = expenseData.amount;
     expenseData.managementFeePercent = feePercent;
@@ -321,9 +326,9 @@ async function checkLinkedOrOnboard(phoneNumber) {
     if (!lastActivity || (now - lastActivity) > INACTIVE_THRESHOLD) {
       await sendReturningUserWelcome(phoneNumber, linkData);
     } else {
-      db.collection(COLLECTIONS.WHATSAPP_LINKS).doc(phoneNumber).update({
+      await db.collection(COLLECTIONS.WHATSAPP_LINKS).doc(phoneNumber).update({
         lastActivity: admin.firestore.FieldValue.serverTimestamp()
-      }).catch(err => logger.error('Error updating lastActivity', { error: err }));
+      });
     }
 
     return linkData;
@@ -359,7 +364,36 @@ async function sendReturningUserWelcome(phoneNumber, linkData) {
 // ============================================
 // Middleware
 // ============================================
-app.use(express.json());
+app.use(express.json({
+  verify: (req, _res, buf) => {
+    req.rawBody = buf;
+  }
+}));
+
+function verifyWebhookSignature(req, res, next) {
+  if (!META_APP_SECRET) {
+    logger.warn('META_APP_SECRET not configured — skipping signature verification');
+    return next();
+  }
+
+  const signature = req.headers['x-hub-signature-256'];
+  if (!signature) {
+    logger.warn('Webhook request without signature', { ip: req.ip });
+    return res.sendStatus(401);
+  }
+
+  const expectedSignature = 'sha256=' + crypto
+    .createHmac('sha256', META_APP_SECRET)
+    .update(req.rawBody)
+    .digest('hex');
+
+  if (!crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expectedSignature))) {
+    logger.warn('Webhook signature mismatch', { ip: req.ip });
+    return res.sendStatus(401);
+  }
+
+  next();
+}
 
 app.use((req, res, next) => {
   const start = Date.now();
@@ -398,7 +432,7 @@ app.get('/webhook', (req, res) => {
   return res.sendStatus(403);
 });
 
-app.post('/webhook', async (req, res) => {
+app.post('/webhook', verifyWebhookSignature, async (req, res) => {
   logger.debug('Incoming webhook', { body: req.body });
 
   res.sendStatus(200);
@@ -415,8 +449,21 @@ app.post('/webhook', async (req, res) => {
     if (!value?.messages?.[0]) return;
 
     const message = value.messages[0];
-    const from = message.from;
+    const rawFrom = message.from;
+
+    if (!rawFrom || typeof rawFrom !== 'string' || !/^\d{10,15}$/.test(rawFrom)) {
+      logger.warn('Invalid phone number in webhook', { from: rawFrom });
+      return;
+    }
+
+    const from = normalizePhoneNumber(rawFrom);
     const contactName = value.contacts?.[0]?.profile?.name || 'Usuario';
+
+    if (!checkMessageRateLimit(from)) {
+      logger.warn('Rate limit exceeded', { from });
+      Sentry.captureMessage('Rate limit exceeded', { level: 'warning', extra: { from } });
+      return;
+    }
 
     if (message.type === 'text') {
       const messageText = message.text?.body || '';
@@ -637,6 +684,10 @@ async function prepareExpenseContext(phoneNumber) {
   let projectAutoCreated = false;
   let resolvedProject = null;
 
+  // Read provider profile for management fee
+  const providerDoc = await db.collection(COLLECTIONS.PROVIDERS).doc(userId).get();
+  const providerData = providerDoc.exists ? providerDoc.data() : {};
+
   // Validate activeProjectId is still an active project
   if (activeProjectId) {
     resolvedProject = await resolveProject(userId, activeProjectId);
@@ -667,16 +718,16 @@ async function prepareExpenseContext(phoneNumber) {
     recipients: recipients.map(r => ({ id: r.id, name: r.name, platform: r.platform })),
     paymentMethods: VALID_PAYMENT_METHODS,
     vendors,
-    managementFeePercent: linkData.managementFeePercent || 0
+    managementFeePercent: providerData.managementFeePercent || 0
   };
 
-  return { linkData, userId, activeProjectId, activeProjects, resolvedProject, providerCats, recipients, vendors, aiContext, projectAutoCreated };
+  return { linkData, providerData, userId, activeProjectId, activeProjects, resolvedProject, providerCats, recipients, vendors, aiContext, projectAutoCreated };
 }
 
 async function processExpenseResult({
   phoneNumber, userId, activeProjectId, activeProjects,
   resolvedProject: preResolvedProject,
-  aiResult, linkData, providerCats, recipients,
+  aiResult, linkData, providerData, providerCats, recipients,
   mediaUrls, originalMessage, defaultTitle,
   useAITitle = false, useAIDescription = false,
   filterItems = false, sumItemAmounts = false,
@@ -793,7 +844,7 @@ async function processExpenseResult({
       projectName: detectedProject.name,
     };
 
-    applyFeeToExpenseData(expenseData, aiResult, linkData);
+    applyFeeToExpenseData(expenseData, aiResult, providerData);
     setPendingProjectSwitchExpense(phoneNumber, userId, expenseData, detectedProject);
 
     const confirmMsg = buildExpenseConfirmationMessage(expenseData, mismatch);
@@ -819,7 +870,7 @@ async function processExpenseResult({
     projectName: project.name,
   };
 
-  applyFeeToExpenseData(expenseData, aiResult, linkData);
+  applyFeeToExpenseData(expenseData, aiResult, providerData);
   await setPendingConfirmation(phoneNumber, userId, expenseData);
 
   const confirmMsg = buildExpenseConfirmationMessage(expenseData, mismatch);
@@ -1166,7 +1217,7 @@ async function confirmPendingExpense(phoneNumber, pending) {
       const newSlug = vendorSlug(data.vendor);
       const match = existingVendors.find(v => vendorSlug(v.name) === newSlug);
       if (match) {
-        expenseRef.update({ vendor: match.name });
+        await expenseRef.update({ vendor: match.name });
       } else {
         await db.collection(COLLECTIONS.VENDORS).add({ userId, name: data.vendor });
       }
@@ -1308,5 +1359,7 @@ Sentry.setupExpressErrorHandler(app);
 // Start Server
 // ============================================
 app.listen(PORT, () => {
-  logger.info('Server started', { port: PORT, verifyToken: VERIFY_TOKEN });
+  let version = 'unknown';
+  try { version = execFileSync('git', ['rev-parse', '--short', 'HEAD']).toString().trim(); } catch {}
+  logger.info('Server started', { port: PORT, verifyToken: VERIFY_TOKEN, version });
 });

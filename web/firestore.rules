@@ -3,29 +3,51 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
+    // ── Helper ───────────────────────────────────────────────
+    // Returns true when the calling user is a participant
+    // (provider or joined client) of the given project.
+    function isProjectParticipant(projectId) {
+      let proj = get(/databases/$(database)/documents/projects/$(projectId)).data;
+      return request.auth.uid == proj.providerId
+          || request.auth.uid == proj.clientUserId;
+    }
+
     // ── Projects ──────────────────────────────────────────────
-    // Provider (auth'd): full CRUD on own projects
-    // Client (auth'd): read projects where clientUserId matches
-    // Public: read allowed for shareToken lookup flow
-    //   shareTokens are UUIDs — not enumerable or guessable
+    // Read: auth required, scoped to provider or joined client.
+    // Public preview (shareToken lookup) is served by the API server
+    // which uses Admin SDK and returns only non-sensitive fields.
     match /projects/{projectId} {
-      // Public read: needed for shareToken-based join/view flows.
-      // Authenticated users who haven't joined yet (not provider or client)
-      // would be denied if we required auth scoping on reads.
-      allow read: if true;
+      allow read: if request.auth != null
+                  && (resource.data.providerId == request.auth.uid
+                      || resource.data.clientUserId == request.auth.uid);
 
       allow create: if request.auth != null
                     && request.resource.data.providerId == request.auth.uid;
-      allow update, delete: if request.auth != null
-                            && resource.data.providerId == request.auth.uid;
+
+      // Provider: full update.
+      // Client join: any auth'd user can set clientUserId ONLY if it's
+      // currently null, setting it to their own UID, and touching no
+      // other fields besides clientUserId and updatedAt.
+      allow update: if request.auth != null
+                    && (
+                      resource.data.providerId == request.auth.uid
+                      || (
+                        resource.data.clientUserId == null
+                        && request.resource.data.clientUserId == request.auth.uid
+                        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['clientUserId', 'updatedAt'])
+                      )
+                    );
+
+      allow delete: if request.auth != null
+                    && resource.data.providerId == request.auth.uid;
     }
 
     // ── Expenses ──────────────────────────────────────────────
-    // Provider (auth'd): full CRUD on own expenses
-    // Read: open (authenticated clients need access via projectId queries)
-    //   projectIds are Firestore auto-IDs — not guessable
+    // Read: auth required + must be project participant
+    // Write: only the provider who owns the expense
     match /expenses/{expenseId} {
-      allow read: if true;
+      allow read: if request.auth != null
+                  && isProjectParticipant(resource.data.projectId);
 
       allow create: if request.auth != null
                     && request.resource.data.providerId == request.auth.uid;
@@ -34,9 +56,10 @@ service cloud.firestore {
     }
 
     // ── Deliveries ────────────────────────────────────────────
-    // Same pattern as expenses: provider owns, open read
+    // Same pattern as expenses: read for participants, write for provider
     match /deliveries/{deliveryId} {
-      allow read: if true;
+      allow read: if request.auth != null
+                  && isProjectParticipant(resource.data.projectId);
 
       allow create: if request.auth != null
                     && request.resource.data.providerId == request.auth.uid;
@@ -45,15 +68,30 @@ service cloud.firestore {
     }
 
     // ── Categories ────────────────────────────────────────────
-    // Provider (auth'd): full CRUD on own categories
-    // Read: open (authenticated clients need provider's categories)
+    // Read: auth required. Categories are provider-scoped labels/colors
+    // (not sensitive financial data) but we still require authentication.
+    // Clients read the provider's categories via authenticated queries.
+    // Write: only the owning provider.
     match /categories/{categoryId} {
-      allow read: if true;
+      allow read: if request.auth != null;
 
       allow create: if request.auth != null
                     && request.resource.data.userId == request.auth.uid;
       allow update, delete: if request.auth != null
                             && resource.data.userId == request.auth.uid;
+    }
+
+    // ── Providers (private) ────────────────────────────────────
+    // Each user can only read/write their own provider profile
+    // Doc ID = Firebase Auth UID, so we match directly
+    match /providers/{userId} {
+      allow read: if request.auth != null
+                  && request.auth.uid == userId;
+      allow create: if request.auth != null
+                    && request.auth.uid == userId;
+      allow update: if request.auth != null
+                    && request.auth.uid == userId;
+      allow delete: if false;
     }
 
     // ── WhatsApp Links (private) ──────────────────────────────

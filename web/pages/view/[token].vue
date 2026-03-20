@@ -12,33 +12,16 @@
           <MdiSun v-if="isDark" class="text-base" />
           <MdiMoon v-else class="text-base" />
         </button>
-        <span class="bg-go-surface border border-go-border rounded-go-sm px-2 py-1 text-[11px] text-go-text-muted">Vista de cliente</span>
+        <span class="bg-go-surface border border-go-border rounded-go-sm px-2 py-1 text-[11px] text-go-text-muted">Vista previa</span>
       </div>
     </header>
 
-    <div class="max-w-5xl mx-auto px-3 sm:px-6 py-6">
+    <div class="max-w-md mx-auto px-4 py-12">
       <!-- Loading skeleton -->
       <template v-if="isLoading">
-        <div class="bg-go-surface border border-go-border rounded-go-xl p-5 mb-6">
-          <div class="h-7 w-48 skeleton-shimmer bg-go-surface-alt rounded-go-md mb-3"></div>
-          <div class="h-4 w-32 skeleton-shimmer bg-go-surface-alt rounded-go-md"></div>
-        </div>
-        <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-6">
-          <div class="bg-go-bg border border-go-border-subtle rounded-go-xl px-4 py-3">
-            <div class="h-3 w-16 skeleton-shimmer bg-go-surface-alt rounded-go-md mb-2"></div>
-            <div class="h-6 w-24 skeleton-shimmer bg-go-surface-alt rounded-go-md"></div>
-          </div>
-          <div class="bg-go-bg border border-go-border-subtle rounded-go-xl px-4 py-3">
-            <div class="h-3 w-16 skeleton-shimmer bg-go-surface-alt rounded-go-md mb-2"></div>
-            <div class="h-6 w-24 skeleton-shimmer bg-go-surface-alt rounded-go-md"></div>
-          </div>
-          <div class="bg-go-bg border border-go-border-subtle rounded-go-xl px-4 py-3 hidden sm:block">
-            <div class="h-3 w-16 skeleton-shimmer bg-go-surface-alt rounded-go-md mb-2"></div>
-            <div class="h-6 w-24 skeleton-shimmer bg-go-surface-alt rounded-go-md"></div>
-          </div>
-        </div>
-        <div class="space-y-2">
-          <div v-for="i in 4" :key="i" class="bg-go-surface border border-go-border rounded-go-md h-20 skeleton-shimmer"></div>
+        <div class="bg-go-surface border border-go-border rounded-go-xl p-6">
+          <div class="h-7 w-48 skeleton-shimmer bg-go-surface-alt rounded-go-md mb-3 mx-auto"></div>
+          <div class="h-4 w-32 skeleton-shimmer bg-go-surface-alt rounded-go-md mx-auto"></div>
         </div>
       </template>
 
@@ -49,25 +32,23 @@
         <p class="text-go-text-muted text-sm mt-1">El link puede ser inválido o el proyecto ya no está disponible.</p>
       </div>
 
-      <!-- Project view -->
+      <!-- Project preview -->
       <template v-else>
-        <!-- Project header card -->
-        <div class="bg-go-surface border border-go-border rounded-go-xl p-5 mb-6">
-          <div class="flex items-start justify-between gap-3">
-            <div>
-              <h1 class="font-display font-bold text-2xl text-go-text">{{ project.name }}</h1>
-              <div class="flex items-center gap-2 mt-1">
-                <span v-if="project.tag" class="font-mono text-sm text-go-text-muted">#{{ project.tag }}</span>
-              </div>
-            </div>
+        <div class="bg-go-surface border border-go-border rounded-go-xl p-6 text-center">
+          <!-- Project name & tag -->
+          <h1 class="font-display font-bold text-2xl text-go-text">{{ project.name }}</h1>
+          <div class="flex items-center justify-center gap-2 mt-2">
+            <span v-if="project.tag" class="font-mono text-sm text-go-text-muted">#{{ project.tag }}</span>
             <span
-              class="text-xs font-semibold px-2 py-0.5 rounded-go-sm shrink-0"
+              class="text-xs font-semibold px-2 py-0.5 rounded-go-sm"
               :class="statusClasses"
             >
               {{ statusLabel }}
             </span>
           </div>
-          <div v-if="project.address || project.clientName" class="flex flex-wrap items-center gap-3 mt-3 text-sm text-go-text-tertiary">
+
+          <!-- Metadata (address, client name) -->
+          <div v-if="project.address || project.clientName" class="flex flex-wrap items-center justify-center gap-3 mt-4 text-sm text-go-text-tertiary">
             <div v-if="project.address" class="flex items-center gap-1.5">
               <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
               <span>{{ project.address }}</span>
@@ -77,178 +58,71 @@
               <span>{{ project.clientName }}</span>
             </div>
           </div>
-        </div>
 
-        <!-- Details + Summary -->
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
-          <!-- Left: financial overview -->
-          <div class="flex flex-col gap-4">
-            <!-- Financial summary strip -->
-            <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
-              <div class="bg-go-bg border border-go-border-subtle rounded-go-xl px-4 py-3">
-                <span class="text-[10px] font-semibold uppercase tracking-wider text-go-text-muted block mb-1">Total gastado</span>
-                <span class="font-display font-bold text-xl tabular-nums text-go-primary">{{ formatPrice(totalExpensesAmount) }}</span>
-              </div>
-              <div class="bg-go-bg border border-go-border-subtle rounded-go-xl px-4 py-3">
-                <span class="text-[10px] font-semibold uppercase tracking-wider text-go-text-muted block mb-1">Total cobrado</span>
-                <span class="font-display font-bold text-xl tabular-nums text-go-secondary">{{ formatPrice(totalPaymentsAmount) }}</span>
-              </div>
-              <div class="bg-go-bg border border-go-border-subtle rounded-go-xl px-4 py-3 col-span-2 sm:col-span-1">
-                <span class="text-[10px] font-semibold uppercase tracking-wider text-go-text-muted block mb-1">Saldo</span>
-                <span
-                  class="font-display font-bold text-xl tabular-nums"
-                  :class="balanceAmount >= 0 ? 'text-go-success' : 'text-go-danger'"
-                >{{ formatPrice(balanceAmount) }}</span>
-              </div>
-            </div>
-
-            <!-- Budget & timeline info -->
-            <div v-if="project.budget || project.startDate || project.estimatedEndDate" class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
-              <div v-if="project.budget" class="bg-go-surface rounded-go-md border border-go-border p-3">
-                <span class="text-go-text-muted">Presupuesto:</span>
-                <span class="text-go-text ml-2">{{ formatPrice(project.budget) }}</span>
-              </div>
-              <div v-if="project.startDate || project.estimatedEndDate" class="bg-go-surface rounded-go-md border border-go-border p-3">
-                <span class="text-go-text-muted">Cronograma:</span>
-                <span class="text-go-text ml-2">
-                  {{ project.startDate ? formatDate(project.startDate) : '—' }}
-                  →
-                  {{ project.estimatedEndDate ? formatDate(project.estimatedEndDate) : '—' }}
-                </span>
-              </div>
-            </div>
+          <!-- Budget teaser (if set) -->
+          <div v-if="project.budget" class="mt-6 bg-go-bg border border-go-border-subtle rounded-go-md px-3 py-2.5">
+            <span class="text-[10px] font-semibold uppercase tracking-wider text-go-text-muted block mb-0.5">Presupuesto</span>
+            <span class="font-display font-bold text-lg tabular-nums text-go-text">{{ formatPrice(project.budget) }}</span>
           </div>
 
-          <!-- Right: summary -->
-          <div>
-            <ExpenseSummary :expenses="allClientExpenses" :budget="project.budget" :categories="resolvedCategories" />
-          </div>
-        </div>
-
-        <!-- Expense history -->
-        <div class="mb-6">
-          <div class="flex items-center justify-between mb-3">
-            <h3 class="font-display font-semibold text-go-text">Detalle de gastos</h3>
-            <div class="flex items-center gap-2">
-              <span class="text-[11px] text-go-text-muted uppercase tracking-wider">Tipo</span>
-              <select
-                v-model="selectedType"
-                class="bg-go-surface border border-go-border rounded-go-md px-2.5 py-1.5 text-xs text-go-text focus:outline-none focus:border-go-primary cursor-pointer"
-              >
-                <option value="">Todos</option>
-                <option value="expense">Gastos</option>
-                <option value="payment">Pagos</option>
-              </select>
-            </div>
-          </div>
-          <div class="flex rounded-go-md border border-go-border overflow-hidden w-fit mb-4">
-            <button
-              @click="viewMode = 'cards'"
-              class="px-3 py-1.5 text-xs flex items-center gap-1.5 transition-colors"
-              :class="viewMode === 'cards' ? 'bg-go-surface-alt text-go-text' : 'text-go-text-tertiary hover:text-go-text'"
-            >
-              <MdiViewAgenda class="text-sm" />
-              Tarjetas
-            </button>
-            <button
-              @click="viewMode = 'table'"
-              class="px-3 py-1.5 text-xs flex items-center gap-1.5 transition-colors"
-              :class="viewMode === 'table' ? 'bg-go-surface-alt text-go-text' : 'text-go-text-tertiary hover:text-go-text'"
-            >
-              <MdiTable class="text-sm" />
-              Balance
-            </button>
+          <!-- Timeline if available -->
+          <div v-if="project.startDate || project.estimatedEndDate" class="mt-4 text-sm text-go-text-tertiary">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="inline-block mr-1"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            {{ project.startDate ? formatDate(project.startDate) : '—' }}
+            →
+            {{ project.estimatedEndDate ? formatDate(project.estimatedEndDate) : '—' }}
           </div>
 
-          <template v-if="viewMode === 'cards'">
-            <div v-if="filteredCards.length === 0" class="text-center py-12">
-              <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="mx-auto text-go-text-muted/30 mb-3"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
-              <p class="font-display text-go-text-secondary">Sin gastos</p>
-              <p class="text-go-text-muted text-sm mt-1">Todavia no hay gastos registrados en esta obra.</p>
-            </div>
-            <div v-else>
-              <p class="text-[11px] font-semibold uppercase tracking-wider text-go-text-muted mb-3">Movimientos</p>
-              <div class="space-y-2">
-                <ClientExpenseCard
-                  v-for="expense in filteredCards"
-                  :key="expense.id"
-                  :expense="expense"
-                  :categories="resolvedCategories"
-                  @view-detail="openDetailModal"
-                />
-              </div>
-            </div>
-          </template>
+          <!-- Divider -->
+          <div class="border-t border-go-border my-6"></div>
 
-          <template v-else>
-            <ClientBalanceTable :expenses="filteredAll" @view-detail="openDetailModal" />
-          </template>
+          <!-- CTA -->
+          <p class="text-go-text-secondary text-sm mb-4">Unite como cliente para ver el detalle completo de gastos, pagos y el estado financiero de tu obra.</p>
+          <button
+            @click="handleJoin"
+            :disabled="isJoining"
+            class="btn-primary inline-flex items-center gap-2 w-full justify-center"
+          >
+            <span v-if="isJoining" class="w-4 h-4 border-2 border-go-primary-on border-t-transparent rounded-full animate-spin"></span>
+            <MdiGoogle v-else class="text-lg" />
+            Unirme como cliente
+          </button>
+          <p v-if="joinError" class="text-go-danger text-xs mt-2">{{ joinError }}</p>
         </div>
       </template>
-
-      <!-- Detail expense modal -->
-      <ExpenseDetailModal
-        :show="showDetailModal"
-        :expense="detailExpense"
-        :expenses="expenses"
-        :categories="resolvedCategories"
-        :editable="false"
-        @close="showDetailModal = false"
-        @view-expense="handleDetailViewExpense"
-      />
-
-      <!-- Join as client button -->
-      <div v-if="project" class="mt-2 mb-8 bg-go-surface rounded-go-xl border border-go-border p-5 text-center">
-        <p class="text-go-text mb-3 font-ui">¿Sos el dueño de esta obra?</p>
-        <NuxtLink
-          :to="`/client/join?token=${route.params.token}`"
-          class="btn-primary inline-flex items-center gap-2"
-        >
-          Unirme como cliente
-        </NuxtLink>
-      </div>
     </div>
 
     <!-- Footer -->
     <footer class="mt-12 py-6 border-t border-go-border-subtle text-center text-go-text-muted text-xs">
-      Generado por <span class="font-display">gasto<span class="text-go-text-tertiary">obra</span></span> · Solo lectura
+      Generado por <span class="font-display">gasto<span class="text-go-text-tertiary">obra</span></span>
     </footer>
   </div>
 </template>
 
 <script setup>
-import MdiViewAgenda from '~icons/mdi/view-agenda';
-import MdiTable from '~icons/mdi/table';
 import MdiSun from '~icons/mdi/white-balance-sunny';
 import MdiMoon from '~icons/mdi/moon-waning-crescent';
+import MdiGoogle from '~icons/mdi/google';
 
 const { isDark, toggle: toggleTheme } = useTheme();
 import { useProjectStore } from '~/stores/project';
-import { useExpenseStore } from '~/stores/expense';
-import { useCategoryStore } from '~/stores/category';
-import { formatPrice, formatDate } from '~/utils';
+import { signInWithGoogle, getCurrentUserAsync } from '~/utils/firebase';
+import { formatDate, formatPrice } from '~/utils';
 
 definePageMeta({
   layout: 'landing'
 });
 
+const config = useRuntimeConfig();
 const route = useRoute();
+const router = useRouter();
 const projectStore = useProjectStore();
-const expenseStore = useExpenseStore();
-const categoryStore = useCategoryStore();
 
 const isLoading = ref(true);
+const isJoining = ref(false);
 const project = ref(null);
-const expenses = ref([]);
-const selectedType = ref('');
-const viewMode = ref('cards');
-const showDetailModal = ref(false);
-const detailExpense = ref(null);
-
-const resolvedCategories = computed(() => {
-  if (!project.value) return [];
-  return categoryStore.getResolved(project.value.id);
-});
+const projectId = ref(null);
+const joinError = ref(null);
 
 useHead({
   title: computed(() => project.value?.name || 'Vista de Proyecto')
@@ -274,68 +148,78 @@ const statusClasses = computed(() => {
   }
 });
 
-// All client-relevant expenses (for summary + table)
-const allClientExpenses = computed(() =>
-  expenses.value.filter(e => e.type !== 'provider_expense')
-);
+async function handleJoin() {
+  isJoining.value = true;
+  joinError.value = null;
 
-// Financial calculations for the summary strip
-const onlyExpenses = computed(() =>
-  allClientExpenses.value.filter(e => !e.type || e.type === 'expense')
-);
+  try {
+    // Sign in if needed
+    let user = await getCurrentUserAsync();
+    if (!user) {
+      user = await signInWithGoogle();
+    }
+    if (!user) return;
 
-const onlyPayments = computed(() =>
-  allClientExpenses.value.filter(e => e.type === 'payment')
-);
+    // Try to join directly — the update rule allows setting clientUserId
+    // if it's currently null. If already joined, this will fail gracefully
+    // (the rule also allows the current client to read).
+    const result = await projectStore.joinAsClient(projectId.value, user.uid);
+    if (result.success) {
+      useToast('success', 'Te uniste como cliente');
+      router.push(`/client/project/${projectId.value}`);
+      return;
+    }
 
-const totalExpensesAmount = computed(() =>
-  onlyExpenses.value.reduce((sum, e) => sum + (e.amount || 0), 0)
-);
+    // Join failed — might be already joined, try reading the project
+    const fullProject = await projectStore.fetchProject(projectId.value);
+    if (fullProject?.clientUserId === user.uid) {
+      router.push(`/client/project/${projectId.value}`);
+      return;
+    }
 
-const totalPaymentsAmount = computed(() =>
-  onlyPayments.value.reduce((sum, e) => sum + (e.amount || 0), 0)
-);
-
-const balanceAmount = computed(() => totalPaymentsAmount.value - totalExpensesAmount.value);
-
-// Card view hides auto-linked payments (shown as "Pagado" on expense card)
-const cardExpenses = computed(() =>
-  allClientExpenses.value.filter(e => !e.linkedExpenseId)
-);
-
-// Apply type filter to each view
-const filteredCards = computed(() => applyTypeFilter(cardExpenses.value));
-const filteredAll = computed(() => applyTypeFilter(allClientExpenses.value));
-
-function openDetailModal(expense) {
-  detailExpense.value = expense;
-  showDetailModal.value = true;
-}
-
-function handleDetailViewExpense(expense) {
-  detailExpense.value = expense;
-}
-
-function applyTypeFilter(list) {
-  if (!selectedType.value) return list;
-  if (selectedType.value === 'expense') {
-    return list.filter(e => !e.type || e.type === 'expense');
+    joinError.value = result.error || 'Error al unirse';
+  } catch (error) {
+    console.error('Error joining:', error);
+    joinError.value = 'Error al unirse al proyecto';
+  } finally {
+    isJoining.value = false;
   }
-  return list.filter(e => e.type === selectedType.value);
 }
 
 onMounted(async () => {
   const token = route.params.token;
 
-  const projectResult = await projectStore.fetchProjectByShareToken(token);
-  project.value = projectResult;
+  try {
+    const apiBase = config.public.apiBase;
+    const res = await fetch(`${apiBase}/api/project-preview/${token}`);
+    if (res.ok) {
+      const data = await res.json();
+      projectId.value = data.id;
+      project.value = data;
+    }
+  } catch (error) {
+    console.error('Error fetching project preview:', error);
+  }
 
-  if (projectResult) {
-    await Promise.all([
-      expenseStore.fetchByProjectIdPublic(projectResult.id),
-      categoryStore.fetchForProviderPublic(projectResult.providerId, projectResult.id)
-    ]);
-    expenses.value = expenseStore.expenses;
+  // If already signed in, try to read the project — if readable,
+  // the user is a participant and we can redirect to the full view.
+  if (projectId.value) {
+    const user = await getCurrentUserAsync();
+    if (user) {
+      try {
+        const fullProject = await projectStore.fetchProject(projectId.value);
+        if (fullProject?.providerId === user.uid) {
+          router.replace(`/projects/${projectId.value}`);
+          return;
+        }
+        if (fullProject?.clientUserId === user.uid) {
+          router.replace(`/client/project/${projectId.value}`);
+          return;
+        }
+      } catch {
+        // Not a participant — stay on preview page
+      }
+    }
   }
 
   isLoading.value = false;

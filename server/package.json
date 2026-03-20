@@ -5,7 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "node --watch src/webhooks/wp_webhook.js",
+    "dev:api": "node --watch src/index.js",
     "start": "node src/webhooks/wp_webhook.js",
+    "start:api": "node src/index.js",
     "daily-summary": "node src/scripts/send-daily-summary.js",
     "seed-faq": "node src/scripts/seed-faq.js"
   },
@@ -15,6 +17,7 @@
     "express": "^4.21.0",
     "firebase-admin": "^12.0.0",
     "pdf-parse": "^2.4.5",
+    "resend": "^6.9.4",
     "sharp": "^0.34.5",
     "winston": "^3.19.0"
   }

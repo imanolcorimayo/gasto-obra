@@ -625,6 +625,7 @@
 <script setup>
 import { signInWithGoogle, getCurrentUserAsync } from '~/utils/firebase';
 import { useProjectStore } from '~/stores/project';
+import { useProviderStore } from '~/stores/provider';
 
 definePageMeta({
   layout: 'landing'
@@ -718,6 +719,8 @@ async function handleLogin() {
   try {
     const user = await signInWithGoogle();
     if (user) {
+      // Ensure provider profile exists (fire-and-forget, don't block login)
+      useProviderStore().ensureExists();
       await redirectUser(user);
     }
   } catch (error) {

@@ -16,7 +16,7 @@ function isGeminiError(result) {
 }
 
 export async function handleLinkCommand(phoneNumber, code, contactName) {
-  if (!code) {
+  if (!code || code.length > 20 || !/^[A-Z0-9]+$/.test(code)) {
     await sendWhatsAppMessage(phoneNumber, 'Formato incorrecto. Usá: VINCULAR <código>\n\nEjemplo: VINCULAR ABC123');
     return;
   }
