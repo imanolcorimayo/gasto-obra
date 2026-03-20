@@ -17,11 +17,11 @@
     <LandingNavbar :show-login="true" :login-loading="isLoading" @login="handleLogin" />
 
     <!-- ═══ HERO ═══ -->
-    <section class="min-h-screen flex items-center relative overflow-hidden">
+    <section class="relative overflow-hidden">
       <!-- Ambient glow -->
       <div class="absolute top-1/4 left-1/2 -translate-x-1/2 w-[600px] h-[600px] bg-go-primary/[0.04] rounded-full blur-[120px] pointer-events-none"></div>
 
-      <div class="max-w-6xl mx-auto px-5 pt-24 pb-16 w-full">
+      <div class="max-w-6xl mx-auto px-5 pt-28 pb-20 w-full">
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
           <!-- Left: Copy -->
           <div ref="heroTextRef" class="landing-fade-up">
