@@ -27,10 +27,12 @@
     "@pinia/nuxt": "^0.5.1",
     "@sentry/nuxt": "^10.42.0",
     "@vueuse/core": "^10.7.2",
+    "chart.js": "^4.5.1",
     "firebase": "^10.8.0",
     "jspdf": "^4.2.0",
     "jspdf-autotable": "^5.0.7",
     "pinia": "^2.1.7",
+    "vue-chartjs": "^5.3.3",
     "vue3-toastify": "^0.2.1"
   }
 }

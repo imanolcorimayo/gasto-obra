@@ -108,12 +108,28 @@ interface FaqItem {
   order: number
 }
 
-const isLoading = ref(true)
-const error = ref(false)
-const faqItems = ref<FaqItem[]>([])
 const openItems = ref(new Set<string>())
 
+const faqSchema = new FaqSchema()
+
+const { data: faqItems, status, error } = await useAsyncData('faq', async () => {
+  const result = await faqSchema.fetchAll()
+  if (!result.success || !result.data) throw new Error('Failed to load FAQ')
+  return result.data.map((item: any) => ({
+    id: item.id,
+    topic: item.topic,
+    topicLabel: item.topicLabel,
+    topicOrder: item.topicOrder,
+    question: item.question,
+    answer: item.answer,
+    order: item.order,
+  })) as FaqItem[]
+})
+
+const isLoading = computed(() => status.value === 'pending')
+
 const groupedFaq = computed(() => {
+  if (!faqItems.value) return []
   const groups = new Map<string, { topic: string; topicLabel: string; topicOrder: number; items: FaqItem[] }>()
   for (const item of faqItems.value) {
     if (!groups.has(item.topic)) {
@@ -140,24 +156,6 @@ function toggle(id: string) {
   }
   openItems.value = next
 }
-
-const faqSchema = new FaqSchema()
-
-onMounted(async () => {
-  try {
-    const result = await faqSchema.fetchAll()
-    if (result.success && result.data) {
-      faqItems.value = result.data as FaqItem[]
-    } else {
-      error.value = true
-    }
-  } catch (e) {
-    console.error('Error loading FAQ:', e)
-    error.value = true
-  } finally {
-    isLoading.value = false
-  }
-})
 </script>
 
 <style scoped>

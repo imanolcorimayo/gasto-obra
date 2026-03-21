@@ -24,7 +24,7 @@
               v-if="isAuthenticated"
               @click="goToDashboard"
               :disabled="isLoading"
-              class="inline-flex items-center gap-3 text-base px-8 py-3.5 rounded-go-lg shadow-go-md hover:shadow-go-lg transition-all font-semibold bg-go-primary text-go-text-inverse hover:bg-go-primary-hover active:scale-[0.97] focus:outline-none focus:ring-2 focus:ring-offset-2"
+              class="inline-flex items-center gap-3 text-base px-8 py-3.5 rounded-go-lg shadow-go-md hover:shadow-go-lg transition-all font-semibold bg-go-primary text-white hover:bg-go-primary-hover active:scale-[0.97] focus:outline-none focus:ring-2 focus:ring-offset-2"
               style="--tw-ring-color: rgba(255, 171, 64, 0.5); --tw-ring-offset-color: var(--go-bg);"
             >
               <template v-if="!isLoading">Ir al dashboard</template>
@@ -207,6 +207,7 @@
     <!-- ═══ FEATURES ═══ -->
     <section class="py-20 sm:py-28">
       <div class="max-w-6xl mx-auto px-5">
+        <h2 class="sr-only">Funcionalidades</h2>
         <div ref="featuresRef" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
           <!-- Feature 1: WhatsApp -->
           <div class="bg-go-surface border border-go-border rounded-go-xl p-6 hover:bg-go-surface-hover transition-colors landing-fade-up">
@@ -307,7 +308,7 @@
                 <path stroke-linecap="round" stroke-linejoin="round" d="M7.5 8.25h9m-9 3H12m-9.75 1.51c0 1.6 1.123 2.994 2.707 3.227 1.087.16 2.185.283 3.293.369V21l4.076-4.076a1.526 1.526 0 0 1 1.037-.443 48.282 48.282 0 0 0 5.68-.494c1.584-.233 2.707-1.626 2.707-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0 0 12 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018Z" />
               </svg>
             </div>
-            <h4 class="text-go-text font-medium mb-1">Texto libre</h4>
+            <h3 class="text-go-text font-medium mb-1">Texto libre</h3>
             <p class="text-go-text-secondary text-sm leading-relaxed">
               Escribí como hablás: monto, descripción y categoría se extraen del mensaje automáticamente.
             </p>
@@ -324,7 +325,7 @@
                 <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 12.75a4.5 4.5 0 1 1-9 0 4.5 4.5 0 0 1 9 0Z" />
               </svg>
             </div>
-            <h4 class="text-go-text font-medium mb-1">Foto de comprobante</h4>
+            <h3 class="text-go-text font-medium mb-1">Foto de comprobante</h3>
             <p class="text-go-text-secondary text-sm leading-relaxed">
               Sacale foto al ticket o comprobante. Se leen los items, montos y comercio directo de la imagen.
             </p>
@@ -340,7 +341,7 @@
                 <path stroke-linecap="round" stroke-linejoin="round" d="M12 18.75a6 6 0 0 0 6-6v-1.5m-6 7.5a6 6 0 0 1-6-6v-1.5m6 7.5v3.75m-3.75 0h7.5M12 15.75a3 3 0 0 1-3-3V4.5a3 3 0 0 1 6 0v8.25a3 3 0 0 1-3 3Z" />
               </svg>
             </div>
-            <h4 class="text-go-text font-medium mb-1">Mensaje de audio</h4>
+            <h3 class="text-go-text font-medium mb-1">Mensaje de audio</h3>
             <p class="text-go-text-secondary text-sm leading-relaxed">
               Grabá un audio contando el gasto. Se transcribe y se extraen todos los datos automáticamente.
             </p>
@@ -356,7 +357,7 @@
                 <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
               </svg>
             </div>
-            <h4 class="text-go-text font-medium mb-1">Factura en PDF</h4>
+            <h3 class="text-go-text font-medium mb-1">Factura en PDF</h3>
             <p class="text-go-text-secondary text-sm leading-relaxed">
               Reenviá la factura o presupuesto en PDF. Se procesan los items, montos y datos del documento.
             </p>
@@ -600,7 +601,7 @@
         </p>
         <NuxtLink
           to="/contactanos"
-          class="inline-flex items-center gap-2 px-6 py-3 rounded-go-lg border-2 border-go-primary text-go-primary font-semibold text-sm hover:bg-go-primary hover:text-go-text-inverse transition-all active:scale-[0.97]"
+          class="inline-flex items-center gap-2 px-6 py-3 rounded-go-lg border-2 border-go-primary text-go-primary font-semibold text-sm hover:bg-go-primary hover:text-white transition-all active:scale-[0.97]"
         >
           Contactanos
         </NuxtLink>
@@ -622,7 +623,7 @@
           v-if="isAuthenticated"
           @click="goToDashboard"
           :disabled="isLoading"
-          class="inline-flex items-center gap-3 text-base px-8 py-3.5 rounded-go-lg shadow-go-md hover:shadow-go-lg transition-all font-semibold bg-go-primary text-go-text-inverse hover:bg-go-primary-hover active:scale-[0.97] focus:outline-none focus:ring-2 focus:ring-offset-2"
+          class="inline-flex items-center gap-3 text-base px-8 py-3.5 rounded-go-lg shadow-go-md hover:shadow-go-lg transition-all font-semibold bg-go-primary text-white hover:bg-go-primary-hover active:scale-[0.97] focus:outline-none focus:ring-2 focus:ring-offset-2"
           style="--tw-ring-color: rgba(255, 171, 64, 0.5); --tw-ring-offset-color: var(--go-bg);"
         >
           <template v-if="!isLoading">Ir al dashboard</template>
@@ -674,7 +675,7 @@
               <button
                 @click="handleModalLogin"
                 :disabled="isLoading"
-                class="w-full inline-flex items-center justify-center gap-3 text-base px-6 py-3 rounded-go-lg font-semibold bg-go-primary text-go-text-inverse hover:bg-go-primary-hover active:scale-[0.97] transition-all"
+                class="w-full inline-flex items-center justify-center gap-3 text-base px-6 py-3 rounded-go-lg font-semibold bg-go-primary text-white hover:bg-go-primary-hover active:scale-[0.97] transition-all"
               >
                 <svg v-if="!isLoading" class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
                   <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 01-2.2 3.32v2.77h3.57c2.08-1.92 3.27-4.74 3.27-8.1z" fill="#4285F4"/>

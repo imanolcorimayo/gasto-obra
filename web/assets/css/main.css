@@ -50,11 +50,11 @@ input[type="number"] {
   --go-border:          #B8AFA2;
   --go-border-subtle:   #CFC7BA;
 
-  /* Primary (amber — darkened for WCAG AA on white) */
-  --go-primary:         #BF6C15;
-  --go-primary-hover:   #A85E0E;
-  --go-primary-active:  #96520C;
-  --go-primary-muted:   rgba(191, 108, 21, 0.10);
+  /* Primary (amber — darkened for WCAG AA on all light surfaces) */
+  --go-primary:         #A35C0D;
+  --go-primary-hover:   #8E500B;
+  --go-primary-active:  #7D470A;
+  --go-primary-muted:   rgba(163, 92, 13, 0.10);
   --go-primary-on:      #FFFFFF;
 
   /* Secondary (olive/green) */

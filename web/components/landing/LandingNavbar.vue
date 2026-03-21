@@ -34,7 +34,7 @@
         <NuxtLink
           v-if="authenticated"
           to="/projects"
-          class="px-4 py-2 rounded-go-md bg-go-primary text-go-text-inverse text-sm font-medium hover:bg-go-primary-hover transition-colors"
+          class="px-4 py-2 rounded-go-md bg-go-primary text-white text-sm font-medium hover:bg-go-primary-hover transition-colors"
         >
           Ir al dashboard
         </NuxtLink>
