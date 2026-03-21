@@ -1089,6 +1089,7 @@ async function handleTextExpense(phoneNumber, text) {
 
   if (!isGeminiError(result) && result?.isSupportQuestion && (!result.totalAmount || result.totalAmount === 0)) {
     const session = createAISupportSession(phoneNumber);
+    await sendWhatsAppMessage(phoneNumber, '💡 Modo soporte activado — Escribí *listo* para volver a registrar gastos.');
     await handleAISupport(phoneNumber, text, session, { geminiHandler, getFaqData });
     return;
   }

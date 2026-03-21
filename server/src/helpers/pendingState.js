@@ -169,17 +169,22 @@ export function resetSessionTimers(phoneNumber) {
     const current = pendingAISupportSessions.get(phoneNumber);
     if (current === session) {
       try {
-        await sendWhatsAppMessage(phoneNumber, 'El soporte se cerrará en 3 minutos.');
+        await sendWhatsAppMessage(phoneNumber, 'El soporte se cierra en 3 minutos ⏳ Escribí tu consulta o *listo* para salir.');
       } catch (err) {
         logger.error('Error sending session warning', { error: err });
       }
     }
   }, AI_SUPPORT_WARNING_TTL);
 
-  session.expiryTimerId = setTimeout(() => {
+  session.expiryTimerId = setTimeout(async () => {
     const current = pendingAISupportSessions.get(phoneNumber);
     if (current === session) {
       pendingAISupportSessions.delete(phoneNumber);
+      try {
+        await sendWhatsAppMessage(phoneNumber, 'Sesión de soporte finalizada ✅ Estás de vuelta en modo gastos. Escribí *AYUDA* para volver a consultar.');
+      } catch (err) {
+        logger.error('Error sending session expiry message', { error: err });
+      }
     }
   }, AI_SUPPORT_SESSION_TTL);
 }
