@@ -36,7 +36,7 @@
 </template>
 
 <script setup lang="ts">
-withDefaults(defineProps<{ size?: number }>(), { size: 100 })
+withDefaults(defineProps<{ size?: number }>(), { size: 180 })
 </script>
 
 <style scoped>

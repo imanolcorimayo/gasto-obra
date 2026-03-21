@@ -73,6 +73,7 @@ export interface Expense {
   vendor: string | null;
   amountBase: number | null;
   managementFeePercent: number | null;
+  passThrough: boolean | null;
   source: 'whatsapp' | 'web';
   date: any;
   createdAt: any;

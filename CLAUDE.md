@@ -30,6 +30,19 @@ Keep code simple, but never at the expense of user experience. Every user-facing
 
 Avoid adding libraries for things that can be done with plain JS. Input validation, rate limiting, and similar utilities should use simple guard clauses and native code — no zod, joi, express-rate-limit, etc.
 
+## Casquito (Mascot)
+
+Hardhat from the logo with two dots for eyes. No mouth, no limbs. Emotion via eye shape, head tilt, and contextual symbols. All components are pure SVG, accept a `size` prop (default 100), and live in `web/components/`. Full design spec: `docs/casquito-demo.html`.
+
+| Component | State | Use for |
+|---|---|---|
+| `CasquitoNeutral` | Calm, symmetric eyes, float | Default/idle states |
+| `CasquitoHappy` | Arc eyes, sparkles, bounce | Success, completion |
+| `CasquitoConfused` | Tilted, asymmetric eyes, "?", wobble | 404, errors, FAQ |
+| `CasquitoWorking` | Neutral eyes, hammer, dust, bob | Loading, processing |
+| `CasquitoAlert` | Wide eyes with highlights, "!", pulse | Warnings, attention |
+| `CasquitoSleeping` | Closed eyes (lines), "zzz", sway | Maintenance, inactive |
+
 ## GitHub CLI (gh)
 
 Remote uses custom SSH alias `github-corimayo`, so `gh` commands need `--repo imanolcorimayo/gasto-obra` flag.

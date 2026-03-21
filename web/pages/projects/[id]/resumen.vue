@@ -4,13 +4,13 @@
 
     <div v-else-if="!project" class="text-center py-16">
       <h2 class="font-display text-xl font-semibold text-go-text-secondary">Proyecto no encontrado</h2>
-      <NuxtLink to="/client" class="text-go-primary text-sm mt-4 inline-block hover:underline">&larr; Volver a mis obras</NuxtLink>
+      <NuxtLink to="/projects" class="text-go-primary text-sm mt-4 inline-block hover:underline">&larr; Volver a proyectos</NuxtLink>
     </div>
 
     <template v-else>
       <!-- Back link -->
       <NuxtLink
-        :to="`/client/project/${route.params.id}`"
+        :to="`/projects/${route.params.id}`"
         class="text-go-text-muted text-sm hover:text-go-text inline-flex items-center gap-1 mb-4"
       >
         <MdiArrowLeft class="text-lg" />
@@ -46,7 +46,7 @@
           </div>
 
           <!-- Projection -->
-          <div v-if="projectedTotal" class="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-4 border-t border-go-border">
+          <div v-if="projectedTotal" class="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-4 border-t border-go-border">
             <div>
               <span class="text-xs font-semibold uppercase tracking-wider text-go-text-muted block mb-0.5">Promedio semanal</span>
               <span class="font-display font-bold text-lg tabular-nums text-go-text">{{ formatPrice(avgWeeklySpend) }}</span>
@@ -70,20 +70,139 @@
               >{{ formatPrice(Math.abs(budgetRemaining)) }}</span>
               <span class="text-xs text-go-text-muted block">{{ budgetRemaining >= 0 ? 'disponible' : 'excedido' }}</span>
             </div>
+            <div class="flex flex-col">
+              <span class="text-xs font-semibold uppercase tracking-wider text-go-text-muted block mb-0.5">Gastos propios</span>
+              <span class="font-display font-bold text-lg tabular-nums" :class="totalProviderExpenses > 0 ? 'text-go-text' : 'text-go-text-muted'">{{ formatPrice(totalProviderExpenses) }}</span>
+              <button @click="showBalanceModal = true" class="text-xs px-2.5 py-1 mt-auto pt-1.5 rounded-go-sm bg-go-primary text-go-primary-on hover:opacity-90 transition-opacity cursor-pointer self-start">
+                {{ balanceCalculated ? 'Recalcular' : 'Calcular' }}
+              </button>
+            </div>
           </div>
         </template>
 
         <div v-else class="flex flex-col items-center py-4">
           <CasquitoNeutral :size="180" />
-          <p class="text-sm text-go-text-muted mt-3">Tu proveedor todavía no definió un presupuesto para esta obra.</p>
-          <NuxtLink :to="`/client/project/${route.params.id}`" class="text-sm text-go-primary hover:underline mt-1 inline-block">Volver al proyecto →</NuxtLink>
+          <p class="text-sm text-go-text-muted mt-3">Definí un presupuesto para ver proyecciones y seguimiento.</p>
+          <NuxtLink :to="`/projects/${route.params.id}`" class="text-sm text-go-primary hover:underline mt-1 inline-block">Editar proyecto →</NuxtLink>
         </div>
       </section>
 
-      <!-- ==================== 2. SPENDING OVER TIME ==================== -->
+      <!-- ==================== 2. TU BALANCE ==================== -->
+      <section class="bg-go-surface border border-go-border rounded-go-xl p-5 mb-6">
+        <h3 class="font-display font-semibold text-go-text mb-1">Tu balance en esta obra</h3>
+        <p class="text-xs text-go-text-muted mb-4">De todo lo que el cliente te paga, solo cuenta como ingreso lo que no fue para cubrir compras de materiales. A eso sumale tus honorarios y restale lo que pusiste de tu bolsillo.</p>
+
+        <template v-if="balanceCalculated">
+          <div class="sm:flex sm:gap-4 mb-3">
+            <!-- Result highlight — hero number first -->
+            <div
+              class="rounded-go-lg p-5 mb-4 sm:mb-0 sm:w-auto sm:flex-shrink-0"
+              :class="netBalance >= 0
+                ? 'bg-gradient-to-br from-go-secondary/10 to-go-secondary/5 border border-go-secondary/20'
+                : 'bg-gradient-to-br from-go-danger/10 to-go-danger/5 border border-go-danger/20'"
+            >
+              <div class="flex items-center gap-4">
+                <div>
+                  <span class="text-xs font-semibold uppercase tracking-wider block mb-1" :class="netBalance >= 0 ? 'text-go-secondary' : 'text-go-danger'">
+                    {{ netBalance >= 0 ? 'Te quedó en el bolsillo' : 'Estás poniendo de más' }}
+                  </span>
+                  <span
+                    class="font-display font-bold text-3xl tabular-nums"
+                    :class="netBalance >= 0 ? 'text-go-secondary' : 'text-go-danger'"
+                  >{{ formatPrice(Math.abs(netBalance)) }}</span>
+                </div>
+                <div
+                  class="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0"
+                  :class="netBalance >= 0 ? 'bg-go-secondary/15' : 'bg-go-danger/15'"
+                >
+                  <component
+                    :is="netBalance >= 0 ? TrendingUpIcon : TrendingDownIcon"
+                    class="text-xl"
+                    :class="netBalance >= 0 ? 'text-go-secondary' : 'text-go-danger'"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <!-- Formula breakdown -->
+            <div class="rounded-go-md bg-go-surface-alt/50 p-4 sm:flex-1 sm:flex sm:items-center">
+              <div class="space-y-2.5 text-sm w-full">
+                <div class="flex items-center justify-between">
+                  <span class="text-go-text-muted">Cobros del cliente</span>
+                  <span class="font-display font-semibold tabular-nums text-go-text">{{ formatPrice(totalPayments) }}</span>
+                </div>
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center gap-1.5">
+                    <span class="w-1 h-1 rounded-full bg-go-danger"></span>
+                    <span class="text-go-text-muted">Compras/materiales</span>
+                    <span class="text-[10px] text-go-text-muted/70 tabular-nums">({{ passThroughCount }})</span>
+                  </div>
+                  <span class="font-display font-medium tabular-nums text-go-danger">−{{ formatPrice(totalPassThrough) }}</span>
+                </div>
+                <div v-if="totalManagementFee > 0" class="flex items-center justify-between">
+                  <div class="flex items-center gap-1.5">
+                    <span class="w-1 h-1 rounded-full bg-go-secondary"></span>
+                    <span class="text-go-text-muted">Honorarios de gestión</span>
+                  </div>
+                  <span class="font-display font-medium tabular-nums text-go-secondary">+{{ formatPrice(totalManagementFee) }}</span>
+                </div>
+                <div v-if="totalProviderExpenses > 0" class="flex items-center justify-between">
+                  <div class="flex items-center gap-1.5">
+                    <span class="w-1 h-1 rounded-full bg-go-danger"></span>
+                    <span class="text-go-text-muted">Gastos propios</span>
+                  </div>
+                  <span class="font-display font-medium tabular-nums text-go-danger">−{{ formatPrice(totalProviderExpenses) }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="flex items-center justify-between">
+            <span class="text-xs text-go-text-muted">{{ passThroughCount }} gastos marcados como pass-through</span>
+            <button @click="showBalanceModal = true" class="text-xs text-go-primary hover:underline cursor-pointer font-medium">
+              Recalcular
+            </button>
+          </div>
+        </template>
+
+        <template v-else>
+          <div class="flex flex-col items-center py-4">
+            <CasquitoNeutral :size="120" />
+            <p class="text-sm text-go-text-muted mt-3 text-center max-w-sm">
+              Marcá qué gastos son "de paso" (materiales, compras) y calculamos cuánto te queda a vos de esta obra.
+            </p>
+            <button @click="showBalanceModal = true" class="btn-primary mt-4 cursor-pointer">
+              Calculá tu balance
+            </button>
+          </div>
+        </template>
+      </section>
+
+      <!-- Balance Calculator Modal -->
+      <BalanceCalculatorModal
+        :show="showBalanceModal"
+        :expenses="clientExpenses"
+        :categories="resolvedCategories"
+        @close="showBalanceModal = false"
+        @save="handleBalanceSave"
+      />
+
+      <!-- ==================== 3. SPENDING OVER TIME ==================== -->
       <section class="bg-go-surface border border-go-border rounded-go-xl p-5 mb-6">
         <div class="flex items-center justify-between mb-4">
-          <h3 class="font-display font-semibold text-go-text">Gastos por semana</h3>
+          <div class="flex items-center gap-3">
+            <h3 class="font-display font-semibold text-go-text">Gastos por semana</h3>
+            <div v-if="totalProviderExpenses > 0" class="flex items-center gap-3 text-xs">
+              <div class="flex items-center gap-1.5">
+                <span class="w-2.5 h-2.5 rounded-full" style="background-color: #A35C0D"></span>
+                <span class="text-go-text-muted">Cobrables</span>
+              </div>
+              <div class="flex items-center gap-1.5">
+                <span class="w-2.5 h-2.5 rounded-full" style="background-color: #8B847A"></span>
+                <span class="text-go-text-muted">Propios</span>
+              </div>
+            </div>
+          </div>
           <div class="flex gap-1">
             <button
               v-for="mode in ['weekly', 'daily']"
@@ -106,7 +225,7 @@
       <!-- ==================== 3. PAYMENTS VS EXPENSES ==================== -->
       <section class="bg-go-surface border border-go-border rounded-go-xl p-5 mb-6">
         <div class="flex items-center justify-between mb-4">
-          <h3 class="font-display font-semibold text-go-text">Pagos vs Gastos</h3>
+          <h3 class="font-display font-semibold text-go-text">Cobros vs Gastos</h3>
           <div class="flex items-center gap-4 text-xs">
             <div class="flex items-center gap-1.5">
               <span class="w-2.5 h-2.5 rounded-full bg-go-primary"></span>
@@ -114,7 +233,11 @@
             </div>
             <div class="flex items-center gap-1.5">
               <span class="w-2.5 h-2.5 rounded-full bg-go-secondary"></span>
-              <span class="text-go-text-muted">Pagos</span>
+              <span class="text-go-text-muted">Cobros</span>
+            </div>
+            <div v-if="totalProviderExpenses > 0" class="flex items-center gap-1.5">
+              <span class="w-2.5 h-2.5 rounded-full" style="background-color: #8B847A"></span>
+              <span class="text-go-text-muted">Propios</span>
             </div>
           </div>
         </div>
@@ -133,7 +256,7 @@
         </div>
       </section>
 
-      <!-- ==================== 4. CATEGORY BREAKDOWN ==================== -->
+      <!-- ==================== 5. CATEGORY BREAKDOWN ==================== -->
       <section class="bg-go-surface border border-go-border rounded-go-xl p-5 mb-6">
         <h3 class="font-display font-semibold text-go-text mb-4">Gastos por categoría</h3>
 
@@ -224,30 +347,56 @@
             </div>
           </div>
           <div class="mt-4 pt-4 border-t border-go-border flex items-center justify-between text-sm text-go-text-muted">
-            <span>{{ expenseCount }} gastos en total</span>
+            <span>{{ clientExpenseCount }} gastos cobrables en total</span>
             <span class="font-display font-bold tabular-nums text-go-primary">{{ formatPrice(totalExpenses) }}</span>
           </div>
         </div>
       </section>
 
-      <!-- ==================== 6. MANAGEMENT FEE ==================== -->
+      <!-- ==================== 8. DELIVERY OVERVIEW ==================== -->
       <section class="bg-go-surface border border-go-border rounded-go-xl p-5 mb-6">
-        <h3 class="font-display font-semibold text-go-text mb-4">Gastos de gestión</h3>
+        <h3 class="font-display font-semibold text-go-text mb-4">Entregas</h3>
 
-        <template v-if="totalManagementFee > 0">
-          <div class="flex items-end justify-between">
+        <template v-if="deliveries.length > 0">
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
             <div>
-              <span class="font-display font-bold text-xl tabular-nums text-go-text-secondary">{{ formatPrice(Math.round(totalManagementFee)) }}</span>
-              <span class="text-xs text-go-text-muted block mt-1">incluido en el total de gastos</span>
+              <span class="text-xs font-semibold uppercase tracking-wider text-go-text-muted block mb-0.5">Entregas</span>
+              <span class="font-display font-bold text-xl tabular-nums text-go-text">{{ deliveries.length }}</span>
             </div>
-            <span class="text-sm tabular-nums text-go-text-muted">{{ managementFeePercent }}% del total</span>
+            <div>
+              <span class="text-xs font-semibold uppercase tracking-wider text-go-text-muted block mb-0.5">Gastos asignados</span>
+              <span class="font-display font-bold text-xl tabular-nums text-go-text">{{ assignedExpenseCount }}</span>
+              <span class="text-xs text-go-text-muted"> de {{ clientExpenseCount }}</span>
+            </div>
+            <div>
+              <span class="text-xs font-semibold uppercase tracking-wider text-go-text-muted block mb-0.5">Sin asignar</span>
+              <span
+                class="font-display font-bold text-xl tabular-nums"
+                :class="unassignedExpenseCount > 0 ? 'text-go-warning' : 'text-go-success'"
+              >{{ unassignedExpenseCount }}</span>
+            </div>
+          </div>
+
+          <!-- Delivery list -->
+          <div class="pt-4 border-t border-go-border space-y-2">
+            <div
+              v-for="d in deliverySummaries"
+              :key="d.id"
+              class="flex items-center justify-between text-sm px-3 py-2 rounded-go-md bg-go-surface-alt/50"
+            >
+              <div class="flex items-center gap-2">
+                <span class="font-display font-semibold text-go-text">Entrega #{{ d.number }}</span>
+                <span class="text-xs text-go-text-muted">{{ d.expenseCount }} gastos</span>
+              </div>
+              <span class="font-display font-medium tabular-nums text-go-text-secondary">{{ formatPrice(d.total) }}</span>
+            </div>
           </div>
         </template>
 
         <div v-else class="flex flex-col items-center py-4">
           <CasquitoNeutral :size="180" />
-          <p class="text-sm text-go-text-muted mt-3">No hay gastos de gestión registrados en esta obra.</p>
-          <NuxtLink :to="`/client/project/${route.params.id}`" class="text-sm text-go-primary hover:underline mt-1 inline-block">Volver al proyecto →</NuxtLink>
+          <p class="text-sm text-go-text-muted mt-3">Organizá los gastos en entregas para llevar un mejor control.</p>
+          <NuxtLink :to="`/projects/${route.params.id}?tab=entregas`" class="text-sm text-go-primary hover:underline mt-1 inline-block">Crear entrega →</NuxtLink>
         </div>
       </section>
 
@@ -292,8 +441,8 @@
 
         <div v-else class="flex flex-col items-center py-4">
           <CasquitoNeutral :size="180" />
-          <p class="text-sm text-go-text-muted mt-3">Cuando tu proveedor cargue gastos fuera del presupuesto original como "Agregados", acá vas a ver la comparación con lo pactado.</p>
-          <NuxtLink :to="`/client/project/${route.params.id}`" class="text-sm text-go-primary hover:underline mt-1 inline-block">Ver gastos →</NuxtLink>
+          <p class="text-sm text-go-text-muted mt-3">Cuando cargues un gasto que está fuera del presupuesto original, marcalo como "Agregado" y acá vas a ver la comparación con lo pactado.</p>
+          <NuxtLink :to="`/projects/${route.params.id}`" class="text-sm text-go-primary hover:underline mt-1 inline-block">Ir al proyecto →</NuxtLink>
         </div>
       </section>
     </template>
@@ -303,10 +452,14 @@
 <script setup>
 import MdiArrowLeft from '~icons/mdi/arrow-left';
 import MdiChevronDown from '~icons/mdi/chevron-down';
+import TrendingUpIcon from '~icons/mdi/trending-up';
+import TrendingDownIcon from '~icons/mdi/trending-down';
 import { useProjectStore } from '~/stores/project';
 import { useExpenseStore } from '~/stores/expense';
 import { useCategoryStore } from '~/stores/category';
-import { formatPrice, formatDate, getCategoryLabel, getCategoryColor, getManagementFeeAmount } from '~/utils';
+import { useDeliveryStore } from '~/stores/delivery';
+import { useProviderStore } from '~/stores/provider';
+import { formatPrice, getCategoryLabel, getCategoryColor, getManagementFeeAmount } from '~/utils';
 import { getCurrentUserAsync } from '~/utils/firebase';
 
 definePageMeta({
@@ -317,11 +470,14 @@ const route = useRoute();
 const projectStore = useProjectStore();
 const expenseStore = useExpenseStore();
 const categoryStore = useCategoryStore();
+const deliveryStore = useDeliveryStore();
+const providerStore = useProviderStore();
 
 const isLoading = ref(true);
 const project = ref(null);
 const timeChartMode = ref('weekly');
 const expandedCategories = ref(new Set());
+const showBalanceModal = ref(false);
 
 const resolvedCategories = computed(() => categoryStore.getResolved(route.params.id));
 
@@ -331,26 +487,34 @@ useHead({
 
 // --- Data slices ---
 
-const allClientExpenses = computed(() =>
-  expenseStore.expenses.filter(e => e.type !== 'provider_expense')
+const allExpenses = computed(() => expenseStore.expenses);
+
+const clientExpenses = computed(() =>
+  allExpenses.value.filter(e => !e.type || e.type === 'expense')
 );
 
-const onlyExpenses = computed(() =>
-  allClientExpenses.value.filter(e => !e.type || e.type === 'expense')
+const payments = computed(() =>
+  allExpenses.value.filter(e => e.type === 'payment')
 );
 
-const onlyPayments = computed(() =>
-  allClientExpenses.value.filter(e => e.type === 'payment')
+const providerExpenses = computed(() =>
+  allExpenses.value.filter(e => e.type === 'provider_expense')
 );
+
+const deliveries = computed(() => deliveryStore.deliveries);
 
 // --- Financial KPIs ---
 
 const totalExpenses = computed(() =>
-  onlyExpenses.value.reduce((sum, e) => sum + (e.amount || 0), 0)
+  clientExpenses.value.reduce((sum, e) => sum + (e.amount || 0), 0)
 );
 
 const totalPayments = computed(() =>
-  onlyPayments.value.reduce((sum, e) => sum + (e.amount || 0), 0)
+  payments.value.reduce((sum, e) => sum + (e.amount || 0), 0)
+);
+
+const totalProviderExpenses = computed(() =>
+  providerExpenses.value.reduce((sum, e) => sum + (e.amount || 0), 0)
 );
 
 const balance = computed(() => totalPayments.value - totalExpenses.value);
@@ -368,11 +532,11 @@ const budgetRemaining = computed(() => {
 // --- Scope breakdown ---
 
 const originalExpenses = computed(() =>
-  onlyExpenses.value.filter(e => !e.scopeType || e.scopeType === 'original')
+  clientExpenses.value.filter(e => !e.scopeType || e.scopeType === 'original')
 );
 
 const additionExpenses = computed(() =>
-  onlyExpenses.value.filter(e => e.scopeType === 'addition')
+  clientExpenses.value.filter(e => e.scopeType === 'addition')
 );
 
 const totalOriginal = computed(() =>
@@ -392,10 +556,39 @@ const additionPercent = computed(() => {
   return Math.round((totalAddition.value / totalExpenses.value) * 100);
 });
 
+// --- Provider expenses ---
+
+const providerExpenseCount = computed(() => providerExpenses.value.length);
+
+const providerExpensePercent = computed(() => {
+  const grandTotal = totalExpenses.value + totalProviderExpenses.value;
+  if (grandTotal === 0) return 0;
+  return Math.round((totalProviderExpenses.value / grandTotal) * 100);
+});
+
+const providerCategoryBreakdown = computed(() => {
+  const grouped = {};
+  for (const e of providerExpenses.value) {
+    const cat = e.category || 'otros';
+    if (!grouped[cat]) grouped[cat] = { total: 0, count: 0 };
+    grouped[cat].total += e.amount || 0;
+    grouped[cat].count++;
+  }
+  return Object.entries(grouped)
+    .map(([name, data]) => ({
+      name,
+      label: getCategoryLabel(name, resolvedCategories.value),
+      color: getCategoryColor(name, resolvedCategories.value),
+      total: data.total,
+      count: data.count
+    }))
+    .sort((a, b) => b.total - a.total);
+});
+
 // --- Management fee ---
 
 const totalManagementFee = computed(() =>
-  onlyExpenses.value
+  clientExpenses.value
     .filter(e => e.managementFeePercent)
     .reduce((sum, e) => sum + getManagementFeeAmount(e), 0)
 );
@@ -404,6 +597,44 @@ const managementFeePercent = computed(() => {
   if (totalExpenses.value === 0) return 0;
   return Math.round((totalManagementFee.value / totalExpenses.value) * 100);
 });
+
+// --- Balance calculation ---
+
+const balanceCalculated = computed(() =>
+  clientExpenses.value.some(e => e.passThrough === true || e.passThrough === false)
+);
+
+const passThroughExpenses = computed(() =>
+  clientExpenses.value.filter(e => e.passThrough === true)
+);
+
+const passThroughCount = computed(() => passThroughExpenses.value.length);
+
+const totalPassThrough = computed(() =>
+  passThroughExpenses.value.reduce((sum, e) => sum + (e.amount || 0), 0)
+);
+
+const netIncome = computed(() =>
+  totalPayments.value - totalPassThrough.value + totalManagementFee.value
+);
+
+const netBalance = computed(() =>
+  netIncome.value - totalProviderExpenses.value
+);
+
+async function handleBalanceSave(selectedIds) {
+  const assignments = clientExpenses.value.map(e => ({
+    expenseId: e.id,
+    passThrough: selectedIds.includes(e.id)
+  }));
+
+  const result = await expenseStore.batchUpdatePassThrough(assignments);
+  showBalanceModal.value = false;
+
+  if (!result.success) {
+    console.error('Error saving pass-through:', result.error);
+  }
+}
 
 // --- Weekly average & projection ---
 
@@ -419,8 +650,8 @@ function getExpenseDate(e) {
 }
 
 const weeksElapsed = computed(() => {
-  if (onlyExpenses.value.length === 0) return 0;
-  const dates = onlyExpenses.value.map(e => getExpenseDate(e).getTime());
+  if (clientExpenses.value.length === 0) return 0;
+  const dates = clientExpenses.value.map(e => getExpenseDate(e).getTime());
   const earliest = Math.min(...dates);
   const diffMs = Date.now() - earliest;
   return Math.max(1, Math.ceil(diffMs / (7 * 24 * 60 * 60 * 1000)));
@@ -441,7 +672,29 @@ const projectedTotal = computed(() => {
 
 // --- Counts ---
 
-const expenseCount = computed(() => onlyExpenses.value.length);
+const clientExpenseCount = computed(() => clientExpenses.value.length);
+
+// --- Delivery stats ---
+
+const assignedExpenseCount = computed(() =>
+  clientExpenses.value.filter(e => e.deliveryId).length
+);
+
+const unassignedExpenseCount = computed(() =>
+  clientExpenses.value.filter(e => !e.deliveryId).length
+);
+
+const deliverySummaries = computed(() =>
+  deliveries.value.map(d => {
+    const dExpenses = clientExpenses.value.filter(e => e.deliveryId === d.id);
+    return {
+      id: d.id,
+      number: d.number,
+      expenseCount: dExpenses.length,
+      total: dExpenses.reduce((sum, e) => sum + (e.amount || 0), 0)
+    };
+  }).sort((a, b) => a.number - b.number)
+);
 
 // --- Time-based grouping helpers ---
 
@@ -464,11 +717,7 @@ function getWeekKey(date) {
 
 function formatWeekLabel(weekStartStr) {
   const start = new Date(weekStartStr + 'T00:00:00');
-  const end = new Date(start);
-  end.setDate(end.getDate() + 6);
-  const s = start.toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit' });
-  const e = end.toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit' });
-  return `${s}`;
+  return start.toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit' });
 }
 
 function formatDayLabel(dayStr) {
@@ -476,45 +725,68 @@ function formatDayLabel(dayStr) {
   return d.toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit' });
 }
 
-// --- Build time series for spending chart ---
+// --- Spending over time chart ---
 
 const spendingTimeSeries = computed(() => {
-  const expenses = onlyExpenses.value;
-  if (expenses.length === 0) return { labels: [], data: [] };
+  const allItems = [...clientExpenses.value, ...providerExpenses.value];
+  if (allItems.length === 0) return { labels: [], expenses: [], propios: [] };
 
   const isWeekly = timeChartMode.value === 'weekly';
-  const grouped = {};
+  const expenseGrouped = {};
+  const propioGrouped = {};
 
-  for (const e of expenses) {
+  for (const e of allItems) {
     const d = getExpenseDate(e);
     const key = isWeekly ? getWeekKey(d) : getDayKey(d);
-    grouped[key] = (grouped[key] || 0) + (e.amount || 0);
+    if (e.type === 'provider_expense') {
+      propioGrouped[key] = (propioGrouped[key] || 0) + (e.amount || 0);
+    } else {
+      expenseGrouped[key] = (expenseGrouped[key] || 0) + (e.amount || 0);
+    }
   }
 
-  const sortedKeys = Object.keys(grouped).sort();
+  const allKeys = [...new Set([...Object.keys(expenseGrouped), ...Object.keys(propioGrouped)])].sort();
   return {
-    labels: sortedKeys.map(k => isWeekly ? formatWeekLabel(k) : formatDayLabel(k)),
-    data: sortedKeys.map(k => grouped[k])
+    labels: allKeys.map(k => isWeekly ? formatWeekLabel(k) : formatDayLabel(k)),
+    expenses: allKeys.map(k => expenseGrouped[k] || 0),
+    propios: allKeys.map(k => propioGrouped[k] || 0)
   };
 });
 
-const spendingOverTimeData = computed(() => ({
-  labels: spendingTimeSeries.value.labels,
-  datasets: [{
-    data: spendingTimeSeries.value.data,
+const spendingOverTimeData = computed(() => {
+  const datasets = [{
+    label: 'Gastos',
+    data: spendingTimeSeries.value.expenses,
     backgroundColor: '#A35C0D33',
     borderColor: '#A35C0D',
     borderWidth: 2,
     borderRadius: 4,
     barPercentage: 0.7
-  }]
-}));
+  }];
+  // Only show propios dataset if there are any
+  if (spendingTimeSeries.value.propios?.some(v => v > 0)) {
+    datasets.push({
+      label: 'Gastos propios',
+      data: spendingTimeSeries.value.propios,
+      backgroundColor: '#8B847A33',
+      borderColor: '#8B847A',
+      borderWidth: 2,
+      borderRadius: 4,
+      barPercentage: 0.7
+    });
+  }
+  return {
+    labels: spendingTimeSeries.value.labels,
+    datasets
+  };
+});
 
 const spendingChartOptions = {
   plugins: {
+    legend: { display: false },
     tooltip: {
       callbacks: {
-        label: (ctx) => formatPrice(ctx.raw)
+        label: (ctx) => `${ctx.dataset.label}: ${formatPrice(ctx.raw)}`
       }
     }
   },
@@ -530,34 +802,36 @@ const spendingChartOptions = {
 // --- Payments vs Expenses chart ---
 
 const paymentsVsExpensesTimeSeries = computed(() => {
-  const allItems = allClientExpenses.value;
-  if (allItems.length === 0) return { labels: [], expenses: [], payments: [] };
+  if (allExpenses.value.length === 0) return { labels: [], expenses: [], payments: [], propios: [] };
 
   const expenseGrouped = {};
   const paymentGrouped = {};
+  const propioGrouped = {};
 
-  for (const e of allItems) {
+  for (const e of allExpenses.value) {
     const d = getExpenseDate(e);
     const key = getWeekKey(d);
     if (e.type === 'payment') {
       paymentGrouped[key] = (paymentGrouped[key] || 0) + (e.amount || 0);
+    } else if (e.type === 'provider_expense') {
+      propioGrouped[key] = (propioGrouped[key] || 0) + (e.amount || 0);
     } else {
       expenseGrouped[key] = (expenseGrouped[key] || 0) + (e.amount || 0);
     }
   }
 
-  const allKeys = [...new Set([...Object.keys(expenseGrouped), ...Object.keys(paymentGrouped)])].sort();
+  const allKeys = [...new Set([...Object.keys(expenseGrouped), ...Object.keys(paymentGrouped), ...Object.keys(propioGrouped)])].sort();
 
   return {
     labels: allKeys.map(k => formatWeekLabel(k)),
     expenses: allKeys.map(k => expenseGrouped[k] || 0),
-    payments: allKeys.map(k => paymentGrouped[k] || 0)
+    payments: allKeys.map(k => paymentGrouped[k] || 0),
+    propios: allKeys.map(k => propioGrouped[k] || 0)
   };
 });
 
-const paymentsVsExpensesData = computed(() => ({
-  labels: paymentsVsExpensesTimeSeries.value.labels,
-  datasets: [
+const paymentsVsExpensesData = computed(() => {
+  const datasets = [
     {
       label: 'Gastos',
       data: paymentsVsExpensesTimeSeries.value.expenses,
@@ -568,7 +842,7 @@ const paymentsVsExpensesData = computed(() => ({
       barPercentage: 0.7
     },
     {
-      label: 'Pagos',
+      label: 'Cobros',
       data: paymentsVsExpensesTimeSeries.value.payments,
       backgroundColor: '#3D6B4533',
       borderColor: '#3D6B45',
@@ -576,8 +850,23 @@ const paymentsVsExpensesData = computed(() => ({
       borderRadius: 4,
       barPercentage: 0.7
     }
-  ]
-}));
+  ];
+  if (paymentsVsExpensesTimeSeries.value.propios?.some(v => v > 0)) {
+    datasets.push({
+      label: 'Gastos propios',
+      data: paymentsVsExpensesTimeSeries.value.propios,
+      backgroundColor: '#8B847A33',
+      borderColor: '#8B847A',
+      borderWidth: 2,
+      borderRadius: 4,
+      barPercentage: 0.7
+    });
+  }
+  return {
+    labels: paymentsVsExpensesTimeSeries.value.labels,
+    datasets
+  };
+});
 
 const paymentsChartOptions = {
   plugins: {
@@ -597,11 +886,11 @@ const paymentsChartOptions = {
   }
 };
 
-// --- Category breakdown ---
+// --- Category breakdown (client expenses only) ---
 
 const categoryBreakdown = computed(() => {
   const grouped = {};
-  for (const e of onlyExpenses.value) {
+  for (const e of clientExpenses.value) {
     const cat = e.category || 'otros';
     if (!grouped[cat]) {
       grouped[cat] = { total: 0, count: 0, expenses: [] };
@@ -677,11 +966,14 @@ onMounted(async () => {
 
   const result = await projectStore.fetchProject(id);
 
-  if (result && result.clientUserId === user.uid) {
+  if (result) {
     project.value = result;
     await Promise.all([
-      expenseStore.fetchByProjectIdPublic(id),
-      categoryStore.fetchForProjectFromAPI(id)
+      expenseStore.fetchByProjectId(id),
+      categoryStore.fetchGlobal(),
+      categoryStore.fetchForProject(id),
+      deliveryStore.fetchByProjectId(id),
+      providerStore.fetchOrCreate()
     ]);
   }
 

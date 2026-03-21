@@ -1,5 +1,5 @@
 <template>
-  <div class="casquito-neutral" :style="{ width: size + 'px' }">
+  <div class="casquito-working" :style="{ width: size + 'px' }">
     <svg :width="size" :height="Math.round(size * 230 / 200)" viewBox="0 0 200 230" fill="none" aria-hidden="true">
       <!-- Ticket body -->
       <path d="M 52,118 L 50,205 Q 100,220 148,205 L 148,118 Z"
@@ -18,6 +18,20 @@
       <!-- Eyes -->
       <circle cx="76" cy="86" r="5" fill="#2C261E"/>
       <circle cx="124" cy="86" r="5" fill="#2C261E"/>
+      <!-- Hammer -->
+      <g class="casquito-hammer" opacity="0.6">
+        <line x1="175" y1="60" x2="190" y2="42" stroke="#4A443D" stroke-width="2.5" stroke-linecap="round"/>
+        <rect x="185" y="34" width="12" height="8" rx="2" fill="#4A443D" transform="rotate(-35, 191, 38)"/>
+      </g>
+      <!-- Dust particles -->
+      <circle cx="30" cy="180" r="2" fill="#6B6259">
+        <animate attributeName="opacity" values="0.4;0" dur="2s" repeatCount="indefinite"/>
+        <animate attributeName="cy" values="180;162" dur="2s" repeatCount="indefinite"/>
+      </circle>
+      <circle cx="170" cy="185" r="1.5" fill="#6B6259">
+        <animate attributeName="opacity" values="0.3;0" dur="2.5s" repeatCount="indefinite" begin="0.8s"/>
+        <animate attributeName="cy" values="185;167" dur="2.5s" repeatCount="indefinite" begin="0.8s"/>
+      </circle>
     </svg>
   </div>
 </template>
@@ -27,12 +41,24 @@ withDefaults(defineProps<{ size?: number }>(), { size: 180 })
 </script>
 
 <style scoped>
-.casquito-neutral {
-  animation: casquito-float 4s ease-in-out infinite;
+.casquito-working {
+  animation: casquito-bob 3s ease-in-out infinite;
 }
 
-@keyframes casquito-float {
+.casquito-hammer {
+  transform-origin: 85% 15%;
+  animation: casquito-hammer-swing 1.8s ease-in-out infinite;
+}
+
+@keyframes casquito-bob {
   0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-8px); }
+  25% { transform: translateY(-5px); }
+  75% { transform: translateY(3px); }
+}
+
+@keyframes casquito-hammer-swing {
+  0%, 100% { transform: rotate(0deg); }
+  30% { transform: rotate(-25deg); }
+  60% { transform: rotate(8deg); }
 }
 </style>

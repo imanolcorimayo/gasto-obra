@@ -5,6 +5,7 @@ import {
   type Auth,
   GoogleAuthProvider,
   signInWithPopup,
+  signInWithCustomToken as _signInWithCustomToken,
   signOut,
   onAuthStateChanged,
   type User,
@@ -72,6 +73,12 @@ export const getAuthInstance = (): Auth => {
     setPersistence(auth, browserLocalPersistence).catch((error) => {
       console.warn('Failed to set auth persistence:', error)
     })
+
+    // Dev helper: sign in with custom token from browser console
+    // Usage: await window.__signInWithToken('<token>')
+    if (process.dev) {
+      (window as any).__signInWithToken = (token: string) => _signInWithCustomToken(auth!, token)
+    }
   }
 
   return auth

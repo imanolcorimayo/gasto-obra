@@ -114,13 +114,16 @@
       </div>
 
       <!-- ═══ Section 2: Gestión ═══ -->
-      <div class="mt-10 pt-8 border-t border-go-border">
+      <div ref="gestionSectionRef" class="mt-10 pt-8 border-t border-go-border">
         <div class="mb-6">
           <h2 class="font-display font-bold text-xl text-go-text">Gestión</h2>
           <p class="text-go-text-muted text-sm mt-1">Porcentaje que cobrás como gestión sobre compras de materiales u otros gastos de obra.</p>
         </div>
 
-        <div class="bg-go-surface border border-go-border rounded-go-xl p-5">
+        <div
+          class="bg-go-surface border border-go-border rounded-go-xl p-5"
+          :class="highlightGestion ? 'heartbeat-section' : ''"
+        >
           <label class="block text-[11px] font-semibold uppercase tracking-wider text-go-text-muted mb-1.5">Porcentaje de gestión</label>
           <div class="flex flex-col sm:flex-row sm:items-center gap-3">
             <div class="flex w-full sm:w-auto">
@@ -261,9 +264,13 @@ useHead({
   title: 'General'
 });
 
+const route = useRoute();
 const whatsappStore = useWhatsappStore();
 const providerStore = useProviderStore();
 const { linkedAccount, pendingCode, isLoading, isGenerating } = storeToRefs(whatsappStore);
+
+const gestionSectionRef = ref(null);
+const highlightGestion = ref(false);
 
 const config = useRuntimeConfig();
 const whatsappNumber = config.public.whatsappNumber;
@@ -394,9 +401,32 @@ onMounted(async () => {
   }
 
   whatsappStore.subscribeToChanges();
+
+  // Handle ?highlight=gestion query param
+  if (route.query.highlight === 'gestion') {
+    await nextTick();
+    gestionSectionRef.value?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    highlightGestion.value = true;
+    setTimeout(() => { highlightGestion.value = false; }, 2000);
+  }
 });
 
 onUnmounted(() => {
   whatsappStore.unsubscribe();
 });
 </script>
+
+<style scoped>
+.heartbeat-section {
+  animation: heartbeat-section 2s ease-in-out;
+}
+
+@keyframes heartbeat-section {
+  0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(163, 92, 13, 0); }
+  10% { transform: scale(1.02); box-shadow: 0 0 0 4px rgba(163, 92, 13, 0.2); }
+  20% { transform: scale(1); box-shadow: 0 0 0 0 rgba(163, 92, 13, 0); }
+  30% { transform: scale(1.02); box-shadow: 0 0 0 4px rgba(163, 92, 13, 0.2); }
+  40% { transform: scale(1); box-shadow: 0 0 0 0 rgba(163, 92, 13, 0); }
+  100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(163, 92, 13, 0); }
+}
+</style>

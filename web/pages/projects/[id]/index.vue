@@ -176,13 +176,23 @@
         </div>
 
         <!-- Right: summary -->
-        <div class="lg:sticky lg:top-6 lg:self-start">
+        <div class="lg:sticky lg:top-6 lg:self-start space-y-3">
+          <NuxtLink
+            :to="`/projects/${route.params.id}/resumen`"
+            class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-go-md bg-go-primary text-white text-sm font-medium hover:bg-go-primary-hover transition-colors"
+          >
+            <MdiChartBox class="text-base" />
+            Ver resumen
+          </NuxtLink>
           <ExpenseSummary :expenses="expenseStore.expenses" :budget="project.budget" :categories="resolvedCategories" />
         </div>
       </div>
 
       <!-- Movements -->
-      <div class="mt-8 pt-8 border-t border-go-border-subtle">
+      <div
+        ref="tabSectionRef"
+        class="mt-8 pt-8 border-t border-go-border-subtle"
+      >
         <!-- Tab bar -->
         <div class="flex items-center justify-between mb-4">
           <div class="flex bg-go-surface border border-go-border rounded-go-md p-0.5 gap-0.5">
@@ -207,8 +217,10 @@
           </div>
           <button
             v-if="activeTab === 'entregas'"
+            ref="newDeliveryBtnRef"
             @click="editingDelivery = null; showDeliveryModal = true"
             class="btn-primary text-sm flex items-center gap-1.5"
+            :class="highlightTab ? 'heartbeat' : ''"
           >
             <MdiPlus class="text-base" />
             Nueva entrega
@@ -359,6 +371,7 @@
 
 <script setup>
 import MdiArrowLeft from '~icons/mdi/arrow-left';
+import MdiChartBox from '~icons/mdi/chart-box';
 import MdiLinkVariant from '~icons/mdi/link-variant';
 import MdiCheck from '~icons/mdi/check';
 import MdiPlus from '~icons/mdi/plus';
@@ -402,6 +415,9 @@ const createModalPrefill = ref(null);
 const showEditModal = ref(false);
 const editingExpense = ref(null);
 const showProjectEditModal = ref(false);
+const tabSectionRef = ref(null);
+const newDeliveryBtnRef = ref(null);
+const highlightTab = ref(false);
 const activeTab = ref('movimientos');
 const showDeliveryModal = ref(false);
 const showDeliveryAssignModal = ref(false);
@@ -478,6 +494,16 @@ onMounted(async () => {
     // Load all projects for the edit modal's "move" feature
     if (projectStore.projects.length === 0) {
       await projectStore.fetchProjects();
+    }
+
+    // Handle ?tab= query param — switch tab, scroll and highlight
+    const tabParam = route.query.tab;
+    if (tabParam === 'entregas' || tabParam === 'movimientos') {
+      activeTab.value = tabParam;
+      await nextTick();
+      tabSectionRef.value?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      highlightTab.value = true;
+      setTimeout(() => { highlightTab.value = false; }, 2000);
     }
   }
 });
@@ -906,3 +932,18 @@ async function handleAssignExpenses({ deliveryId, expenseIds }) {
 }
 
 </script>
+
+<style scoped>
+.heartbeat {
+  animation: heartbeat 2s ease-in-out;
+}
+
+@keyframes heartbeat {
+  0% { transform: scale(1); }
+  10% { transform: scale(1.15); }
+  20% { transform: scale(1); }
+  30% { transform: scale(1.15); }
+  40% { transform: scale(1); }
+  100% { transform: scale(1); }
+}
+</style>

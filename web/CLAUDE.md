@@ -35,5 +35,8 @@ Nuxt 3 web app for renovation expense management. Providers manage projects and 
 ## Language
 Spanish (Argentine). Currency: ARS with `es-AR` locale.
 
+## Casquito Components
+`CasquitoNeutral` (idle), `CasquitoHappy` (success), `CasquitoConfused` (errors/FAQ), `CasquitoWorking` (loading), `CasquitoAlert` (warnings), `CasquitoSleeping` (maintenance). Pure SVG, `size` prop. See root `CLAUDE.md` for details.
+
 ## Expense Categories
 Materiales, Herramientas, Transporte, Mano de obra, Comida, Otros

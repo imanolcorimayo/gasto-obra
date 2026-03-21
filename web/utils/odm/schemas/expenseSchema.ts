@@ -126,6 +126,10 @@ export class ExpenseSchema extends Schema {
       type: 'number',
       required: false
     },
+    passThrough: {
+      type: 'boolean',
+      required: false
+    },
     source: {
       type: 'string',
       required: true,
@@ -170,6 +174,27 @@ export class ExpenseSchema extends Schema {
     } catch (error) {
       console.error('Error batch updating deliveryId:', error);
       return { success: false, error: `Error al asignar entregas: ${error}` };
+    }
+  }
+
+  async batchUpdatePassThrough(assignments: Array<{ expenseId: string; passThrough: boolean }>): Promise<{ success: boolean; error?: string }> {
+    try {
+      const db = getFirestoreInstance();
+      const batch = writeBatch(db);
+      const colRef = collection(db, this.collectionName);
+
+      for (const { expenseId, passThrough } of assignments) {
+        batch.update(doc(colRef, expenseId), {
+          passThrough,
+          updatedAt: serverTimestamp()
+        });
+      }
+
+      await batch.commit();
+      return { success: true };
+    } catch (error) {
+      console.error('Error batch updating passThrough:', error);
+      return { success: false, error: `Error al actualizar gastos: ${error}` };
     }
   }
 

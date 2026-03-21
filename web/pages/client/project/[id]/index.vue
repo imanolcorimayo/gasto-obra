@@ -47,6 +47,16 @@
       </div>
 
       <!-- KPIs -->
+      <div class="flex items-center justify-between mb-3">
+        <h2 class="font-display font-semibold text-go-text">Resumen</h2>
+        <NuxtLink
+          :to="`/client/project/${route.params.id}/resumen`"
+          class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-go-md bg-go-primary text-white text-sm font-medium hover:bg-go-primary-hover transition-colors"
+        >
+          <MdiChartBox class="text-base" />
+          Ver resumen
+        </NuxtLink>
+      </div>
       <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-6">
         <!-- Total gastado -->
         <div class="bg-go-surface border border-go-border rounded-go-xl px-3.5 py-3">
@@ -145,17 +155,6 @@
           <span class="font-display font-bold text-lg tabular-nums text-go-text block leading-tight">{{ expenseCount }}</span>
           <span class="text-xs text-go-text-muted">{{ paymentCount }} {{ paymentCount === 1 ? 'pago' : 'pagos' }}</span>
         </div>
-      </div>
-
-      <!-- Link to full resumen -->
-      <div class="mb-6">
-        <NuxtLink
-          :to="`/client/project/${route.params.id}/resumen`"
-          class="text-xs text-go-primary hover:underline inline-flex items-center gap-1"
-        >
-          Ver resumen completo
-          <MdiArrowRight class="text-sm" />
-        </NuxtLink>
       </div>
 
       <!-- Expense history -->
@@ -281,6 +280,7 @@ import MdiReceiptText from '~icons/mdi/receipt-text';
 import MdiMagnify from '~icons/mdi/magnify';
 import MdiCloseCircle from '~icons/mdi/close-circle';
 import MdiChevronDown from '~icons/mdi/chevron-down';
+import MdiChartBox from '~icons/mdi/chart-box';
 import { useProjectStore } from '~/stores/project';
 import { useExpenseStore } from '~/stores/expense';
 import { useCategoryStore } from '~/stores/category';
