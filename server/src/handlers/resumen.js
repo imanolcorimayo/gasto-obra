@@ -1,7 +1,7 @@
 import { sendWhatsAppMessage } from '../helpers/whatsapp.js';
 import { formatAmount, capitalizeFirst } from '../helpers/responseFormatter.js';
 
-const APP_URL = process.env.APP_URL || 'https://gasto-obra.web.app';
+const APP_URL = process.env.APP_URL || 'https://gastoobra.com';
 
 function getARTDate(date) {
   const artOffset = -3 * 60;

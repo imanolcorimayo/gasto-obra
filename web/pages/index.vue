@@ -639,6 +639,48 @@
 
     <!-- ═══ FOOTER ═══ -->
     <LandingFooter />
+
+    <!-- Login modal (shown when redirected from auth-required page) -->
+    <Teleport to="body">
+      <Transition name="modal">
+        <div v-if="showLoginModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm px-4" @click.self="showLoginModal = false">
+          <div class="bg-go-surface border border-go-border rounded-go-xl w-full max-w-sm overflow-hidden shadow-go-lg">
+            <div class="px-6 pt-8 pb-2 text-center">
+              <div class="w-14 h-14 rounded-full bg-go-primary-muted flex items-center justify-center mx-auto mb-4">
+                <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="text-go-primary"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+              </div>
+              <h2 class="font-display text-xl font-bold text-go-text mb-2">Iniciá sesión para continuar</h2>
+              <p class="text-go-text-secondary text-sm leading-relaxed">Necesitás estar logueado para acceder a esta página.</p>
+            </div>
+            <div class="px-6 py-6 space-y-3">
+              <button
+                @click="handleModalLogin"
+                :disabled="isLoading"
+                class="w-full inline-flex items-center justify-center gap-3 text-base px-6 py-3 rounded-go-lg font-semibold bg-go-primary text-go-text-inverse hover:bg-go-primary-hover active:scale-[0.97] transition-all"
+              >
+                <svg v-if="!isLoading" class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 01-2.2 3.32v2.77h3.57c2.08-1.92 3.27-4.74 3.27-8.1z" fill="#4285F4"/>
+                  <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+                  <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
+                  <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+                </svg>
+                <template v-if="!isLoading">Continuar con Google</template>
+                <span v-else class="flex items-center gap-2">
+                  <span class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
+                  Ingresando...
+                </span>
+              </button>
+              <button
+                @click="showLoginModal = false"
+                class="w-full text-sm text-go-text-muted hover:text-go-text transition-colors py-2"
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
+        </div>
+      </Transition>
+    </Teleport>
   </div>
 </template>
 
@@ -670,6 +712,7 @@ useSeoMeta({
 
 const isLoading = ref(false);
 const isAuthenticated = ref(false);
+const showLoginModal = ref(false);
 const heroTextRef = ref(null);
 const heroPhoneRef = ref(null);
 const featuresRef = ref(null);
@@ -715,10 +758,24 @@ onMounted(async () => {
   const user = await getCurrentUserAsync();
   if (user) {
     isAuthenticated.value = true;
+    // If redirected here with ?redirect=, go directly
+    const route = useRoute();
+    if (route.query.redirect) {
+      await redirectUser(user);
+    }
+  } else if (useRoute().query.redirect) {
+    showLoginModal.value = true;
   }
 });
 
 async function redirectUser(user) {
+  const route = useRoute();
+  const redirect = route.query.redirect;
+  if (redirect && typeof redirect === 'string' && redirect.startsWith('/')) {
+    navigateTo(redirect);
+    return;
+  }
+
   const projectStore = useProjectStore();
   await projectStore.fetchClientProjects(user.uid);
 
@@ -741,6 +798,23 @@ async function goToDashboard() {
     if (user) {
       await redirectUser(user);
     }
+  } finally {
+    isLoading.value = false;
+  }
+}
+
+async function handleModalLogin() {
+  isLoading.value = true;
+  try {
+    const user = await signInWithGoogle();
+    if (user) {
+      useProviderStore().ensureExists();
+      showLoginModal.value = false;
+      await redirectUser(user);
+    }
+  } catch (error) {
+    console.error('Login error:', error);
+    useToast('error', 'Error al iniciar sesión');
   } finally {
     isLoading.value = false;
   }

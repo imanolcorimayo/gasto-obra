@@ -7,7 +7,7 @@ import { GetProjectCategories } from './actions/categories/GetProjectCategories.
 
 const app = express();
 const PORT = process.env.API_PORT || 4002;
-const APP_URL = process.env.APP_URL || 'https://gasto-obra.web.app';
+const APP_URL = process.env.APP_URL || 'https://gastoobra.com';
 
 // ============================================
 // Rate limiting (per IP, in-memory)
@@ -65,7 +65,13 @@ app.use(rateLimit);
 // CORS — allow requests from the web frontend
 app.use((req, res, next) => {
   const origin = req.headers.origin;
-  const allowed = [APP_URL, 'http://localhost:3000', 'http://localhost:3001'];
+  const allowed = [
+    APP_URL,
+    'https://gastoobra.com',
+    'https://gastoobra.wiseutils.com',
+    'http://localhost:3000',
+    'http://localhost:3001',
+  ];
   if (allowed.includes(origin)) {
     res.setHeader('Access-Control-Allow-Origin', origin);
   } else if (origin) {

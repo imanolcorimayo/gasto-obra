@@ -8,11 +8,23 @@ import { formatAmount } from '../../helpers/responseFormatter.js';
 import { normalizePhoneNumber } from '../../helpers/phone.js';
 import logger from '../../../lib/logger.js';
 
-const APP_URL = process.env.APP_URL || 'https://gasto-obra.web.app';
+const APP_URL = process.env.APP_URL || 'https://gastoobra.com';
 const PROVIDER_WINDOW_MS = 24 * 60 * 60 * 1000; // 24h
 const resendHandler = process.env.RESEND_API_KEY
   ? new ResendHandler(process.env.RESEND_API_KEY)
   : null;
+
+// When set, only send to recipients matching these substrings (for testing)
+const SUMMARY_EMAIL_FILTER = process.env.SUMMARY_EMAIL_FILTER || '';
+const SUMMARY_PHONE_FILTER = process.env.SUMMARY_PHONE_FILTER || '';
+
+function shouldSendEmail(email) {
+  return email && (!SUMMARY_EMAIL_FILTER || email.includes(SUMMARY_EMAIL_FILTER));
+}
+
+function shouldSendWhatsApp(phone) {
+  return phone && (!SUMMARY_PHONE_FILTER || phone.includes(SUMMARY_PHONE_FILTER));
+}
 
 // ============================================
 // Helpers
@@ -33,13 +45,14 @@ async function getProviderInfo(providerId) {
   };
 }
 
-async function getClientEmail(clientUserId) {
-  if (!clientUserId) return null;
+async function getUserInfo(userId) {
+  if (!userId) return { email: null, name: null };
   try {
-    const user = await admin.auth().getUser(clientUserId);
-    return user.email || null;
+    const user = await admin.auth().getUser(userId);
+    const name = user.displayName?.split(' ')[0] || null;
+    return { email: user.email || null, name };
   } catch {
-    return null;
+    return { email: null, name: null };
   }
 }
 
@@ -62,37 +75,85 @@ function buildWhatsAppMessage({ role, project, dateFormatted, weekExpenses, week
   return message;
 }
 
-function buildEmailVars({ role, project, dateFormatted, weekExpenses, weekExpenseTotal, weekPaymentTotal, weekProviderExpenseTotal, accumulatedExpenses, accumulatedPayments, accumulatedProviderExpenses, balance, viewUrl }) {
+function buildClientEmailVars({ project, providerName, dateFormatted, weekExpenses, weekExpenseTotal, weekPaymentTotal, accumulatedExpenses, accumulatedPayments, balance, viewUrl }) {
+  const who = providerName || 'Tu proveedor';
   const blocks = [];
 
   if (weekExpenseTotal > 0) {
-    blocks.push(highlightBox(
-      weekExpenses.length > 1 ? '🧱' : '🛒',
-      `Se registraron <span class="amount">${formatAmount(weekExpenseTotal)}</span> en gastos esta semana`
-    ));
+    const count = weekExpenses.length;
+    blocks.push(highlightBox('📋', `${who} registró <span class="amount">${formatAmount(weekExpenseTotal)}</span> en ${count} gasto${count > 1 ? 's' : ''}`));
   }
   if (weekPaymentTotal > 0) {
-    blocks.push(highlightBox('💰', `Ingresaron <span class="amount">${formatAmount(weekPaymentTotal)}</span> en pagos`));
-  }
-  if (role === 'provider' && weekProviderExpenseTotal > 0) {
-    blocks.push(highlightBox('🧾', `Gastos propios por <span class="amount">${formatAmount(weekProviderExpenseTotal)}</span>`));
+    blocks.push(highlightBox('✅', `Se acreditaron <span class="amount">${formatAmount(weekPaymentTotal)}</span> en pagos`));
   }
 
   const statsRows = [];
   statsRows.push(statRow('Total acumulado', formatAmount(accumulatedExpenses)));
-  if (role === 'provider' && accumulatedProviderExpenses > 0) statsRows.push(statRow('Gastos propios acum.', formatAmount(accumulatedProviderExpenses)));
   if (accumulatedPayments > 0) {
     statsRows.push(statRow('Total pagos', formatAmount(accumulatedPayments)));
     const balanceColor = balance >= 0 ? '#3E9954' : '#C74840';
-    statsRows.push(`<tr><td class="label">Saldo</td><td class="value" style="color: ${balanceColor};">${formatAmount(balance)}</td></tr>`);
+    const balanceLabel = balance >= 0 ? 'Saldo a favor' : 'Pendiente';
+    statsRows.push(`<tr><td class="label">${balanceLabel}</td><td class="value" style="color: ${balanceColor};">${formatAmount(Math.abs(balance))}</td></tr>`);
   }
 
   return {
     Project_Name: project.name,
     Address: project.address || '',
+    Provider_Name: who,
     Date: dateFormatted,
     Today_Blocks: blocks.join(''),
     Stats_Rows: statsRows.join(''),
+    View_Url: viewUrl
+  };
+}
+
+function buildProviderEmailVars({ project, clientName, dateFormatted, weekExpenses, weekPayments, weekProviderExpenses, weekExpenseTotal, weekPaymentTotal, weekProviderExpenseTotal, accumulatedExpenses, accumulatedPayments, accumulatedProviderExpenses, balance, viewUrl }) {
+  // Main activity blocks (client-facing: expenses + payments)
+  const blocks = [];
+
+  if (weekExpenseTotal > 0) {
+    const count = weekExpenses.length;
+    blocks.push(highlightBox('📋', `Registraste <span class="amount">${formatAmount(weekExpenseTotal)}</span> en ${count} gasto${count > 1 ? 's' : ''}`));
+  }
+  if (weekPaymentTotal > 0) {
+    const count = weekPayments.length;
+    blocks.push(highlightBox('✅', `Recibiste <span class="amount">${formatAmount(weekPaymentTotal)}</span> en ${count} pago${count > 1 ? 's' : ''}`));
+  }
+
+  // Project stats (client balance only)
+  const statsRows = [];
+  statsRows.push(statRow('Total acumulado', formatAmount(accumulatedExpenses)));
+  if (accumulatedPayments > 0) {
+    statsRows.push(statRow('Total cobrado', formatAmount(accumulatedPayments)));
+    const balanceColor = balance >= 0 ? '#3E9954' : '#C74840';
+    const balanceLabel = balance >= 0 ? 'A favor del cliente' : 'Pendiente de cobro';
+    statsRows.push(`<tr><td class="label">${balanceLabel}</td><td class="value" style="color: ${balanceColor};">${formatAmount(Math.abs(balance))}</td></tr>`);
+  }
+
+  // Provider expenses — separate section
+  let providerExpenseSection = '';
+  if (weekProviderExpenseTotal > 0 || accumulatedProviderExpenses > 0) {
+    providerExpenseSection += '<hr class="divider">';
+    providerExpenseSection += '<h2 class="stats-title">Tus gastos propios</h2>';
+
+    if (weekProviderExpenseTotal > 0) {
+      const count = weekProviderExpenses.length;
+      providerExpenseSection += highlightBox('📝', `${count} gasto${count > 1 ? 's' : ''} propio${count > 1 ? 's' : ''} esta semana por <span class="amount">${formatAmount(weekProviderExpenseTotal)}</span>`);
+    }
+
+    if (accumulatedProviderExpenses > 0) {
+      providerExpenseSection += `<table class="stats-table">${statRow('Acumulado gastos propios', formatAmount(accumulatedProviderExpenses))}</table>`;
+    }
+  }
+
+  return {
+    Project_Name: project.name,
+    Address: project.address || '',
+    Client_Name: clientName || project.clientName || '',
+    Date: dateFormatted,
+    Today_Blocks: blocks.join(''),
+    Stats_Rows: statsRows.join(''),
+    Provider_Expense_Section: providerExpenseSection,
     View_Url: viewUrl
   };
 }
@@ -144,11 +205,12 @@ async function sendWeeklySummaries() {
   for (const projectDoc of projectsSnapshot.docs) {
     const project = projectDoc.data();
     const clientPhone = normalizePhoneNumber(project.clientPhone);
-    const clientEmail = await getClientEmail(project.clientUserId);
+    const { email: clientEmail, name: clientName } = await getUserInfo(project.clientUserId);
+    const { email: providerEmail, name: providerName } = await getUserInfo(project.providerId);
     const { phone: providerPhone, lastActivity } = await getProviderInfo(project.providerId);
     const providerWithin24h = lastActivity && (Date.now() - lastActivity.getTime()) < PROVIDER_WINDOW_MS;
 
-    if (!clientPhone && !clientEmail && !providerPhone) continue;
+    if (!clientPhone && !clientEmail && !providerPhone && !providerEmail) continue;
 
     // Get this week's expenses
     const expensesSnapshot = await db
@@ -184,32 +246,38 @@ async function sendWeeklySummaries() {
     const accumulatedProviderExpenses = allEntries.filter(e => e.type === 'provider_expense').reduce((sum, e) => sum + (e.amount || 0), 0);
     const balance = accumulatedPayments - accumulatedExpenses;
 
-    const viewUrl = `${APP_URL}/view/${project.shareToken}`;
+    const clientViewUrl = `${APP_URL}/client/project/${projectDoc.id}`;
+    const providerViewUrl = `${APP_URL}/projects/${projectDoc.id}`;
 
     const sharedData = {
       project, dateFormatted, weekExpenses, weekPayments, weekProviderExpenses,
       weekExpenseTotal, weekPaymentTotal, weekProviderExpenseTotal,
       accumulatedExpenses, accumulatedPayments, accumulatedProviderExpenses,
-      balance, viewUrl
+      balance
     };
 
     const hasClientActivity = weekExpenses.length > 0 || weekPayments.length > 0;
+    const emailSubject = `${project.name} — Resumen semanal ${dateFormatted}`;
 
     // Send to client (prefer email, fallback to WhatsApp)
     if (hasClientActivity) {
-      if (clientEmail && resendHandler) {
-        const vars = buildEmailVars({ role: 'client', ...sharedData });
-        const result = await resendHandler.sendEmail(clientEmail, `${project.name} — Resumen semanal ${dateFormatted}`, 'daily-summary', vars);
+      if (shouldSendEmail(clientEmail) && resendHandler) {
+        const vars = buildClientEmailVars({ ...sharedData, providerName, viewUrl: clientViewUrl });
+        const result = await resendHandler.sendEmail(clientEmail, emailSubject, 'daily-summary', vars);
         if (!result.success) logger.error('Failed to send client email', { project: project.name, email: clientEmail, error: result.error });
-      } else if (clientPhone) {
-        const msg = buildWhatsAppMessage({ role: 'client', ...sharedData });
+      } else if (shouldSendWhatsApp(clientPhone)) {
+        const msg = buildWhatsAppMessage({ role: 'client', ...sharedData, viewUrl: clientViewUrl });
         await sendWhatsAppMessage(clientPhone, msg);
       }
     }
 
-    // Send to provider (only if within 24h window — free)
-    if (providerPhone && providerWithin24h) {
-      const msg = buildWhatsAppMessage({ role: 'provider', ...sharedData });
+    // Send to provider (prefer email, fallback to WhatsApp if within 24h window)
+    if (shouldSendEmail(providerEmail) && resendHandler) {
+      const vars = buildProviderEmailVars({ ...sharedData, clientName, viewUrl: providerViewUrl });
+      const result = await resendHandler.sendEmail(providerEmail, emailSubject, 'provider-summary', vars);
+      if (!result.success) logger.error('Failed to send provider email', { project: project.name, email: providerEmail, error: result.error });
+    } else if (shouldSendWhatsApp(providerPhone) && providerWithin24h) {
+      const msg = buildWhatsAppMessage({ role: 'provider', ...sharedData, viewUrl: providerViewUrl });
       await sendWhatsAppMessage(providerPhone, msg);
     }
   }

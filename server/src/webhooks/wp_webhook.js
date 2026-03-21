@@ -33,7 +33,7 @@ import { handleLinkCommand, handleUnlinkCommand, sendHelpMessage, handleAISuppor
 const app = express();
 const PORT = process.env.PORT || 4001;
 const VERIFY_TOKEN = process.env.WP_VERIFY_TOKEN || 'gasto_obra_verify';
-const APP_URL = process.env.APP_URL || 'https://gasto-obra.web.app';
+const APP_URL = process.env.APP_URL || 'https://gastoobra.com';
 const META_APP_SECRET = process.env.META_APP_SECRET;
 
 // ============================================
