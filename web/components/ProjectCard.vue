@@ -29,7 +29,7 @@
     </div>
 
     <div class="pt-3 border-t border-go-border">
-      <span class="text-go-text-muted text-[10px] uppercase tracking-wider font-semibold block mb-0.5">Total gastado</span>
+      <span class="text-go-text-muted text-xs uppercase tracking-wider font-semibold block mb-0.5">Total gastado</span>
       <div class="flex items-end justify-between">
         <span class="font-display font-bold text-go-primary text-xl tabular-nums">{{ formatPrice(totalSpent) }}</span>
         <span class="text-go-text-muted text-xs">{{ expenseCount }} gastos</span>

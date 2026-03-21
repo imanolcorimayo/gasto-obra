@@ -45,16 +45,16 @@
               <h4 class="font-medium text-go-text text-sm truncate">{{ expense.title }}</h4>
               <span
                 v-if="isPayment"
-                class="text-[10px] font-semibold px-1.5 py-0.5 rounded-go-sm bg-go-secondary/20 text-go-secondary shrink-0"
+                class="text-xs font-semibold px-1.5 py-0.5 rounded-go-sm bg-go-secondary/20 text-go-secondary shrink-0"
               >Pago</span>
               <span
                 v-if="expense.scopeType === 'addition'"
-                class="text-[10px] font-medium px-1.5 py-0.5 rounded-go-sm shrink-0"
+                class="text-xs font-medium px-1.5 py-0.5 rounded-go-sm shrink-0"
                 :style="getScopeTypeStyles('addition')"
               >Agregado</span>
               <span
                 v-if="!isPayment && expense.installmentPercent != null && expense.installmentPercent < 100"
-                class="text-[10px] font-semibold px-1.5 py-0.5 rounded-go-sm shrink-0"
+                class="text-xs font-semibold px-1.5 py-0.5 rounded-go-sm shrink-0"
                 :class="expense.installmentPercent === 0 ? 'bg-go-danger-muted text-go-danger' : 'bg-go-info/15 text-go-info tabular-nums'"
               >{{ expense.installmentPercent === 0 ? 'Desc. balance' : `${expense.installmentPercent}%` }}</span>
             </div>
@@ -68,7 +68,7 @@
         <!-- Compact footer: category + date + items -->
         <div class="flex items-center gap-2 mt-1.5">
           <span
-            class="text-[10px] font-medium px-1.5 py-0.5 rounded-go-sm"
+            class="text-xs font-medium px-1.5 py-0.5 rounded-go-sm"
             :style="getCategoryStyles(expense.category, categories)"
           >{{ getCategoryLabel(expense.category, categories) }}</span>
 

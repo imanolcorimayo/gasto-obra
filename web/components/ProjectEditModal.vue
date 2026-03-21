@@ -21,7 +21,7 @@
 
         <!-- Project Categories Section -->
         <div class="mt-6 pt-6 border-t border-go-border">
-          <h4 class="text-[10px] font-semibold uppercase tracking-wider text-go-text-muted/60 mb-3">Categorías del proyecto</h4>
+          <h4 class="text-xs font-semibold uppercase tracking-wider text-go-text-muted/60 mb-3">Categorías del proyecto</h4>
 
           <div class="flex items-center gap-3 p-3 bg-go-surface rounded-go-md border border-go-border mb-4">
             <label class="flex items-center justify-between cursor-pointer flex-1">

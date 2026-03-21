@@ -71,7 +71,7 @@
                     <div class="mx-auto w-[90px] h-[24px] bg-go-text-inverse rounded-full"></div>
                     <!-- Status bar icons -->
                     <div class="flex items-center justify-between mt-2 px-1">
-                      <span class="text-go-text text-[10px] font-medium">10:32</span>
+                      <span class="text-go-text text-xs font-medium">10:32</span>
                       <div class="flex items-center gap-1">
                         <svg class="w-3.5 h-3.5 text-go-text" fill="currentColor" viewBox="0 0 24 24"><path d="M2 20h2V8H2v12zm5 0h2V4H7v16zm5 0h2v-8h-2v8zm5 0h2V2h-2v18z"/></svg>
                         <svg class="w-3.5 h-3.5 text-go-text" fill="currentColor" viewBox="0 0 24 24"><path d="M1 9l2 2c4.97-4.97 13.03-4.97 18 0l2-2C16.93 2.93 7.08 2.93 1 9zm8 8l3 3 3-3c-1.65-1.66-4.34-1.66-6 0zm-4-4l2 2c2.76-2.76 7.24-2.76 10 0l2-2C15.14 9.14 8.87 9.14 5 13z"/></svg>
@@ -88,7 +88,7 @@
                     </div>
                     <div class="flex-1 min-w-0">
                       <p class="text-go-text text-xs font-medium">Gasto Obra Bot</p>
-                      <p class="text-go-text-tertiary text-[10px]">en línea</p>
+                      <p class="text-go-text-tertiary text-xs">en línea</p>
                     </div>
                   </div>
 
@@ -106,7 +106,7 @@
                     <div class="flex justify-start">
                       <div class="bg-go-surface border border-go-border-subtle rounded-go-lg rounded-tl-sm px-3 py-1.5 max-w-[85%]">
                         <p class="text-go-text text-xs font-medium mb-1">Gasto registrado</p>
-                        <div class="space-y-0.5 text-[10px] text-go-text-secondary">
+                        <div class="space-y-0.5 text-xs text-go-text-secondary">
                           <div class="flex justify-between gap-4">
                             <span class="text-go-text-tertiary">Monto</span>
                             <span class="text-go-primary font-medium">$45.000</span>
@@ -159,8 +159,8 @@
                     <div class="flex justify-start">
                       <div class="bg-go-surface border border-go-border-subtle rounded-go-lg rounded-tl-sm px-3 py-1.5 max-w-[85%]">
                         <p class="text-go-text text-xs font-medium mb-1">Gasto registrado</p>
-                        <p class="text-go-text-tertiary text-[10px] italic mb-1">"Pagué 28 mil de pintura en Pinturerías"</p>
-                        <div class="space-y-0.5 text-[10px] text-go-text-secondary">
+                        <p class="text-go-text-tertiary text-xs italic mb-1">"Pagué 28 mil de pintura en Pinturerías"</p>
+                        <div class="space-y-0.5 text-xs text-go-text-secondary">
                           <div class="flex justify-between gap-4">
                             <span class="text-go-text-tertiary">Monto</span>
                             <span class="text-go-primary font-medium">$28.000</span>
@@ -182,7 +182,7 @@
                   <!-- Chat input bar -->
                   <div class="bg-go-bg-elevated px-3 py-2 border-t border-go-border-subtle flex items-center gap-2">
                     <svg class="w-4 h-4 text-go-text-muted shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
-                    <div class="flex-1 bg-go-surface rounded-full px-3 py-1.5 text-[10px] text-go-text-muted">
+                    <div class="flex-1 bg-go-surface rounded-full px-3 py-1.5 text-xs text-go-text-muted">
                       Mensaje
                     </div>
                     <svg class="w-4 h-4 text-go-text-muted shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 18.75a6 6 0 0 0 6-6v-1.5m-6 7.5a6 6 0 0 1-6-6v-1.5m6 7.5v3.75m-3.75 0h7.5M12 15.75a3 3 0 0 1-3-3V4.5a3 3 0 0 1 6 0v8.25a3 3 0 0 1-3 3Z" /></svg>
@@ -434,27 +434,27 @@
               <div class="w-2 h-2 rounded-full bg-go-danger"></div>
               <div class="w-2 h-2 rounded-full bg-go-warning"></div>
               <div class="w-2 h-2 rounded-full bg-go-success"></div>
-              <span class="text-go-text-muted text-[10px] ml-2">Vista de cliente</span>
+              <span class="text-go-text-muted text-xs ml-2">Vista de cliente</span>
             </div>
 
             <!-- Mini financial summary -->
             <div class="grid grid-cols-3 gap-3 mb-5">
               <div class="bg-go-bg rounded-go-md p-3 text-center">
-                <p class="text-go-text-tertiary text-[10px] mb-1">Gastos</p>
+                <p class="text-go-text-tertiary text-xs mb-1">Gastos</p>
                 <p class="text-go-danger font-display text-sm font-semibold">$847.500</p>
               </div>
               <div class="bg-go-bg rounded-go-md p-3 text-center">
-                <p class="text-go-text-tertiary text-[10px] mb-1">Pagos</p>
+                <p class="text-go-text-tertiary text-xs mb-1">Pagos</p>
                 <p class="text-go-success font-display text-sm font-semibold">$600.000</p>
               </div>
               <div class="bg-go-bg rounded-go-md p-3 text-center">
-                <p class="text-go-text-tertiary text-[10px] mb-1">Saldo</p>
+                <p class="text-go-text-tertiary text-xs mb-1">Saldo</p>
                 <p class="text-go-warning font-display text-sm font-semibold">-$247.500</p>
               </div>
             </div>
 
             <!-- Mini category breakdown -->
-            <p class="text-go-text-tertiary text-[10px] uppercase tracking-wide mb-2">Categorías</p>
+            <p class="text-go-text-tertiary text-xs uppercase tracking-wide mb-2">Categorías</p>
             <div class="space-y-2">
               <div>
                 <div class="flex justify-between text-[11px] mb-1">
@@ -632,18 +632,20 @@ definePageMeta({
 });
 
 useHead({
-  title: 'Gasto Obra - Control de gastos de obra'
+  title: 'Gasto Obra - Control de gastos de obra y reformas',
+  link: [{ rel: 'canonical', href: 'https://gastoobra.com/' }],
 });
 
 useSeoMeta({
-  description: 'Registrá gastos de obra desde WhatsApp con texto, fotos, audios o PDFs. Los datos se extraen automáticamente. Tu cliente ve todo en tiempo real.',
-  ogTitle: 'Gasto Obra - Control de gastos de obra',
-  ogDescription: 'Registrá gastos de obra desde WhatsApp con texto, fotos, audios o PDFs. Los datos se extraen automáticamente.',
+  description: 'Controlá los gastos de tu obra o reforma desde WhatsApp. Ideal para albañiles, plomeros, electricistas y cualquier proveedor de servicios en Argentina. Enviá fotos, audios o PDFs y tu cliente ve todo en tiempo real.',
+  ogTitle: 'Gasto Obra - Control de gastos de obra y reformas',
+  ogDescription: 'Gestión de gastos de obra desde WhatsApp. Tu cliente ve todo en tiempo real. Para proveedores de servicios en Argentina.',
   ogType: 'website',
-  ogImage: '/img/logo.png',
+  ogUrl: 'https://gastoobra.com/',
+  ogImage: 'https://gastoobra.com/img/logo.png',
   twitterCard: 'summary',
-  twitterTitle: 'Gasto Obra - Control de gastos de obra',
-  twitterDescription: 'Registrá gastos de obra desde WhatsApp con texto, fotos, audios o PDFs. Tu cliente ve todo en tiempo real.',
+  twitterTitle: 'Gasto Obra - Control de gastos de obra y reformas',
+  twitterDescription: 'Controlá los gastos de tu obra o reforma desde WhatsApp. Para proveedores de servicios en Argentina.',
 });
 
 const isLoading = ref(false);

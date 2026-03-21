@@ -3,17 +3,7 @@
     <!-- Branded mini-header -->
     <header class="bg-go-bg border-b border-go-border px-4 py-3 flex items-center justify-between">
       <span class="font-display font-bold text-go-text">gasto<span class="text-go-primary">obra</span></span>
-      <div class="flex items-center gap-2">
-        <button
-          @click="toggleTheme"
-          class="p-1.5 rounded-lg text-go-text-tertiary hover:text-go-text hover:bg-go-surface-hover transition-colors duration-200"
-          :aria-label="isDark ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'"
-        >
-          <MdiSun v-if="isDark" class="text-base" />
-          <MdiMoon v-else class="text-base" />
-        </button>
-        <span class="bg-go-surface border border-go-border rounded-go-sm px-2 py-1 text-[11px] text-go-text-muted">Vista previa</span>
-      </div>
+      <span class="bg-go-surface border border-go-border rounded-go-sm px-2 py-1 text-[11px] text-go-text-muted">Vista previa</span>
     </header>
 
     <div class="max-w-md mx-auto px-4 py-12">
@@ -61,7 +51,7 @@
 
           <!-- Budget teaser (if set) -->
           <div v-if="project.budget" class="mt-6 bg-go-bg border border-go-border-subtle rounded-go-md px-3 py-2.5">
-            <span class="text-[10px] font-semibold uppercase tracking-wider text-go-text-muted block mb-0.5">Presupuesto</span>
+            <span class="text-xs font-semibold uppercase tracking-wider text-go-text-muted block mb-0.5">Presupuesto</span>
             <span class="font-display font-bold text-lg tabular-nums text-go-text">{{ formatPrice(project.budget) }}</span>
           </div>
 
@@ -100,11 +90,7 @@
 </template>
 
 <script setup>
-import MdiSun from '~icons/mdi/white-balance-sunny';
-import MdiMoon from '~icons/mdi/moon-waning-crescent';
 import MdiGoogle from '~icons/mdi/google';
-
-const { isDark, toggle: toggleTheme } = useTheme();
 import { useProjectStore } from '~/stores/project';
 import { signInWithGoogle, getCurrentUserAsync } from '~/utils/firebase';
 import { formatDate, formatPrice } from '~/utils';

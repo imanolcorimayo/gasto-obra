@@ -388,6 +388,7 @@ async function sendReturningUserWelcome(phoneNumber, linkData) {
 // Middleware
 // ============================================
 app.use(express.json({
+  limit: '1mb',
   verify: (req, _res, buf) => {
     req.rawBody = buf;
   }

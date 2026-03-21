@@ -83,11 +83,11 @@
               <span v-if="item.amount" class="tabular-nums text-go-text-secondary font-medium ml-3">{{ formatPrice(item.amount) }}</span>
             </div>
           </div>
-          <div v-if="itemsTotalMismatch" class="flex items-start gap-2 mt-3 p-3 rounded-go-md bg-amber-50 dark:bg-amber-950/30 border border-amber-300 dark:border-amber-700">
-            <MdiAlertCircleOutline class="text-lg text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
-            <div class="text-sm text-amber-800 dark:text-amber-300">
+          <div v-if="itemsTotalMismatch" class="flex items-start gap-2 mt-3 p-3 rounded-go-md bg-amber-50 border border-amber-300">
+            <MdiAlertCircleOutline class="text-lg text-amber-600 shrink-0 mt-0.5" />
+            <div class="text-sm text-amber-800">
               <span class="font-semibold">La suma de items no coincide con el total</span>
-              <p class="mt-0.5 text-xs text-amber-700 dark:text-amber-400">Items: {{ formatPrice(itemsTotalMismatch.itemsSum) }} · Total: {{ formatPrice(itemsTotalMismatch.total) }} · Diferencia: {{ formatPrice(itemsTotalMismatch.diff) }}</p>
+              <p class="mt-0.5 text-xs text-amber-700">Items: {{ formatPrice(itemsTotalMismatch.itemsSum) }} · Total: {{ formatPrice(itemsTotalMismatch.total) }} · Diferencia: {{ formatPrice(itemsTotalMismatch.diff) }}</p>
             </div>
           </div>
         </div>
@@ -248,7 +248,7 @@
 
         <!-- 7. Transcription -->
         <div v-if="expense.audioTranscription" class="bg-go-surface border border-go-border-subtle rounded-go-md p-3">
-          <span class="text-[10px] font-semibold uppercase tracking-wider text-go-text-muted block mb-1">Transcripción</span>
+          <span class="text-xs font-semibold uppercase tracking-wider text-go-text-muted block mb-1">Transcripción</span>
           <p class="text-sm text-go-text-secondary leading-relaxed">{{ expense.audioTranscription }}</p>
         </div>
 
@@ -278,7 +278,7 @@
 
         <!-- 9. Linked payment/expense -->
         <div v-if="linkedExpense" class="bg-go-surface border border-go-border-subtle rounded-go-md p-3">
-          <span class="text-[10px] font-semibold uppercase tracking-wider text-go-text-muted block mb-2">
+          <span class="text-xs font-semibold uppercase tracking-wider text-go-text-muted block mb-2">
             {{ expense.linkedPaymentId ? 'Pago vinculado' : 'Gasto vinculado' }}
           </span>
           <div class="flex items-center justify-between">

@@ -10,15 +10,6 @@
       </NuxtLink>
       <div class="flex items-center gap-2">
         <button
-          @click="toggleTheme"
-          class="p-2 rounded-lg text-go-text-tertiary hover:text-go-text hover:bg-go-surface-hover transition-colors duration-200"
-          :aria-label="isDark ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'"
-          :title="isDark ? 'Modo claro' : 'Modo oscuro'"
-        >
-          <MdiSun v-if="isDark" class="text-lg" />
-          <MdiMoon v-else class="text-lg" />
-        </button>
-        <button
           v-if="showLogin"
           @click="$emit('login')"
           :disabled="loginLoading"
@@ -39,9 +30,6 @@
 </template>
 
 <script setup lang="ts">
-import MdiSun from '~icons/mdi/white-balance-sunny'
-import MdiMoon from '~icons/mdi/moon-waning-crescent'
-
 defineProps<{
   showLogin?: boolean
   loginLoading?: boolean
@@ -50,8 +38,6 @@ defineProps<{
 defineEmits<{
   login: []
 }>()
-
-const { isDark, toggle: toggleTheme } = useTheme()
 
 const scrolled = ref(false)
 

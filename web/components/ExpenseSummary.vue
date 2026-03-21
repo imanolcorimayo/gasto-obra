@@ -5,34 +5,34 @@
     <!-- Balance card -->
     <div class="flex flex-col gap-3 mb-4 pb-4 border-b border-go-border">
       <div>
-        <span class="text-[10px] font-semibold uppercase tracking-wider text-go-text-muted block mb-0.5">Gastos</span>
+        <span class="text-xs font-semibold uppercase tracking-wider text-go-text-muted block mb-0.5">Gastos</span>
         <span class="font-display font-bold text-2xl tabular-nums text-go-primary">{{ formatPrice(totalExpenses) }}</span>
       </div>
       <div v-if="totalAddition > 0" class="flex gap-4 pl-3 border-l-2 border-go-border-subtle">
         <div class="flex-1">
-          <span class="text-[10px] font-semibold uppercase tracking-wider text-go-text-muted block mb-0.5">Original</span>
+          <span class="text-xs font-semibold uppercase tracking-wider text-go-text-muted block mb-0.5">Original</span>
           <span class="font-display font-bold text-base tabular-nums" :style="{ color: getScopeTypeColor('original') }">{{ formatPrice(totalOriginal) }}</span>
         </div>
         <div class="flex-1">
-          <span class="text-[10px] font-semibold uppercase tracking-wider text-go-text-muted block mb-0.5">Agregados</span>
+          <span class="text-xs font-semibold uppercase tracking-wider text-go-text-muted block mb-0.5">Agregados</span>
           <span class="font-display font-bold text-base tabular-nums" :style="{ color: getScopeTypeColor('addition') }">{{ formatPrice(totalAddition) }}</span>
         </div>
       </div>
       <div v-if="totalManagementFee > 0" class="pl-3 border-l-2 border-go-border-subtle">
-        <span class="text-[10px] font-semibold uppercase tracking-wider text-go-text-muted block mb-0.5">Gestión</span>
+        <span class="text-xs font-semibold uppercase tracking-wider text-go-text-muted block mb-0.5">Gestión</span>
         <span class="font-display font-bold text-base tabular-nums text-go-text-secondary">{{ formatPrice(Math.round(totalManagementFee)) }}</span>
-        <span class="text-[10px] text-go-text-muted block">(incluido en gastos)</span>
+        <span class="text-xs text-go-text-muted block">(incluido en gastos)</span>
       </div>
       <div v-if="totalPayments > 0">
-        <span class="text-[10px] font-semibold uppercase tracking-wider text-go-text-muted block mb-0.5">Pagos recibidos</span>
+        <span class="text-xs font-semibold uppercase tracking-wider text-go-text-muted block mb-0.5">Pagos recibidos</span>
         <span class="font-display font-bold text-xl tabular-nums text-go-secondary">{{ formatPrice(totalPayments) }}</span>
       </div>
       <div v-if="totalProviderExpenses > 0">
-        <span class="text-[10px] font-semibold uppercase tracking-wider text-go-text-muted block mb-0.5">Gastos propios</span>
+        <span class="text-xs font-semibold uppercase tracking-wider text-go-text-muted block mb-0.5">Gastos propios</span>
         <span class="font-display font-bold text-xl tabular-nums text-go-text-tertiary">{{ formatPrice(totalProviderExpenses) }}</span>
       </div>
       <div v-if="totalPayments > 0" class="pt-3 border-t border-go-border">
-        <span class="text-[10px] font-semibold uppercase tracking-wider text-go-text-muted block mb-0.5">Saldo</span>
+        <span class="text-xs font-semibold uppercase tracking-wider text-go-text-muted block mb-0.5">Saldo</span>
         <span
           class="font-display font-bold text-xl tabular-nums"
           :class="balance >= 0 ? 'text-go-success' : 'text-go-danger'"
@@ -45,7 +45,7 @@
     <!-- Budget progress -->
     <div v-if="budget" class="mb-4 pb-4 border-b border-go-border">
       <div class="flex items-center justify-between text-sm mb-2">
-        <span class="text-[10px] font-semibold uppercase tracking-wider text-go-text-muted">Presupuesto</span>
+        <span class="text-xs font-semibold uppercase tracking-wider text-go-text-muted">Presupuesto</span>
         <span class="text-go-text tabular-nums">{{ formatPrice(budget) }}</span>
       </div>
       <div class="w-full bg-go-surface-alt rounded-full h-1.5">

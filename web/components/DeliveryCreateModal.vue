@@ -15,7 +15,7 @@
         <div class="modal-body space-y-4">
           <!-- Preview -->
           <div class="bg-go-surface border border-go-border rounded-go-md px-4 py-3">
-            <span class="text-[10px] font-semibold uppercase tracking-wider text-go-text-muted block mb-1">Vista previa</span>
+            <span class="text-xs font-semibold uppercase tracking-wider text-go-text-muted block mb-1">Vista previa</span>
             <div class="flex items-center gap-2">
               <span class="font-display font-semibold text-go-text">{{ displayNumber }}° Entrega</span>
               <span v-if="form.date" class="text-xs text-go-text-muted tabular-nums">{{ previewDate }}</span>

@@ -10,10 +10,57 @@ const PORT = process.env.API_PORT || 4002;
 const APP_URL = process.env.APP_URL || 'https://gasto-obra.web.app';
 
 // ============================================
+// Rate limiting (per IP, in-memory)
+// ============================================
+const rateLimits = new Map();
+const RATE_LIMIT = 60;
+const RATE_WINDOW = 60 * 1000;
+
+function rateLimit(req, res, next) {
+  const ip = req.ip;
+  const now = Date.now();
+  const entry = rateLimits.get(ip);
+
+  if (!entry || now >= entry.resetAt) {
+    rateLimits.set(ip, { count: 1, resetAt: now + RATE_WINDOW });
+    return next();
+  }
+
+  if (entry.count >= RATE_LIMIT) {
+    logger.warn('Rate limit exceeded', { ip });
+    return res.status(429).json({ error: 'Demasiadas solicitudes, intentá de nuevo en un momento' });
+  }
+
+  entry.count++;
+  next();
+}
+
+// Cleanup stale entries every 5 minutes
+setInterval(() => {
+  const now = Date.now();
+  for (const [ip, entry] of rateLimits.entries()) {
+    if (now >= entry.resetAt) rateLimits.delete(ip);
+  }
+}, 5 * 60 * 1000);
+
+// ============================================
 // Middleware
 // ============================================
 
-app.use(express.json());
+app.use(express.json({ limit: '1mb' }));
+
+// Security headers
+app.use((_req, res, next) => {
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'DENY');
+  res.setHeader('X-XSS-Protection', '0');
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+  res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
+  next();
+});
+
+// Rate limiting
+app.use(rateLimit);
 
 // CORS — allow requests from the web frontend
 app.use((req, res, next) => {

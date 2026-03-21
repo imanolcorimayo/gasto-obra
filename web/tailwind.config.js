@@ -8,9 +8,6 @@ export default {
     './utils/**/*.{js,ts}',
   ],
 
-  // Tema controlado por clase en <html>
-  darkMode: 'class',
-
   theme: {
     extend: {
       fontFamily: {

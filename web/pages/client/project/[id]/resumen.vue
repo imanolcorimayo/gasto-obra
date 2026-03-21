@@ -34,7 +34,7 @@
               <span class="font-display font-bold text-xl tabular-nums text-go-primary">{{ budgetSpentPercent.toFixed(0) }}%</span>
             </div>
           </div>
-          <span class="text-[10px] font-semibold uppercase tracking-wider text-go-text-muted mb-1">Total gastado</span>
+          <span class="text-xs font-semibold uppercase tracking-wider text-go-text-muted mb-1">Total gastado</span>
           <span class="font-display font-bold text-2xl tabular-nums text-go-primary">{{ formatPrice(totalExpenses) }}</span>
           <span v-if="project.budget" class="text-xs text-go-text-muted mt-1">de {{ formatPrice(project.budget) }} presupuestado</span>
         </div>
@@ -50,7 +50,7 @@
               <span class="font-display font-bold text-xl tabular-nums text-go-secondary">{{ budgetCollectedPercent.toFixed(0) }}%</span>
             </div>
           </div>
-          <span class="text-[10px] font-semibold uppercase tracking-wider text-go-text-muted mb-1">Total cobrado</span>
+          <span class="text-xs font-semibold uppercase tracking-wider text-go-text-muted mb-1">Total cobrado</span>
           <span class="font-display font-bold text-2xl tabular-nums text-go-secondary">{{ formatPrice(totalPayments) }}</span>
           <span v-if="project.budget" class="text-xs text-go-text-muted mt-1">de {{ formatPrice(project.budget) }} presupuestado</span>
         </div>
@@ -69,7 +69,7 @@
             <MdiCheckCircle v-if="balance >= 0" class="text-3xl text-go-success" />
             <MdiAlertCircle v-else class="text-3xl text-go-danger" />
           </div>
-          <span class="text-[10px] font-semibold uppercase tracking-wider text-go-text-muted mb-1">Saldo pendiente</span>
+          <span class="text-xs font-semibold uppercase tracking-wider text-go-text-muted mb-1">Saldo pendiente</span>
           <span
             class="font-display font-bold text-3xl tabular-nums"
             :class="balance >= 0 ? 'text-go-success' : 'text-go-danger'"
@@ -89,7 +89,7 @@
         <!-- Cronograma -->
         <div class="bg-go-surface border border-go-border rounded-go-xl px-5 py-4">
           <div class="flex items-center justify-between mb-3">
-            <span class="text-[10px] font-semibold uppercase tracking-wider text-go-text-muted">Cronograma</span>
+            <span class="text-xs font-semibold uppercase tracking-wider text-go-text-muted">Cronograma</span>
             <span v-if="timelinePercent != null" class="text-xs font-semibold tabular-nums text-go-info">{{ timelinePercent.toFixed(0) }}%</span>
           </div>
           <template v-if="timelinePercent != null">
@@ -110,14 +110,14 @@
 
         <!-- Gasto promedio semanal -->
         <div class="bg-go-surface border border-go-border rounded-go-xl px-5 py-4">
-          <span class="text-[10px] font-semibold uppercase tracking-wider text-go-text-muted block mb-2">Promedio semanal</span>
+          <span class="text-xs font-semibold uppercase tracking-wider text-go-text-muted block mb-2">Promedio semanal</span>
           <span class="font-display font-bold text-xl tabular-nums text-go-text">{{ formatPrice(avgWeeklySpend) }}</span>
           <p class="text-[11px] text-go-text-muted mt-1">en {{ weeksElapsed }} {{ weeksElapsed === 1 ? 'semana' : 'semanas' }} de obra</p>
         </div>
 
         <!-- Cantidad de gastos -->
         <div class="bg-go-surface border border-go-border rounded-go-xl px-5 py-4">
-          <span class="text-[10px] font-semibold uppercase tracking-wider text-go-text-muted block mb-2">Cantidad de gastos</span>
+          <span class="text-xs font-semibold uppercase tracking-wider text-go-text-muted block mb-2">Cantidad de gastos</span>
           <span class="font-display font-bold text-xl tabular-nums text-go-text">{{ expenseCount }}</span>
           <p class="text-[11px] text-go-text-muted mt-1">{{ paymentCount }} {{ paymentCount === 1 ? 'pago' : 'pagos' }} registrados</p>
         </div>

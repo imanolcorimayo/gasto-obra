@@ -92,19 +92,19 @@
           <!-- Metadata strip -->
           <div class="grid grid-cols-2 gap-2">
             <div v-if="project.clientName" class="bg-go-surface border border-go-border rounded-go-md px-3 py-2">
-              <span class="text-[10px] uppercase tracking-wider text-go-text-muted block">Cliente</span>
+              <span class="text-xs uppercase tracking-wider text-go-text-muted block">Cliente</span>
               <span class="text-sm font-medium text-go-text">{{ project.clientName }}</span>
             </div>
             <div v-if="project.address" class="bg-go-surface border border-go-border rounded-go-md px-3 py-2">
-              <span class="text-[10px] uppercase tracking-wider text-go-text-muted block">Dirección</span>
+              <span class="text-xs uppercase tracking-wider text-go-text-muted block">Dirección</span>
               <span class="text-sm font-medium text-go-text">{{ project.address }}</span>
             </div>
             <div v-if="project.budget" class="bg-go-surface border border-go-border rounded-go-md px-3 py-2">
-              <span class="text-[10px] uppercase tracking-wider text-go-text-muted block">Presupuesto</span>
+              <span class="text-xs uppercase tracking-wider text-go-text-muted block">Presupuesto</span>
               <span class="text-sm font-medium text-go-text">{{ formatPrice(project.budget) }}</span>
             </div>
             <div v-if="project.startDate || project.estimatedEndDate" class="bg-go-surface border border-go-border rounded-go-md px-3 py-2">
-              <span class="text-[10px] uppercase tracking-wider text-go-text-muted block">Cronograma</span>
+              <span class="text-xs uppercase tracking-wider text-go-text-muted block">Cronograma</span>
               <span class="text-sm font-medium text-go-text">
                 {{ project.startDate ? formatDate(project.startDate) : '—' }}
                 →
@@ -112,7 +112,7 @@
               </span>
             </div>
             <div v-if="project.description" class="col-span-2 bg-go-surface border border-go-border rounded-go-md px-3 py-2">
-              <span class="text-[10px] uppercase tracking-wider text-go-text-muted block">Descripción</span>
+              <span class="text-xs uppercase tracking-wider text-go-text-muted block">Descripción</span>
               <span class="text-sm font-medium text-go-text">{{ project.description }}</span>
             </div>
           </div>
@@ -149,7 +149,7 @@
               <MdiPlus class="text-base" />
               <div class="text-left">
                 <span>Gasto</span>
-                <span class="block text-[11px] opacity-70 font-normal">Cobrable al cliente</span>
+                <span class="block text-xs opacity-90 font-normal">Cobrable al cliente</span>
               </div>
             </button>
             <button
@@ -159,17 +159,17 @@
               <MdiPlus class="text-base" />
               <div class="text-left">
                 <span>Cobro</span>
-                <span class="block text-[11px] opacity-70 font-normal">Ingreso recibido</span>
+                <span class="block text-xs opacity-90 font-normal">Ingreso recibido</span>
               </div>
             </button>
             <button
               @click="openCreateModal('provider_expense')"
-              class="bg-go-surface border border-go-border text-go-text-tertiary hover:text-go-text-secondary hover:bg-go-surface-hover rounded-go-md px-5 py-2.5 text-sm font-medium transition-all duration-150 flex items-center justify-center gap-2 w-full sm:w-auto active:scale-[0.97]"
+              class="bg-go-surface border border-go-border text-go-text-secondary hover:text-go-text hover:bg-go-surface-hover rounded-go-md px-5 py-2.5 text-sm font-medium transition-all duration-150 flex items-center justify-center gap-2 w-full sm:w-auto active:scale-[0.97]"
             >
               <MdiPlus class="text-base" />
               <div class="text-left">
                 <span>Gasto propio</span>
-                <span class="block text-[11px] opacity-70 font-normal">No cobrable</span>
+                <span class="block text-xs opacity-90 font-normal">No cobrable</span>
               </div>
             </button>
           </div>

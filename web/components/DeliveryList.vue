@@ -40,7 +40,7 @@
         </div>
         <div class="text-right flex-shrink-0">
           <span class="font-display font-bold text-base tabular-nums text-go-primary">{{ formatPrice(getDeliveryTotal(delivery.id)) }}</span>
-          <span class="text-[10px] text-go-text-muted block">{{ getDeliveryExpenseCount(delivery.id) }} gastos</span>
+          <span class="text-xs text-go-text-muted block">{{ getDeliveryExpenseCount(delivery.id) }} gastos</span>
         </div>
       </div>
 

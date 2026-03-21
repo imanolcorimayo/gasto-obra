@@ -75,16 +75,16 @@
       <table class="w-full text-sm">
         <thead>
           <tr class="border-b border-go-border">
-            <th class="text-[10px] font-semibold uppercase tracking-wider text-go-text-muted text-left pb-2 pr-3">Fecha</th>
-            <th class="text-[10px] font-semibold uppercase tracking-wider text-go-text-muted text-left pb-2 pr-3">Concepto</th>
-            <th v-if="hasInstallments" class="text-[10px] font-semibold uppercase tracking-wider text-go-text-muted text-center pb-2 px-3">Pagado</th>
-            <th class="text-[10px] font-semibold uppercase tracking-wider text-go-text-muted text-left pb-2 px-3">Categoria</th>
-            <th v-if="hasAdditions" class="text-[10px] font-semibold uppercase tracking-wider text-go-text-muted text-left pb-2 px-3">Alcance</th>
-            <th class="text-[10px] font-semibold uppercase tracking-wider text-go-text-muted text-right pb-2 pl-3">Gasto</th>
-            <th class="text-[10px] font-semibold uppercase tracking-wider text-go-text-muted text-right pb-2 pl-3">Pago</th>
-            <th v-if="hasProviderExpenses" class="text-[10px] font-semibold uppercase tracking-wider text-go-text-muted text-right pb-2 pl-3">Propio</th>
-            <th class="text-[10px] font-semibold uppercase tracking-wider text-go-text-muted text-right pb-2 pl-3">Saldo</th>
-            <th v-if="editable" class="text-[10px] font-semibold uppercase tracking-wider text-go-text-muted text-right pb-2 pl-3">Acciones</th>
+            <th class="text-xs font-semibold uppercase tracking-wider text-go-text-muted text-left pb-2 pr-3">Fecha</th>
+            <th class="text-xs font-semibold uppercase tracking-wider text-go-text-muted text-left pb-2 pr-3">Concepto</th>
+            <th v-if="hasInstallments" class="text-xs font-semibold uppercase tracking-wider text-go-text-muted text-center pb-2 px-3">Pagado</th>
+            <th class="text-xs font-semibold uppercase tracking-wider text-go-text-muted text-left pb-2 px-3">Categoria</th>
+            <th v-if="hasAdditions" class="text-xs font-semibold uppercase tracking-wider text-go-text-muted text-left pb-2 px-3">Alcance</th>
+            <th class="text-xs font-semibold uppercase tracking-wider text-go-text-muted text-right pb-2 pl-3">Gasto</th>
+            <th class="text-xs font-semibold uppercase tracking-wider text-go-text-muted text-right pb-2 pl-3">Pago</th>
+            <th v-if="hasProviderExpenses" class="text-xs font-semibold uppercase tracking-wider text-go-text-muted text-right pb-2 pl-3">Propio</th>
+            <th class="text-xs font-semibold uppercase tracking-wider text-go-text-muted text-right pb-2 pl-3">Saldo</th>
+            <th v-if="editable" class="text-xs font-semibold uppercase tracking-wider text-go-text-muted text-right pb-2 pl-3">Acciones</th>
           </tr>
         </thead>
         <tbody>
@@ -92,7 +92,7 @@
             v-for="row in tableRows"
             :key="row.id"
             class="border-b border-go-border-subtle hover:bg-go-surface/50 transition-colors cursor-pointer"
-            :class="row.hasItemsMismatch ? 'bg-amber-500/8 dark:bg-amber-500/10' : ''"
+            :class="row.hasItemsMismatch ? 'bg-amber-500/8' : ''"
             @click="$emit('viewDetail', row.expense)"
           >
             <td class="py-3 pr-3 text-go-text-muted text-xs tabular-nums whitespace-nowrap">{{ row.date }}</td>
@@ -106,11 +106,11 @@
               <template v-if="!row.isPayment && !row.isProvider && row.installmentPercent != null">
                 <span
                   v-if="(row.groupPercent ?? row.installmentPercent) === 0"
-                  class="text-[10px] text-go-text-muted leading-tight inline-block w-20"
+                  class="text-xs text-go-text-muted leading-tight inline-block w-20"
                 >Descontado del balance</span>
                 <div v-else class="w-16">
                   <div class="flex items-baseline gap-0.5 mb-0.5">
-                    <span class="text-[10px] tabular-nums font-semibold"
+                    <span class="text-xs tabular-nums font-semibold"
                       :class="(row.groupPercent || row.installmentPercent) >= 100 ? 'text-go-success' : 'text-go-text'"
                     >{{ row.groupPercent != null ? row.groupPercent : row.installmentPercent }}%</span>
                     <span v-if="row.groupPercent != null && row.groupPercent !== row.installmentPercent" class="text-[9px] tabular-nums text-go-text-muted">
@@ -133,7 +133,7 @@
             <td v-if="hasAdditions" class="py-3 px-3 whitespace-nowrap">
               <span
                 v-if="row.scopeType === 'addition'"
-                class="text-[10px] font-medium px-1.5 py-0.5 rounded-go-sm"
+                class="text-xs font-medium px-1.5 py-0.5 rounded-go-sm"
                 :style="getScopeTypeStyles('addition')"
               >Agregado</span>
             </td>

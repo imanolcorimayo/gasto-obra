@@ -131,5 +131,18 @@ definePageMeta({
 
 useHead({
   title: 'Política de Privacidad - Gasto Obra',
+  link: [{ rel: 'canonical', href: 'https://gastoobra.com/privacy' }],
+})
+
+useSeoMeta({
+  description: 'Política de privacidad de Gasto Obra. Conocé cómo protegemos tus datos y qué información recopilamos.',
+  ogTitle: 'Política de Privacidad - Gasto Obra',
+  ogDescription: 'Política de privacidad de Gasto Obra. Conocé cómo protegemos tus datos y qué información recopilamos.',
+  ogType: 'website',
+  ogUrl: 'https://gastoobra.com/privacy',
+  ogImage: 'https://gastoobra.com/img/logo.png',
+  twitterCard: 'summary',
+  twitterTitle: 'Política de Privacidad - Gasto Obra',
+  twitterDescription: 'Política de privacidad de Gasto Obra.',
 })
 </script>

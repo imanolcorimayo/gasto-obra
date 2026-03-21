@@ -10,21 +10,12 @@
 <script setup>
 useHead({
   titleTemplate: "%s | Gasto Obra",
-  script: [
-    {
-      children: `(function(){try{var t=localStorage.getItem('go-theme')||'light';if(t==='light')document.documentElement.classList.add('light')}catch(e){}})()`,
-      type: 'text/javascript',
-    },
-  ],
 });
 
 // Default SEO meta for all pages (overridden per-page where needed)
 useSeoMeta({
-  description: 'Gasto Obra - Control de gastos de obra desde WhatsApp.',
+  description: 'Gasto Obra - Gestión y control de gastos de obra, reformas y remodelaciones desde WhatsApp. Para proveedores de servicios en Argentina.',
   ogSiteName: 'Gasto Obra',
   ogLocale: 'es_AR',
 });
-
-// Initialize theme composable to keep singleton in sync
-useTheme();
 </script>

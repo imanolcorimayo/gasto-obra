@@ -7,17 +7,6 @@
       </NuxtLink>
 
       <div class="flex items-center gap-3">
-        <!-- Theme toggle -->
-        <button
-          @click="toggle"
-          class="p-2 rounded-lg text-go-text-tertiary hover:text-go-text hover:bg-go-surface-hover transition-colors duration-200"
-          :aria-label="isDark ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'"
-          :title="isDark ? 'Modo claro' : 'Modo oscuro'"
-        >
-          <MdiSun v-if="isDark" class="text-lg" />
-          <MdiMoon v-else class="text-lg" />
-        </button>
-
         <template v-if="user">
           <div class="flex items-center gap-2">
             <span class="bg-go-surface border border-go-border rounded-full w-8 h-8 flex items-center justify-center text-go-text-secondary text-sm font-medium shrink-0">
@@ -39,11 +28,7 @@
 </template>
 
 <script setup>
-import MdiSun from '~icons/mdi/white-balance-sunny';
-import MdiMoon from '~icons/mdi/moon-waning-crescent';
 import { getCurrentUser, signOutUser } from '~/utils/firebase';
-
-const { isDark, toggle } = useTheme();
 const user = import.meta.server ? null : getCurrentUser();
 
 const userInitial = computed(() => {

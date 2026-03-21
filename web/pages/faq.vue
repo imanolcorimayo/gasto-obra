@@ -65,17 +65,21 @@ import MdiChevronDown from '~icons/mdi/chevron-down'
 
 definePageMeta({ layout: 'landing' })
 
-useHead({ title: 'Preguntas frecuentes — Gasto Obra' })
+useHead({
+  title: 'Preguntas frecuentes — Gasto Obra',
+  link: [{ rel: 'canonical', href: 'https://gastoobra.com/faq' }],
+})
 
 useSeoMeta({
-  description: 'Respondemos las dudas más comunes sobre Gasto Obra: cómo registrar gastos por WhatsApp, compartir con clientes, categorías, reportes y más.',
+  description: 'Preguntas frecuentes sobre Gasto Obra: cómo registrar gastos de obra o reforma por WhatsApp, compartir reportes con clientes, categorías de gastos y más.',
   ogTitle: 'Preguntas frecuentes — Gasto Obra',
-  ogDescription: 'Respondemos las dudas más comunes sobre Gasto Obra: cómo registrar gastos por WhatsApp, compartir con clientes y más.',
+  ogDescription: 'Dudas sobre control de gastos de obra desde WhatsApp: registro, reportes, categorías y más.',
   ogType: 'website',
-  ogImage: '/img/logo.png',
+  ogUrl: 'https://gastoobra.com/faq',
+  ogImage: 'https://gastoobra.com/img/logo.png',
   twitterCard: 'summary',
   twitterTitle: 'Preguntas frecuentes — Gasto Obra',
-  twitterDescription: 'Respondemos las dudas más comunes sobre Gasto Obra.',
+  twitterDescription: 'Dudas sobre control de gastos de obra desde WhatsApp.',
 })
 
 interface FaqItem {
