@@ -21,6 +21,12 @@ export function clearPendingExpense(phoneNumber) {
   pendingExpenses.delete(phoneNumber);
 }
 
+// Bypasses TTL check — used by the setTimeout auto-confirm callback,
+// which IS the timeout mechanism and must not race against the lazy TTL in getPendingExpense.
+export function getRawPendingExpense(phoneNumber) {
+  return pendingExpenses.get(phoneNumber) || null;
+}
+
 export function setRawPendingExpense(phoneNumber, entry) {
   pendingExpenses.set(phoneNumber, entry);
 }
@@ -116,37 +122,6 @@ export function getPendingResumenSelection(phoneNumber) {
 
 export function clearPendingResumenSelection(phoneNumber) {
   pendingResumenSelections.delete(phoneNumber);
-}
-
-// ============================================
-// Pending Support Detection
-// ============================================
-const SUPPORT_TTL = 2 * 60 * 1000;
-const pendingSupportRequests = new Map();
-
-export function setPendingSupportRequest(phoneNumber, originalText) {
-  const timestamp = Date.now();
-  pendingSupportRequests.set(phoneNumber, { originalText, timestamp });
-  setTimeout(() => {
-    const pending = pendingSupportRequests.get(phoneNumber);
-    if (pending && pending.timestamp === timestamp) {
-      pendingSupportRequests.delete(phoneNumber);
-    }
-  }, SUPPORT_TTL);
-}
-
-export function getPendingSupportRequest(phoneNumber) {
-  const pending = pendingSupportRequests.get(phoneNumber);
-  if (!pending) return null;
-  if (Date.now() - pending.timestamp > SUPPORT_TTL) {
-    pendingSupportRequests.delete(phoneNumber);
-    return null;
-  }
-  return pending;
-}
-
-export function clearPendingSupportRequest(phoneNumber) {
-  pendingSupportRequests.delete(phoneNumber);
 }
 
 // ============================================

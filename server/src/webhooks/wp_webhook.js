@@ -13,11 +13,10 @@ import { PDFParse } from 'pdf-parse';
 import { formatAmount, capitalizeFirst, stripHtml } from '../helpers/responseFormatter.js';
 import logger from '../../lib/logger.js';
 import {
-  CONFIRMATION_TTL, getPendingExpense, clearPendingExpense, setRawPendingExpense,
+  CONFIRMATION_TTL, getPendingExpense, getRawPendingExpense, clearPendingExpense, setRawPendingExpense,
   setPendingProjectSelection, getPendingProjectSelection, clearPendingProjectSelection,
   setPendingProjectSwitchExpense, getPendingProjectSwitchExpense, clearPendingProjectSwitchExpense,
   setPendingResumenSelection, getPendingResumenSelection, clearPendingResumenSelection,
-  setPendingSupportRequest, getPendingSupportRequest, clearPendingSupportRequest,
   createAISupportSession, getAISupportSession, clearAISupportSession, resetSessionTimers,
   getOnboardingState, clearOnboarding, setOnboardingState,
   checkMessageRateLimit
@@ -219,7 +218,7 @@ async function setPendingConfirmation(phoneNumber, userId, expenseData) {
     pendingConfirmation: true
   });
   setTimeout(async () => {
-    const pending = getPendingExpense(phoneNumber);
+    const pending = getRawPendingExpense(phoneNumber);
     if (pending && pending.pendingConfirmation && pending.timestamp === timestamp) {
       try {
         await confirmPendingExpense(phoneNumber, pending);
@@ -593,34 +592,17 @@ async function processMessage(phoneNumber, text, contactName) {
     clearPendingResumenSelection(phoneNumber);
   }
 
-  // 5. Pending support detection → button response
-  const pendingSupport = getPendingSupportRequest(phoneNumber);
-  if (pendingSupport) {
-    if (normalizedText === 'soporte ai') {
-      clearPendingSupportRequest(phoneNumber);
-      const session = createAISupportSession(phoneNumber);
-      await handleAISupport(phoneNumber, pendingSupport.originalText, session, { geminiHandler, getFaqData });
-      return;
-    }
-    if (normalizedText === 'registrar' || normalizedText === 'registrar gasto') {
-      clearPendingSupportRequest(phoneNumber);
-      await handleTextExpense(phoneNumber, pendingSupport.originalText, true);
-      return;
-    }
-    clearPendingSupportRequest(phoneNumber);
-  }
-
-  // 6. Active AI support session
+  // 5. Active AI support session
   const activeSession = getAISupportSession(phoneNumber);
   if (activeSession) {
     if (['listo, gracias', 'listo gracias', 'listo'].includes(normalizedText)) {
       clearAISupportSession(phoneNumber);
-      await sendWhatsAppMessage(phoneNumber, '¡Listo! Si necesitás algo más, escribí *AYUDA* cuando quieras.');
+      await sendWhatsAppMessage(phoneNumber, '¡Listo! Si necesitás algo más, escribí *AYUDA* cuando quieras ✅');
       return;
     }
     if (normalizedText === 'otra consulta') {
       resetSessionTimers(phoneNumber);
-      await sendWhatsAppMessage(phoneNumber, 'Escribí tu consulta y te ayudo.');
+      await sendWhatsAppMessage(phoneNumber, 'Escribí tu consulta y te ayudo 💡');
       return;
     }
     await handleAISupport(phoneNumber, text, activeSession, { geminiHandler, getFaqData });
@@ -666,15 +648,8 @@ async function processMessage(phoneNumber, text, contactName) {
     return;
   }
   if (normalizedText === 'soporte ai') {
-    const supportReq = getPendingSupportRequest(phoneNumber);
-    if (supportReq) {
-      clearPendingSupportRequest(phoneNumber);
-      const session = createAISupportSession(phoneNumber);
-      await handleAISupport(phoneNumber, supportReq.originalText, session, { geminiHandler, getFaqData });
-    } else {
-      createAISupportSession(phoneNumber);
-      await sendWhatsAppMessage(phoneNumber, 'Escribí tu consulta y te ayudo.');
-    }
+    createAISupportSession(phoneNumber);
+    await sendWhatsAppMessage(phoneNumber, 'Escribí tu consulta y te ayudo 💡');
     return;
   }
 
@@ -1106,7 +1081,7 @@ async function processAudioMessage(phoneNumber, audioId, caption, contactName) {
 // Text Message Expense Processing
 // ============================================
 
-async function handleTextExpense(phoneNumber, text, skipSupportDetection = false) {
+async function handleTextExpense(phoneNumber, text) {
   const ctx = await prepareExpenseContext(phoneNumber);
   if (!ctx) return;
 
@@ -1115,20 +1090,11 @@ async function handleTextExpense(phoneNumber, text, skipSupportDetection = false
     return;
   }
 
-  await sendWhatsAppMessage(phoneNumber, 'Procesando mensaje...');
-
   const result = await geminiHandler.parseTextExpense(text, ctx.aiContext);
 
-  if (!skipSupportDetection && !isGeminiError(result) && result?.isSupportQuestion && (!result.totalAmount || result.totalAmount === 0)) {
-    setPendingSupportRequest(phoneNumber, text);
-    await sendWhatsAppButtons(
-      phoneNumber,
-      'Parece que tenés una consulta. ¿Querés que te ayude?',
-      [
-        { id: 'support_ai', title: 'Soporte AI' },
-        { id: 'support_expense', title: 'Registrar' }
-      ]
-    );
+  if (!isGeminiError(result) && result?.isSupportQuestion && (!result.totalAmount || result.totalAmount === 0)) {
+    const session = createAISupportSession(phoneNumber);
+    await handleAISupport(phoneNumber, text, session, { geminiHandler, getFaqData });
     return;
   }
 

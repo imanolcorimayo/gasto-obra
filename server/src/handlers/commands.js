@@ -133,7 +133,7 @@ export async function handleAISupport(phoneNumber, question, session, { geminiHa
     return;
   }
 
-  await sendWhatsAppMessage(phoneNumber, 'Buscando respuesta...');
+  await sendWhatsAppMessage(phoneNumber, 'Buscando respuesta... 💡');
 
   const faqData = await getFaqData();
   if (faqData.length === 0) {
