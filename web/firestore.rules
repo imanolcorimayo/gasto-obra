@@ -73,7 +73,8 @@ service cloud.firestore {
     // Clients read the provider's categories via authenticated queries.
     // Write: only the owning provider.
     match /categories/{categoryId} {
-      allow read: if request.auth != null;
+      allow read: if request.auth != null
+                  && resource.data.userId == request.auth.uid;
 
       allow create: if request.auth != null
                     && request.resource.data.userId == request.auth.uid;

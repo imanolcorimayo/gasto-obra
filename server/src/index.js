@@ -2,6 +2,8 @@ import 'dotenv/config';
 import express from 'express';
 import { db, COLLECTIONS } from './config/firebase.js';
 import logger from '../lib/logger.js';
+import { requireAuth } from './middleware/auth.js';
+import { GetProjectCategories } from './actions/categories/GetProjectCategories.js';
 
 const app = express();
 const PORT = process.env.API_PORT || 4002;
@@ -16,12 +18,14 @@ app.use(express.json());
 // CORS — allow requests from the web frontend
 app.use((req, res, next) => {
   const origin = req.headers.origin;
-  const allowed = [APP_URL, 'http://localhost:3000'];
+  const allowed = [APP_URL, 'http://localhost:3000', 'http://localhost:3001'];
   if (allowed.includes(origin)) {
     res.setHeader('Access-Control-Allow-Origin', origin);
+  } else if (origin) {
+    logger.warn('CORS rejected origin', { origin });
   }
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   if (req.method === 'OPTIONS') return res.sendStatus(204);
   next();
 });
@@ -87,6 +91,12 @@ app.get('/api/project-preview/:token', async (req, res) => {
     res.status(500).json({ error: 'Error interno' });
   }
 });
+
+// ============================================
+// Authenticated routes
+// ============================================
+
+app.get('/api/projects/:projectId/categories', requireAuth, GetProjectCategories);
 
 // ============================================
 // Start Server

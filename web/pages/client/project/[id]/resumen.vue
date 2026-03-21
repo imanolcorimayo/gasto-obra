@@ -267,7 +267,7 @@ onMounted(async () => {
     project.value = result;
     await Promise.all([
       expenseStore.fetchByProjectIdPublic(id),
-      categoryStore.fetchForProviderPublic(result.providerId, id)
+      categoryStore.fetchForProjectFromAPI(id)
     ]);
   }
 

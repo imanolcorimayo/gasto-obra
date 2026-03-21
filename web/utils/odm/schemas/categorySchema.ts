@@ -51,20 +51,6 @@ export class CategorySchema extends Schema {
     }, 'userId');
   }
 
-  async findByProviderPublic(providerId: string, projectId?: string): Promise<FetchResult> {
-    const constraints = [
-      { field: 'userId', operator: '==' as const, value: providerId }
-    ];
-
-    if (projectId) {
-      constraints.push({ field: 'projectId', operator: '==', value: projectId });
-    } else {
-      constraints.push({ field: 'projectId', operator: '==', value: null });
-    }
-
-    return this.findPublic({ where: constraints });
-  }
-
   async saveCategories(categories: Array<{ value: string; label: string; color: string }>, projectId?: string): Promise<{ success: boolean; error?: string }> {
     try {
       const user = getCurrentUser();

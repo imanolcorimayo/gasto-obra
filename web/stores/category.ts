@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia';
 import { CategorySchema } from '~/utils/odm/schemas/categorySchema';
 import { resolveCategories, DEFAULT_EXPENSE_CATEGORIES } from '~/utils';
+import { getCurrentUser } from '~/utils/firebase';
 import type { ExpenseCategory } from '~/interfaces';
 
 interface CategoryState {
@@ -71,24 +72,33 @@ export const useCategoryStore = defineStore('category', {
       }
     },
 
-    async fetchForProviderPublic(providerId: string, projectId: string) {
+    async fetchForProjectFromAPI(projectId: string) {
       this.error = null;
 
       try {
-        // Fetch both global and project-specific in parallel
-        const [globalResult, projectResult] = await Promise.all([
-          getSchema().findByProviderPublic(providerId),
-          getSchema().findByProviderPublic(providerId, projectId)
-        ]);
+        const config = useRuntimeConfig();
+        const user = getCurrentUser();
+        if (!user) {
+          this.error = 'Usuario no autenticado';
+          return;
+        }
 
-        if (globalResult.success && globalResult.data) {
-          this.globalCategories = globalResult.data.map(docToCategory);
+        const token = await user.getIdToken();
+        const res = await fetch(`${config.public.apiBase}/api/projects/${projectId}/categories`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+
+        if (!res.ok) {
+          this.error = 'Error al obtener categorías';
+          return;
         }
-        if (projectResult.success && projectResult.data) {
-          this.projectCategoriesMap[projectId] = projectResult.data.map(docToCategory);
-        }
+
+        const data = await res.json();
+        this.globalCategories = data.global || [];
+        this.projectCategoriesMap[projectId] = data.project || [];
       } catch (error) {
-        console.error('Error fetching provider categories:', error);
+        console.error('Error fetching categories from API:', error);
+        this.error = 'Error al obtener categorías';
       }
     },
 
