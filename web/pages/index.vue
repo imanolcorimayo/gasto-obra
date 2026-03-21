@@ -1,20 +1,6 @@
 <template>
   <div class="bg-go-bg min-h-screen">
-    <!-- Auth-check overlay -->
-    <Transition name="fade">
-      <div
-        v-if="isCheckingAuth"
-        class="fixed inset-0 z-[60] bg-go-bg flex flex-col items-center justify-center gap-4"
-      >
-        <img src="/img/logo-horizontal.svg" alt="Gasto Obra" class="h-8 opacity-80" />
-        <div class="flex items-center gap-2 text-go-text-secondary text-sm">
-          <span class="w-4 h-4 border-2 border-go-primary/30 border-t-go-primary rounded-full animate-spin"></span>
-          Verificando sesión...
-        </div>
-      </div>
-    </Transition>
-
-    <LandingNavbar :show-login="true" :login-loading="isLoading" @login="handleLogin" />
+    <LandingNavbar :show-login="true" :login-loading="isLoading" :is-authenticated="isAuthenticated" @login="handleLogin" />
 
     <!-- ═══ HERO ═══ -->
     <section class="relative overflow-hidden">
@@ -33,7 +19,24 @@
               Mandá un texto, una foto del ticket, un audio o un PDF — los datos se extraen solos. Tu cliente ve todo en tiempo real. Sin papel, sin Excel, sin olvidos.
             </p>
 
+            <!-- Authenticated: go to dashboard -->
             <button
+              v-if="isAuthenticated"
+              @click="goToDashboard"
+              :disabled="isLoading"
+              class="inline-flex items-center gap-3 text-base px-8 py-3.5 rounded-go-lg shadow-go-md hover:shadow-go-lg transition-all font-semibold bg-go-primary text-go-text-inverse hover:bg-go-primary-hover active:scale-[0.97] focus:outline-none focus:ring-2 focus:ring-offset-2"
+              style="--tw-ring-color: rgba(255, 171, 64, 0.5); --tw-ring-offset-color: var(--go-bg);"
+            >
+              <template v-if="!isLoading">Ir al dashboard</template>
+              <span v-else class="flex items-center gap-2">
+                <span class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
+                Cargando...
+              </span>
+            </button>
+
+            <!-- Not authenticated: sign in with Google -->
+            <button
+              v-else
               @click="handleLogin"
               :disabled="isLoading"
               class="inline-flex items-center gap-3 text-base px-8 py-3.5 rounded-go-lg shadow-go-md hover:shadow-go-lg transition-all font-semibold bg-go-primary-muted text-go-primary hover:bg-go-primary/20 active:scale-[0.97] focus:outline-none focus:ring-2 focus:ring-offset-2"
@@ -52,7 +55,7 @@
               </span>
             </button>
 
-            <p class="text-go-text-muted text-sm mt-4">
+            <p v-if="!isAuthenticated" class="text-go-text-muted text-sm mt-4">
               Sin tarjeta. Sin configuración. Gratis para empezar.
             </p>
           </div>
@@ -596,7 +599,24 @@
           Creá tu cuenta en un minuto. Sin tarjeta, sin configuración.
         </p>
 
+        <!-- Authenticated: go to dashboard -->
         <button
+          v-if="isAuthenticated"
+          @click="goToDashboard"
+          :disabled="isLoading"
+          class="inline-flex items-center gap-3 text-base px-8 py-3.5 rounded-go-lg shadow-go-md hover:shadow-go-lg transition-all font-semibold bg-go-primary text-go-text-inverse hover:bg-go-primary-hover active:scale-[0.97] focus:outline-none focus:ring-2 focus:ring-offset-2"
+          style="--tw-ring-color: rgba(255, 171, 64, 0.5); --tw-ring-offset-color: var(--go-bg);"
+        >
+          <template v-if="!isLoading">Ir al dashboard</template>
+          <span v-else class="flex items-center gap-2">
+            <span class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
+            Cargando...
+          </span>
+        </button>
+
+        <!-- Not authenticated: sign in with Google -->
+        <button
+          v-else
           @click="handleLogin"
           :disabled="isLoading"
           class="inline-flex items-center gap-3 text-base px-8 py-3.5 rounded-go-lg shadow-go-md hover:shadow-go-lg transition-all font-semibold bg-go-primary-muted text-go-primary hover:bg-go-primary/20 active:scale-[0.97] focus:outline-none focus:ring-2 focus:ring-offset-2"
@@ -649,7 +669,7 @@ useSeoMeta({
 });
 
 const isLoading = ref(false);
-const isCheckingAuth = ref(true);
+const isAuthenticated = ref(false);
 const heroTextRef = ref(null);
 const heroPhoneRef = ref(null);
 const featuresRef = ref(null);
@@ -691,12 +711,10 @@ onMounted(async () => {
     if (ref.value) observer.observe(ref.value);
   });
 
-  // Check auth and redirect if logged in
+  // Check auth in background (no redirect, no blocking)
   const user = await getCurrentUserAsync();
   if (user) {
-    await redirectUser(user);
-  } else {
-    isCheckingAuth.value = false;
+    isAuthenticated.value = true;
   }
 });
 
@@ -716,6 +734,18 @@ async function redirectUser(user) {
   }
 }
 
+async function goToDashboard() {
+  isLoading.value = true;
+  try {
+    const user = await getCurrentUserAsync();
+    if (user) {
+      await redirectUser(user);
+    }
+  } finally {
+    isLoading.value = false;
+  }
+}
+
 async function handleLogin() {
   isLoading.value = true;
   try {
@@ -723,6 +753,7 @@ async function handleLogin() {
     if (user) {
       // Ensure provider profile exists (fire-and-forget, don't block login)
       useProviderStore().ensureExists();
+      isAuthenticated.value = true;
       await redirectUser(user);
     }
   } catch (error) {
@@ -777,11 +808,4 @@ async function handleLogin() {
   }
 }
 
-/* Auth-check overlay transition */
-.fade-leave-active {
-  transition: opacity 0.3s ease;
-}
-.fade-leave-to {
-  opacity: 0;
-}
 </style>

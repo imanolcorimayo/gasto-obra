@@ -5,12 +5,20 @@
     :class="scrolled ? 'bg-go-bg/95 backdrop-blur-md border-b border-go-border-subtle' : 'bg-transparent border-b border-transparent'"
   >
     <div class="max-w-6xl mx-auto px-5 h-16 flex items-center justify-between">
-      <NuxtLink to="/">
-        <img src="/img/logo-horizontal.svg" alt="Gasto Obra" class="h-7" />
+      <NuxtLink to="/" class="flex items-center gap-2.5">
+        <img src="/img/logo.png" alt="Gasto Obra" class="h-10 w-10" />
+        <span class="font-display font-bold text-lg tracking-tight"><span class="text-go-text">gasto</span><span class="text-go-primary ml-0.5">obra</span></span>
       </NuxtLink>
       <div class="flex items-center gap-2">
+        <NuxtLink
+          v-if="isAuthenticated"
+          to="/projects"
+          class="px-4 py-2 rounded-go-md bg-go-primary text-go-text-inverse text-sm font-medium hover:bg-go-primary-hover transition-colors"
+        >
+          Ir al dashboard
+        </NuxtLink>
         <button
-          v-if="showLogin"
+          v-else-if="showLogin"
           @click="$emit('login')"
           :disabled="loginLoading"
           class="px-4 py-2 rounded-go-md border border-go-border text-go-text-secondary text-sm font-medium hover:border-go-primary hover:text-go-primary transition-colors"
@@ -33,6 +41,7 @@
 defineProps<{
   showLogin?: boolean
   loginLoading?: boolean
+  isAuthenticated?: boolean
 }>()
 
 defineEmits<{
