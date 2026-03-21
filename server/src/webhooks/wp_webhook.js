@@ -600,11 +600,6 @@ async function processMessage(phoneNumber, text, contactName) {
       await sendWhatsAppMessage(phoneNumber, '¡Listo! Si necesitás algo más, escribí *AYUDA* cuando quieras ✅');
       return;
     }
-    if (normalizedText === 'otra consulta') {
-      resetSessionTimers(phoneNumber);
-      await sendWhatsAppMessage(phoneNumber, 'Escribí tu consulta y te ayudo 💡');
-      return;
-    }
     await handleAISupport(phoneNumber, text, activeSession, { geminiHandler, getFaqData });
     return;
   }

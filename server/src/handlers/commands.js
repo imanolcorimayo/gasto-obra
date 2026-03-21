@@ -133,7 +133,7 @@ export async function handleAISupport(phoneNumber, question, session, { geminiHa
     return;
   }
 
-  await sendWhatsAppMessage(phoneNumber, 'Buscando respuesta... 💡');
+  const isFirstInteraction = !session?.previousQA?.length;
 
   const faqData = await getFaqData();
   if (faqData.length === 0) {
@@ -179,10 +179,6 @@ export async function handleAISupport(phoneNumber, question, session, { geminiHa
       session.lastQueryId = queryDocId;
       resetSessionTimers(phoneNumber);
     }
-    await sendWhatsAppButtons(phoneNumber, '¿Necesitás algo más?', [
-      { id: 'support_otra', title: 'Otra consulta' },
-      { id: 'support_listo', title: 'Listo, gracias' }
-    ]);
     return;
   }
 
@@ -195,8 +191,9 @@ export async function handleAISupport(phoneNumber, question, session, { geminiHa
   session.lastQueryId = queryDocId;
   resetSessionTimers(phoneNumber);
 
-  await sendWhatsAppButtons(phoneNumber, '¿Necesitás algo más?', [
-    { id: 'support_otra', title: 'Otra consulta' },
-    { id: 'support_listo', title: 'Listo, gracias' }
-  ]);
+  if (!isFirstInteraction) {
+    await sendWhatsAppButtons(phoneNumber, 'Seguí preguntando o cuando termines 👇', [
+      { id: 'support_listo', title: 'Listo, gracias' }
+    ]);
+  }
 }
