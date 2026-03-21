@@ -1,0 +1,26 @@
+        <!-- Header -->
+        <div class="header">
+          <img src="https://go-api.wiseutils.com/static/img/logo.png" alt="Gasto Obra" class="header-logo">
+          <h1>Nuevo mensaje</h1>
+          <p class="subtitle">Formulario de contacto web</p>
+        </div>
+
+        <!-- Content -->
+        <div class="content">
+          <p class="greeting">Recibiste un mensaje desde el formulario de contacto de <strong>gastoobra.com</strong>.</p>
+
+          <div class="context-bar">
+            <strong>Nombre:</strong> {{Name}}<br>
+            <strong>Email:</strong> <a href="mailto:{{Email}}" style="color: #E99A35; text-decoration: underline;">{{Email}}</a>
+          </div>
+
+          <hr class="divider">
+
+          <h2 class="stats-title">Mensaje</h2>
+          <p style="font-size: 14px; color: #4A443D; line-height: 1.7;">{{Message}}</p>
+        </div>
+
+        <!-- CTA -->
+        <div class="cta-wrap">
+          <a href="mailto:{{Email}}?subject=Re: Contacto Gasto Obra" style="display: inline-block; background: linear-gradient(135deg, #E99A35, #FFAB40); color: #FFFFFF !important; padding: 13px 32px; border-radius: 10px; text-decoration: none; font-weight: 700; font-size: 14px; mso-padding-alt: 0;">Responder</a>
+        </div>

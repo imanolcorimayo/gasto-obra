@@ -8,6 +8,9 @@
         <NuxtLink to="/faq" class="hover:text-go-text-secondary transition-colors">
           Preguntas frecuentes
         </NuxtLink>
+        <NuxtLink to="/contactanos" class="hover:text-go-text-secondary transition-colors">
+          Contacto
+        </NuxtLink>
         <NuxtLink to="/privacy" class="hover:text-go-text-secondary transition-colors">
           Privacidad
         </NuxtLink>

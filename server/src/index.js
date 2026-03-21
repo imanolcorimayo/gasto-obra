@@ -4,6 +4,7 @@ import { db, COLLECTIONS } from './config/firebase.js';
 import logger from '../lib/logger.js';
 import { requireAuth } from './middleware/auth.js';
 import { GetProjectCategories } from './actions/categories/GetProjectCategories.js';
+import { SendContactEmail } from './actions/contact/SendContactEmail.js';
 
 const app = express();
 const PORT = process.env.API_PORT || 4002;
@@ -77,7 +78,7 @@ app.use((req, res, next) => {
   } else if (origin) {
     logger.warn('CORS rejected origin', { origin });
   }
-  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   if (req.method === 'OPTIONS') return res.sendStatus(204);
   next();
@@ -144,6 +145,9 @@ app.get('/api/project-preview/:token', async (req, res) => {
     res.status(500).json({ error: 'Error interno' });
   }
 });
+
+// Public POST endpoints
+app.post('/api/contact', SendContactEmail);
 
 // ============================================
 // Authenticated routes

@@ -127,8 +127,8 @@ export function clearPendingResumenSelection(phoneNumber) {
 // ============================================
 // AI Support Sessions (persistent multi-turn)
 // ============================================
-const AI_SUPPORT_SESSION_TTL = 5 * 60 * 1000;
-const AI_SUPPORT_WARNING_TTL = 2 * 60 * 1000;
+const AI_SUPPORT_SESSION_TTL = 15 * 60 * 1000;
+const AI_SUPPORT_WARNING_TTL = 12 * 60 * 1000;
 const pendingAISupportSessions = new Map();
 
 export function createAISupportSession(phoneNumber) {
@@ -169,7 +169,7 @@ export function resetSessionTimers(phoneNumber) {
     const current = pendingAISupportSessions.get(phoneNumber);
     if (current === session) {
       try {
-        await sendWhatsAppMessage(phoneNumber, 'El soporte se cierra en 3 minutos ⏳ Escribí tu consulta o *listo* para salir.');
+        await sendWhatsAppMessage(phoneNumber, 'El soporte se cierra en 2 minutos ⏳ Escribí tu consulta o *listo* para salir.');
       } catch (err) {
         logger.error('Error sending session warning', { error: err });
       }

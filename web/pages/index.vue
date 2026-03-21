@@ -589,6 +589,24 @@
       </div>
     </section>
 
+    <!-- ═══ CONTACT ═══ -->
+    <section class="py-16 sm:py-20 border-t border-go-border-subtle bg-go-surface-alt/50">
+      <div ref="contactRef" class="max-w-3xl mx-auto px-5 text-center landing-fade-up">
+        <h2 class="font-display text-2xl sm:text-3xl text-go-text mb-3">
+          ¿Tenés dudas o sugerencias?
+        </h2>
+        <p class="text-go-text-secondary mb-6 max-w-lg mx-auto">
+          Escribinos y te respondemos a la brevedad. Queremos que tu experiencia sea la mejor posible.
+        </p>
+        <NuxtLink
+          to="/contactanos"
+          class="inline-flex items-center gap-2 px-6 py-3 rounded-go-lg border-2 border-go-primary text-go-primary font-semibold text-sm hover:bg-go-primary hover:text-go-text-inverse transition-all active:scale-[0.97]"
+        >
+          Contactanos
+        </NuxtLink>
+      </div>
+    </section>
+
     <!-- ═══ CTA ═══ -->
     <section class="py-20 sm:py-28 border-t border-go-border-subtle">
       <div ref="ctaRef" class="max-w-3xl mx-auto px-5 text-center landing-fade-up">
@@ -723,6 +741,7 @@ const howRef = ref(null);
 const stepsRef = ref(null);
 const whyTitleRef = ref(null);
 const whyRef = ref(null);
+const contactRef = ref(null);
 const ctaRef = ref(null);
 
 onMounted(async () => {
@@ -750,7 +769,7 @@ onMounted(async () => {
   });
 
   // Observe scroll-triggered sections
-  [featuresRef, whatsappTitleRef, whatsappRef, clientRef, howRef, stepsRef, whyTitleRef, whyRef, ctaRef].forEach((ref) => {
+  [featuresRef, whatsappTitleRef, whatsappRef, clientRef, howRef, stepsRef, whyTitleRef, whyRef, contactRef, ctaRef].forEach((ref) => {
     if (ref.value) observer.observe(ref.value);
   });
 
