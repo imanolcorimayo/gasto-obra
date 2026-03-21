@@ -22,6 +22,10 @@ All user-facing text is in **Spanish (Argentine)**. Currency: ARS with `es-AR` l
 
 `/docs/conflictive-reports/` contains real receipt images that caused parsing issues, with `notes.md` documenting each problem and its fix/status. Use this folder as reference when working on AI prompting improvements.
 
+## UX Philosophy
+
+Keep code simple, but never at the expense of user experience. Every user-facing flow should feel intentional and complete — proper redirects, clear feedback, no dead ends. "Simple" means minimal code complexity, not minimal polish. Do it once, do it right.
+
 ## Dependencies Policy
 
 Avoid adding libraries for things that can be done with plain JS. Input validation, rate limiting, and similar utilities should use simple guard clauses and native code — no zod, joi, express-rate-limit, etc.

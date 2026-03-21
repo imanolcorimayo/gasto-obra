@@ -5,9 +5,25 @@
     <!-- Spacer for fixed navbar -->
     <div class="h-16"></div>
 
-    <div class="max-w-3xl mx-auto px-4 sm:px-6 py-8 flex-1 w-full">
-      <h1 class="font-display font-bold text-3xl text-go-text mb-1">Preguntas frecuentes</h1>
-      <p class="text-go-text-secondary text-sm mb-8">Todo lo que necesitás saber sobre Gasto Obra.</p>
+    <!-- Hero -->
+    <section class="relative overflow-hidden">
+      <div class="absolute top-1/3 left-1/2 -translate-x-1/2 w-[500px] h-[500px] bg-go-primary/[0.04] rounded-full blur-[100px] pointer-events-none"></div>
+
+      <div class="relative max-w-3xl mx-auto px-4 sm:px-6 pt-12 pb-10 text-center">
+        <div class="flex justify-center mb-5">
+          <CasquitoConfused :size="140" />
+        </div>
+        <h1 class="font-display font-bold text-4xl sm:text-5xl text-go-text tracking-tight mb-4">
+          Preguntas frecuentes
+        </h1>
+        <p class="text-go-text-secondary text-base sm:text-lg leading-relaxed max-w-lg mx-auto">
+          Todo lo que necesitás saber sobre cómo registrar gastos, compartir reportes con tus clientes y sacarle el máximo provecho a Gasto Obra.
+        </p>
+      </div>
+    </section>
+
+    <!-- Content -->
+    <div class="max-w-3xl mx-auto px-4 sm:px-6 pb-12 flex-1 w-full">
 
       <!-- Loading -->
       <template v-if="isLoading">
@@ -25,18 +41,18 @@
       </div>
 
       <!-- FAQ grouped by topic -->
-      <div v-else class="space-y-8">
+      <div v-else class="space-y-10">
         <section v-for="group in groupedFaq" :key="group.topic">
           <h2 class="font-display font-semibold text-lg text-go-text mb-3">{{ group.topicLabel }}</h2>
           <div class="space-y-2">
             <div
               v-for="item in group.items"
               :key="item.id"
-              class="bg-go-surface border border-go-border rounded-go-lg overflow-hidden"
+              class="bg-go-surface border border-go-border rounded-go-lg overflow-hidden transition-shadow hover:shadow-go-sm"
             >
               <button
                 @click="toggle(item.id)"
-                class="w-full text-left px-4 py-3 flex items-center justify-between gap-3"
+                class="w-full text-left px-5 py-3.5 flex items-center justify-between gap-3"
               >
                 <span class="font-ui font-medium text-sm text-go-text">{{ item.question }}</span>
                 <MdiChevronDown
@@ -46,7 +62,7 @@
               </button>
               <div
                 v-show="openItems.has(item.id)"
-                class="px-4 pb-4 text-go-text-secondary text-sm leading-relaxed faq-answer"
+                class="px-5 pb-4 text-go-text-secondary text-sm leading-relaxed faq-answer"
                 v-html="item.answer"
               />
             </div>

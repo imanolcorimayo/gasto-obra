@@ -1,0 +1,920 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Casquito — Gasto Obra Character System</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Red+Hat+Display:wght@400;500;600;700&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --go-primary: #BF6C15;
+    --go-primary-hover: #A85E0E;
+    --go-primary-active: #96520C;
+    --go-bg: #F5F0E8;
+    --go-bg-elevated: #FDFAF4;
+    --go-surface: #FFFFFF;
+    --go-surface-hover: #EDE8DF;
+    --go-surface-alt: #E0DBD2;
+    --go-border: #B8AFA2;
+    --go-border-subtle: #CFC7BA;
+    --go-text: #1C1915;
+    --go-text-secondary: #4A443D;
+    --go-text-tertiary: #6B6259;
+    --go-text-muted: #635B54;
+    --go-success: #2D7A3F;
+    --go-danger: #B53E36;
+    --go-warning: #8C6818;
+    --go-info: #2D6A8A;
+    --go-helmet: #FFAB40;
+    --go-helmet-shadow: #E99A35;
+    --go-eye: #2C261E;
+  }
+
+  body {
+    min-height: 100vh;
+    background: var(--go-bg);
+    color: var(--go-text);
+    font-family: 'Red Hat Display', sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 48px 24px 80px;
+  }
+
+  h1 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 700;
+    font-size: 40px;
+    text-align: center;
+    line-height: 1.2;
+  }
+  h1 .accent { color: var(--go-primary); }
+
+  .subtitle {
+    font-size: 16px;
+    color: var(--go-text-secondary);
+    text-align: center;
+    margin-top: 8px;
+    margin-bottom: 48px;
+    max-width: 500px;
+    line-height: 1.5;
+  }
+
+  .section-label {
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 600;
+    font-size: 12px;
+    letter-spacing: 2.5px;
+    text-transform: uppercase;
+    color: var(--go-primary);
+    opacity: 0.6;
+    margin-top: 56px;
+    margin-bottom: 20px;
+    text-align: center;
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+    max-width: 860px;
+    width: 100%;
+  }
+
+  .grid-2 { grid-template-columns: repeat(2, 1fr); }
+
+  .card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+    padding: 36px 20px 20px;
+    border-radius: 14px;
+    background: var(--go-surface);
+    border: 1px solid var(--go-border-subtle);
+    transition: border-color 0.2s;
+  }
+  .card:hover { border-color: var(--go-border); }
+
+  .card-label {
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 600;
+    font-size: 14px;
+    color: var(--go-text);
+  }
+
+  .card-sublabel {
+    font-size: 12px;
+    color: var(--go-text-tertiary);
+    text-align: center;
+    line-height: 1.4;
+  }
+
+  .card-dark {
+    background: #1C1915;
+    border-color: #3D362C;
+  }
+  .card-dark .card-label { color: #F0EBE1; }
+  .card-dark .card-sublabel { color: #8A8579; }
+  .card-dark:hover { border-color: #574E42; }
+
+  .card-primary {
+    background: var(--go-primary);
+    border-color: var(--go-primary-hover);
+  }
+  .card-primary .card-label { color: #FFFFFF; }
+  .card-primary .card-sublabel { color: rgba(255,255,255,0.7); }
+
+  /* ─── Size reference ─── */
+  .sizes-row {
+    display: flex;
+    gap: 32px;
+    align-items: flex-end;
+    justify-content: center;
+    padding: 40px;
+    background: var(--go-surface);
+    border-radius: 14px;
+    border: 1px solid var(--go-border-subtle);
+    grid-column: 1 / -1;
+  }
+  .size-item { text-align: center; }
+  .size-label {
+    font-size: 11px;
+    color: var(--go-text-muted);
+    margin-top: 8px;
+    font-weight: 500;
+  }
+
+  /* ─── Interactive playground ─── */
+  .playground {
+    grid-column: 1 / -1;
+    background: var(--go-bg-elevated);
+    border-radius: 14px;
+    border: 1px solid var(--go-border-subtle);
+    padding: 48px 32px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 32px;
+  }
+
+  .state-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: center;
+  }
+
+  .state-btn {
+    padding: 8px 18px;
+    border-radius: 8px;
+    font-family: 'Red Hat Display', sans-serif;
+    font-weight: 600;
+    font-size: 13px;
+    border: 1px solid var(--go-border);
+    background: var(--go-surface);
+    color: var(--go-text-secondary);
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .state-btn:hover {
+    background: var(--go-surface-hover);
+    color: var(--go-text);
+    border-color: var(--go-primary);
+  }
+  .state-btn.active {
+    background: var(--go-primary);
+    color: #26211A;
+    border-color: var(--go-primary);
+  }
+
+  /* ─── Animations ─── */
+  @keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-8px); }
+  }
+
+  @keyframes bounce {
+    0%, 100% { transform: translateY(0) scale(1); }
+    30% { transform: translateY(-14px) scale(1.02); }
+    50% { transform: translateY(-6px) scale(1); }
+    70% { transform: translateY(-10px) scale(1.01); }
+  }
+
+  @keyframes wobble {
+    0%, 100% { transform: rotate(-3deg) translateY(0); }
+    25% { transform: rotate(-6deg) translateY(-4px); }
+    75% { transform: rotate(0deg) translateY(-4px); }
+  }
+
+  @keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.06); }
+  }
+
+  @keyframes sway {
+    0%, 100% { transform: rotate(-5deg) translateY(0); }
+    50% { transform: rotate(-3deg) translateY(-5px); }
+  }
+
+  @keyframes bob {
+    0%, 100% { transform: translateY(0); }
+    25% { transform: translateY(-5px); }
+    75% { transform: translateY(3px); }
+  }
+
+  @keyframes hammerSwing {
+    0%, 100% { transform-origin: 85% 15%; transform: rotate(0deg); }
+    30% { transform-origin: 85% 15%; transform: rotate(-25deg); }
+    60% { transform-origin: 85% 15%; transform: rotate(8deg); }
+  }
+
+  @keyframes flapWave {
+    0%, 100% { transform: rotate(0deg) scaleX(1); }
+    50% { transform: rotate(3deg) scaleX(1.04); }
+  }
+
+  /* State animation classes */
+  .anim-float { animation: float 4s ease-in-out infinite; }
+  .anim-bounce { animation: bounce 2.8s ease-in-out infinite; }
+  .anim-wobble { animation: wobble 3.5s ease-in-out infinite; }
+  .anim-pulse { animation: pulse 2s ease-in-out infinite; }
+  .anim-sway { animation: sway 5s ease-in-out infinite; }
+  .anim-bob { animation: bob 3s ease-in-out infinite; }
+
+  .concept-block {
+    max-width: 860px;
+    width: 100%;
+    background: var(--go-surface);
+    border: 1px solid var(--go-border-subtle);
+    border-radius: 14px;
+    padding: 32px;
+    margin-top: 20px;
+  }
+  .concept-block h3 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 600;
+    font-size: 16px;
+    margin-bottom: 12px;
+    color: var(--go-primary);
+  }
+  .concept-block p {
+    font-size: 14px;
+    line-height: 1.6;
+    color: var(--go-text-secondary);
+  }
+  .concept-block ul {
+    list-style: none;
+    padding: 0;
+    margin-top: 12px;
+  }
+  .concept-block li {
+    font-size: 14px;
+    line-height: 1.6;
+    color: var(--go-text-secondary);
+    padding-left: 20px;
+    position: relative;
+    margin-bottom: 6px;
+  }
+  .concept-block li::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 9px;
+    width: 8px;
+    height: 8px;
+    border-radius: 2px;
+    background: var(--go-primary);
+    opacity: 0.5;
+  }
+
+  @media (max-width: 700px) {
+    .grid { grid-template-columns: repeat(2, 1fr); }
+    .grid-2 { grid-template-columns: 1fr; }
+    body { padding: 32px 16px 60px; }
+    h1 { font-size: 32px; }
+  }
+
+  @media (max-width: 480px) {
+    .grid { grid-template-columns: 1fr; }
+    .sizes-row { flex-wrap: wrap; }
+    .state-buttons { gap: 8px; }
+  }
+</style>
+</head>
+<body>
+
+<h1>Casquito <span class="accent">Character</span></h1>
+<p class="subtitle">
+  El casco de obra personalizado. No es una mascota — es el icono del logo con un destello momentaneo de vida, a traves de personificacion minima.
+</p>
+
+<!-- ─── CONCEPT ─── -->
+<div class="concept-block">
+  <h3>Filosofia de diseno</h3>
+  <p>Casquito es el casco de obra del logo de Gasto Obra, animado con personalidad sutil. Comunica a traves de:</p>
+  <ul>
+    <li>Dos puntos como ojos (sin boca, sin extremidades, sin accesorios)</li>
+    <li>Posicion de los ojos — asimetria transmite confusion, curiosidad, emocion</li>
+    <li>Inclinacion de cabeza — rotaciones sutiles de -5 a +3 grados</li>
+    <li>Simbolos contextuales — ? para confusion, ! para alerta, destellos para exito</li>
+    <li>Animacion suave — como un ticket balanceandose en una brisa de obra</li>
+  </ul>
+</div>
+
+<!-- ─── SENTIMENT STATES ─── -->
+<div class="section-label">Estados de sentimiento</div>
+
+<div class="grid grid-2">
+
+  <!-- Neutral / Tranquilo -->
+  <div class="card">
+    <div class="anim-float">
+      <svg width="120" height="138" viewBox="0 0 200 230" fill="none">
+        <path d="M 52,118 L 50,205 Q 100,220 148,205 L 148,118 Z" stroke="var(--go-helmet)" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round" fill="var(--go-helmet)" fill-opacity="0.06"/>
+        <line x1="56" y1="140" x2="144" y2="140" stroke="var(--go-helmet)" stroke-width="5.5" stroke-dasharray="10 14" stroke-linecap="round" opacity="0.5"/>
+        <path d="M 35,112 C 35,38 165,38 165,112 Z" fill="var(--go-helmet)"/>
+        <path d="M 14,110 Q 14,100 38,106 L 162,106 Q 186,100 186,110 L 186,120 Q 186,128 162,122 L 38,122 Q 14,128 14,120 Z" fill="var(--go-helmet-shadow)"/>
+        <path d="M 38,108 Q 100,102 162,108" stroke="rgba(255,255,255,0.15)" stroke-width="2" fill="none" stroke-linecap="round"/>
+        <path d="M 62,56 Q 78,40 108,48" stroke="rgba(255,255,255,0.35)" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+        <path d="M 68,68 Q 78,58 96,63" stroke="rgba(255,255,255,0.25)" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+        <circle cx="76" cy="86" r="5" fill="var(--go-eye)"/>
+        <circle cx="124" cy="86" r="5" fill="var(--go-eye)"/>
+      </svg>
+    </div>
+    <div class="card-label">Tranquilo</div>
+    <div class="card-sublabel">Estado por defecto. Flotacion suave.</div>
+  </div>
+
+  <!-- Happy / Contento -->
+  <div class="card">
+    <div class="anim-bounce">
+      <svg width="120" height="138" viewBox="0 0 200 230" fill="none">
+        <path d="M 52,118 L 50,205 Q 100,220 148,205 L 148,118 Z" stroke="var(--go-helmet)" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round" fill="var(--go-helmet)" fill-opacity="0.06"/>
+        <line x1="56" y1="140" x2="144" y2="140" stroke="var(--go-helmet)" stroke-width="5.5" stroke-dasharray="10 14" stroke-linecap="round" opacity="0.5"/>
+        <path d="M 35,112 C 35,38 165,38 165,112 Z" fill="var(--go-helmet)"/>
+        <path d="M 14,110 Q 14,100 38,106 L 162,106 Q 186,100 186,110 L 186,120 Q 186,128 162,122 L 38,122 Q 14,128 14,120 Z" fill="var(--go-helmet-shadow)"/>
+        <path d="M 38,108 Q 100,102 162,108" stroke="rgba(255,255,255,0.15)" stroke-width="2" fill="none" stroke-linecap="round"/>
+        <path d="M 62,56 Q 78,40 108,48" stroke="rgba(255,255,255,0.35)" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+        <path d="M 68,68 Q 78,58 96,63" stroke="rgba(255,255,255,0.25)" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+        <path d="M 68,86 Q 76,78 84,86" stroke="var(--go-eye)" stroke-width="3" fill="none" stroke-linecap="round"/>
+        <path d="M 116,86 Q 124,78 132,86" stroke="var(--go-eye)" stroke-width="3" fill="none" stroke-linecap="round"/>
+        <circle cx="38" cy="48" r="2.5" fill="var(--go-helmet)">
+          <animate attributeName="opacity" values="0;0.8;0" dur="2s" repeatCount="indefinite"/>
+          <animate attributeName="r" values="1;3;1" dur="2s" repeatCount="indefinite"/>
+        </circle>
+        <circle cx="170" cy="52" r="2" fill="var(--go-helmet)">
+          <animate attributeName="opacity" values="0;0.6;0" dur="2.4s" repeatCount="indefinite" begin="0.6s"/>
+          <animate attributeName="r" values="1;2.5;1" dur="2.4s" repeatCount="indefinite" begin="0.6s"/>
+        </circle>
+        <circle cx="52" cy="36" r="1.5" fill="var(--go-helmet)">
+          <animate attributeName="opacity" values="0;0.5;0" dur="1.8s" repeatCount="indefinite" begin="1.2s"/>
+          <animate attributeName="r" values="0.5;2;0.5" dur="1.8s" repeatCount="indefinite" begin="1.2s"/>
+        </circle>
+      </svg>
+    </div>
+    <div class="card-label">Contento</div>
+    <div class="card-sublabel">Exito, tarea completada. Ojos en arco, destellos.</div>
+  </div>
+
+  <!-- Working / Trabajando -->
+  <div class="card">
+    <div class="anim-bob">
+      <svg width="120" height="138" viewBox="0 0 200 230" fill="none">
+        <path d="M 52,118 L 50,205 Q 100,220 148,205 L 148,118 Z" stroke="var(--go-helmet)" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round" fill="var(--go-helmet)" fill-opacity="0.06"/>
+        <line x1="56" y1="140" x2="144" y2="140" stroke="var(--go-helmet)" stroke-width="5.5" stroke-dasharray="10 14" stroke-linecap="round" opacity="0.5"/>
+        <path d="M 35,112 C 35,38 165,38 165,112 Z" fill="var(--go-helmet)"/>
+        <path d="M 14,110 Q 14,100 38,106 L 162,106 Q 186,100 186,110 L 186,120 Q 186,128 162,122 L 38,122 Q 14,128 14,120 Z" fill="var(--go-helmet-shadow)"/>
+        <path d="M 38,108 Q 100,102 162,108" stroke="rgba(255,255,255,0.15)" stroke-width="2" fill="none" stroke-linecap="round"/>
+        <path d="M 62,56 Q 78,40 108,48" stroke="rgba(255,255,255,0.35)" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+        <path d="M 68,68 Q 78,58 96,63" stroke="rgba(255,255,255,0.25)" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+        <circle cx="76" cy="86" r="5" fill="var(--go-eye)"/>
+        <circle cx="124" cy="86" r="5" fill="var(--go-eye)"/>
+        <g style="animation: hammerSwing 1.8s ease-in-out infinite;" opacity="0.6">
+          <line x1="175" y1="60" x2="190" y2="42" stroke="var(--go-text-secondary)" stroke-width="2.5" stroke-linecap="round"/>
+          <rect x="185" y="34" width="12" height="8" rx="2" fill="var(--go-text-secondary)" transform="rotate(-35, 191, 38)"/>
+        </g>
+        <circle cx="30" cy="180" r="2" fill="var(--go-text-tertiary)">
+          <animate attributeName="opacity" values="0.4;0" dur="2s" repeatCount="indefinite"/>
+          <animate attributeName="cy" values="180;162" dur="2s" repeatCount="indefinite"/>
+        </circle>
+        <circle cx="170" cy="185" r="1.5" fill="var(--go-text-tertiary)">
+          <animate attributeName="opacity" values="0.3;0" dur="2.5s" repeatCount="indefinite" begin="0.8s"/>
+          <animate attributeName="cy" values="185;167" dur="2.5s" repeatCount="indefinite" begin="0.8s"/>
+        </circle>
+      </svg>
+    </div>
+    <div class="card-label">Trabajando</div>
+    <div class="card-sublabel">Cargando, procesando. Martillo y particulas de obra.</div>
+  </div>
+
+  <!-- Confused / Confundido -->
+  <div class="card">
+    <div class="anim-wobble">
+      <svg width="120" height="138" viewBox="0 0 200 230" fill="none">
+        <g transform="rotate(-3, 100, 130)">
+          <path d="M 52,118 L 50,205 Q 100,220 148,205 L 148,118 Z" stroke="var(--go-helmet)" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round" fill="var(--go-helmet)" fill-opacity="0.06"/>
+          <line x1="56" y1="140" x2="144" y2="140" stroke="var(--go-helmet)" stroke-width="5.5" stroke-dasharray="10 14" stroke-linecap="round" opacity="0.5"/>
+          <path d="M 35,112 C 35,38 165,38 165,112 Z" fill="var(--go-helmet)"/>
+          <path d="M 14,110 Q 14,100 38,106 L 162,106 Q 186,100 186,110 L 186,120 Q 186,128 162,122 L 38,122 Q 14,128 14,120 Z" fill="var(--go-helmet-shadow)"/>
+          <path d="M 38,108 Q 100,102 162,108" stroke="rgba(255,255,255,0.15)" stroke-width="2" fill="none" stroke-linecap="round"/>
+          <path d="M 62,56 Q 78,40 108,48" stroke="rgba(255,255,255,0.35)" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+          <path d="M 68,68 Q 78,58 96,63" stroke="rgba(255,255,255,0.25)" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+          <circle cx="76" cy="88" r="5" fill="var(--go-eye)"/>
+          <circle cx="124" cy="83" r="4.5" fill="var(--go-eye)"/>
+        </g>
+        <g opacity="0.5">
+          <animate attributeName="opacity" values="0.6;0.2;0.6" dur="3s" repeatCount="indefinite"/>
+          <path d="M 170,32 C 170,22 180,18 185,24 C 190,30 183,36 178,38 L 178,46" stroke="var(--go-helmet)" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+          <circle cx="178" cy="52" r="2" fill="var(--go-helmet)"/>
+        </g>
+      </svg>
+    </div>
+    <div class="card-label">Confundido</div>
+    <div class="card-sublabel">Error, 404. Inclinado, ojos asimetricos, signo de pregunta.</div>
+  </div>
+
+  <!-- Alert / Alerta -->
+  <div class="card">
+    <div class="anim-pulse">
+      <svg width="120" height="138" viewBox="0 0 200 230" fill="none">
+        <g transform="rotate(2, 100, 130)">
+          <path d="M 52,118 L 50,205 Q 100,220 148,205 L 148,118 Z" stroke="var(--go-helmet)" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round" fill="var(--go-helmet)" fill-opacity="0.06"/>
+          <line x1="56" y1="140" x2="144" y2="140" stroke="var(--go-helmet)" stroke-width="5.5" stroke-dasharray="10 14" stroke-linecap="round" opacity="0.5"/>
+          <path d="M 35,112 C 35,38 165,38 165,112 Z" fill="var(--go-helmet)"/>
+          <path d="M 14,110 Q 14,100 38,106 L 162,106 Q 186,100 186,110 L 186,120 Q 186,128 162,122 L 38,122 Q 14,128 14,120 Z" fill="var(--go-helmet-shadow)"/>
+          <path d="M 38,108 Q 100,102 162,108" stroke="rgba(255,255,255,0.15)" stroke-width="2" fill="none" stroke-linecap="round"/>
+          <path d="M 62,56 Q 78,40 108,48" stroke="rgba(255,255,255,0.35)" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+          <path d="M 68,68 Q 78,58 96,63" stroke="rgba(255,255,255,0.25)" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+          <circle cx="76" cy="85" r="7" fill="var(--go-eye)"/>
+          <circle cx="124" cy="85" r="7" fill="var(--go-eye)"/>
+          <circle cx="73" cy="82" r="2" fill="var(--go-helmet)" opacity="0.6"/>
+          <circle cx="121" cy="82" r="2" fill="var(--go-helmet)" opacity="0.6"/>
+        </g>
+        <g>
+          <animate attributeName="opacity" values="0.8;0.3;0.8" dur="2s" repeatCount="indefinite"/>
+          <line x1="182" y1="30" x2="182" y2="48" stroke="var(--go-warning)" stroke-width="3" stroke-linecap="round"/>
+          <circle cx="182" cy="56" r="2.5" fill="var(--go-warning)"/>
+        </g>
+      </svg>
+    </div>
+    <div class="card-label">Alerta</div>
+    <div class="card-sublabel">Advertencia. Ojos grandes con brillo, signo de exclamacion.</div>
+  </div>
+
+  <!-- Sleeping / Descansando -->
+  <div class="card">
+    <div class="anim-sway">
+      <svg width="120" height="138" viewBox="0 0 200 230" fill="none">
+        <g transform="rotate(-5, 100, 130)">
+          <path d="M 52,118 L 50,205 Q 100,220 148,205 L 148,118 Z" stroke="var(--go-helmet)" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round" fill="var(--go-helmet)" fill-opacity="0.06"/>
+          <line x1="56" y1="140" x2="144" y2="140" stroke="var(--go-helmet)" stroke-width="5.5" stroke-dasharray="10 14" stroke-linecap="round" opacity="0.5"/>
+          <path d="M 35,112 C 35,38 165,38 165,112 Z" fill="var(--go-helmet)"/>
+          <path d="M 14,110 Q 14,100 38,106 L 162,106 Q 186,100 186,110 L 186,120 Q 186,128 162,122 L 38,122 Q 14,128 14,120 Z" fill="var(--go-helmet-shadow)"/>
+          <path d="M 38,108 Q 100,102 162,108" stroke="rgba(255,255,255,0.15)" stroke-width="2" fill="none" stroke-linecap="round"/>
+          <path d="M 62,56 Q 78,40 108,48" stroke="rgba(255,255,255,0.35)" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+          <path d="M 68,68 Q 78,58 96,63" stroke="rgba(255,255,255,0.25)" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+          <line x1="68" y1="87" x2="84" y2="87" stroke="var(--go-eye)" stroke-width="2.5" stroke-linecap="round"/>
+          <line x1="116" y1="87" x2="132" y2="87" stroke="var(--go-eye)" stroke-width="2.5" stroke-linecap="round"/>
+        </g>
+        <g fill="var(--go-text-tertiary)" font-family="'Space Grotesk', sans-serif" font-weight="700">
+          <text x="162" y="48" font-size="18">z<animate attributeName="opacity" values="0;0.4;0" dur="3s" repeatCount="indefinite"/><animate attributeName="y" values="48;28" dur="3s" repeatCount="indefinite"/><animate attributeName="x" values="162;172" dur="3s" repeatCount="indefinite"/></text>
+          <text x="172" y="38" font-size="14">z<animate attributeName="opacity" values="0;0.3;0" dur="3.5s" repeatCount="indefinite" begin="0.8s"/><animate attributeName="y" values="38;16" dur="3.5s" repeatCount="indefinite" begin="0.8s"/><animate attributeName="x" values="172;184" dur="3.5s" repeatCount="indefinite" begin="0.8s"/></text>
+          <text x="180" y="28" font-size="10">z<animate attributeName="opacity" values="0;0.2;0" dur="4s" repeatCount="indefinite" begin="1.6s"/><animate attributeName="y" values="28;8" dur="4s" repeatCount="indefinite" begin="1.6s"/><animate attributeName="x" values="180;194" dur="4s" repeatCount="indefinite" begin="1.6s"/></text>
+        </g>
+      </svg>
+    </div>
+    <div class="card-label">Descansando</div>
+    <div class="card-sublabel">Mantenimiento, inactivo. Ojos cerrados, zzz.</div>
+  </div>
+
+</div>
+
+<!-- ─── COLOR VARIANTS ─── -->
+<div class="section-label">Variantes de color</div>
+
+<div class="grid">
+  <!-- Default (light) -->
+  <div class="card">
+    <div class="anim-float">
+      <svg width="100" height="115" viewBox="0 0 200 230" fill="none">
+        <path d="M 52,118 L 50,205 Q 100,220 148,205 L 148,118 Z" stroke="var(--go-helmet)" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round" fill="var(--go-helmet)" fill-opacity="0.06"/>
+        <line x1="56" y1="140" x2="144" y2="140" stroke="var(--go-helmet)" stroke-width="5.5" stroke-dasharray="10 14" stroke-linecap="round" opacity="0.5"/>
+        <path d="M 35,112 C 35,38 165,38 165,112 Z" fill="var(--go-helmet)"/>
+        <path d="M 14,110 Q 14,100 38,106 L 162,106 Q 186,100 186,110 L 186,120 Q 186,128 162,122 L 38,122 Q 14,128 14,120 Z" fill="var(--go-helmet-shadow)"/>
+        <path d="M 62,56 Q 78,40 108,48" stroke="rgba(255,255,255,0.35)" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+        <circle cx="76" cy="86" r="5" fill="var(--go-eye)"/>
+        <circle cx="124" cy="86" r="5" fill="var(--go-eye)"/>
+      </svg>
+    </div>
+    <div class="card-label">Sobre claro (default)</div>
+  </div>
+
+  <!-- On dark section -->
+  <div class="card card-dark">
+    <div class="anim-float">
+      <svg width="100" height="115" viewBox="0 0 200 230" fill="none">
+        <path d="M 52,118 L 50,205 Q 100,220 148,205 L 148,118 Z" stroke="#FFAB40" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round" fill="#FFAB40" fill-opacity="0.08"/>
+        <line x1="56" y1="140" x2="144" y2="140" stroke="#FFAB40" stroke-width="5.5" stroke-dasharray="10 14" stroke-linecap="round" opacity="0.4"/>
+        <path d="M 35,112 C 35,38 165,38 165,112 Z" fill="#FFAB40"/>
+        <path d="M 14,110 Q 14,100 38,106 L 162,106 Q 186,100 186,110 L 186,120 Q 186,128 162,122 L 38,122 Q 14,128 14,120 Z" fill="#E99A35"/>
+        <path d="M 62,56 Q 78,40 108,48" stroke="rgba(255,255,255,0.35)" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+        <circle cx="76" cy="86" r="5" fill="#1C1915"/>
+        <circle cx="124" cy="86" r="5" fill="#1C1915"/>
+      </svg>
+    </div>
+    <div class="card-label">Sobre oscuro</div>
+  </div>
+
+  <!-- On primary -->
+  <div class="card card-primary">
+    <div class="anim-float">
+      <svg width="100" height="115" viewBox="0 0 200 230" fill="none">
+        <path d="M 52,118 L 50,205 Q 100,220 148,205 L 148,118 Z" stroke="rgba(255,255,255,0.8)" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round" fill="rgba(255,255,255,0.08)"/>
+        <line x1="56" y1="140" x2="144" y2="140" stroke="rgba(255,255,255,0.7)" stroke-width="5.5" stroke-dasharray="10 14" stroke-linecap="round" opacity="0.4"/>
+        <path d="M 35,112 C 35,38 165,38 165,112 Z" fill="rgba(255,255,255,0.95)"/>
+        <path d="M 14,110 Q 14,100 38,106 L 162,106 Q 186,100 186,110 L 186,120 Q 186,128 162,122 L 38,122 Q 14,128 14,120 Z" fill="rgba(255,255,255,0.7)"/>
+        <path d="M 62,56 Q 78,40 108,48" stroke="rgba(255,188,98,0.3)" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+        <circle cx="76" cy="86" r="5" fill="#FFAB40"/>
+        <circle cx="124" cy="86" r="5" fill="#FFAB40"/>
+      </svg>
+    </div>
+    <div class="card-label">Sobre primario</div>
+  </div>
+</div>
+
+<!-- ─── SIZE REFERENCE ─── -->
+<div class="section-label">Referencia de tamanos</div>
+
+<div class="grid">
+  <div class="sizes-row">
+    <div class="size-item">
+      <svg width="140" height="161" viewBox="0 0 200 230" fill="none">
+        <path d="M 52,118 L 50,205 Q 100,220 148,205 L 148,118 Z" stroke="var(--go-helmet)" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round" fill="var(--go-helmet)" fill-opacity="0.06"/>
+        <line x1="56" y1="140" x2="144" y2="140" stroke="var(--go-helmet)" stroke-width="5.5" stroke-dasharray="10 14" stroke-linecap="round" opacity="0.5"/>
+        <path d="M 35,112 C 35,38 165,38 165,112 Z" fill="var(--go-helmet)"/>
+        <path d="M 14,110 Q 14,100 38,106 L 162,106 Q 186,100 186,110 L 186,120 Q 186,128 162,122 L 38,122 Q 14,128 14,120 Z" fill="var(--go-helmet-shadow)"/>
+        <path d="M 62,56 Q 78,40 108,48" stroke="rgba(255,255,255,0.35)" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+        <path d="M 68,68 Q 78,58 96,63" stroke="rgba(255,255,255,0.25)" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+        <circle cx="76" cy="86" r="5" fill="var(--go-eye)"/>
+        <circle cx="124" cy="86" r="5" fill="var(--go-eye)"/>
+      </svg>
+      <div class="size-label">140px (hero)</div>
+    </div>
+    <div class="size-item">
+      <svg width="80" height="92" viewBox="0 0 200 230" fill="none">
+        <path d="M 52,118 L 50,205 Q 100,220 148,205 L 148,118 Z" stroke="var(--go-helmet)" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round" fill="var(--go-helmet)" fill-opacity="0.06"/>
+        <line x1="56" y1="140" x2="144" y2="140" stroke="var(--go-helmet)" stroke-width="5.5" stroke-dasharray="10 14" stroke-linecap="round" opacity="0.5"/>
+        <path d="M 35,112 C 35,38 165,38 165,112 Z" fill="var(--go-helmet)"/>
+        <path d="M 14,110 Q 14,100 38,106 L 162,106 Q 186,100 186,110 L 186,120 Q 186,128 162,122 L 38,122 Q 14,128 14,120 Z" fill="var(--go-helmet-shadow)"/>
+        <path d="M 62,56 Q 78,40 108,48" stroke="rgba(255,255,255,0.35)" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+        <circle cx="76" cy="86" r="5" fill="var(--go-eye)"/>
+        <circle cx="124" cy="86" r="5" fill="var(--go-eye)"/>
+      </svg>
+      <div class="size-label">80px (empty state)</div>
+    </div>
+    <div class="size-item">
+      <svg width="48" height="55" viewBox="0 0 200 230" fill="none">
+        <path d="M 52,118 L 50,205 Q 100,220 148,205 L 148,118 Z" stroke="var(--go-helmet)" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round" fill="var(--go-helmet)" fill-opacity="0.06"/>
+        <line x1="56" y1="140" x2="144" y2="140" stroke="var(--go-helmet)" stroke-width="5.5" stroke-dasharray="10 14" stroke-linecap="round" opacity="0.5"/>
+        <path d="M 35,112 C 35,38 165,38 165,112 Z" fill="var(--go-helmet)"/>
+        <path d="M 14,110 Q 14,100 38,106 L 162,106 Q 186,100 186,110 L 186,120 Q 186,128 162,122 L 38,122 Q 14,128 14,120 Z" fill="var(--go-helmet-shadow)"/>
+        <circle cx="76" cy="86" r="5" fill="var(--go-eye)"/>
+        <circle cx="124" cy="86" r="5" fill="var(--go-eye)"/>
+      </svg>
+      <div class="size-label">48px (inline)</div>
+    </div>
+  </div>
+</div>
+
+<!-- ─── INTERACTIVE PLAYGROUND ─── -->
+<div class="section-label">Playground interactivo</div>
+
+<div class="grid">
+  <div class="playground">
+    <div class="card-sublabel" style="margin-bottom: 8px;">Hace click en un estado para ver a Casquito cambiar.</div>
+
+    <div id="playground-wrapper" class="anim-float">
+      <svg width="160" height="184" viewBox="0 0 200 230" fill="none">
+        <!-- Ticket body -->
+        <g id="pg-flap" style="transform-origin: 100px 170px; transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);">
+          <path d="M 52,118 L 50,205 Q 100,220 148,205 L 148,118 Z" stroke="var(--go-helmet)" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round" fill="var(--go-helmet)" fill-opacity="0.06"/>
+          <line x1="56" y1="140" x2="144" y2="140" stroke="var(--go-helmet)" stroke-width="5.5" stroke-dasharray="10 14" stroke-linecap="round" opacity="0.5"/>
+        </g>
+        <!-- Helmet group (for tilt) -->
+        <g id="pg-body" style="transform-origin: 100px 100px; transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);">
+          <path d="M 35,112 C 35,38 165,38 165,112 Z" fill="var(--go-helmet)"/>
+          <path d="M 14,110 Q 14,100 38,106 L 162,106 Q 186,100 186,110 L 186,120 Q 186,128 162,122 L 38,122 Q 14,128 14,120 Z" fill="var(--go-helmet-shadow)"/>
+          <path d="M 38,108 Q 100,102 162,108" stroke="rgba(255,255,255,0.15)" stroke-width="2" fill="none" stroke-linecap="round"/>
+          <path d="M 62,56 Q 78,40 108,48" stroke="rgba(255,255,255,0.35)" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+          <path d="M 68,68 Q 78,58 96,63" stroke="rgba(255,255,255,0.25)" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+        </g>
+
+        <!-- All eye variants (toggle display) -->
+        <g id="eyes-neutral">
+          <circle cx="76" cy="86" r="5" fill="var(--go-eye)"/>
+          <circle cx="124" cy="86" r="5" fill="var(--go-eye)"/>
+        </g>
+        <g id="eyes-happy" display="none">
+          <path d="M 68,86 Q 76,78 84,86" stroke="var(--go-eye)" stroke-width="3" fill="none" stroke-linecap="round"/>
+          <path d="M 116,86 Q 124,78 132,86" stroke="var(--go-eye)" stroke-width="3" fill="none" stroke-linecap="round"/>
+        </g>
+        <g id="eyes-working" display="none">
+          <circle cx="76" cy="86" r="5" fill="var(--go-eye)"/>
+          <circle cx="124" cy="86" r="5" fill="var(--go-eye)"/>
+        </g>
+        <g id="eyes-confused" display="none">
+          <circle cx="76" cy="88" r="5" fill="var(--go-eye)"/>
+          <circle cx="124" cy="83" r="4.5" fill="var(--go-eye)"/>
+        </g>
+        <g id="eyes-alert" display="none">
+          <circle cx="76" cy="85" r="7" fill="var(--go-eye)"/>
+          <circle cx="124" cy="85" r="7" fill="var(--go-eye)"/>
+          <circle cx="73" cy="82" r="2" fill="var(--go-helmet)" opacity="0.6"/>
+          <circle cx="121" cy="82" r="2" fill="var(--go-helmet)" opacity="0.6"/>
+        </g>
+        <g id="eyes-sleeping" display="none">
+          <line x1="68" y1="87" x2="84" y2="87" stroke="var(--go-eye)" stroke-width="2.5" stroke-linecap="round"/>
+          <line x1="116" y1="87" x2="132" y2="87" stroke="var(--go-eye)" stroke-width="2.5" stroke-linecap="round"/>
+        </g>
+
+        <!-- All symbol variants (toggle display) -->
+        <g id="sym-neutral" display="none"></g>
+        <g id="sym-happy" display="none">
+          <circle cx="30" cy="48" r="2.5" fill="var(--go-helmet)">
+            <animate attributeName="opacity" values="0;0.8;0" dur="2s" repeatCount="indefinite"/>
+            <animate attributeName="r" values="1;3;1" dur="2s" repeatCount="indefinite"/>
+          </circle>
+          <circle cx="175" cy="52" r="2" fill="var(--go-helmet)">
+            <animate attributeName="opacity" values="0;0.6;0" dur="2.4s" repeatCount="indefinite" begin="0.6s"/>
+            <animate attributeName="r" values="1;2.5;1" dur="2.4s" repeatCount="indefinite" begin="0.6s"/>
+          </circle>
+          <circle cx="45" cy="35" r="1.5" fill="var(--go-helmet)">
+            <animate attributeName="opacity" values="0;0.5;0" dur="1.8s" repeatCount="indefinite" begin="1.2s"/>
+            <animate attributeName="r" values="0.5;2;0.5" dur="1.8s" repeatCount="indefinite" begin="1.2s"/>
+          </circle>
+        </g>
+        <g id="sym-working" display="none">
+          <g style="animation: hammerSwing 1.8s ease-in-out infinite;" opacity="0.6">
+            <line x1="175" y1="58" x2="190" y2="40" stroke="var(--go-text-secondary)" stroke-width="2.5" stroke-linecap="round"/>
+            <rect x="185" y="32" width="12" height="8" rx="2" fill="var(--go-text-secondary)" transform="rotate(-35, 191, 36)"/>
+          </g>
+          <circle cx="28" cy="128" r="2" fill="var(--go-text-tertiary)">
+            <animate attributeName="opacity" values="0.4;0" dur="2s" repeatCount="indefinite"/>
+            <animate attributeName="cy" values="128;110" dur="2s" repeatCount="indefinite"/>
+          </circle>
+          <circle cx="172" cy="130" r="1.5" fill="var(--go-text-tertiary)">
+            <animate attributeName="opacity" values="0.3;0" dur="2.5s" repeatCount="indefinite" begin="0.8s"/>
+            <animate attributeName="cy" values="130;112" dur="2.5s" repeatCount="indefinite" begin="0.8s"/>
+          </circle>
+        </g>
+        <g id="sym-confused" display="none">
+          <g opacity="0.5">
+            <animate attributeName="opacity" values="0.6;0.2;0.6" dur="3s" repeatCount="indefinite"/>
+            <path d="M 172,36 C 172,26 182,22 187,28 C 192,34 185,40 180,42 L 180,50" stroke="var(--go-helmet)" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+            <circle cx="180" cy="56" r="2" fill="var(--go-helmet)"/>
+          </g>
+        </g>
+        <g id="sym-alert" display="none">
+          <g>
+            <animate attributeName="opacity" values="0.8;0.3;0.8" dur="2s" repeatCount="indefinite"/>
+            <line x1="182" y1="30" x2="182" y2="48" stroke="var(--go-warning)" stroke-width="3" stroke-linecap="round"/>
+            <circle cx="182" cy="56" r="2.5" fill="var(--go-warning)"/>
+          </g>
+        </g>
+        <g id="sym-sleeping" display="none">
+          <g fill="var(--go-text-tertiary)" font-family="'Space Grotesk', sans-serif" font-weight="700">
+            <text x="162" y="48" font-size="18">
+              z
+              <animate attributeName="opacity" values="0;0.4;0" dur="3s" repeatCount="indefinite"/>
+              <animate attributeName="y" values="48;28" dur="3s" repeatCount="indefinite"/>
+              <animate attributeName="x" values="162;172" dur="3s" repeatCount="indefinite"/>
+            </text>
+            <text x="172" y="38" font-size="14">
+              z
+              <animate attributeName="opacity" values="0;0.3;0" dur="3.5s" repeatCount="indefinite" begin="0.8s"/>
+              <animate attributeName="y" values="38;16" dur="3.5s" repeatCount="indefinite" begin="0.8s"/>
+              <animate attributeName="x" values="172;184" dur="3.5s" repeatCount="indefinite" begin="0.8s"/>
+            </text>
+            <text x="180" y="28" font-size="10">
+              z
+              <animate attributeName="opacity" values="0;0.2;0" dur="4s" repeatCount="indefinite" begin="1.6s"/>
+              <animate attributeName="y" values="28;8" dur="4s" repeatCount="indefinite" begin="1.6s"/>
+              <animate attributeName="x" values="180;194" dur="4s" repeatCount="indefinite" begin="1.6s"/>
+            </text>
+          </g>
+        </g>
+      </svg>
+    </div>
+
+    <div class="state-buttons">
+      <button class="state-btn active" data-state="neutral" onclick="setState(this)">Tranquilo</button>
+      <button class="state-btn" data-state="happy" onclick="setState(this)">Contento</button>
+      <button class="state-btn" data-state="working" onclick="setState(this)">Trabajando</button>
+      <button class="state-btn" data-state="confused" onclick="setState(this)">Confundido</button>
+      <button class="state-btn" data-state="alert" onclick="setState(this)">Alerta</button>
+      <button class="state-btn" data-state="sleeping" onclick="setState(this)">Descansando</button>
+    </div>
+  </div>
+</div>
+
+<!-- ─── USAGE GUIDELINES ─── -->
+<div class="section-label">Guia de uso</div>
+
+<div class="concept-block" style="margin-top: 0;">
+  <h3>Cuando usar cada estado</h3>
+  <ul>
+    <li><strong>Tranquilo</strong> — Estado por defecto, empty states, pantallas sin datos</li>
+    <li><strong>Contento</strong> — Gasto registrado con exito, proyecto creado, operacion completada</li>
+    <li><strong>Trabajando</strong> — Cargando datos, procesando imagen/audio, analizando gasto</li>
+    <li><strong>Confundido</strong> — Pagina 404, formato no reconocido, error de parseo</li>
+    <li><strong>Alerta</strong> — Advertencia de presupuesto, gasto inusual, accion requerida</li>
+    <li><strong>Descansando</strong> — Mantenimiento programado, sin actividad reciente, horario nocturno</li>
+  </ul>
+</div>
+
+<div class="concept-block">
+  <h3>Principios de animacion</h3>
+  <ul>
+    <li>Duraciones largas (3-5 segundos por ciclo) — la rapidez transmite ansiedad</li>
+    <li>Siempre <code>ease-in-out</code> para movimientos organicos</li>
+    <li>Nunca animar la forma del casco — solo transform (translate, rotate, scale)</li>
+    <li>Escalonar elementos con animation-delay para evitar sincronizacion mecanica</li>
+    <li>Tamano minimo recomendado: <strong>48px</strong> de ancho</li>
+  </ul>
+</div>
+
+<!-- ─── ARCHIVE: VERSIONES ANTERIORES ─── -->
+<div class="section-label">Archivo — versiones exploradas</div>
+
+<div class="concept-block" style="margin-top: 0; margin-bottom: 12px;">
+  <h3>Historial de iteraciones</h3>
+  <p>Versiones descartadas durante el proceso de diseno. Se conservan como referencia para futuras mejoras.</p>
+</div>
+
+<div class="grid grid-2">
+
+  <!-- v1: Solo casco -->
+  <div class="card" style="opacity: 0.6;">
+    <div class="anim-float">
+      <svg width="80" height="84" viewBox="0 0 200 210" fill="none">
+        <path d="M 150,120 C 166,138 172,172 154,194 C 140,210 116,192 126,172 C 136,152 144,134 150,120 Z" fill="var(--go-helmet)" opacity="0.75"/>
+        <path d="M 35,112 C 35,38 165,38 165,112 Z" fill="var(--go-helmet)"/>
+        <path d="M 14,110 Q 14,100 38,106 L 162,106 Q 186,100 186,110 L 186,120 Q 186,128 162,122 L 38,122 Q 14,128 14,120 Z" fill="var(--go-helmet-shadow)"/>
+        <path d="M 62,56 Q 78,40 108,48" stroke="rgba(255,255,255,0.35)" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+        <circle cx="76" cy="86" r="5" fill="var(--go-eye)"/>
+        <circle cx="124" cy="86" r="5" fill="var(--go-eye)"/>
+      </svg>
+    </div>
+    <div class="card-label">v1 — Solo casco</div>
+    <div class="card-sublabel">Casco con solapa como personaje completo. Sin cuerpo de ticket.</div>
+  </div>
+
+  <!-- v2: Ticket largo zigzag -->
+  <div class="card" style="opacity: 0.6;">
+    <div class="anim-float">
+      <svg width="80" height="120" viewBox="0 0 200 300" fill="none">
+        <path d="M 48,118 C 44,148 54,188 46,230 C 40,255 50,275 46,285 l 4,-3.5 4,3.5 4,-3.5 4,3.5 4,-3.5 4,3.5 4,-3.5 4,3.5 4,-3.5 4,3.5 4,-3.5 4,3.5 4,-3.5 4,3.5 4,-3.5 4,3.5 4,-3.5 4,3.5 4,-3.5 4,3.5 4,-3.5 4,3.5 4,-3.5 4,3.5 4,-3.5 4,3.5 C 154,275 160,255 154,230 C 146,188 156,148 152,118 Z"
+          stroke="var(--go-helmet)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="var(--go-helmet)" fill-opacity="0.06"/>
+        <rect x="62" y="150" width="38" height="7" rx="3.5" fill="var(--go-helmet)" opacity="0.15"/>
+        <rect x="96" y="166" width="42" height="7" rx="3.5" fill="var(--go-helmet)" opacity="0.10"/>
+        <rect x="65" y="182" width="30" height="7" rx="3.5" fill="var(--go-helmet)" opacity="0.13"/>
+        <path d="M 35,112 C 35,38 165,38 165,112 Z" fill="var(--go-helmet)"/>
+        <path d="M 14,110 Q 14,100 38,106 L 162,106 Q 186,100 186,110 L 186,120 Q 186,128 162,122 L 38,122 Q 14,128 14,120 Z" fill="var(--go-helmet-shadow)"/>
+        <path d="M 62,56 Q 78,40 108,48" stroke="rgba(255,255,255,0.35)" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+        <circle cx="76" cy="86" r="5" fill="var(--go-eye)"/>
+        <circle cx="124" cy="86" r="5" fill="var(--go-eye)"/>
+      </svg>
+    </div>
+    <div class="card-label">v2 — Ticket largo zigzag</div>
+    <div class="card-sublabel">Cuerpo largo con curvas organicas, 13 dientes zigzag, lineas de gasto. Demasiado largo, copiaba a Recibito.</div>
+  </div>
+
+  <!-- v3: Ticket corto zigzag -->
+  <div class="card" style="opacity: 0.6;">
+    <div class="anim-float">
+      <svg width="80" height="92" viewBox="0 0 200 230" fill="none">
+        <path d="M 52,118 L 50,210 l 8,-6 8,6 8,-6 8,6 8,-6 8,6 8,-6 8,6 8,-6 8,6 8,-6 8,6 L 148,118 Z"
+          stroke="var(--go-helmet)" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" fill="var(--go-helmet)" fill-opacity="0.06"/>
+        <rect x="65" y="145" width="36" height="7" rx="3.5" fill="var(--go-helmet)" opacity="0.15"/>
+        <rect x="90" y="163" width="40" height="7" rx="3.5" fill="var(--go-helmet)" opacity="0.10"/>
+        <path d="M 35,112 C 35,38 165,38 165,112 Z" fill="var(--go-helmet)"/>
+        <path d="M 14,110 Q 14,100 38,106 L 162,106 Q 186,100 186,110 L 186,120 Q 186,128 162,122 L 38,122 Q 14,128 14,120 Z" fill="var(--go-helmet-shadow)"/>
+        <path d="M 62,56 Q 78,40 108,48" stroke="rgba(255,255,255,0.35)" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+        <circle cx="76" cy="86" r="5" fill="var(--go-eye)"/>
+        <circle cx="124" cy="86" r="5" fill="var(--go-eye)"/>
+      </svg>
+    </div>
+    <div class="card-label">v3 — Ticket corto zigzag</div>
+    <div class="card-sublabel">Mas corto, lados rectos, 6 dientes. Mejor pero zigzag seguia pesado visualmente.</div>
+  </div>
+
+  <!-- v4: Borde curvo -->
+  <div class="card" style="opacity: 0.6;">
+    <div class="anim-float">
+      <svg width="80" height="92" viewBox="0 0 200 230" fill="none">
+        <path d="M 52,118 L 50,205 Q 100,220 148,205 L 148,118 Z"
+          stroke="var(--go-helmet)" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" fill="var(--go-helmet)" fill-opacity="0.06"/>
+        <rect x="65" y="145" width="36" height="7" rx="3.5" fill="var(--go-helmet)" opacity="0.15"/>
+        <rect x="90" y="163" width="40" height="7" rx="3.5" fill="var(--go-helmet)" opacity="0.10"/>
+        <path d="M 35,112 C 35,38 165,38 165,112 Z" fill="var(--go-helmet)"/>
+        <path d="M 14,110 Q 14,100 38,106 L 162,106 Q 186,100 186,110 L 186,120 Q 186,128 162,122 L 38,122 Q 14,128 14,120 Z" fill="var(--go-helmet-shadow)"/>
+        <path d="M 62,56 Q 78,40 108,48" stroke="rgba(255,255,255,0.35)" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+        <circle cx="76" cy="86" r="5" fill="var(--go-eye)"/>
+        <circle cx="124" cy="86" r="5" fill="var(--go-eye)"/>
+      </svg>
+    </div>
+    <div class="card-label">v4 — Borde curvo</div>
+    <div class="card-sublabel">Curva suave reemplazo el zigzag. Mas liviano, pero no se leia como ticket.</div>
+  </div>
+
+  <!-- v5: Muescas laterales -->
+  <div class="card" style="opacity: 0.6;">
+    <div class="anim-float">
+      <svg width="80" height="92" viewBox="0 0 200 230" fill="none">
+        <path d="M 52,118 L 50,155 Q 40,165 50,175 L 50,205 Q 100,220 148,205 L 148,175 Q 158,165 148,155 L 148,118 Z"
+          stroke="var(--go-helmet)" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round" fill="var(--go-helmet)" fill-opacity="0.06"/>
+        <path d="M 35,112 C 35,38 165,38 165,112 Z" fill="var(--go-helmet)"/>
+        <path d="M 14,110 Q 14,100 38,106 L 162,106 Q 186,100 186,110 L 186,120 Q 186,128 162,122 L 38,122 Q 14,128 14,120 Z" fill="var(--go-helmet-shadow)"/>
+        <path d="M 62,56 Q 78,40 108,48" stroke="rgba(255,255,255,0.35)" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+        <circle cx="76" cy="86" r="5" fill="var(--go-eye)"/>
+        <circle cx="124" cy="86" r="5" fill="var(--go-eye)"/>
+      </svg>
+    </div>
+    <div class="card-label">v5 — Muescas laterales</div>
+    <div class="card-sublabel">Cortes semicirculares en los lados como ticket de evento. Descartado a favor de linea de corte.</div>
+  </div>
+
+  <!-- v6 (final): Linea de corte -->
+  <div class="card" style="border-color: var(--go-primary); opacity: 1;">
+    <div class="anim-float">
+      <svg width="80" height="92" viewBox="0 0 200 230" fill="none">
+        <path d="M 52,118 L 50,205 Q 100,220 148,205 L 148,118 Z" stroke="var(--go-helmet)" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round" fill="var(--go-helmet)" fill-opacity="0.06"/>
+        <line x1="56" y1="140" x2="144" y2="140" stroke="var(--go-helmet)" stroke-width="5.5" stroke-dasharray="10 14" stroke-linecap="round" opacity="0.5"/>
+        <path d="M 35,112 C 35,38 165,38 165,112 Z" fill="var(--go-helmet)"/>
+        <path d="M 14,110 Q 14,100 38,106 L 162,106 Q 186,100 186,110 L 186,120 Q 186,128 162,122 L 38,122 Q 14,128 14,120 Z" fill="var(--go-helmet-shadow)"/>
+        <path d="M 62,56 Q 78,40 108,48" stroke="rgba(255,255,255,0.35)" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+        <circle cx="76" cy="86" r="5" fill="var(--go-eye)"/>
+        <circle cx="124" cy="86" r="5" fill="var(--go-eye)"/>
+      </svg>
+    </div>
+    <div class="card-label">v6 — Linea de corte (final)</div>
+    <div class="card-sublabel">Curva suave + linea punteada de perforacion. Trazo grueso (5.5px). Version elegida.</div>
+  </div>
+
+</div>
+
+<script>
+  var states = ['neutral', 'happy', 'working', 'confused', 'alert', 'sleeping'];
+  var animClasses = {
+    neutral: 'anim-float',
+    happy: 'anim-bounce',
+    working: 'anim-bob',
+    confused: 'anim-wobble',
+    alert: 'anim-pulse',
+    sleeping: 'anim-sway'
+  };
+  var tilts = {
+    neutral: 'rotate(0deg)',
+    happy: 'rotate(0deg)',
+    working: 'rotate(0deg)',
+    confused: 'rotate(-3deg)',
+    alert: 'rotate(2deg)',
+    sleeping: 'rotate(-5deg)'
+  };
+
+  function setState(btn) {
+    var state = btn.getAttribute('data-state');
+    var wrapper = document.getElementById('playground-wrapper');
+    var body = document.getElementById('pg-body');
+    var flap = document.getElementById('pg-flap');
+
+    // Swap animation class
+    states.forEach(function(s) {
+      wrapper.classList.remove(animClasses[s]);
+    });
+    wrapper.classList.add(animClasses[state]);
+
+    // Apply tilt
+    body.style.transform = tilts[state];
+    flap.style.transform = tilts[state];
+
+    // Toggle eyes: hide all, show current
+    states.forEach(function(s) {
+      document.getElementById('eyes-' + s).setAttribute('display', s === state ? 'inline' : 'none');
+      document.getElementById('sym-' + s).setAttribute('display', s === state ? 'inline' : 'none');
+    });
+
+    // Update active button
+    document.querySelectorAll('.state-btn').forEach(function(b) {
+      b.classList.remove('active');
+    });
+    btn.classList.add('active');
+  }
+</script>
+
+</body>
+</html>

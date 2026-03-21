@@ -21,8 +21,11 @@ Nuxt 3 web app for renovation expense management. Providers manage projects and 
 - `/projects/[id]` - Project detail with expense history
 - `/settings/general` - General settings (WhatsApp linking, management fee)
 
-### Client (public, no auth)
-- `/view/[token]` - Read-only expense view via shareToken
+### Client (authenticated via Google)
+- `/view/[token]` - Project preview + join as client (public)
+- `/client` - Client project list
+- `/client/project/[id]` - Full project view with KPIs and expense history
+- `/client/project/[id]/resumen` - Detailed project summary
 
 ## Firestore Collections
 - `projects` - Renovation projects (provider-scoped)

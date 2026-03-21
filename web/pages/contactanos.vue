@@ -11,8 +11,8 @@
 
       <!-- Success state -->
       <div v-if="sent" class="text-center py-16">
-        <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-go-success/10 mb-5">
-          <MdiCheckCircle class="w-8 h-8 text-go-success" />
+        <div class="flex justify-center mb-5">
+          <CasquitoHappy :size="120" />
         </div>
         <h2 class="font-display font-semibold text-xl text-go-text mb-2">Mensaje enviado</h2>
         <p class="text-go-text-secondary text-sm mb-6">Gracias por escribirnos. Te responderemos lo antes posible.</p>
@@ -89,7 +89,6 @@
 </template>
 
 <script setup lang="ts">
-import MdiCheckCircle from '~icons/mdi/check-circle'
 import { getCurrentUserAsync } from '~/utils/firebase'
 
 definePageMeta({ layout: 'landing' })

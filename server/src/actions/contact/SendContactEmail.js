@@ -34,6 +34,12 @@ export async function SendContactEmail(req, res) {
   }
 
   try {
+    // Skip actual email in dev — log and return success
+    if (process.env.NODE_ENV !== 'production') {
+      logger.info('Contact email skipped (dev)', { name: trimmedName, from: trimmedEmail, message: trimmedMessage });
+      return res.json({ success: true });
+    }
+
     const result = await resendHandler.sendEmail(
       contactEmail,
       `Contacto web — ${trimmedName}`,
