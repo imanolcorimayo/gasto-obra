@@ -9,20 +9,13 @@
         <div class="h-9 w-72 bg-go-surface rounded-go-md skeleton-shimmer"></div>
         <div class="h-4 w-40 bg-go-surface rounded-go-md skeleton-shimmer mt-2"></div>
       </div>
-      <!-- Details + Summary skeleton -->
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-4">
-        <div class="flex flex-col gap-3">
-          <div class="grid grid-cols-2 gap-2">
-            <div v-for="n in 4" :key="n" class="bg-go-surface rounded-go-md skeleton-shimmer h-12"></div>
-          </div>
-          <div class="h-14 bg-go-surface rounded-go-xl skeleton-shimmer"></div>
-          <div class="flex flex-col sm:flex-row gap-2">
-            <div v-for="n in 3" :key="n" class="bg-go-surface rounded-go-md skeleton-shimmer h-10 w-full sm:w-28"></div>
-          </div>
-        </div>
-        <div>
-          <div class="bg-go-surface rounded-go-xl skeleton-shimmer h-64"></div>
-        </div>
+      <!-- KPIs skeleton -->
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-5">
+        <div v-for="n in 4" :key="n" class="bg-go-surface rounded-go-xl skeleton-shimmer h-24"></div>
+      </div>
+      <!-- Actions skeleton -->
+      <div class="flex gap-2 mt-4">
+        <div v-for="n in 4" :key="n" class="bg-go-surface rounded-go-md skeleton-shimmer h-10 w-24"></div>
       </div>
       <!-- Movements skeleton -->
       <div class="mt-8 pt-8 border-t border-go-border-subtle">
@@ -85,107 +78,138 @@
         </div>
       </div>
 
-      <!-- Details + Summary -->
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-4">
-        <!-- Left: project info + actions -->
-        <div class="flex flex-col gap-3">
-          <!-- Metadata strip -->
-          <div class="grid grid-cols-2 gap-2">
-            <div v-if="project.clientName" class="bg-go-surface border border-go-border rounded-go-md px-3 py-2">
-              <span class="text-xs uppercase tracking-wider text-go-text-muted block">Cliente</span>
-              <span class="text-sm font-medium text-go-text">{{ project.clientName }}</span>
-            </div>
-            <div v-if="project.address" class="bg-go-surface border border-go-border rounded-go-md px-3 py-2">
-              <span class="text-xs uppercase tracking-wider text-go-text-muted block">Dirección</span>
-              <span class="text-sm font-medium text-go-text">{{ project.address }}</span>
-            </div>
-            <div v-if="project.budget" class="bg-go-surface border border-go-border rounded-go-md px-3 py-2">
-              <span class="text-xs uppercase tracking-wider text-go-text-muted block">Presupuesto</span>
-              <span class="text-sm font-medium text-go-text">{{ formatPrice(project.budget) }}</span>
-            </div>
-            <div v-if="project.startDate || project.estimatedEndDate" class="bg-go-surface border border-go-border rounded-go-md px-3 py-2">
-              <span class="text-xs uppercase tracking-wider text-go-text-muted block">Cronograma</span>
-              <span class="text-sm font-medium text-go-text">
-                {{ project.startDate ? formatDate(project.startDate) : '—' }}
-                →
-                {{ project.estimatedEndDate ? formatDate(project.estimatedEndDate) : '—' }}
-              </span>
-            </div>
-            <div v-if="project.description" class="col-span-2 bg-go-surface border border-go-border rounded-go-md px-3 py-2">
-              <span class="text-xs uppercase tracking-wider text-go-text-muted block">Descripción</span>
-              <span class="text-sm font-medium text-go-text">{{ project.description }}</span>
-            </div>
-          </div>
+      <!-- Project info -->
+      <div class="flex flex-wrap items-center gap-x-4 gap-y-1 mt-2 text-sm text-go-text-tertiary">
+        <div v-if="project.clientName" class="flex items-center gap-1.5">
+          <MdiAccountOutline class="text-base text-go-text-muted" />
+          <span>{{ project.clientName }}</span>
+        </div>
+        <div v-if="project.address" class="flex items-center gap-1.5">
+          <MdiMapMarkerOutline class="text-base text-go-text-muted" />
+          <span>{{ project.address }}</span>
+        </div>
+        <div v-if="project.budget" class="flex items-center gap-1.5">
+          <MdiCurrencyUsd class="text-base text-go-text-muted" />
+          <span>Presupuesto: {{ formatPrice(project.budget) }}</span>
+        </div>
+        <div v-if="project.startDate || project.estimatedEndDate" class="flex items-center gap-1.5">
+          <MdiCalendarRange class="text-base text-go-text-muted" />
+          <span>{{ project.startDate ? formatDate(project.startDate) : '—' }} → {{ project.estimatedEndDate ? formatDate(project.estimatedEndDate) : '—' }}</span>
+        </div>
+      </div>
+      <p v-if="project.description" class="text-sm text-go-text-muted mt-1.5">{{ project.description }}</p>
 
-          <!-- Client share link panel -->
-          <button
-            @click="copyShareLink"
-            class="w-full bg-go-bg-elevated border border-go-border rounded-go-xl px-4 py-3.5 flex items-center gap-3 hover:border-go-secondary transition-colors group active:scale-[0.99]"
-          >
-            <div class="w-9 h-9 rounded-go-md bg-go-secondary/15 flex items-center justify-center flex-shrink-0">
-              <MdiCheck v-if="copied" class="text-go-success text-lg" />
-              <MdiLinkVariant v-else class="text-go-secondary text-lg" />
+      <!-- KPIs -->
+      <div class="flex items-center justify-between mt-5 mb-3">
+        <h2 class="font-display font-semibold text-go-text">Resumen</h2>
+        <NuxtLink
+          :to="`/projects/${route.params.id}/resumen`"
+          class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-go-md bg-go-primary text-white text-sm font-medium hover:bg-go-primary-hover transition-colors"
+        >
+          <MdiChartBox class="text-base" />
+          Ver resumen
+        </NuxtLink>
+      </div>
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5">
+        <!-- Gastado -->
+        <div class="bg-go-surface border border-go-border rounded-go-xl px-3.5 py-3">
+          <div class="flex items-center gap-2 mb-1.5">
+            <div class="w-7 h-7 rounded-full bg-go-primary/15 flex items-center justify-center">
+              <MdiTrendingUp class="text-sm text-go-primary" />
             </div>
-            <div class="flex-1 min-w-0 text-left">
-              <span class="font-display font-semibold text-sm text-go-text block">Link para el cliente</span>
-              <span class="text-xs text-go-text-tertiary">Compartí este link con el dueño</span>
+            <span class="text-[11px] font-semibold uppercase tracking-wider text-go-text-muted">Gastado</span>
+          </div>
+          <span class="font-display font-bold text-lg tabular-nums text-go-primary block leading-tight">{{ formatPrice(totalExpenses) }}</span>
+          <span v-if="project.budget" class="text-xs text-go-text-muted tabular-nums">{{ budgetSpentPercent.toFixed(0) }}% del presupuesto</span>
+        </div>
+
+        <!-- Cobrado -->
+        <div class="bg-go-surface border border-go-border rounded-go-xl px-3.5 py-3">
+          <div class="flex items-center gap-2 mb-1.5">
+            <div class="w-7 h-7 rounded-full bg-go-secondary/15 flex items-center justify-center">
+              <MdiCashCheck class="text-sm text-go-secondary" />
             </div>
+            <span class="text-[11px] font-semibold uppercase tracking-wider text-go-text-muted">Cobrado</span>
+          </div>
+          <span class="font-display font-bold text-lg tabular-nums text-go-secondary block leading-tight">{{ formatPrice(totalPayments) }}</span>
+          <span v-if="project.budget" class="text-xs text-go-text-muted tabular-nums">{{ budgetCollectedPercent.toFixed(0) }}% del presupuesto</span>
+        </div>
+
+        <!-- Saldo -->
+        <div
+          class="border rounded-go-xl px-3.5 py-3"
+          :class="balance >= 0 ? 'bg-go-success-muted border-go-success/30' : 'bg-go-danger-muted border-go-danger/30'"
+        >
+          <div class="flex items-center gap-2 mb-1.5">
             <div
-              class="flex-shrink-0 px-3 py-1.5 rounded-go-md text-xs font-semibold transition-colors"
-              :class="copied
-                ? 'bg-go-success/15 text-go-success'
-                : 'bg-go-secondary/10 text-go-secondary group-hover:bg-go-secondary/20'"
+              class="w-7 h-7 rounded-full flex items-center justify-center"
+              :class="balance >= 0 ? 'bg-go-success/15' : 'bg-go-danger/15'"
             >
-              {{ copied ? 'Copiado' : 'Copiar' }}
+              <MdiCheckCircle v-if="balance >= 0" class="text-sm text-go-success" />
+              <MdiAlertCircle v-else class="text-sm text-go-danger" />
             </div>
-          </button>
-
-          <!-- Add expense action bar -->
-          <div class="flex flex-col sm:flex-row gap-2">
-            <button
-              @click="openCreateModal('expense')"
-              class="btn-primary flex items-center justify-center gap-2 text-sm w-full sm:w-auto"
-            >
-              <MdiPlus class="text-base" />
-              <div class="text-left">
-                <span>Gasto</span>
-                <span class="block text-xs opacity-90 font-normal">Cobrable al cliente</span>
-              </div>
-            </button>
-            <button
-              @click="openCreateModal('payment')"
-              class="bg-go-secondary text-white hover:bg-go-secondary-hover rounded-go-md px-5 py-2.5 text-sm font-semibold transition-all duration-150 flex items-center justify-center gap-2 w-full sm:w-auto active:scale-[0.97]"
-            >
-              <MdiPlus class="text-base" />
-              <div class="text-left">
-                <span>Cobro</span>
-                <span class="block text-xs opacity-90 font-normal">Ingreso recibido</span>
-              </div>
-            </button>
-            <button
-              @click="openCreateModal('provider_expense')"
-              class="bg-go-surface border border-go-border text-go-text-secondary hover:text-go-text hover:bg-go-surface-hover rounded-go-md px-5 py-2.5 text-sm font-medium transition-all duration-150 flex items-center justify-center gap-2 w-full sm:w-auto active:scale-[0.97]"
-            >
-              <MdiPlus class="text-base" />
-              <div class="text-left">
-                <span>Gasto propio</span>
-                <span class="block text-xs opacity-90 font-normal">No cobrable</span>
-              </div>
-            </button>
+            <span class="text-[11px] font-semibold uppercase tracking-wider text-go-text-muted">Saldo</span>
           </div>
+          <span
+            class="font-display font-bold text-lg tabular-nums block leading-tight"
+            :class="balance >= 0 ? 'text-go-success' : 'text-go-danger'"
+          >{{ formatPrice(Math.abs(balance)) }}</span>
+          <span
+            class="text-xs font-medium"
+            :class="balance >= 0 ? 'text-go-success' : 'text-go-danger'"
+          >{{ balance >= 0 ? 'Al día' : 'Falta cobrar' }}</span>
         </div>
 
-        <!-- Right: summary -->
-        <div class="lg:sticky lg:top-6 lg:self-start space-y-3">
-          <NuxtLink
-            :to="`/projects/${route.params.id}/resumen`"
-            class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-go-md bg-go-primary text-white text-sm font-medium hover:bg-go-primary-hover transition-colors"
-          >
-            <MdiChartBox class="text-base" />
-            Ver resumen
-          </NuxtLink>
-          <ExpenseSummary :expenses="expenseStore.expenses" :budget="project.budget" :categories="resolvedCategories" />
+        <!-- Gastos propios -->
+        <div class="bg-go-surface border border-go-border rounded-go-xl px-3.5 py-3">
+          <div class="flex items-center gap-2 mb-1.5">
+            <div class="w-7 h-7 rounded-full bg-go-text-muted/10 flex items-center justify-center">
+              <MdiWalletOutline class="text-sm text-go-text-muted" />
+            </div>
+            <span class="text-[11px] font-semibold uppercase tracking-wider text-go-text-muted">Propios</span>
+          </div>
+          <span class="font-display font-bold text-lg tabular-nums block leading-tight" :class="totalProviderExpenses > 0 ? 'text-go-text' : 'text-go-text-muted'">{{ formatPrice(totalProviderExpenses) }}</span>
+          <span class="text-xs text-go-text-muted">No cobrables</span>
         </div>
+      </div>
+
+      <!-- Actions: share link + add buttons -->
+      <div class="flex flex-col sm:flex-row gap-2 mb-2">
+        <button
+          @click="copyShareLink"
+          class="bg-go-bg-elevated border border-go-border rounded-go-md px-4 py-2.5 flex items-center gap-2.5 hover:border-go-secondary transition-colors group active:scale-[0.99] sm:mr-auto"
+        >
+          <MdiCheck v-if="copied" class="text-go-success text-base" />
+          <MdiLinkVariant v-else class="text-go-secondary text-base" />
+          <span class="text-sm text-go-text-secondary">Link cliente</span>
+          <span
+            class="text-xs font-semibold px-2 py-0.5 rounded-go-sm transition-colors"
+            :class="copied
+              ? 'bg-go-success/15 text-go-success'
+              : 'bg-go-secondary/10 text-go-secondary group-hover:bg-go-secondary/20'"
+          >{{ copied ? 'Copiado' : 'Copiar' }}</span>
+        </button>
+        <button
+          @click="openCreateModal('expense')"
+          class="btn-primary flex items-center justify-center gap-1.5 text-sm"
+        >
+          <MdiPlus class="text-base" />
+          Gasto
+        </button>
+        <button
+          @click="openCreateModal('payment')"
+          class="bg-go-secondary text-white hover:bg-go-secondary-hover rounded-go-md px-4 py-2.5 text-sm font-semibold transition-all duration-150 flex items-center justify-center gap-1.5 active:scale-[0.97]"
+        >
+          <MdiPlus class="text-base" />
+          Cobro
+        </button>
+        <button
+          @click="openCreateModal('provider_expense')"
+          class="bg-go-surface border border-go-border text-go-text-secondary hover:text-go-text hover:bg-go-surface-hover rounded-go-md px-4 py-2.5 text-sm font-medium transition-all duration-150 flex items-center justify-center gap-1.5 active:scale-[0.97]"
+        >
+          <MdiPlus class="text-base" />
+          Gasto propio
+        </button>
       </div>
 
       <!-- Movements -->
@@ -378,6 +402,15 @@ import MdiPlus from '~icons/mdi/plus';
 import MdiPencil from '~icons/mdi/pencil';
 import MdiClose from '~icons/mdi/close';
 import MdiFileDocument from '~icons/mdi/file-document';
+import MdiTrendingUp from '~icons/mdi/trending-up';
+import MdiCashCheck from '~icons/mdi/cash-check';
+import MdiCheckCircle from '~icons/mdi/check-circle';
+import MdiAlertCircle from '~icons/mdi/alert-circle';
+import MdiWalletOutline from '~icons/mdi/wallet-outline';
+import MdiAccountOutline from '~icons/mdi/account-outline';
+import MdiMapMarkerOutline from '~icons/mdi/map-marker-outline';
+import MdiCurrencyUsd from '~icons/mdi/currency-usd';
+import MdiCalendarRange from '~icons/mdi/calendar-range';
 import { useProjectStore } from '~/stores/project';
 import { useExpenseStore } from '~/stores/expense';
 import { useCategoryStore } from '~/stores/category';
@@ -436,6 +469,43 @@ const isExportingPdf = ref(false);
 const resolvedCategories = computed(() => {
   const id = route.params.id;
   return categoryStore.getResolved(id);
+});
+
+// Financial KPIs
+const clientExpenses = computed(() =>
+  expenseStore.expenses.filter(e => !e.type || e.type === 'expense')
+);
+
+const payments = computed(() =>
+  expenseStore.expenses.filter(e => e.type === 'payment')
+);
+
+const providerExpensesList = computed(() =>
+  expenseStore.expenses.filter(e => e.type === 'provider_expense')
+);
+
+const totalExpenses = computed(() =>
+  clientExpenses.value.reduce((sum, e) => sum + (e.amount || 0), 0)
+);
+
+const totalPayments = computed(() =>
+  payments.value.reduce((sum, e) => sum + (e.amount || 0), 0)
+);
+
+const totalProviderExpenses = computed(() =>
+  providerExpensesList.value.reduce((sum, e) => sum + (e.amount || 0), 0)
+);
+
+const balance = computed(() => totalPayments.value - totalExpenses.value);
+
+const budgetSpentPercent = computed(() => {
+  if (!project.value?.budget || project.value.budget <= 0) return 0;
+  return (totalExpenses.value / project.value.budget) * 100;
+});
+
+const budgetCollectedPercent = computed(() => {
+  if (!project.value?.budget || project.value.budget <= 0) return 0;
+  return (totalPayments.value / project.value.budget) * 100;
 });
 
 const unassignedExpenses = computed(() =>

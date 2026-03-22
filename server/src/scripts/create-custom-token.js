@@ -12,7 +12,7 @@
 
 import { admin } from '../config/firebase.js';
 
-const UID = 'xQYX8r9OPWbcuvlfmCZBhCxa5xB3';
+const UID = '9jLIVI8WsyYFYeTckAKRsbKA9Bq1';
 
 const token = await admin.auth().createCustomToken(UID);
 console.log('\nCustom token for UID:', UID);

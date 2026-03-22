@@ -46,21 +46,14 @@
           </div>
 
           <!-- Projection -->
-          <div v-if="projectedTotal" class="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-4 border-t border-go-border">
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-4 border-t border-go-border">
             <div>
-              <span class="text-xs font-semibold uppercase tracking-wider text-go-text-muted block mb-0.5">Promedio semanal</span>
-              <span class="font-display font-bold text-lg tabular-nums text-go-text">{{ formatPrice(avgWeeklySpend) }}</span>
+              <span class="text-xs font-semibold uppercase tracking-wider text-go-text-muted block mb-0.5">Gastos</span>
+              <span class="font-display font-bold text-lg tabular-nums text-go-text">{{ formatPrice(totalExpenses) }}</span>
             </div>
             <div>
-              <span class="text-xs font-semibold uppercase tracking-wider text-go-text-muted block mb-0.5">Proyección total</span>
-              <span
-                class="font-display font-bold text-lg tabular-nums"
-                :class="projectedTotal > project.budget ? 'text-go-danger' : 'text-go-text'"
-              >{{ formatPrice(projectedTotal) }}</span>
-              <span
-                v-if="projectedTotal > project.budget"
-                class="text-xs text-go-danger block"
-              >Supera el presupuesto en {{ formatPrice(projectedTotal - project.budget) }}</span>
+              <span class="text-xs font-semibold uppercase tracking-wider text-go-text-muted block mb-0.5">Ingresos</span>
+              <span class="font-display font-bold text-lg tabular-nums text-go-secondary">{{ formatPrice(totalPayments) }}</span>
             </div>
             <div>
               <span class="text-xs font-semibold uppercase tracking-wider text-go-text-muted block mb-0.5">Restante</span>
@@ -68,7 +61,7 @@
                 class="font-display font-bold text-lg tabular-nums"
                 :class="budgetRemaining >= 0 ? 'text-go-secondary' : 'text-go-danger'"
               >{{ formatPrice(Math.abs(budgetRemaining)) }}</span>
-              <span class="text-xs text-go-text-muted block">{{ budgetRemaining >= 0 ? 'disponible' : 'excedido' }}</span>
+              <span class="text-xs text-go-text-muted block">{{ budgetRemaining >= 0 ? 'del presupuesto' : 'excedido del presupuesto' }}</span>
             </div>
             <div class="flex flex-col">
               <span class="text-xs font-semibold uppercase tracking-wider text-go-text-muted block mb-0.5">Gastos propios</span>
@@ -648,27 +641,6 @@ function getExpenseDate(e) {
   if (!raw) return new Date(0);
   return raw.toDate ? raw.toDate() : new Date(raw);
 }
-
-const weeksElapsed = computed(() => {
-  if (clientExpenses.value.length === 0) return 0;
-  const dates = clientExpenses.value.map(e => getExpenseDate(e).getTime());
-  const earliest = Math.min(...dates);
-  const diffMs = Date.now() - earliest;
-  return Math.max(1, Math.ceil(diffMs / (7 * 24 * 60 * 60 * 1000)));
-});
-
-const avgWeeklySpend = computed(() => {
-  if (weeksElapsed.value === 0) return 0;
-  return Math.round(totalExpenses.value / weeksElapsed.value);
-});
-
-const projectedTotal = computed(() => {
-  const end = toDate(project.value?.estimatedEndDate);
-  const start = toDate(project.value?.startDate);
-  if (!end || !start || avgWeeklySpend.value === 0) return null;
-  const totalWeeks = Math.max(1, Math.ceil((end.getTime() - start.getTime()) / (7 * 24 * 60 * 60 * 1000)));
-  return avgWeeklySpend.value * totalWeeks;
-});
 
 // --- Counts ---
 
