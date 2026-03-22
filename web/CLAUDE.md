@@ -38,5 +38,9 @@ Spanish (Argentine). Currency: ARS with `es-AR` locale.
 ## Casquito Components
 `CasquitoNeutral` (idle), `CasquitoHappy` (success), `CasquitoConfused` (errors/FAQ), `CasquitoWorking` (loading), `CasquitoAlert` (warnings), `CasquitoSleeping` (maintenance). Pure SVG, `size` prop. See root `CLAUDE.md` for details.
 
+## UX Philosophy
+
+**Challenge before building**: Before implementing any user-facing change, evaluate whether it actually improves the experience. If a requested feature adds noise, breaks flow, or contradicts existing UX patterns, flag it with a clear reason before writing code — even if the task was already approved. Building the wrong thing is always more expensive than a 30-second pushback.
+
 ## Expense Categories
 Materiales, Herramientas, Transporte, Mano de obra, Comida, Otros

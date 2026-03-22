@@ -50,6 +50,10 @@ server/
 ## Expense Categories
 materiales, herramientas, transporte, mano de obra, comida, otros
 
+## UX Philosophy
+
+**Challenge before building**: Before implementing any user-facing change, evaluate whether it actually improves the experience. If a requested feature contradicts the WhatsApp UX principles (message economy, register flow brevity, no unnecessary friction), flag it with a clear reason before writing code — even if the task was already approved. Building the wrong thing is always more expensive than a 30-second pushback.
+
 ## WhatsApp Message Format
 Free-form text parsed by Gemini AI. Users send natural language messages like "500 clavos", "me pagaron 5000 por transferencia", "gasto propio 2000 almuerzo". AI extracts amount, title, category, transaction type, payment method, recipient, vendor, and project from context. No structured format required.
 

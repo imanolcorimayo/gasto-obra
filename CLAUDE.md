@@ -26,6 +26,8 @@ All user-facing text is in **Spanish (Argentine)**. Currency: ARS with `es-AR` l
 
 Keep code simple, but never at the expense of user experience. Every user-facing flow should feel intentional and complete — proper redirects, clear feedback, no dead ends. "Simple" means minimal code complexity, not minimal polish. Do it once, do it right.
 
+**Challenge before building**: Before implementing any user-facing change, evaluate whether it actually improves the experience. If a requested feature contradicts existing UX principles (message economy, register flow brevity, etc.), flag it with a clear reason before writing code — even if the task was already approved. Building the wrong thing is always more expensive than a 30-second pushback.
+
 ## Dependencies Policy
 
 Avoid adding libraries for things that can be done with plain JS. Input validation, rate limiting, and similar utilities should use simple guard clauses and native code — no zod, joi, express-rate-limit, etc.

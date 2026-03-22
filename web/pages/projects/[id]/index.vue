@@ -190,25 +190,11 @@
           >{{ copied ? 'Copiado' : 'Copiar' }}</span>
         </button>
         <button
-          @click="openCreateModal('expense')"
+          @click="openAIInput()"
           class="btn-primary flex items-center justify-center gap-1.5 text-sm"
         >
-          <MdiPlus class="text-base" />
-          Gasto
-        </button>
-        <button
-          @click="openCreateModal('payment')"
-          class="bg-go-secondary text-white hover:bg-go-secondary-hover rounded-go-md px-4 py-2.5 text-sm font-semibold transition-all duration-150 flex items-center justify-center gap-1.5 active:scale-[0.97]"
-        >
-          <MdiPlus class="text-base" />
-          Cobro
-        </button>
-        <button
-          @click="openCreateModal('provider_expense')"
-          class="bg-go-surface border border-go-border text-go-text-secondary hover:text-go-text hover:bg-go-surface-hover rounded-go-md px-4 py-2.5 text-sm font-medium transition-all duration-150 flex items-center justify-center gap-1.5 active:scale-[0.97]"
-        >
-          <MdiPlus class="text-base" />
-          Gasto propio
+          <MdiAutoFix class="text-base" />
+          Nuevo movimiento
         </button>
       </div>
 
@@ -343,6 +329,15 @@
         </div>
       </div>
 
+      <!-- AI input modal -->
+      <ExpenseAIInput
+        :show="showAIInput"
+        :project-id="project?.id"
+        @close="showAIInput = false"
+        @parsed="handleAIParsed"
+        @skip="handleAISkip"
+      />
+
       <!-- Create expense modal -->
       <ExpenseCreateModal
         :show="showCreateModal"
@@ -411,6 +406,7 @@ import MdiAccountOutline from '~icons/mdi/account-outline';
 import MdiMapMarkerOutline from '~icons/mdi/map-marker-outline';
 import MdiCurrencyUsd from '~icons/mdi/currency-usd';
 import MdiCalendarRange from '~icons/mdi/calendar-range';
+import MdiAutoFix from '~icons/mdi/auto-fix';
 import { useProjectStore } from '~/stores/project';
 import { useExpenseStore } from '~/stores/expense';
 import { useCategoryStore } from '~/stores/category';
@@ -442,6 +438,7 @@ const managementFeePercent = ref(0);
 const isLoading = ref(true);
 const project = ref(null);
 const copied = ref(false);
+const showAIInput = ref(false);
 const showCreateModal = ref(false);
 const createModalType = ref('expense');
 const createModalPrefill = ref(null);
@@ -651,6 +648,42 @@ async function handleExportPdf() {
   }
 }
 
+function openAIInput() {
+  showAIInput.value = true;
+}
+
+function handleAIParsed(result) {
+  showAIInput.value = false;
+  const p = result.parsed || {};
+
+  // Map AI result to the prefill format expected by ExpenseCreateModal
+  const prefill = {
+    title: p.title || '',
+    totalAmount: p.totalAmount || (p.items?.length ? p.items.reduce((s, i) => s + (i.amount || 0), 0) : ''),
+    category: p.category || 'materiales',
+    items: p.items?.length ? p.items.map(i => ({ name: i.name, amount: i.amount })) : [],
+    paymentMethod: p.paymentMethod || null,
+    vendor: p.vendor || p.vendorName || '',
+    installmentPercent: parseInt(p.installmentPercent, 10) || 0,
+    applyManagementFee: p.applyManagementFee || false,
+    // File URLs from the parse response
+    imageUrl: result.imageUrl || null,
+    fileUrl: result.fileUrl || null,
+    aiParsed: true
+  };
+
+  const type = p.transactionType === 'payment' ? 'payment'
+    : p.transactionType === 'provider_expense' ? 'provider_expense'
+    : 'expense';
+
+  openCreateModal(type, prefill);
+}
+
+function handleAISkip(type) {
+  showAIInput.value = false;
+  openCreateModal(type || 'expense');
+}
+
 function openCreateModal(type, prefill = null) {
   createModalType.value = type;
   createModalPrefill.value = prefill;
@@ -726,7 +759,9 @@ async function handleCreateSubmit(formData) {
       installmentGroupId: formData.installmentGroupId || null,
       vendor: formData.vendor || null,
       amountBase: formData.amountBase ?? null,
-      managementFeePercent: formData.managementFeePercent ?? null
+      managementFeePercent: formData.managementFeePercent ?? null,
+      imageUrl: createModalPrefill.value?.imageUrl || null,
+      fileUrl: createModalPrefill.value?.fileUrl || null
     };
 
     const result = await expenseStore.createExpense(data);

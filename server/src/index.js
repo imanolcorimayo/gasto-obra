@@ -5,6 +5,7 @@ import logger from '../lib/logger.js';
 import { requireAuth } from './middleware/auth.js';
 import { GetProjectCategories } from './actions/categories/GetProjectCategories.js';
 import { SendContactEmail } from './actions/contact/SendContactEmail.js';
+import { ParseExpense } from './actions/expenses/ParseExpense.js';
 
 const app = express();
 const PORT = process.env.API_PORT || 4002;
@@ -48,7 +49,7 @@ setInterval(() => {
 // Middleware
 // ============================================
 
-app.use(express.json({ limit: '1mb' }));
+app.use(express.json({ limit: '15mb' }));
 
 // Security headers
 app.use((_req, res, next) => {
@@ -154,6 +155,7 @@ app.post('/api/contact', SendContactEmail);
 // ============================================
 
 app.get('/api/projects/:projectId/categories', requireAuth, GetProjectCategories);
+app.post('/api/parse-expense', requireAuth, ParseExpense);
 
 // ============================================
 // Start Server

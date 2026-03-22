@@ -15,6 +15,14 @@
       <!-- Body + Footer inside form for submit -->
       <form @submit.prevent="handleSubmit">
         <div class="modal-body space-y-4">
+          <!-- AI prefill banner -->
+          <div v-if="prefill?.aiParsed" class="flex items-start gap-2.5 bg-go-primary/5 border border-go-primary/15 rounded-go-md px-3 py-2.5">
+            <MdiAutoFix class="text-go-primary text-base shrink-0 mt-0.5" />
+            <p class="text-xs text-go-text-secondary leading-relaxed">
+              Datos extraídos automáticamente — revisá antes de guardar.
+            </p>
+          </div>
+
           <!-- Title -->
           <div>
             <label class="block text-[11px] font-semibold uppercase tracking-wider text-go-text-muted mb-1.5">
@@ -285,6 +293,7 @@
 
 <script setup>
 import MdiChevronDown from '~icons/mdi/chevron-down';
+import MdiAutoFix from '~icons/mdi/auto-fix';
 import MdiPlus from '~icons/mdi/plus';
 import MdiClose from '~icons/mdi/close';
 import { DEFAULT_EXPENSE_CATEGORIES, PAYMENT_METHODS, SCOPE_TYPES, getScopeTypeStyles, formatPrice } from '~/utils';
