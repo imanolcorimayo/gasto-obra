@@ -1,25 +1,6 @@
 <template>
-  <section class="relative overflow-hidden">
-    <!-- Ambient glow -->
-    <div class="absolute top-1/4 left-1/2 -translate-x-1/2 w-[600px] h-[600px] bg-go-primary/[0.04] rounded-full blur-[120px] pointer-events-none"></div>
-
-    <div class="max-w-2xl mx-auto px-5 pt-20 sm:pt-24 pb-12 w-full">
-
-      <!-- ── Authenticated: dashboard redirect ── -->
-      <div v-if="isAuthenticated" ref="heroTextRef" class="text-center landing-fade-up mb-8">
-        <button
-          @click="$emit('dashboard')"
-          :disabled="isLoading"
-          class="inline-flex items-center gap-3 text-base px-8 py-3.5 rounded-go-lg shadow-go-md hover:shadow-go-lg transition-all font-semibold bg-go-primary text-white hover:bg-go-primary-hover active:scale-[0.97]"
-        >
-          <template v-if="!isLoading">Ir al dashboard</template>
-          <span v-else class="flex items-center gap-2">
-            <span class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
-            Cargando...
-          </span>
-        </button>
-      </div>
-
+  <div>
+    <div class="max-w-2xl mx-auto px-5 pb-6 w-full">
       <!-- ── Demo Panel ── -->
       <div ref="heroDemoRef" class="landing-fade-up">
         <div
@@ -116,23 +97,17 @@
                   </button>
                 </div>
 
-                <!-- Has remaining: signup CTA + smaller try again -->
-                <div v-else class="flex items-center gap-3">
-                  <button v-if="!isAuthenticated" @click="$emit('login')" class="inline-flex items-center gap-2 text-sm px-4 py-2 rounded-go-lg font-semibold bg-go-primary text-white hover:bg-go-primary-hover active:scale-[0.97] transition-all">
+                <!-- Has remaining: try again + signup -->
+                <div v-else class="space-y-3">
+                  <button @click="reset" class="w-full py-2.5 rounded-go-lg text-sm font-medium border border-go-border text-go-text-secondary hover:text-go-text hover:border-go-primary/40 transition-colors flex items-center justify-center gap-2">
+                    <MdiRefresh class="w-4 h-4" />
+                    {{ isFirstResult ? postResultHint : 'Probar otro gasto' }}
+                  </button>
+                  <button v-if="!isAuthenticated" @click="$emit('login')" class="w-full inline-flex items-center justify-center gap-2 text-sm px-4 py-2.5 rounded-go-lg font-semibold bg-go-primary text-white hover:bg-go-primary-hover active:scale-[0.97] transition-all">
                     Registrate gratis
                     <MdiArrowRight class="w-3.5 h-3.5" />
                   </button>
-                  <button @click="reset" class="text-xs text-go-text-muted hover:text-go-text transition-colors flex items-center gap-1 ml-auto">
-                    <MdiRefresh class="w-3.5 h-3.5" />
-                    Probar otro gasto
-                  </button>
                 </div>
-              </div>
-
-              <!-- Post-result Casquito hint (first result only) -->
-              <div v-if="isFirstResult && !isRateLimited" class="flex items-center gap-3 mt-5 pt-4 border-t border-go-border-subtle demo-field" style="--field-delay: 450ms">
-                <CasquitoHappy :size="36" class="shrink-0" />
-                <p class="text-sm text-go-text-secondary">{{ postResultHint }}</p>
               </div>
 
               <!-- Contextual type hint (when result is payment or provider_expense) -->
@@ -324,7 +299,7 @@
         </p>
       </div>
     </div>
-  </section>
+  </div>
 </template>
 
 <script setup>
