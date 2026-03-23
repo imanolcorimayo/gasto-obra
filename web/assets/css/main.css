@@ -51,10 +51,10 @@ input[type="number"] {
   --go-border-subtle:   #CFC7BA;
 
   /* Primary (amber — darkened for WCAG AA on all light surfaces) */
-  --go-primary:         #A35C0D;
-  --go-primary-hover:   #8E500B;
+  --go-primary:         #92520B;
+  --go-primary-hover:   #7F4709;
   --go-primary-active:  #7D470A;
-  --go-primary-muted:   rgba(163, 92, 13, 0.10);
+  --go-primary-muted:   rgba(146, 82, 11, 0.10);
   --go-primary-on:      #FFFFFF;
 
   /* Secondary (olive/green) */
