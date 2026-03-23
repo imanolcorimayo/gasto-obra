@@ -130,6 +130,15 @@ app.get('/api/project-preview/:token', async (req, res) => {
     const doc = snapshot.docs[0];
     const data = doc.data();
 
+    // Fetch provider display name
+    let providerName = null;
+    if (data.providerId) {
+      const providerDoc = await db.collection(COLLECTIONS.PROVIDERS).doc(data.providerId).get();
+      if (providerDoc.exists) {
+        providerName = providerDoc.data().displayName?.split(' ')[0] || null;
+      }
+    }
+
     res.json({
       id: doc.id,
       name: data.name,
@@ -140,6 +149,7 @@ app.get('/api/project-preview/:token', async (req, res) => {
       budget: data.budget || null,
       startDate: data.startDate?.toDate?.()?.toISOString() || null,
       estimatedEndDate: data.estimatedEndDate?.toDate?.()?.toISOString() || null,
+      providerName,
     });
   } catch (error) {
     logger.error('Error in /api/project-preview', { error: error.message });

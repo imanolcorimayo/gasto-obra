@@ -625,24 +625,13 @@ async function processMessage(phoneNumber, text, contactName) {
   }
 
   // 10. AYUDA
-  if (normalizedText === 'ayuda' || normalizedText === 'help') {
-    await sendWhatsAppButtons(
-      phoneNumber,
-      '¿En qué te puedo ayudar?',
-      [
-        { id: 'ayuda_comandos', title: 'Comandos' },
-        { id: 'ayuda_soporte', title: 'Soporte AI' }
-      ]
-    );
-    return;
-  }
-
-  // 10b. AYUDA button responses
-  if (normalizedText === 'comandos') {
+  if (normalizedText === 'ayuda' || normalizedText === 'help' || normalizedText === 'comandos') {
     await sendHelpMessage(phoneNumber);
     return;
   }
-  if (normalizedText === 'soporte ai') {
+
+  // 10b. SOPORTE AI
+  if (normalizedText === 'soporte' || normalizedText === 'soporte ai') {
     createAISupportSession(phoneNumber);
     await sendWhatsAppMessage(phoneNumber, 'Escribí tu consulta y te ayudo 💡');
     return;

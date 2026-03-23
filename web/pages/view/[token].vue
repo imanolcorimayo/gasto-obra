@@ -25,6 +25,11 @@
       <!-- Project preview -->
       <template v-else>
         <div class="bg-go-surface border border-go-border rounded-go-xl p-6 text-center">
+          <!-- Personal invitation -->
+          <p v-if="project.providerName" class="text-go-text-muted text-sm mb-4">
+            <span class="font-semibold text-go-text">{{ project.providerName }}</span> te invita a seguir los gastos de
+          </p>
+
           <!-- Project name & tag -->
           <h1 class="font-display font-bold text-2xl text-go-text">{{ project.name }}</h1>
           <div class="flex items-center justify-center gap-2 mt-2">
@@ -67,7 +72,9 @@
           <div class="border-t border-go-border my-6"></div>
 
           <!-- CTA -->
-          <p class="text-go-text-secondary text-sm mb-4">Unite como cliente para ver el detalle completo de gastos, pagos y el estado financiero de tu obra.</p>
+          <p class="text-go-text-secondary text-sm mb-4">
+            Tu proveedor registra gastos por WhatsApp y vos los ves acá en tiempo real — con fotos, categorías y totales.
+          </p>
           <button
             @click="handleJoin"
             :disabled="isJoining"

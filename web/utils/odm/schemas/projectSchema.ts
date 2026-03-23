@@ -93,6 +93,7 @@ export class ProjectSchema extends Schema {
     data.providerId = this.getCurrentUserId();
     data.status = data.status || 'active';
     data.shareToken = this.generateShareToken();
+    data.clientUserId = null;
 
     return this.create(data);
   }

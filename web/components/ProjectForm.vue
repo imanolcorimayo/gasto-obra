@@ -106,7 +106,6 @@
           placeholder="5491155512345"
           class="w-full bg-go-bg border border-go-border rounded-go-md px-3 py-2.5 text-sm text-go-text placeholder-go-text-muted focus:outline-none focus:ring-2 focus:ring-go-primary/40 focus:border-go-primary transition-colors"
         />
-        <p class="text-[11px] text-go-text-muted mt-1">Para enviar resúmenes diarios por WhatsApp</p>
       </div>
     </div>
 

@@ -239,15 +239,6 @@
 
         <AppLoader v-if="expenseStore.isLoading" text="Cargando gastos..." />
         <template v-else>
-          <!-- Empty state callout -->
-          <div v-if="expenseStore.expenses.length === 0" class="bg-go-surface border border-go-border-subtle rounded-go-xl p-6 text-center mb-6">
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="text-go-primary/50 mx-auto mb-3">
-              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-            </svg>
-            <h4 class="font-display font-semibold text-go-text">Tu obra está lista.</h4>
-            <p class="text-go-text-muted text-sm mt-1">Mandá un gasto por WhatsApp para empezar, o usá el botón + Gasto acá arriba.</p>
-          </div>
-
           <!-- Movimientos tab -->
           <ExpenseList
             v-if="activeTab === 'movimientos'"

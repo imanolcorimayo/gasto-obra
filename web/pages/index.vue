@@ -797,15 +797,18 @@ async function redirectUser(user) {
   }
 
   const projectStore = useProjectStore();
-  await projectStore.fetchClientProjects(user.uid);
+  await Promise.all([
+    projectStore.fetchClientProjects(user.uid),
+    projectStore.fetchProjects()
+  ]);
 
-  if (projectStore.clientProjects.length > 0) {
-    await projectStore.fetchProjects();
-    if (projectStore.projects.length > 0) {
-      navigateTo('/projects');
-    } else {
-      navigateTo('/client');
-    }
+  const hasProjects = projectStore.projects.length > 0;
+  const hasClientProjects = projectStore.clientProjects.length > 0;
+
+  if (!hasProjects && !hasClientProjects) {
+    navigateTo('/onboarding');
+  } else if (hasClientProjects && !hasProjects) {
+    navigateTo('/client');
   } else {
     navigateTo('/projects');
   }

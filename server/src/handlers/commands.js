@@ -57,17 +57,21 @@ export async function handleLinkCommand(phoneNumber, code, contactName) {
     };
 
     const activeProjects = await getActiveProjects(codeData.userId);
-    if (activeProjects.length === 1) {
+    if (activeProjects.length > 0) {
       linkData.activeProjectId = activeProjects[0].id;
     }
 
     await db.collection(COLLECTIONS.WHATSAPP_LINKS).doc(phoneNumber).set(linkData);
 
     let message = 'Cuenta vinculada!\n\n';
-    if (activeProjects.length === 1) {
-      message += `Proyecto activo: *${activeProjects[0].name}* (${activeProjects[0].tag})\n\n`;
+    if (activeProjects.length > 0) {
+      message += `*${activeProjects[0].name}* está activo y los gastos van a este proyecto.`;
+      if (activeProjects.length > 1) {
+        message += ' Escribí *PROYECTO* para cambiar.';
+      }
+      message += '\n\n';
     }
-    message += 'Enviá una foto, audio o PDF para registrar gastos.\nEnviá *PROYECTO* para cambiar de proyecto.\nEscribí *AYUDA* para más info.';
+    message += 'Probá ahora — mandá una foto de un ticket o escribí algo como "500 clavos".\n\nEscribí *AYUDA* si necesitás ayuda.';
 
     await sendWhatsAppMessage(phoneNumber, message);
   } catch (error) {
@@ -113,7 +117,9 @@ Podés incluir método de pago (efectivo, transferencia, tarjeta, mercadopago), 
 *Comandos:*
 *PROYECTO* - Seleccionar proyecto activo
 *RESUMEN* - Resumen del proyecto activo
-*AYUDA* - Ver este mensaje`;
+*AYUDA* - Ver este mensaje
+
+¿Tenés una duda? Escribí *SOPORTE* para hablar con el asistente AI.`;
 
   await sendWhatsAppMessage(phoneNumber, helpText);
 }

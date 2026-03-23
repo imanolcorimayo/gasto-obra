@@ -34,6 +34,7 @@ export default defineNuxtConfig({
     '/settings/**': { ssr: false },
     '/view/**': { ssr: false },
     '/client/**': { ssr: false },
+    '/onboarding': { ssr: false },
   },
 
   runtimeConfig: {
