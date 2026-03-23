@@ -2,7 +2,7 @@
   <header class="w-full bg-go-bg/90 backdrop-blur-sm border-b border-go-border sticky top-0 z-40">
     <div class="max-w-7xl m-auto px-3 sm:px-6 py-3 flex items-center justify-between">
       <NuxtLink to="/" class="flex items-center gap-2.5">
-        <img src="/img/logo.png" alt="Gasto Obra" class="h-10 w-10" />
+        <img src="/img/logo-160.webp" alt="Gasto Obra" class="h-10 w-10" width="40" height="40" />
         <span class="font-display font-bold text-lg tracking-tight"><span class="text-go-text">gasto</span><span class="text-go-primary ml-0.5">obra</span></span>
       </NuxtLink>
 

@@ -54,15 +54,15 @@ export default defineNuxtConfig({
     head: {
       htmlAttrs: { dir: "ltr", lang: "es" },
       link: [
-        { rel: "icon", type: "image/png", href: "/img/logo.png" },
+        { rel: "icon", type: "image/png", href: "/img/favicon-32.png" },
         { rel: "preconnect", href: "https://fonts.googleapis.com" },
         { rel: "preconnect", href: "https://fonts.gstatic.com", crossorigin: "" },
-        { rel: "stylesheet", href: "https://fonts.googleapis.com/css2?family=Red+Hat+Display:ital,wght@0,300..900;1,300..900&family=Space+Grotesk:wght@500;600;700&display=swap" },
+        { rel: "stylesheet", href: "https://fonts.googleapis.com/css2?family=Red+Hat+Display:ital,wght@0,300..900;1,300..900&family=Space+Grotesk:wght@500;600;700&display=swap", media: "print", onload: "this.media='all'" },
       ],
       meta: [
         {
           name: "viewport",
-          content: "width=device-width, initial-scale=1.0, maximum-scale=1.0"
+          content: "width=device-width, initial-scale=1.0, maximum-scale=5.0"
         }
       ]
     }

@@ -6,7 +6,7 @@
   >
     <div class="max-w-6xl mx-auto px-5 h-16 flex items-center justify-between">
       <NuxtLink to="/" class="flex items-center gap-2.5">
-        <img src="/img/logo.png" alt="Gasto Obra" class="h-10 w-10" />
+        <img src="/img/logo-160.webp" alt="Gasto Obra" class="h-10 w-10" width="40" height="40" />
         <span class="font-display font-bold text-lg tracking-tight"><span class="text-go-text">gasto</span><span class="text-go-primary ml-0.5">obra</span></span>
       </NuxtLink>
       <div class="flex items-center gap-1 sm:gap-4">
