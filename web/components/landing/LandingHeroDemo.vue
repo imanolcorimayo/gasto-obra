@@ -160,13 +160,38 @@
             </div>
 
             <!-- ═══ ERROR STATE ═══ -->
-            <div v-else-if="error && !isRateLimited" class="flex flex-col items-center py-8">
+            <div v-else-if="(error || errorReason) && !isRateLimited" class="flex flex-col items-center py-8">
               <CasquitoConfused :size="64" class="mb-4" />
-              <p class="text-go-text text-sm font-medium text-center mb-1">{{ error }}</p>
-              <button @click="resetError" class="text-sm text-go-primary hover:text-go-primary-hover transition-colors mt-3 flex items-center gap-1">
-                <MdiRefresh class="w-4 h-4" />
-                Intentar de nuevo
-              </button>
+
+              <!-- Fun "not an expense" state -->
+              <template v-if="errorReason">
+                <p class="text-go-text text-sm font-medium text-center mb-1">{{ funErrorMessage }}</p>
+                <p class="text-go-text-muted text-xs text-center mt-1 max-w-xs">{{ funErrorHint }}</p>
+                <div class="flex items-center gap-3 mt-4">
+                  <button @click="resetError" class="text-sm text-go-primary hover:text-go-primary-hover transition-colors flex items-center gap-1">
+                    <MdiRefresh class="w-4 h-4" />
+                    Intentar de nuevo
+                  </button>
+                  <a
+                    :href="supportWaLink"
+                    target="_blank"
+                    rel="noopener"
+                    class="inline-flex items-center gap-1.5 text-sm text-[#25D366] hover:text-[#1da851] font-medium transition-colors"
+                  >
+                    <MdiWhatsapp class="w-4 h-4" />
+                    Escribinos
+                  </a>
+                </div>
+              </template>
+
+              <!-- Generic error -->
+              <template v-else>
+                <p class="text-go-text text-sm font-medium text-center mb-1">{{ error }}</p>
+                <button @click="resetError" class="text-sm text-go-primary hover:text-go-primary-hover transition-colors mt-3 flex items-center gap-1">
+                  <MdiRefresh class="w-4 h-4" />
+                  Intentar de nuevo
+                </button>
+              </template>
             </div>
 
             <!-- ═══ RATE LIMITED STATE ═══ -->
@@ -314,6 +339,7 @@ import MdiFilePdfBox from '~icons/mdi/file-pdf-box';
 import MdiStoreOutline from '~icons/mdi/store-outline';
 import MdiCreditCardOutline from '~icons/mdi/credit-card-outline';
 import MdiArrowRight from '~icons/mdi/arrow-right';
+import MdiWhatsapp from '~icons/mdi/whatsapp';
 import { formatPrice } from '~/utils';
 
 defineProps({
@@ -333,6 +359,7 @@ const result = ref(null);
 const warnings = ref([]);
 const remaining = ref(null);
 const error = ref(null);
+const errorReason = ref(null);
 const isRateLimited = ref(false);
 const emptyShake = ref(false);
 const isFirstResult = ref(true);
@@ -447,6 +474,49 @@ const showTypeHint = computed(() => {
   return type === 'payment' || type === 'provider_expense';
 });
 
+// ── Fun error messages ──
+const SUPPORT_PHONE = '5493513467739';
+const supportWaLink = `https://wa.me/${SUPPORT_PHONE}?text=${encodeURIComponent('Hola! Tengo una consulta sobre Gasto Obra')}`;
+
+const FUN_MESSAGES = {
+  question: [
+    'Parece que tenés una duda, no un gasto 😅',
+    'Eso suena a consulta, no a gasto 😄',
+  ],
+  unrecognized_text: [
+    'Eso no parece un gasto... o sí? 🤔',
+  ],
+  unrecognized_file: [
+    'Eso no parece un ticket... o sí? 🤔',
+    'Hmm, no pudimos leer un gasto de ahí 😅',
+  ],
+  unrecognized_audio: [
+    'No detectamos un gasto en el audio 🤔',
+    'Eso no sonó a gasto... o sí? 😄',
+  ],
+};
+
+const FUN_HINTS = {
+  question: 'Si tenés dudas, escribinos directo o probá de otra forma.',
+  unrecognized_text: 'Probá con algo tipo "500 clavos" o "pagué 28 mil de pintura".',
+  unrecognized_file: 'Mandá una foto de un ticket, factura o comprobante.',
+  unrecognized_audio: 'Probá dictando algo tipo "compré 3 bolsas de cemento, 45 mil".',
+};
+
+function pickRandom(arr) {
+  return arr[Math.floor(Math.random() * arr.length)];
+}
+
+const funErrorMessage = computed(() => {
+  if (!errorReason.value) return '';
+  return pickRandom(FUN_MESSAGES[errorReason.value] || FUN_MESSAGES.unrecognized_text);
+});
+
+const funErrorHint = computed(() => {
+  if (!errorReason.value) return '';
+  return FUN_HINTS[errorReason.value] || FUN_HINTS.unrecognized_text;
+});
+
 const typeHintText = computed(() => {
   const type = result.value?.transactionType;
   if (type === 'payment') return 'Detectamos un pago — también podés registrar gastos y gastos propios. ';
@@ -548,7 +618,11 @@ async function submitDemo(body) {
         setRateLimited();
         return;
       }
-      error.value = data.error || 'Error al procesar';
+      if (data.reason) {
+        errorReason.value = data.reason;
+      } else {
+        error.value = data.error || 'Error al procesar';
+      }
       return;
     }
 
@@ -579,6 +653,10 @@ function handleTextSubmit() {
     setTimeout(() => { emptyShake.value = false; }, 600);
     return;
   }
+  if (text.length > 500) {
+    error.value = 'El texto es muy largo. Máximo 500 caracteres.';
+    return;
+  }
   submitDemo({ type: 'text', text });
 }
 
@@ -594,10 +672,19 @@ function handleDrop(e) {
   if (file) setFile(file);
 }
 
+const MAX_IMAGE_SIZE = 10 * 1024 * 1024; // 10MB
+const MAX_PDF_SIZE = 5 * 1024 * 1024;    // 5MB
+const MAX_AUDIO_SIZE = 10 * 1024 * 1024;  // 10MB
+
 function setFile(file) {
   const validTypes = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
   if (!validTypes.includes(file.type)) {
     error.value = 'Formato no soportado. Usá JPG, PNG, WebP o PDF.';
+    return;
+  }
+  const maxSize = file.type === 'application/pdf' ? MAX_PDF_SIZE : MAX_IMAGE_SIZE;
+  if (file.size > maxSize) {
+    error.value = `El archivo supera el límite de ${maxSize / (1024 * 1024)}MB.`;
     return;
   }
   selectedFile.value = file;
@@ -734,6 +821,7 @@ function reset() {
   result.value = null;
   warnings.value = [];
   error.value = null;
+  errorReason.value = null;
   textInput.value = '';
   clearFile();
   inputMode.value = 'text';
@@ -743,6 +831,7 @@ function reset() {
 
 function resetError() {
   error.value = null;
+  errorReason.value = null;
 }
 
 // ── Helpers ──

@@ -31,7 +31,8 @@ const COLLECTIONS = {
   RECIPIENTS: 'recipients',
   VENDORS: 'vendors',
   FAQ: 'faq',
-  SUPPORT_QUERIES: 'supportQueries'
+  SUPPORT_QUERIES: 'supportQueries',
+  DEMO_SUBMISSIONS: 'demoSubmissions'
 };
 
 export { admin, db, bucket, COLLECTIONS };
