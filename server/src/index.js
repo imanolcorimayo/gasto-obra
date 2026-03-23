@@ -6,6 +6,10 @@ import { requireAuth } from './middleware/auth.js';
 import { GetProjectCategories } from './actions/categories/GetProjectCategories.js';
 import { SendContactEmail } from './actions/contact/SendContactEmail.js';
 import { ParseExpense } from './actions/expenses/ParseExpense.js';
+import { DemoParseExpense, DemoParseStatus } from './actions/expenses/DemoParseExpense.js';
+import redis from './handlers/RedisHandler.js';
+
+redis.connect();
 
 const app = express();
 const PORT = process.env.API_PORT || 4002;
@@ -159,6 +163,8 @@ app.get('/api/project-preview/:token', async (req, res) => {
 
 // Public POST endpoints
 app.post('/api/contact', SendContactEmail);
+app.get('/api/demo-parse/status', DemoParseStatus);
+app.post('/api/demo-parse', DemoParseExpense);
 
 // ============================================
 // Authenticated routes
