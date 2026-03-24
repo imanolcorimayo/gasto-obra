@@ -581,11 +581,43 @@ body {
 .step-title { font-size: 14px; font-weight: 600; color: #F0EBE1; margin-bottom: 2px; }
 .step-desc { font-size: 13px; color: #8A8579; line-height: 1.6; }
 
+/* ── Logo Showcase ── */
+.logo-showcase {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 14px;
+  margin: 16px 0 24px;
+}
+.logo-frame {
+  border-radius: 14px;
+  padding: 28px 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  border: 1px solid #3D362C;
+  min-height: 120px;
+  justify-content: center;
+}
+.logo-frame .frame-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  color: #5E594F;
+  text-transform: uppercase;
+}
+.logo-frame img, .logo-frame svg {
+  display: block;
+}
+.logo-frame.dark-bg { background: #26211A; }
+.logo-frame.light-bg { background: #F5F0E8; }
+
 /* ── Responsive fix ── */
 @media (max-width: 768px) {
   .cover h1 { font-size: 34px; }
   .section h2 { font-size: 24px; }
   .color-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+  .logo-showcase { grid-template-columns: 1fr; }
 }
 </style>
 </head>
@@ -924,13 +956,13 @@ body {
         </div>
       </div>
       <div class="color-card">
-        <div class="color-swatch" style="background:#D4CCC0;">
+        <div class="color-swatch" style="background:#B8AFA2;">
           <span class="contrast-label" style="color:#1C1915;">Border</span>
         </div>
         <div class="color-info">
           <div class="color-name">Border</div>
           <div class="color-token">--go-border</div>
-          <div class="color-hex">#D4CCC0</div>
+          <div class="color-hex">#B8AFA2</div>
         </div>
       </div>
     </div>
@@ -939,8 +971,8 @@ body {
     <div style="background:#F5F0E8; border:1px solid #D4CCC0; border-radius:14px; padding:28px; margin:16px 0 24px;">
       <p style="font-size:22px; font-weight:700; color:#1C1915; margin-bottom:8px; font-family:'Red Hat Display',sans-serif;">Depto Flores 3B — Remodelación</p>
       <p style="font-size:14px; color:#4A443D; margin-bottom:6px; font-family:'Red Hat Display',sans-serif;">Presupuesto: $2.500.000 · Av. Rivadavia 1234</p>
-      <p style="font-size:13px; color:#8A8078; margin-bottom:6px; font-family:'Red Hat Display',sans-serif;">Inicio: 15 enero 2026 · Fin estimado: abril 2026</p>
-      <p style="font-size:12px; color:#B5AFA6; font-family:'Red Hat Display',sans-serif;">Creado hace 2 días · Última actualización: hoy</p>
+      <p style="font-size:13px; color:#6B6259; margin-bottom:6px; font-family:'Red Hat Display',sans-serif;">Inicio: 15 enero 2026 · Fin estimado: abril 2026</p>
+      <p style="font-size:12px; color:#635B54; font-family:'Red Hat Display',sans-serif;">Creado hace 2 días · Última actualización: hoy</p>
     </div>
 
     <div class="color-grid">
@@ -953,46 +985,46 @@ body {
         <div class="color-info"><div class="color-name">Text Secondary</div><div class="color-token">--go-text-secondary</div><div class="color-hex">#4A443D</div></div>
       </div>
       <div class="color-card">
-        <div class="color-swatch" style="background:#8A8078;"><span class="contrast-label">Tertiary</span></div>
-        <div class="color-info"><div class="color-name">Text Tertiary</div><div class="color-token">--go-text-tertiary</div><div class="color-hex">#8A8078</div></div>
+        <div class="color-swatch" style="background:#6B6259;"><span class="contrast-label">Tertiary</span></div>
+        <div class="color-info"><div class="color-name">Text Tertiary</div><div class="color-token">--go-text-tertiary</div><div class="color-hex">#6B6259</div></div>
       </div>
       <div class="color-card">
-        <div class="color-swatch" style="background:#B5AFA6;"><span class="contrast-label" style="background:rgba(0,0,0,0.3);">Muted</span></div>
-        <div class="color-info"><div class="color-name">Text Muted</div><div class="color-token">--go-text-muted</div><div class="color-hex">#B5AFA6</div></div>
+        <div class="color-swatch" style="background:#635B54;"><span class="contrast-label">Muted</span></div>
+        <div class="color-info"><div class="color-name">Text Muted</div><div class="color-token">--go-text-muted</div><div class="color-hex">#635B54</div></div>
       </div>
     </div>
 
-    <h3 style="margin-top:32px;">Primario en modo claro</h3>
-    <p>El ámbar se oscurece levemente para mantener contraste WCAG AA sobre fondos claros.</p>
+    <h3 style="margin-top:32px;">Primario — contraste WCAG AA</h3>
+    <p>El ámbar se oscureció significativamente (#FFAB40 → #92520B) para alcanzar contraste WCAG AA sobre fondos claros. Todos los colores semánticos siguen la misma lógica.</p>
     <div class="compare-row">
       <div class="compare-chip">
         <div class="compare-dot-pair">
           <div class="compare-dot" style="background:#FFAB40;"></div>
-          <div class="compare-dot" style="background:#E99A35;"></div>
+          <div class="compare-dot" style="background:#92520B;"></div>
         </div>
         <div class="compare-info">
-          <div style="font-weight:600;color:#D4CFC3;">#FFAB40 → #E99A35</div>
-          <div style="color:#6B665C;font-size:11px;">Dark primary → Light primary</div>
+          <div style="font-weight:600;color:#D4CFC3;">#FFAB40 → #92520B</div>
+          <div style="color:#6B665C;font-size:11px;">Brand amber → Light primary (WCAG AA)</div>
         </div>
       </div>
       <div class="compare-chip">
         <div class="compare-dot-pair">
           <div class="compare-dot" style="background:#5CB870;"></div>
-          <div class="compare-dot" style="background:#3E9954;"></div>
+          <div class="compare-dot" style="background:#2D7A3F;"></div>
         </div>
         <div class="compare-info">
-          <div style="font-weight:600;color:#D4CFC3;">#5CB870 → #3E9954</div>
-          <div style="color:#6B665C;font-size:11px;">Success dark → light</div>
+          <div style="font-weight:600;color:#D4CFC3;">#5CB870 → #2D7A3F</div>
+          <div style="color:#6B665C;font-size:11px;">Success → Light (WCAG AA)</div>
         </div>
       </div>
       <div class="compare-chip">
         <div class="compare-dot-pair">
           <div class="compare-dot" style="background:#D4544A;"></div>
-          <div class="compare-dot" style="background:#C74840;"></div>
+          <div class="compare-dot" style="background:#B53E36;"></div>
         </div>
         <div class="compare-info">
-          <div style="font-weight:600;color:#D4CFC3;">#D4544A → #C74840</div>
-          <div style="color:#6B665C;font-size:11px;">Danger dark → light</div>
+          <div style="font-weight:600;color:#D4CFC3;">#D4544A → #B53E36</div>
+          <div style="color:#6B665C;font-size:11px;">Danger → Light (WCAG AA)</div>
         </div>
       </div>
     </div>
@@ -1011,7 +1043,7 @@ body {
 <section class="section">
   <p class="section-number">03</p>
   <h2>CSS Variables — Ambos Temas</h2>
-  <p class="section-desc">El bloque completo para <code style="color:#FFAB40;">assets/css/main.css</code>. Modo oscuro por defecto, modo claro con la clase <code style="color:#FFAB40;">.light</code> en el elemento <code style="color:#FFAB40;">&lt;html&gt;</code>.</p>
+  <p class="section-desc">El bloque completo para <code style="color:#FFAB40;">assets/css/main.css</code>. Actualmente el app usa <strong>solo tema claro</strong> (light-only). El tema oscuro se mantiene como referencia para futuro uso.</p>
 
   <div class="subsection">
     <div class="code-block">
@@ -1083,44 +1115,45 @@ body {
   <span class="prop">--go-text-inverse</span>: <span class="val">#1C1915</span>;
 }
 
-<span class="comment">/* ── LIGHT THEME (clase .light en &lt;html&gt;) ── */</span>
-<span class="prop">html.light</span> {
+<span class="comment">/* ── LIGHT-ONLY THEME (contrast-improved, WCAG AA) ── */</span>
+<span class="comment">/* Nota: el app usa solo tema claro. Dark theme arriba se mantiene como referencia. */</span>
+<span class="prop">:root</span> {
   <span class="comment">/* Surfaces */</span>
   <span class="prop">--go-bg</span>: <span class="val">#F5F0E8</span>;
   <span class="prop">--go-bg-elevated</span>: <span class="val">#FDFAF4</span>;
   <span class="prop">--go-surface</span>: <span class="val">#FFFFFF</span>;
   <span class="prop">--go-surface-hover</span>: <span class="val">#EDE8DF</span>;
   <span class="prop">--go-surface-alt</span>: <span class="val">#E0DBD2</span>;
-  <span class="prop">--go-border</span>: <span class="val">#D4CCC0</span>;
-  <span class="prop">--go-border-subtle</span>: <span class="val">#E8E3DA</span>;
+  <span class="prop">--go-border</span>: <span class="val">#B8AFA2</span>;
+  <span class="prop">--go-border-subtle</span>: <span class="val">#CFC7BA</span>;
 
-  <span class="comment">/* Primary (slightly darker for WCAG AA on light bg) */</span>
-  <span class="prop">--go-primary</span>: <span class="val">#E99A35</span>;
-  <span class="prop">--go-primary-hover</span>: <span class="val">#D4892C</span>;
-  <span class="prop">--go-primary-active</span>: <span class="val">#C47A25</span>;
-  <span class="prop">--go-primary-muted</span>: <span class="val">rgba(233, 154, 53, 0.10)</span>;
-  <span class="prop">--go-primary-on</span>: <span class="val">#1A1200</span>;
+  <span class="comment">/* Primary (amber — darkened for WCAG AA on all light surfaces) */</span>
+  <span class="prop">--go-primary</span>: <span class="val">#92520B</span>;
+  <span class="prop">--go-primary-hover</span>: <span class="val">#7F4709</span>;
+  <span class="prop">--go-primary-active</span>: <span class="val">#7D470A</span>;
+  <span class="prop">--go-primary-muted</span>: <span class="val">rgba(146, 82, 11, 0.10)</span>;
+  <span class="prop">--go-primary-on</span>: <span class="val">#FFFFFF</span>;
 
-  <span class="comment">/* Secondary */</span>
-  <span class="prop">--go-secondary</span>: <span class="val">#4A7A52</span>;
-  <span class="prop">--go-secondary-hover</span>: <span class="val">#3E6645</span>;
-  <span class="prop">--go-secondary-muted</span>: <span class="val">rgba(74, 122, 82, 0.10)</span>;
+  <span class="comment">/* Secondary (olive/green) */</span>
+  <span class="prop">--go-secondary</span>: <span class="val">#3D6B45</span>;
+  <span class="prop">--go-secondary-hover</span>: <span class="val">#325838</span>;
+  <span class="prop">--go-secondary-muted</span>: <span class="val">rgba(61, 107, 69, 0.10)</span>;
 
-  <span class="comment">/* Semantic (darkened for contrast on white) */</span>
-  <span class="prop">--go-success</span>: <span class="val">#3E9954</span>;
-  <span class="prop">--go-success-muted</span>: <span class="val">rgba(62, 153, 84, 0.10)</span>;
-  <span class="prop">--go-danger</span>: <span class="val">#C74840</span>;
-  <span class="prop">--go-danger-muted</span>: <span class="val">rgba(199, 72, 64, 0.08)</span>;
-  <span class="prop">--go-warning</span>: <span class="val">#A07820</span>;
-  <span class="prop">--go-warning-muted</span>: <span class="val">rgba(160, 120, 32, 0.10)</span>;
-  <span class="prop">--go-info</span>: <span class="val">#3A7A9F</span>;
-  <span class="prop">--go-info-muted</span>: <span class="val">rgba(58, 122, 159, 0.10)</span>;
+  <span class="comment">/* Semantic */</span>
+  <span class="prop">--go-success</span>: <span class="val">#2D7A3F</span>;
+  <span class="prop">--go-success-muted</span>: <span class="val">rgba(45, 122, 63, 0.10)</span>;
+  <span class="prop">--go-danger</span>: <span class="val">#B53E36</span>;
+  <span class="prop">--go-danger-muted</span>: <span class="val">rgba(181, 62, 54, 0.08)</span>;
+  <span class="prop">--go-warning</span>: <span class="val">#8C6818</span>;
+  <span class="prop">--go-warning-muted</span>: <span class="val">rgba(140, 104, 24, 0.10)</span>;
+  <span class="prop">--go-info</span>: <span class="val">#2D6A8A</span>;
+  <span class="prop">--go-info-muted</span>: <span class="val">rgba(45, 106, 138, 0.10)</span>;
 
   <span class="comment">/* Text */</span>
   <span class="prop">--go-text</span>: <span class="val">#1C1915</span>;
   <span class="prop">--go-text-secondary</span>: <span class="val">#4A443D</span>;
-  <span class="prop">--go-text-tertiary</span>: <span class="val">#8A8078</span>;
-  <span class="prop">--go-text-muted</span>: <span class="val">#B5AFA6</span>;
+  <span class="prop">--go-text-tertiary</span>: <span class="val">#6B6259</span>;
+  <span class="prop">--go-text-muted</span>: <span class="val">#635B54</span>;
   <span class="prop">--go-text-inverse</span>: <span class="val">#F0EBE1</span>;
 }
     </div>
@@ -1373,6 +1406,66 @@ body {
     <div class="note">
       <strong>Zero dark: prefixes.</strong> Gracias al enfoque CSS-variable-first, ningún componente necesita clases <code style="color:#FFAB40;">dark:</code>. El tema cambia globalmente desde las variables. Esto significa que el trabajo de migración es simplemente un find-and-replace semántico — sin lógica condicional en los templates.
     </div>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- ============================================================
+     SECTION 07 — LOGO SYSTEM (from v3)
+     ============================================================ -->
+<section class="section">
+  <p class="section-number">07</p>
+  <h2>Sistema de Logo</h2>
+  <p class="section-desc">El logo combina un ícono de casco de obra ilustrado con la wordmark "gasto obra" en la tipografía Space Grotesk. Se presenta en cuatro variantes.</p>
+
+  <div class="subsection">
+    <h3>Variantes del Logo</h3>
+
+    <div class="logo-showcase">
+      <div class="logo-frame dark-bg">
+        <span class="frame-label">Horizontal / Fondo oscuro</span>
+        <img src="images/manual_img_2.svg" alt="Gasto Obra logo horizontal" style="max-width:100%; max-height:110px; object-fit:contain;">
+      </div>
+      <div class="logo-frame light-bg">
+        <span class="frame-label" style="color:#8B847A;">Horizontal / Fondo claro</span>
+        <img src="images/manual_img_2.svg" alt="Gasto Obra logo horizontal" style="max-width:100%; max-height:110px; object-fit:contain;">
+      </div>
+      <div class="logo-frame dark-bg">
+        <span class="frame-label">Vertical / Fondo oscuro</span>
+        <img src="images/manual_img_3.svg" alt="Gasto Obra logo vertical" style="max-width:100%; max-height:130px; object-fit:contain;">
+      </div>
+      <div class="logo-frame dark-bg">
+        <span class="frame-label">Ícono solo / Favicon</span>
+        <div style="display:flex; gap:16px; align-items:center;">
+          <img src="images/manual_img_1.svg" style="width:64px; height:64px;" alt="Gasto Obra icon 64px">
+          <img src="images/manual_img_1.svg" style="width:40px; height:40px;" alt="Gasto Obra icon 40px">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="subsection">
+    <h3>Descripción del Logo</h3>
+    <ul style="list-style:none; padding:0; margin:0 0 24px;">
+      <li style="color:#B5B0A4; font-size:14px; line-height:1.7; margin-bottom:6px;">• El casco de obra ilustrado es inmediatamente reconocible y comunica "construcción" sin ambigüedad</li>
+      <li style="color:#B5B0A4; font-size:14px; line-height:1.7; margin-bottom:6px;">• El estilo ilustrativo con trazos gruesos le da personalidad — no es un ícono genérico de Material Design</li>
+      <li style="color:#B5B0A4; font-size:14px; line-height:1.7; margin-bottom:6px;">• El detalle del protector de nuca (neck flap) lo diferencia de un casco genérico y le agrega autenticidad</li>
+      <li style="color:#B5B0A4; font-size:14px; line-height:1.7; margin-bottom:6px;">• La wordmark "gasto obra" en minúsculas con Space Grotesk es amigable, moderna y directa</li>
+      <li style="color:#B5B0A4; font-size:14px; line-height:1.7; margin-bottom:6px;">• La combinación de ícono + wordmark funciona en horizontal (navbar, header) y vertical (landing, splash)</li>
+    </ul>
+
+    <h4 style="font-size:15px; font-weight:600; color:#D4CFC3; margin-bottom:12px;">Archivos de producción</h4>
+    <table class="token-table">
+      <thead>
+        <tr><th>Archivo</th><th>Uso</th><th>Formato</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>go_logo_horizontal_v1.svg</td><td>Navbar del dashboard, header de emails</td><td>SVG</td></tr>
+        <tr><td>go_logo_vertical_v1.svg</td><td>Landing page, splash screen</td><td>SVG</td></tr>
+        <tr><td>go_logo_v1.png</td><td>App icon, favicon, perfil social</td><td>PNG</td></tr>
+      </tbody>
+    </table>
   </div>
 </section>
 

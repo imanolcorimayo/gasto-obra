@@ -37,3 +37,6 @@ service-account.json
 
 # Exclude demo videos
 docs/*.mp4
+
+# Admin config
+admin/config.php

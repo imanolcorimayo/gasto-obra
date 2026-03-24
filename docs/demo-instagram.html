@@ -1,0 +1,888 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Gasto Obra — Demo Reel</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Red+Hat+Display:wght@400;500;600;700;800;900&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   BASE
+   ============================================================ */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body {
+  width: 100vw; height: 100vh;
+  overflow: hidden;
+  background: #13100B;
+  font-family: 'Red Hat Display', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -webkit-text-size-adjust: none;
+}
+
+:root {
+  --amber: #FFAB40;
+  --amber-dim: rgba(255, 171, 64, 0.12);
+  --amber-glow: rgba(255, 171, 64, 0.06);
+  --bg: #13100B;
+  --surface: #1E1A14;
+  --elevated: #26211A;
+  --border: #3D362C;
+  --text: #F0EBE1;
+  --text-sec: #B5B0A4;
+  --text-dim: #6B665C;
+  --green: #25D366;
+  --success: #5CB870;
+  --danger: #D4544A;
+  --cat-materiales: #5A8FB8;
+  --cat-herramientas: #D4793D;
+  --cat-transporte: #BFA63D;
+  --cat-comida: #6B9B6B;
+}
+
+.amber { color: var(--amber); }
+.green { color: var(--success); }
+.red { color: var(--danger); }
+
+/* ============================================================
+   FLASH / GLITCH OVERLAY
+   ============================================================ */
+.flash-overlay {
+  position: fixed; inset: 0;
+  background: #fff;
+  z-index: 150;
+  opacity: 0;
+  pointer-events: none;
+}
+.flash-overlay.fire {
+  animation: flash 400ms ease-out forwards;
+}
+@keyframes flash {
+  0% { opacity: 0; }
+  8% { opacity: 0.95; }
+  20% { opacity: 0.7; }
+  35% { opacity: 0.85; background: var(--amber); }
+  50% { opacity: 0.3; background: #fff; }
+  100% { opacity: 0; }
+}
+
+.glitch-bars {
+  position: fixed; inset: 0;
+  z-index: 140;
+  pointer-events: none;
+  opacity: 0;
+}
+.glitch-bars.fire {
+  animation: glitchBars 350ms steps(1) forwards;
+}
+.glitch-bar {
+  position: absolute;
+  left: 0; right: 0;
+  background: var(--amber);
+  opacity: 0.7;
+}
+.glitch-bar:nth-child(1) { top: 15%; height: 3px; }
+.glitch-bar:nth-child(2) { top: 38%; height: 5px; }
+.glitch-bar:nth-child(3) { top: 62%; height: 2px; }
+.glitch-bar:nth-child(4) { top: 78%; height: 4px; }
+.glitch-bar:nth-child(5) { top: 91%; height: 3px; }
+@keyframes glitchBars {
+  0% { opacity: 1; transform: translateX(-6px); }
+  14% { transform: translateX(4px); }
+  28% { transform: translateX(-3px); }
+  42% { transform: translateX(5px); }
+  56% { transform: translateX(-2px); }
+  70% { opacity: 1; transform: translateX(3px); }
+  85% { opacity: 0.4; transform: translateX(0); }
+  100% { opacity: 0; }
+}
+
+/* ============================================================
+   SCENES
+   ============================================================ */
+.scene {
+  position: fixed; inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  z-index: 10;
+  padding: 60px 28px;
+}
+.scene.active { opacity: 1; z-index: 20; }
+
+.scene::before {
+  content: '';
+  position: absolute;
+  top: 30%; left: 50%;
+  width: 300px; height: 300px;
+  transform: translate(-50%, -50%);
+  background: radial-gradient(circle, var(--amber-glow) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+/* ============================================================
+   SCENE 1 — BRAND IMPACT
+   ============================================================ */
+.s1-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+.s1-logo {
+  width: 140px; height: 140px;
+  opacity: 0;
+  transform: scale(1.6);
+}
+.s1-logo.show {
+  animation: logoSlam 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+.s1-logo img {
+  width: 100%; height: 100%;
+  object-fit: contain;
+  filter: drop-shadow(0 0 40px rgba(255, 171, 64, 0.3));
+}
+@keyframes logoSlam {
+  0% { opacity: 0; transform: scale(1.6); }
+  60% { opacity: 1; transform: scale(0.92); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+.s1-title {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 52px;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: -1.5px;
+  opacity: 0;
+  transform: translateY(20px);
+}
+.s1-title.show { animation: fadeUp 0.35s ease forwards; }
+
+.s1-sub {
+  font-size: 18px;
+  color: var(--text-sec);
+  text-align: center;
+  opacity: 0;
+  transform: translateY(14px);
+}
+.s1-sub.show { animation: fadeUp 0.35s ease forwards; }
+
+/* ============================================================
+   SCENE 2 — WHATSAPP
+   ============================================================ */
+.phone {
+  width: 92%;
+  max-width: 400px;
+  border-radius: 28px;
+  background: #0B141A;
+  border: 2.5px solid #2A3942;
+  overflow: hidden;
+  box-shadow: 0 24px 80px rgba(0,0,0,0.6);
+  opacity: 0;
+  transform: scale(0.9);
+}
+.phone.show { animation: phoneIn 0.35s ease forwards; }
+@keyframes phoneIn { to { opacity: 1; transform: scale(1); } }
+
+.wa-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 16px;
+  background: #1F2C34;
+  border-bottom: 1px solid #2A3942;
+}
+.wa-avatar {
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: var(--elevated);
+  flex-shrink: 0;
+}
+.wa-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.wa-name { font-size: 15px; font-weight: 600; color: #E9EDEF; }
+.wa-status { font-size: 11px; color: #8696A0; }
+
+.chat-area {
+  padding: 16px 12px;
+  min-height: 320px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: #0B141A;
+}
+
+.bubble {
+  max-width: 85%;
+  padding: 8px 12px;
+  font-size: 14px;
+  line-height: 1.45;
+  color: #E9EDEF;
+  opacity: 0;
+  transform: translateY(10px) scale(0.95);
+}
+.bubble.show { animation: bubbleIn 0.28s ease forwards; }
+@keyframes bubbleIn { to { opacity: 1; transform: translateY(0) scale(1); } }
+
+.bubble.sent {
+  align-self: flex-end;
+  background: #005C4B;
+  border-radius: 10px 3px 10px 10px;
+}
+.bubble.recv {
+  align-self: flex-start;
+  background: #1F2C34;
+  border-radius: 3px 10px 10px 10px;
+}
+
+.receipt-thumb {
+  width: 200px; height: 130px;
+  border-radius: 6px;
+  background: linear-gradient(145deg, #F5F0E5, #E8E2D5);
+  margin-bottom: 6px;
+  position: relative;
+  overflow: hidden;
+}
+.receipt-thumb::before {
+  content: '';
+  position: absolute;
+  top: 18px; left: 16px; right: 16px; height: 100px;
+  background: repeating-linear-gradient(180deg, #C8C0B2 0px, #C8C0B2 2px, transparent 2px, transparent 12px);
+  opacity: 0.4;
+}
+.receipt-thumb::after {
+  content: '$45.000';
+  position: absolute;
+  bottom: 14px; right: 16px;
+  font-size: 16px; font-weight: 800;
+  color: #3D362C;
+  font-family: 'SF Mono', 'Consolas', monospace;
+}
+.receipt-store {
+  position: absolute;
+  top: 12px; left: 16px;
+  font-size: 11px; font-weight: 700;
+  color: #5E594F;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  z-index: 1;
+}
+
+.bubble-time {
+  font-size: 10px;
+  color: rgba(255,255,255,0.45);
+  text-align: right;
+  margin-top: 4px;
+}
+
+.bot-header { font-weight: 700; font-size: 14px; margin-bottom: 8px; }
+.badge-row { display: flex; gap: 6px; margin: 6px 0; flex-wrap: wrap; }
+.cat-badge {
+  display: inline-flex; align-items: center;
+  padding: 3px 10px; border-radius: 999px;
+  font-size: 12px; font-weight: 600;
+  background: rgba(90, 143, 184, 0.2);
+  color: var(--cat-materiales);
+}
+.amount-badge {
+  display: inline-flex; align-items: center;
+  padding: 3px 10px; border-radius: 999px;
+  font-size: 12px; font-weight: 700;
+  background: var(--amber-dim);
+  color: var(--amber);
+}
+.bot-detail { font-size: 12px; color: #8696A0; margin-top: 4px; }
+
+.typing-dots { display: flex; gap: 4px; padding: 4px 2px; }
+.typing-dots span {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: #8696A0;
+  animation: dotBounce 0.7s ease infinite;
+}
+.typing-dots span:nth-child(2) { animation-delay: 0.15s; }
+.typing-dots span:nth-child(3) { animation-delay: 0.3s; }
+@keyframes dotBounce {
+  0%, 80%, 100% { transform: translateY(0); opacity: 0.4; }
+  40% { transform: translateY(-5px); opacity: 1; }
+}
+
+/* ============================================================
+   SCENE 3 — DASHBOARD
+   ============================================================ */
+.s3-label {
+  font-size: 14px; font-weight: 700;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  margin-bottom: 16px;
+  opacity: 0; transform: translateY(10px);
+}
+.s3-label.show { animation: fadeUp 0.3s ease forwards; }
+
+.dashboard {
+  width: 92%; max-width: 400px;
+  border-radius: 20px;
+  background: #FFFFFF;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+  overflow: hidden;
+  opacity: 0; transform: scale(0.92);
+}
+.dashboard.show { animation: cardIn 0.35s ease forwards; }
+@keyframes cardIn { to { opacity: 1; transform: scale(1); } }
+
+.dash-top {
+  padding: 20px 20px 16px;
+  border-bottom: 1px solid #F0EBE1;
+}
+.dash-project { font-size: 18px; font-weight: 800; color: #1C1915; margin-bottom: 2px; }
+.dash-tag { font-size: 12px; font-weight: 600; color: #8A8579; }
+
+.dash-kpis { display: flex; gap: 1px; background: #F0EBE1; }
+.kpi {
+  flex: 1; padding: 14px 12px;
+  background: #FDFAF4; text-align: center;
+  opacity: 0; transform: translateY(8px);
+}
+.kpi.show { animation: fadeUp 0.25s ease forwards; }
+.kpi-label {
+  font-size: 10px; font-weight: 600; color: #8A8579;
+  text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;
+}
+.kpi-value { font-size: 17px; font-weight: 800; font-variant-numeric: tabular-nums; }
+
+.dash-list { padding: 8px 0; }
+.dash-row {
+  display: flex; align-items: center;
+  padding: 10px 20px; gap: 10px;
+  opacity: 0; transform: translateX(-14px);
+}
+.dash-row.show { animation: slideIn 0.25s ease forwards; }
+.row-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.row-info { flex: 1; min-width: 0; }
+.row-desc {
+  font-size: 13px; font-weight: 600; color: #1C1915;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.row-cat { font-size: 10px; color: #8A8579; }
+.row-amount { font-size: 14px; font-weight: 800; font-variant-numeric: tabular-nums; flex-shrink: 0; }
+
+.dash-row.new-highlight.show {
+  animation: slideIn 0.25s ease forwards, rowGlow 1.2s ease 0.25s;
+}
+@keyframes rowGlow {
+  0% { background: rgba(255, 171, 64, 0.15); }
+  100% { background: transparent; }
+}
+
+/* ============================================================
+   SCENE 4 — CLIENT SHARE
+   ============================================================ */
+.s4-label {
+  font-size: 14px; font-weight: 700;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  margin-bottom: 20px;
+  opacity: 0; transform: translateY(10px);
+}
+.s4-label.show { animation: fadeUp 0.3s ease forwards; }
+
+.link-bar {
+  display: flex; align-items: center;
+  gap: 6px; padding: 12px 20px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  margin-bottom: 20px;
+  font-size: 15px;
+  opacity: 0; transform: translateY(8px);
+}
+.link-bar.show { animation: fadeUp 0.3s ease forwards; }
+.link-url { color: var(--amber); font-weight: 700; }
+.link-domain { color: var(--text-dim); }
+
+.client-card {
+  width: 92%; max-width: 400px;
+  border-radius: 20px;
+  background: #FFFFFF;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+  overflow: hidden;
+  opacity: 0; transform: scale(0.92) translateY(10px);
+}
+.client-card.show { animation: cardSlideIn 0.35s ease forwards; }
+@keyframes cardSlideIn { to { opacity: 1; transform: scale(1) translateY(0); } }
+
+.client-header {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 18px 20px 14px;
+  border-bottom: 1px solid #F0EBE1;
+}
+.client-project { font-size: 17px; font-weight: 800; color: #1C1915; }
+.client-badge {
+  font-size: 10px; font-weight: 700;
+  padding: 4px 10px; border-radius: 999px;
+  background: rgba(92, 184, 112, 0.12);
+  color: #2D7A3F;
+  text-transform: uppercase; letter-spacing: 0.5px;
+}
+
+.client-stats { display: flex; gap: 1px; background: #F0EBE1; }
+.client-stat {
+  flex: 1; padding: 14px 10px;
+  background: #FDFAF4; text-align: center;
+  opacity: 0; transform: scale(0.9);
+}
+.client-stat.show { animation: popIn 0.25s ease forwards; }
+.client-stat-label {
+  font-size: 10px; font-weight: 600; color: #8A8579;
+  text-transform: uppercase; letter-spacing: 0.3px; margin-bottom: 4px;
+}
+.client-stat-value { font-size: 16px; font-weight: 800; font-variant-numeric: tabular-nums; }
+
+.client-cats { padding: 16px 20px; }
+.client-cat-row {
+  display: flex; align-items: center;
+  gap: 8px; margin-bottom: 10px;
+  opacity: 0;
+}
+.client-cat-row.show { animation: fadeUp 0.2s ease forwards; }
+.client-cat-label { font-size: 12px; font-weight: 600; color: #4A443D; width: 90px; flex-shrink: 0; }
+.client-cat-bar-bg { flex: 1; height: 8px; border-radius: 4px; background: #F0EBE1; overflow: hidden; }
+.client-cat-bar { height: 100%; border-radius: 4px; width: 0%; transition: width 0.6s cubic-bezier(0.22, 1, 0.36, 1); }
+.client-cat-pct { font-size: 11px; font-weight: 700; color: #8A8579; width: 36px; text-align: right; flex-shrink: 0; }
+
+.realtime-pill {
+  display: flex; align-items: center; justify-content: center;
+  gap: 6px; padding: 8px 16px; margin-top: 16px;
+  font-size: 12px; font-weight: 600;
+  color: var(--success);
+  opacity: 0;
+}
+.realtime-pill.show { animation: fadeUp 0.3s ease forwards; }
+.realtime-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--success);
+  animation: pulse 1.2s ease infinite;
+}
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(1.4); }
+}
+
+/* ============================================================
+   SCENE 5 — FINALE
+   ============================================================ */
+.s5-wrap {
+  display: flex; flex-direction: column;
+  align-items: center; gap: 10px;
+}
+.s5-line {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 38px; font-weight: 700;
+  color: var(--text); letter-spacing: -1px;
+  text-align: center;
+  opacity: 0; transform: translateY(16px);
+}
+.s5-line.show { animation: fadeUp 0.3s ease forwards; }
+
+.s5-logo {
+  width: 56px; height: 56px; margin-top: 16px;
+  opacity: 0;
+}
+.s5-logo.show { animation: fadeUp 0.3s ease forwards; }
+.s5-logo img {
+  width: 100%; height: 100%; object-fit: contain;
+  filter: drop-shadow(0 0 20px rgba(255, 171, 64, 0.25));
+}
+
+.s5-tagline {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 20px; font-weight: 600;
+  color: var(--text-sec);
+  opacity: 0; transform: translateY(10px);
+}
+.s5-tagline.show { animation: fadeUp 0.3s ease forwards; }
+
+.s5-cta {
+  margin-top: 12px;
+  padding: 12px 32px; border-radius: 999px;
+  background: var(--amber); color: #1A1200;
+  font-size: 16px; font-weight: 700;
+  opacity: 0; transform: scale(0.9);
+}
+.s5-cta.show { animation: popIn 0.3s ease forwards; }
+
+/* ============================================================
+   SHARED KEYFRAMES
+   ============================================================ */
+@keyframes fadeUp { to { opacity: 1; transform: translateY(0); } }
+@keyframes slideIn { to { opacity: 1; transform: translateX(0); } }
+@keyframes popIn { to { opacity: 1; transform: scale(1); } }
+@keyframes shake {
+  0%, 100% { transform: translateY(0); }
+  25% { transform: translateY(-2px); }
+  75% { transform: translateY(2px); }
+}
+</style>
+</head>
+<body>
+
+<div class="flash-overlay" id="flashOverlay"></div>
+<div class="glitch-bars" id="glitchBars">
+  <div class="glitch-bar"></div>
+  <div class="glitch-bar"></div>
+  <div class="glitch-bar"></div>
+  <div class="glitch-bar"></div>
+  <div class="glitch-bar"></div>
+</div>
+
+<!-- SCENE 1 — BRAND IMPACT -->
+<div class="scene" id="s1">
+  <div class="s1-wrap">
+    <div class="s1-logo" id="s1Logo">
+      <img src="https://gastoobra.com/img/logo.png" alt="Gasto Obra">
+    </div>
+    <h1 class="s1-title" id="s1Title">gasto <span class="amber">obra</span></h1>
+    <p class="s1-sub" id="s1Sub">Cada gasto de tu obra, bajo control.</p>
+  </div>
+</div>
+
+<!-- SCENE 2 — WHATSAPP -->
+<div class="scene" id="s2">
+  <div class="phone" id="s2Phone">
+    <div class="wa-header">
+      <div class="wa-avatar">
+        <img src="https://gastoobra.com/img/logo.png" alt="GO">
+      </div>
+      <div>
+        <div class="wa-name">Gasto Obra</div>
+        <div class="wa-status">en línea</div>
+      </div>
+    </div>
+    <div class="chat-area" id="chatArea"></div>
+  </div>
+</div>
+
+<!-- SCENE 3 — DASHBOARD -->
+<div class="scene" id="s3">
+  <div class="s3-label" id="s3Label">Tu dashboard</div>
+  <div class="dashboard" id="s3Dash">
+    <div class="dash-top">
+      <div class="dash-project">Depto Flores 3B</div>
+      <div class="dash-tag">#flores3b · Av. Rivadavia 1234</div>
+    </div>
+    <div class="dash-kpis">
+      <div class="kpi" data-delay="150">
+        <div class="kpi-label">Gastado</div>
+        <div class="kpi-value amber">$847.500</div>
+      </div>
+      <div class="kpi" data-delay="250">
+        <div class="kpi-label">Pagado</div>
+        <div class="kpi-value green">$600.000</div>
+      </div>
+      <div class="kpi" data-delay="350">
+        <div class="kpi-label">Balance</div>
+        <div class="kpi-value red">-$247.500</div>
+      </div>
+    </div>
+    <div class="dash-list">
+      <div class="dash-row new-highlight" data-delay="550">
+        <div class="row-dot" style="background:var(--cat-materiales)"></div>
+        <div class="row-info">
+          <div class="row-desc">Cemento Portland x3</div>
+          <div class="row-cat">Materiales · hoy</div>
+        </div>
+        <div class="row-amount amber">$45.000</div>
+      </div>
+      <div class="dash-row" data-delay="700">
+        <div class="row-dot" style="background:var(--cat-herramientas)"></div>
+        <div class="row-info">
+          <div class="row-desc">Amoladora Bosch</div>
+          <div class="row-cat">Herramientas · ayer</div>
+        </div>
+        <div class="row-amount" style="color:#1C1915">$89.000</div>
+      </div>
+      <div class="dash-row" data-delay="850">
+        <div class="row-dot" style="background:var(--cat-materiales)"></div>
+        <div class="row-info">
+          <div class="row-desc">Arena x 2m³</div>
+          <div class="row-cat">Materiales · lun</div>
+        </div>
+        <div class="row-amount" style="color:#1C1915">$32.000</div>
+      </div>
+      <div class="dash-row" data-delay="1000">
+        <div class="row-dot" style="background:var(--cat-transporte)"></div>
+        <div class="row-info">
+          <div class="row-desc">Flete materiales</div>
+          <div class="row-cat">Transporte · lun</div>
+        </div>
+        <div class="row-amount" style="color:#1C1915">$15.000</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SCENE 4 — CLIENT SHARE -->
+<div class="scene" id="s4">
+  <div class="s4-label" id="s4Label">Tu cliente ve todo</div>
+  <div class="link-bar" id="s4Link">
+    <span style="font-size:18px">&#128279;</span>
+    <span class="link-domain">gastoobra.com/view/</span>
+    <span class="link-url">a3xK9m</span>
+  </div>
+  <div class="client-card" id="s4Card">
+    <div class="client-header">
+      <div class="client-project">Depto Flores 3B</div>
+      <div class="client-badge">En vivo</div>
+    </div>
+    <div class="client-stats">
+      <div class="client-stat" data-delay="200">
+        <div class="client-stat-label">Gastado</div>
+        <div class="client-stat-value amber">$847.500</div>
+      </div>
+      <div class="client-stat" data-delay="320">
+        <div class="client-stat-label">Pagado</div>
+        <div class="client-stat-value green">$600.000</div>
+      </div>
+      <div class="client-stat" data-delay="440">
+        <div class="client-stat-label">Balance</div>
+        <div class="client-stat-value red">-$247.500</div>
+      </div>
+    </div>
+    <div class="client-cats" id="s4Cats">
+      <div class="client-cat-row" data-delay="550" data-width="52" data-color="var(--cat-materiales)">
+        <div class="client-cat-label">Materiales</div>
+        <div class="client-cat-bar-bg"><div class="client-cat-bar"></div></div>
+        <div class="client-cat-pct">52%</div>
+      </div>
+      <div class="client-cat-row" data-delay="650" data-width="28" data-color="var(--cat-herramientas)">
+        <div class="client-cat-label">Herramientas</div>
+        <div class="client-cat-bar-bg"><div class="client-cat-bar"></div></div>
+        <div class="client-cat-pct">28%</div>
+      </div>
+      <div class="client-cat-row" data-delay="750" data-width="12" data-color="var(--cat-transporte)">
+        <div class="client-cat-label">Transporte</div>
+        <div class="client-cat-bar-bg"><div class="client-cat-bar"></div></div>
+        <div class="client-cat-pct">12%</div>
+      </div>
+      <div class="client-cat-row" data-delay="850" data-width="8" data-color="var(--cat-comida)">
+        <div class="client-cat-label">Comida</div>
+        <div class="client-cat-bar-bg"><div class="client-cat-bar"></div></div>
+        <div class="client-cat-pct">8%</div>
+      </div>
+    </div>
+  </div>
+  <div class="realtime-pill" id="s4Realtime">
+    <span class="realtime-dot"></span>
+    Actualización en tiempo real
+  </div>
+</div>
+
+<!-- SCENE 5 — FINALE -->
+<div class="scene" id="s5">
+  <div class="s5-wrap">
+    <div class="s5-line" id="s5L1">Sin papel.</div>
+    <div class="s5-line" id="s5L2">Sin Excel.</div>
+    <div class="s5-line" id="s5L3"><span class="amber">Sin olvidos.</span></div>
+    <div class="s5-logo" id="s5Logo">
+      <img src="https://gastoobra.com/img/logo.png" alt="Gasto Obra">
+    </div>
+    <div class="s5-tagline" id="s5Tag">Tu obra, bajo control.</div>
+    <div class="s5-cta" id="s5Cta">Probalo gratis</div>
+  </div>
+</div>
+
+<!-- ============================================================
+     SEQUENCER
+     ============================================================ -->
+<script>
+(function() {
+  var scenes = ['s1','s2','s3','s4','s5'];
+  var durations = [1000, 2800, 2700, 2000, 1500];
+  var currentScene = 0;
+  function showScene(id) {
+    var all = document.querySelectorAll('.scene');
+    for (var i = 0; i < all.length; i++) all[i].classList.remove('active');
+    document.getElementById(id).classList.add('active');
+  }
+
+  // ── Scene 1: Brand impact ──
+  function playBrand() {
+    document.getElementById('glitchBars').classList.add('fire');
+    document.getElementById('flashOverlay').classList.add('fire');
+    setTimeout(function() {
+      document.getElementById('s1Logo').classList.add('show');
+      document.getElementById('s1').style.animation = 'shake 0.15s ease';
+    }, 200);
+    setTimeout(function() { document.getElementById('s1Title').classList.add('show'); }, 380);
+    setTimeout(function() { document.getElementById('s1Sub').classList.add('show'); }, 520);
+  }
+
+  // ── Scene 2: WhatsApp chat ──
+  function playChat() {
+    document.getElementById('s2Phone').classList.add('show');
+    var area = document.getElementById('chatArea');
+    while (area.firstChild) area.removeChild(area.firstChild);
+
+    // User sends receipt photo
+    setTimeout(function() {
+      var b = document.createElement('div');
+      b.className = 'bubble sent';
+
+      var thumb = document.createElement('div');
+      thumb.className = 'receipt-thumb';
+      var store = document.createElement('span');
+      store.className = 'receipt-store';
+      store.textContent = 'Ferretería López';
+      thumb.appendChild(store);
+      b.appendChild(thumb);
+
+      var caption = document.createElement('div');
+      caption.style.cssText = 'font-size:13px;margin-top:4px';
+      caption.textContent = 'Cemento portland x3';
+      b.appendChild(caption);
+
+      var time = document.createElement('div');
+      time.className = 'bubble-time';
+      time.textContent = '14:32';
+      b.appendChild(time);
+
+      area.appendChild(b);
+      requestAnimationFrame(function(){ b.classList.add('show'); });
+    }, 250);
+
+    // Typing indicator
+    setTimeout(function() {
+      var t = document.createElement('div');
+      t.className = 'bubble recv show';
+      t.id = 'typingBubble';
+      var dots = document.createElement('div');
+      dots.className = 'typing-dots';
+      for (var i = 0; i < 3; i++) dots.appendChild(document.createElement('span'));
+      t.appendChild(dots);
+      area.appendChild(t);
+    }, 900);
+
+    // Bot response
+    setTimeout(function() {
+      var old = document.getElementById('typingBubble');
+      if (old && old.parentNode) old.parentNode.removeChild(old);
+
+      var b = document.createElement('div');
+      b.className = 'bubble recv';
+
+      var header = document.createElement('div');
+      header.className = 'bot-header';
+      header.textContent = '\u2705 Gasto registrado';
+      b.appendChild(header);
+
+      var badges = document.createElement('div');
+      badges.className = 'badge-row';
+      var catBadge = document.createElement('span');
+      catBadge.className = 'cat-badge';
+      catBadge.textContent = 'Materiales';
+      badges.appendChild(catBadge);
+      var amtBadge = document.createElement('span');
+      amtBadge.className = 'amount-badge';
+      amtBadge.textContent = '$45.000';
+      badges.appendChild(amtBadge);
+      b.appendChild(badges);
+
+      var detail = document.createElement('div');
+      detail.className = 'bot-detail';
+      detail.textContent = 'Cemento portland x3 \u2192 Flores 3B';
+      b.appendChild(detail);
+
+      var time = document.createElement('div');
+      time.className = 'bubble-time';
+      time.textContent = '14:32';
+      b.appendChild(time);
+
+      area.appendChild(b);
+      requestAnimationFrame(function(){ b.classList.add('show'); });
+    }, 1600);
+  }
+
+  // ── Scene 3: Dashboard ──
+  function playDash() {
+    document.getElementById('s3Label').classList.add('show');
+    setTimeout(function() {
+      document.getElementById('s3Dash').classList.add('show');
+    }, 100);
+    var els = document.querySelectorAll('#s3 .kpi, #s3 .dash-row');
+    for (var i = 0; i < els.length; i++) {
+      els[i].classList.remove('show');
+      (function(el) {
+        setTimeout(function(){ el.classList.add('show'); }, +el.dataset.delay);
+      })(els[i]);
+    }
+  }
+
+  // ── Scene 4: Client share ──
+  function playClient() {
+    document.getElementById('s4Label').classList.add('show');
+    setTimeout(function() { document.getElementById('s4Link').classList.add('show'); }, 200);
+    setTimeout(function() { document.getElementById('s4Card').classList.add('show'); }, 450);
+
+    var stats = document.querySelectorAll('#s4 .client-stat');
+    for (var i = 0; i < stats.length; i++) {
+      stats[i].classList.remove('show');
+      (function(el) {
+        setTimeout(function(){ el.classList.add('show'); }, +el.dataset.delay);
+      })(stats[i]);
+    }
+
+    var cats = document.querySelectorAll('#s4Cats .client-cat-row');
+    for (var i = 0; i < cats.length; i++) {
+      cats[i].classList.remove('show');
+      (function(row) {
+        var delay = +row.dataset.delay;
+        var width = row.dataset.width;
+        var color = row.dataset.color;
+        var bar = row.querySelector('.client-cat-bar');
+        bar.style.background = color;
+        bar.style.width = '0%';
+        setTimeout(function() {
+          row.classList.add('show');
+          requestAnimationFrame(function() { bar.style.width = width + '%'; });
+        }, delay);
+      })(cats[i]);
+    }
+
+    setTimeout(function() { document.getElementById('s4Realtime').classList.add('show'); }, 1000);
+  }
+
+  // ── Scene 5: Finale ──
+  function playFinale() {
+    setTimeout(function() { document.getElementById('s5L1').classList.add('show'); }, 0);
+    setTimeout(function() { document.getElementById('s5L2').classList.add('show'); }, 180);
+    setTimeout(function() { document.getElementById('s5L3').classList.add('show'); }, 360);
+    setTimeout(function() { document.getElementById('s5Logo').classList.add('show'); }, 600);
+    setTimeout(function() { document.getElementById('s5Tag').classList.add('show'); }, 750);
+    setTimeout(function() { document.getElementById('s5Cta').classList.add('show'); }, 900);
+  }
+
+  var players = [playBrand, playChat, playDash, playClient, playFinale];
+
+  // ── Main loop ──
+  function advance() {
+    if (currentScene >= scenes.length) return;
+    showScene(scenes[currentScene]);
+    players[currentScene]();
+
+    setTimeout(function() {
+      currentScene++;
+      advance();
+    }, durations[currentScene]);
+  }
+
+  setTimeout(advance, 150);
+})();
+</script>
+</body>
+</html>
