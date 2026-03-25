@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1080, initial-scale=1.0, user-scalable=no">
+<title>GastoObra — Post Informalidad</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Red+Hat+Display:wght@400;500;600;700;800;900&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   BASE
+   ============================================================ */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body {
+  width: 1080px; height: 1350px;
+  overflow: hidden;
+  background: #13100B;
+  font-family: 'Red Hat Display', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+:root {
+  --amber: #FFAB40;
+  --amber-dim: rgba(255, 171, 64, 0.10);
+  --bg: #13100B;
+  --surface: #1E1A14;
+  --elevated: #26211A;
+  --border: #3D362C;
+  --text: #F0EBE1;
+  --text-sec: #B5B0A4;
+  --text-dim: #6B665C;
+  --success: #5CB870;
+  --danger: #D4544A;
+}
+
+/* ============================================================
+   SLIDE CONTAINER
+   ============================================================ */
+.slides-viewport {
+  width: 1080px; height: 1350px;
+  position: relative;
+  overflow: hidden;
+}
+.slides-track {
+  display: flex;
+  height: 100%;
+  transition: transform 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.slide {
+  width: 1080px; height: 1350px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 80px 90px;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Ambient glow */
+.slide::before {
+  content: '';
+  position: absolute;
+  top: 25%; left: 50%;
+  width: 600px; height: 600px;
+  transform: translate(-50%, -50%);
+  background: radial-gradient(circle, rgba(255, 171, 64, 0.04) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+/* ── Dots indicator ── */
+.dots {
+  position: fixed;
+  bottom: 48px; left: 50%;
+  transform: translateX(-50%);
+  display: flex; gap: 10px;
+  z-index: 100;
+}
+.dot {
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  background: var(--border);
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+.dot.active {
+  background: var(--amber);
+  transform: scale(1.2);
+}
+
+/* ── Branding watermark (bottom-left on every slide) ── */
+.watermark {
+  position: absolute;
+  bottom: 48px; left: 90px;
+  display: flex; align-items: center; gap: 10px;
+  opacity: 0.35;
+}
+.watermark img {
+  width: 28px; height: 28px;
+  object-fit: contain;
+}
+.watermark-text {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 16px; font-weight: 600;
+  color: var(--text);
+  letter-spacing: -0.3px;
+}
+
+/* ============================================================
+   SLIDE 1 — HOOK
+   ============================================================ */
+.s1-number {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 280px;
+  font-weight: 700;
+  color: var(--amber);
+  line-height: 0.85;
+  letter-spacing: -12px;
+  margin-bottom: 20px;
+  text-shadow: 0 0 120px rgba(255, 171, 64, 0.15);
+}
+.s1-percent {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 120px;
+  font-weight: 700;
+  color: var(--amber);
+  opacity: 0.6;
+  vertical-align: super;
+  letter-spacing: -4px;
+}
+.s1-headline {
+  font-size: 42px;
+  font-weight: 800;
+  color: var(--text);
+  text-align: center;
+  line-height: 1.2;
+  max-width: 800px;
+}
+.s1-headline em {
+  font-style: normal;
+  color: var(--amber);
+}
+.s1-source {
+  position: absolute;
+  bottom: 48px; right: 90px;
+  font-size: 14px;
+  color: var(--text-dim);
+  text-align: right;
+  line-height: 1.5;
+}
+
+/* ============================================================
+   SLIDE 2 — CONTEXT
+   ============================================================ */
+.s2-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 48px;
+  max-width: 860px;
+}
+.s2-intro {
+  font-size: 36px;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1.35;
+  text-align: center;
+}
+.s2-intro em {
+  font-style: normal;
+  color: var(--amber);
+}
+
+.s2-points {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+.s2-point {
+  display: flex;
+  align-items: flex-start;
+  gap: 24px;
+}
+.s2-icon {
+  width: 56px; height: 56px;
+  border-radius: 16px;
+  background: var(--amber-dim);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 26px;
+  flex-shrink: 0;
+  border: 1px solid rgba(255, 171, 64, 0.15);
+}
+.s2-point-text {
+  font-size: 28px;
+  font-weight: 600;
+  color: var(--text-sec);
+  line-height: 1.4;
+  padding-top: 6px;
+}
+.s2-point-text strong {
+  color: var(--text);
+  font-weight: 800;
+}
+
+/* ============================================================
+   SLIDE 3 — STANCE
+   ============================================================ */
+.s3-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 40px;
+  max-width: 820px;
+}
+.s3-quote {
+  font-size: 48px;
+  font-weight: 800;
+  color: var(--text);
+  text-align: center;
+  line-height: 1.25;
+  letter-spacing: -0.5px;
+}
+.s3-quote em {
+  font-style: normal;
+  color: var(--amber);
+}
+.s3-divider {
+  width: 80px; height: 4px;
+  border-radius: 2px;
+  background: var(--amber);
+  opacity: 0.5;
+}
+.s3-body {
+  font-size: 30px;
+  font-weight: 500;
+  color: var(--text-sec);
+  text-align: center;
+  line-height: 1.5;
+}
+
+/* ============================================================
+   SLIDE 4 — PRODUCT VALUE
+   ============================================================ */
+.s4-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 44px;
+  width: 100%;
+  max-width: 880px;
+}
+.s4-title {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 40px;
+  font-weight: 700;
+  color: var(--text);
+  text-align: center;
+  letter-spacing: -0.5px;
+}
+.s4-title em {
+  font-style: normal;
+  color: var(--amber);
+}
+
+.s4-features {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+.s4-feat {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  padding: 28px 32px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+}
+.s4-feat-icon {
+  width: 52px; height: 52px;
+  border-radius: 14px;
+  background: var(--amber-dim);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 24px;
+  flex-shrink: 0;
+  border: 1px solid rgba(255, 171, 64, 0.15);
+}
+.s4-feat-content {
+  flex: 1;
+}
+.s4-feat-title {
+  font-size: 26px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 4px;
+}
+.s4-feat-desc {
+  font-size: 20px;
+  font-weight: 500;
+  color: var(--text-dim);
+  line-height: 1.4;
+}
+
+/* ============================================================
+   SLIDE 5 — CTA
+   ============================================================ */
+.s5-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+}
+.s5-logo {
+  width: 160px; height: 160px;
+  margin-bottom: 12px;
+}
+.s5-logo img {
+  width: 100%; height: 100%;
+  object-fit: contain;
+  filter: drop-shadow(0 0 60px rgba(255, 171, 64, 0.2));
+}
+.s5-brand {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 64px;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: -2px;
+}
+.s5-brand span { color: var(--amber); }
+.s5-tagline {
+  font-size: 30px;
+  font-weight: 600;
+  color: var(--text-sec);
+  text-align: center;
+  margin-bottom: 16px;
+}
+.s5-cta {
+  padding: 20px 56px;
+  border-radius: 999px;
+  background: var(--amber);
+  color: #1A1200;
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: -0.3px;
+}
+.s5-sub {
+  font-size: 20px;
+  color: var(--text-dim);
+  margin-top: 8px;
+}
+
+/* ============================================================
+   NAV HINT
+   ============================================================ */
+.nav-hint {
+  position: fixed;
+  top: 50%; right: 24px;
+  transform: translateY(-50%);
+  font-size: 13px;
+  color: var(--text-dim);
+  writing-mode: vertical-rl;
+  letter-spacing: 1px;
+  opacity: 0.4;
+  z-index: 100;
+  pointer-events: none;
+}
+</style>
+</head>
+<body>
+
+<div class="slides-viewport">
+  <div class="slides-track" id="track">
+
+    <!-- SLIDE 1 — HOOK -->
+    <div class="slide">
+      <div class="s1-number">76<span class="s1-percent">%</span></div>
+      <p class="s1-headline">de los trabajadores de construcción en Argentina <em>trabajan en negro.</em></p>
+      <div class="s1-source">Fuente: OIT — Organización<br>Internacional del Trabajo</div>
+      <div class="watermark">
+        <img src="https://gastoobra.com/img/logo.png" alt="">
+        <span class="watermark-text">gasto obra</span>
+      </div>
+    </div>
+
+    <!-- SLIDE 2 — CONTEXT -->
+    <div class="slide">
+      <div class="s2-wrap">
+        <p class="s2-intro">¿Qué significa eso <em>para vos</em>?</p>
+        <div class="s2-points">
+          <div class="s2-point">
+            <div class="s2-icon">📄</div>
+            <p class="s2-point-text"><strong>Cero documentación.</strong> No hay registro de qué se compró, cuánto costó, ni a dónde fue la plata.</p>
+          </div>
+          <div class="s2-point">
+            <div class="s2-icon">🔍</div>
+            <p class="s2-point-text"><strong>Imposible verificar.</strong> No sabés si el proveedor trabaja bien o mal hasta que ya pagaste.</p>
+          </div>
+          <div class="s2-point">
+            <div class="s2-icon">💸</div>
+            <p class="s2-point-text"><strong>Precios sin lógica.</strong> Mucha dispersión en cotizaciones. El cliente no puede comparar.</p>
+          </div>
+        </div>
+      </div>
+      <div class="watermark">
+        <img src="https://gastoobra.com/img/logo.png" alt="">
+        <span class="watermark-text">gasto obra</span>
+      </div>
+    </div>
+
+    <!-- SLIDE 3 — STANCE -->
+    <div class="slide">
+      <div class="s3-wrap">
+        <p class="s3-quote">Eso es lo que <em>queremos cambiar.</em></p>
+        <div class="s3-divider"></div>
+        <p class="s3-body">No lo decimos para criticar. Lo decimos porque en un mercado así, es imposible saber quién trabaja bien y quién no.</p>
+        <p class="s3-body">El que trabaja bien <strong style="color:var(--text);font-weight:700;">merece ser reconocido.</strong><br>El que no, tiene que levantar la vara.</p>
+      </div>
+      <div class="watermark">
+        <img src="https://gastoobra.com/img/logo.png" alt="">
+        <span class="watermark-text">gasto obra</span>
+      </div>
+    </div>
+
+    <!-- SLIDE 4 — PRODUCT VALUE -->
+    <div class="slide">
+      <div class="s4-wrap">
+        <p class="s4-title">Herramientas que <em>cambian el juego</em></p>
+        <div class="s4-features">
+          <div class="s4-feat">
+            <div class="s4-feat-icon">📸</div>
+            <div class="s4-feat-content">
+              <div class="s4-feat-title">Mandá una foto, un audio o un texto</div>
+              <div class="s4-feat-desc">La IA extrae monto, categoría y detalle sola.</div>
+            </div>
+          </div>
+          <div class="s4-feat">
+            <div class="s4-feat-icon">📊</div>
+            <div class="s4-feat-content">
+              <div class="s4-feat-title">Dashboard en tiempo real</div>
+              <div class="s4-feat-desc">Gastos, pagos y balance al instante.</div>
+            </div>
+          </div>
+          <div class="s4-feat">
+            <div class="s4-feat-icon">🔗</div>
+            <div class="s4-feat-content">
+              <div class="s4-feat-title">Compartí con tu cliente</div>
+              <div class="s4-feat-desc">Un link. Sin instalar nada. Transparencia total.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="watermark">
+        <img src="https://gastoobra.com/img/logo.png" alt="">
+        <span class="watermark-text">gasto obra</span>
+      </div>
+    </div>
+
+    <!-- SLIDE 5 — CTA -->
+    <div class="slide">
+      <div class="s5-wrap">
+        <div class="s5-logo">
+          <img src="https://gastoobra.com/img/logo.png" alt="Gasto Obra">
+        </div>
+        <div class="s5-brand">gasto <span>obra</span></div>
+        <p class="s5-tagline">Tu obra, bajo control.</p>
+        <div class="s5-cta">Probalo gratis</div>
+        <p class="s5-sub">Sin tarjeta. Sin configuración.</p>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Dots -->
+<div class="dots" id="dots"></div>
+
+<!-- Nav hint -->
+<div class="nav-hint" id="navHint">← → para navegar</div>
+
+<script>
+(function() {
+  var track = document.getElementById('track');
+  var dotsContainer = document.getElementById('dots');
+  var totalSlides = track.children.length;
+  var current = 0;
+
+  // Build dots
+  for (var i = 0; i < totalSlides; i++) {
+    var d = document.createElement('div');
+    d.className = 'dot' + (i === 0 ? ' active' : '');
+    d.dataset.index = i;
+    dotsContainer.appendChild(d);
+  }
+
+  function goTo(index) {
+    if (index < 0 || index >= totalSlides) return;
+    current = index;
+    track.style.transform = 'translateX(-' + (current * 1080) + 'px)';
+    var dots = dotsContainer.children;
+    for (var i = 0; i < dots.length; i++) {
+      dots[i].classList.toggle('active', i === current);
+    }
+    // Hide nav hint after first interaction
+    var hint = document.getElementById('navHint');
+    if (hint) hint.style.display = 'none';
+  }
+
+  // Keyboard nav
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown') goTo(current + 1);
+    if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') goTo(current - 1);
+  });
+
+  // Click dots
+  dotsContainer.addEventListener('click', function(e) {
+    if (e.target.classList.contains('dot')) {
+      goTo(+e.target.dataset.index);
+    }
+  });
+
+  // Touch swipe
+  var startX = 0;
+  var startY = 0;
+  document.addEventListener('touchstart', function(e) {
+    startX = e.touches[0].clientX;
+    startY = e.touches[0].clientY;
+  }, { passive: true });
+  document.addEventListener('touchend', function(e) {
+    var dx = e.changedTouches[0].clientX - startX;
+    var dy = e.changedTouches[0].clientY - startY;
+    if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 50) {
+      if (dx < 0) goTo(current + 1);
+      else goTo(current - 1);
+    }
+  }, { passive: true });
+})();
+</script>
+</body>
+</html>
