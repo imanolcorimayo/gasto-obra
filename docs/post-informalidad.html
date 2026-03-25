@@ -57,6 +57,7 @@ html, body {
   padding: 80px 90px;
   position: relative;
   overflow: hidden;
+  border: 1px dashed rgba(255, 171, 64, 0.25);
 }
 
 /* Ambient glow */
@@ -111,6 +112,15 @@ html, body {
 /* ============================================================
    SLIDE 1 — HOOK
    ============================================================ */
+.s1-topic {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--amber);
+  text-transform: uppercase;
+  letter-spacing: 4px;
+  margin-bottom: 24px;
+  opacity: 0.8;
+}
 .s1-number {
   font-family: 'Space Grotesk', sans-serif;
   font-size: 280px;
@@ -350,6 +360,35 @@ html, body {
 }
 
 /* ============================================================
+   RATIO TOGGLE
+   ============================================================ */
+.ratio-toggle {
+  position: fixed;
+  top: 20px; right: 20px;
+  z-index: 200;
+  display: flex;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+.ratio-btn {
+  padding: 8px 16px;
+  font-family: 'Red Hat Display', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-dim);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.ratio-btn.active {
+  background: var(--amber-dim);
+  color: var(--amber);
+}
+
+/* ============================================================
    NAV HINT
    ============================================================ */
 .nav-hint {
@@ -373,8 +412,9 @@ html, body {
 
     <!-- SLIDE 1 — HOOK -->
     <div class="slide">
+      <div class="s1-topic">El rubro en números</div>
       <div class="s1-number">76<span class="s1-percent">%</span></div>
-      <p class="s1-headline">de los trabajadores de construcción en Argentina <em>trabajan en negro.</em></p>
+      <p class="s1-headline">de los trabajadores de construcción en Argentina <em>son informales.</em></p>
       <div class="s1-source">Fuente: OIT — Organización<br>Internacional del Trabajo</div>
       <div class="watermark">
         <img src="https://gastoobra.com/img/logo.png" alt="">
@@ -385,19 +425,19 @@ html, body {
     <!-- SLIDE 2 — CONTEXT -->
     <div class="slide">
       <div class="s2-wrap">
-        <p class="s2-intro">¿Qué significa eso <em>para vos</em>?</p>
+        <p class="s2-intro">¿Qué significa esto <em>para el rubro</em>?</p>
         <div class="s2-points">
           <div class="s2-point">
-            <div class="s2-icon">📄</div>
-            <p class="s2-point-text"><strong>Cero documentación.</strong> No hay registro de qué se compró, cuánto costó, ni a dónde fue la plata.</p>
+            <div class="s2-icon">🔧</div>
+            <p class="s2-point-text"><strong>Alta informalidad.</strong> No es solo un número — es falta de herramientas de gestión accesibles para el que trabaja todos los días.</p>
           </div>
           <div class="s2-point">
-            <div class="s2-icon">🔍</div>
-            <p class="s2-point-text"><strong>Imposible verificar.</strong> No sabés si el proveedor trabaja bien o mal hasta que ya pagaste.</p>
+            <div class="s2-icon">📉</div>
+            <p class="s2-point-text"><strong>Márgenes bajos.</strong> Sin control de gastos, es difícil saber cuánto ganás realmente en cada obra.</p>
           </div>
           <div class="s2-point">
-            <div class="s2-icon">💸</div>
-            <p class="s2-point-text"><strong>Precios sin lógica.</strong> Mucha dispersión en cotizaciones. El cliente no puede comparar.</p>
+            <div class="s2-icon">📱</div>
+            <p class="s2-point-text"><strong>Las herramientas existen.</strong> Pero no están pensadas para el rubro. Nadie te ofrece algo que se adapte a tu forma de trabajar.</p>
           </div>
         </div>
       </div>
@@ -410,10 +450,10 @@ html, body {
     <!-- SLIDE 3 — STANCE -->
     <div class="slide">
       <div class="s3-wrap">
-        <p class="s3-quote">Eso es lo que <em>queremos cambiar.</em></p>
+        <p class="s3-quote">Por eso <em>creamos Gasto Obra.</em></p>
         <div class="s3-divider"></div>
-        <p class="s3-body">No lo decimos para criticar. Lo decimos porque en un mercado así, es imposible saber quién trabaja bien y quién no.</p>
-        <p class="s3-body">El que trabaja bien <strong style="color:var(--text);font-weight:700;">merece ser reconocido.</strong><br>El que no, tiene que levantar la vara.</p>
+        <p class="s3-body">Creemos que el que trabaja bien merece herramientas que estén a la altura.</p>
+        <p class="s3-body">Gestión clara, registro profesional, y una forma de <strong style="color:var(--text);font-weight:700;">mostrar tu trabajo con respaldo.</strong></p>
       </div>
       <div class="watermark">
         <img src="https://gastoobra.com/img/logo.png" alt="">
@@ -424,27 +464,27 @@ html, body {
     <!-- SLIDE 4 — PRODUCT VALUE -->
     <div class="slide">
       <div class="s4-wrap">
-        <p class="s4-title">Herramientas que <em>cambian el juego</em></p>
+        <p class="s4-title">Nuestro <em>propósito</em></p>
         <div class="s4-features">
           <div class="s4-feat">
-            <div class="s4-feat-icon">📸</div>
+            <div class="s4-feat-icon">📋</div>
             <div class="s4-feat-content">
-              <div class="s4-feat-title">Mandá una foto, un audio o un texto</div>
-              <div class="s4-feat-desc">La IA extrae monto, categoría y detalle sola.</div>
+              <div class="s4-feat-title">Profesionalizar la gestión</div>
+              <div class="s4-feat-desc">Que cada obra tenga registro, control y respaldo — desde el celular.</div>
             </div>
           </div>
           <div class="s4-feat">
-            <div class="s4-feat-icon">📊</div>
+            <div class="s4-feat-icon">⭐</div>
             <div class="s4-feat-content">
-              <div class="s4-feat-title">Dashboard en tiempo real</div>
-              <div class="s4-feat-desc">Gastos, pagos y balance al instante.</div>
+              <div class="s4-feat-title">Reconocer al que trabaja bien</div>
+              <div class="s4-feat-desc">Que la calidad de tu servicio hable por vos, con datos reales.</div>
             </div>
           </div>
           <div class="s4-feat">
-            <div class="s4-feat-icon">🔗</div>
+            <div class="s4-feat-icon">📈</div>
             <div class="s4-feat-content">
-              <div class="s4-feat-title">Compartí con tu cliente</div>
-              <div class="s4-feat-desc">Un link. Sin instalar nada. Transparencia total.</div>
+              <div class="s4-feat-title">Elevar la vara del rubro</div>
+              <div class="s4-feat-desc">Tecnología accesible para que todos puedan dar un mejor servicio.</div>
             </div>
           </div>
         </div>
@@ -463,12 +503,17 @@ html, body {
         </div>
         <div class="s5-brand">gasto <span>obra</span></div>
         <p class="s5-tagline">Tu obra, bajo control.</p>
-        <div class="s5-cta">Probalo gratis</div>
-        <p class="s5-sub">Sin tarjeta. Sin configuración.</p>
+        <div class="s5-cta">gastoobra.com</div>
       </div>
     </div>
 
   </div>
+</div>
+
+<!-- Ratio toggle -->
+<div class="ratio-toggle" id="ratioToggle">
+  <button class="ratio-btn active" data-ratio="1350">4:5</button>
+  <button class="ratio-btn" data-ratio="1080">1:1</button>
 </div>
 
 <!-- Dots -->
@@ -533,6 +578,27 @@ html, body {
       else goTo(current - 1);
     }
   }, { passive: true });
+
+  // Ratio toggle
+  document.getElementById('ratioToggle').addEventListener('click', function(e) {
+    var btn = e.target.closest('.ratio-btn');
+    if (!btn) return;
+    var h = +btn.dataset.ratio;
+    var viewport = document.querySelector('.slides-viewport');
+    var slides = document.querySelectorAll('.slide');
+
+    viewport.style.height = h + 'px';
+    for (var i = 0; i < slides.length; i++) {
+      slides[i].style.height = h + 'px';
+    }
+    document.body.style.height = h + 'px';
+    document.documentElement.style.height = h + 'px';
+
+    var btns = document.querySelectorAll('.ratio-btn');
+    for (var i = 0; i < btns.length; i++) {
+      btns[i].classList.toggle('active', btns[i] === btn);
+    }
+  });
 })();
 </script>
 </body>

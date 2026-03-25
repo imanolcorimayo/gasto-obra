@@ -1,0 +1,927 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1080, initial-scale=1.0, user-scalable=no">
+<title>GastoObra — Cómo Funciona</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Red+Hat+Display:wght@400;500;600;700;800;900&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   BASE
+   ============================================================ */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body {
+  width: 1080px; height: 1350px;
+  overflow: hidden;
+  background: #13100B;
+  font-family: 'Red Hat Display', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+:root {
+  --amber: #FFAB40;
+  --amber-dim: rgba(255, 171, 64, 0.10);
+  --amber-glow: rgba(255, 171, 64, 0.06);
+  --bg: #13100B;
+  --surface: #1E1A14;
+  --elevated: #26211A;
+  --border: #3D362C;
+  --text: #F0EBE1;
+  --text-sec: #B5B0A4;
+  --text-dim: #6B665C;
+  --success: #5CB870;
+  --danger: #D4544A;
+  --wa-green: #25D366;
+  --cat-materiales: #5A8FB8;
+  --cat-herramientas: #D4793D;
+  --cat-transporte: #BFA63D;
+  --cat-comida: #6B9B6B;
+}
+
+.amber { color: var(--amber); }
+.green { color: var(--success); }
+.red { color: var(--danger); }
+
+/* ============================================================
+   SLIDE CONTAINER
+   ============================================================ */
+.slides-viewport {
+  width: 1080px; height: 1350px;
+  position: relative;
+  overflow: hidden;
+}
+.slides-track {
+  display: flex;
+  height: 100%;
+  transition: transform 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.slide {
+  width: 1080px; height: 1350px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 80px 90px;
+  position: relative;
+  overflow: hidden;
+  border: 1px dashed rgba(255, 171, 64, 0.25);
+}
+.slide::before {
+  content: '';
+  position: absolute;
+  top: 25%; left: 50%;
+  width: 600px; height: 600px;
+  transform: translate(-50%, -50%);
+  background: radial-gradient(circle, var(--amber-glow) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+/* Watermark */
+.watermark {
+  position: absolute;
+  bottom: 48px; left: 90px;
+  display: flex; align-items: center; gap: 10px;
+  opacity: 0.35;
+}
+.watermark img { width: 28px; height: 28px; object-fit: contain; }
+.watermark-text {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 16px; font-weight: 600;
+  color: var(--text); letter-spacing: -0.3px;
+}
+
+/* Dots */
+.dots {
+  position: fixed;
+  bottom: 48px; left: 50%;
+  transform: translateX(-50%);
+  display: flex; gap: 10px;
+  z-index: 100;
+}
+.dot {
+  width: 10px; height: 10px; border-radius: 50%;
+  background: var(--border);
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+.dot.active { background: var(--amber); transform: scale(1.2); }
+
+/* Ratio toggle */
+.ratio-toggle {
+  position: fixed;
+  top: 20px; right: 20px;
+  z-index: 200;
+  display: flex;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+.ratio-btn {
+  padding: 8px 16px;
+  font-family: 'Red Hat Display', sans-serif;
+  font-size: 13px; font-weight: 600;
+  color: var(--text-dim);
+  background: transparent;
+  border: none; cursor: pointer;
+  transition: all 0.2s ease;
+}
+.ratio-btn.active { background: var(--amber-dim); color: var(--amber); }
+
+/* Nav hint */
+.nav-hint {
+  position: fixed;
+  top: 50%; right: 24px;
+  transform: translateY(-50%);
+  font-size: 13px; color: var(--text-dim);
+  writing-mode: vertical-rl;
+  letter-spacing: 1px; opacity: 0.4;
+  z-index: 100; pointer-events: none;
+}
+
+/* ============================================================
+   SLIDE 1 — COVER
+   ============================================================ */
+.s1-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+}
+.s1-topic {
+  font-size: 20px; font-weight: 700;
+  color: var(--amber);
+  text-transform: uppercase;
+  letter-spacing: 4px;
+  opacity: 0.8;
+}
+.s1-logo {
+  width: 140px; height: 140px;
+  margin-bottom: 8px;
+}
+.s1-logo img {
+  width: 100%; height: 100%;
+  object-fit: contain;
+  filter: drop-shadow(0 0 50px rgba(255, 171, 64, 0.2));
+}
+.s1-question {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 56px; font-weight: 700;
+  color: var(--text); letter-spacing: -1.5px;
+  text-align: center;
+}
+.s1-question em { font-style: normal; color: var(--amber); }
+.s1-sub {
+  font-size: 26px; font-weight: 500;
+  color: var(--text-sec);
+  text-align: center;
+  max-width: 700px;
+  line-height: 1.4;
+}
+
+/* ============================================================
+   SLIDE 2 — WHATSAPP INPUT
+   ============================================================ */
+.s2-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 36px;
+  max-width: 880px;
+  width: 100%;
+}
+.s2-title {
+  font-size: 38px; font-weight: 800;
+  color: var(--text);
+  text-align: center;
+  line-height: 1.25;
+}
+.s2-title em { font-style: normal; color: var(--amber); }
+
+.s2-phone {
+  width: 100%;
+  max-width: 520px;
+  border-radius: 24px;
+  background: #0B141A;
+  border: 2px solid #2A3942;
+  overflow: visible;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+  position: relative;
+}
+/* Clip the header, let chat overflow */
+.s2-wa-header { position: relative; z-index: 2; }
+.s2-chat { position: relative; z-index: 1; overflow: visible; }
+.s2-wa-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 18px;
+  background: #1F2C34;
+  border-bottom: 1px solid #2A3942;
+}
+.s2-wa-avatar {
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: var(--elevated);
+}
+.s2-wa-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.s2-wa-name { font-size: 15px; font-weight: 600; color: #E9EDEF; }
+.s2-wa-status { font-size: 11px; color: #8696A0; }
+
+.s2-chat {
+  padding: 18px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.s2-bubble {
+  max-width: 82%;
+  padding: 10px 14px;
+  font-size: 15px;
+  line-height: 1.4;
+  color: #E9EDEF;
+  border-radius: 10px;
+}
+.s2-bubble.sent {
+  align-self: flex-end;
+  background: #005C4B;
+  border-radius: 10px 3px 10px 10px;
+}
+.s2-bubble.recv {
+  align-self: flex-start;
+  background: #1F2C34;
+  border-radius: 3px 10px 10px 10px;
+}
+.s2-bubble.recv.pop-out {
+  transform: scale(1.55) rotate(-2deg) translate(20px, -16px);
+  box-shadow: 0 20px 56px rgba(0,0,0,0.6), 0 0 0 1px rgba(255, 171, 64, 0.15);
+  z-index: 10;
+  position: relative;
+}
+/* Receipt image in sent bubble */
+.s2-receipt-img {
+  width: 100%;
+  height: 140px;
+  border-radius: 8px;
+  background: linear-gradient(145deg, #F5F0E5, #E8E2D5);
+  position: relative;
+  overflow: hidden;
+}
+.s2-receipt-img::before {
+  content: 'FERRETERÍA LÓPEZ';
+  position: absolute;
+  top: 14px; left: 16px;
+  font-size: 11px; font-weight: 700;
+  color: #5E594F;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+.s2-receipt-img::after {
+  content: '';
+  position: absolute;
+  top: 34px; left: 16px; right: 16px; bottom: 14px;
+  background: repeating-linear-gradient(180deg, #C8C0B2 0px, #C8C0B2 2px, transparent 2px, transparent 13px);
+  opacity: 0.35;
+}
+
+.s2-bubble-bold { font-weight: 700; margin-bottom: 6px; }
+.s2-badge-row { display: flex; gap: 6px; margin: 6px 0; }
+.s2-cat-badge {
+  padding: 3px 10px; border-radius: 999px;
+  font-size: 12px; font-weight: 600;
+  background: rgba(90, 143, 184, 0.2);
+  color: var(--cat-materiales);
+}
+.s2-amt-badge {
+  padding: 3px 10px; border-radius: 999px;
+  font-size: 12px; font-weight: 700;
+  background: var(--amber-dim);
+  color: var(--amber);
+}
+.s2-bubble-detail { font-size: 12px; color: #8696A0; }
+.s2-bubble-time { font-size: 10px; color: rgba(255,255,255,0.4); text-align: right; margin-top: 4px; }
+
+.s2-caption {
+  font-size: 22px; font-weight: 600;
+  color: var(--text-sec);
+  text-align: center;
+  line-height: 1.4;
+}
+.s2-caption strong { color: var(--text); font-weight: 700; }
+
+/* ============================================================
+   SLIDE 3 — MULTI FORMAT
+   ============================================================ */
+.s3-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 44px;
+  max-width: 880px;
+  width: 100%;
+}
+.s3-title {
+  font-size: 38px; font-weight: 800;
+  color: var(--text);
+  text-align: center;
+  line-height: 1.25;
+}
+.s3-title em { font-style: normal; color: var(--amber); }
+
+.s3-formats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  width: 100%;
+}
+.s3-format {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding: 36px 24px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  text-align: center;
+}
+.s3-format-icon {
+  width: 64px; height: 64px;
+  border-radius: 18px;
+  background: var(--amber-dim);
+  border: 1px solid rgba(255, 171, 64, 0.15);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 30px;
+}
+.s3-format-title {
+  font-size: 24px; font-weight: 700;
+  color: var(--text);
+}
+.s3-format-desc {
+  font-size: 18px; font-weight: 500;
+  color: var(--text-dim);
+  line-height: 1.4;
+}
+
+.s3-footer {
+  font-size: 24px; font-weight: 600;
+  color: var(--text-sec);
+  text-align: center;
+}
+.s3-footer strong { color: var(--amber); font-weight: 700; }
+
+/* ============================================================
+   SLIDE 4 — DASHBOARD
+   ============================================================ */
+.s4-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 28px;
+  max-width: 880px;
+  width: 100%;
+}
+.s4-title {
+  font-size: 38px; font-weight: 800;
+  color: var(--text);
+  text-align: center;
+  line-height: 1.25;
+}
+.s4-title em { font-style: normal; color: var(--amber); }
+
+.s4-dash {
+  width: 100%;
+  border-radius: 20px;
+  background: #FFFFFF;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+  overflow: visible;
+  position: relative;
+}
+.s4-dash-top {
+  padding: 20px 24px 16px;
+  border-bottom: 1px solid #F0EBE1;
+}
+.s4-dash-project { font-size: 20px; font-weight: 800; color: #1C1915; margin-bottom: 2px; }
+.s4-dash-tag { font-size: 13px; font-weight: 600; color: #8A8579; }
+
+.s4-kpis {
+  display: flex; gap: 1px; background: #F0EBE1;
+  position: relative; z-index: 10;
+}
+.s4-kpis.pop-out {
+  transform: scale(1.12) translateY(-8px);
+  box-shadow: 0 14px 40px rgba(0,0,0,0.35), 0 0 0 1px rgba(255, 171, 64, 0.12);
+  border-radius: 12px;
+  overflow: hidden;
+}
+.s4-kpi {
+  flex: 1; padding: 16px 14px;
+  background: #FDFAF4; text-align: center;
+}
+.s4-kpi-label {
+  font-size: 11px; font-weight: 600; color: #8A8579;
+  text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;
+}
+.s4-kpi-value { font-size: 20px; font-weight: 800; font-variant-numeric: tabular-nums; }
+
+.s4-list { padding: 8px 0; }
+.s4-row {
+  display: flex; align-items: center;
+  padding: 12px 24px; gap: 12px;
+}
+.s4-row-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+.s4-row-info { flex: 1; }
+.s4-row-desc { font-size: 15px; font-weight: 600; color: #1C1915; }
+.s4-row-cat { font-size: 11px; color: #8A8579; }
+.s4-row-amount { font-size: 16px; font-weight: 800; font-variant-numeric: tabular-nums; flex-shrink: 0; }
+
+.s4-caption {
+  font-size: 22px; font-weight: 600;
+  color: var(--text-sec);
+  text-align: center;
+}
+.s4-caption strong { color: var(--text); font-weight: 700; }
+
+/* ============================================================
+   SLIDE 5 — CLIENT TRANSPARENCY
+   ============================================================ */
+.s5-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 28px;
+  max-width: 880px;
+  width: 100%;
+}
+.s5-title {
+  font-size: 38px; font-weight: 800;
+  color: var(--text);
+  text-align: center;
+  line-height: 1.25;
+}
+.s5-title em { font-style: normal; color: var(--amber); }
+
+.s5-link-bar {
+  display: flex; align-items: center;
+  gap: 8px; padding: 14px 24px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  font-size: 18px;
+}
+.s5-link-domain { color: var(--text-dim); }
+.s5-link-url { color: var(--amber); font-weight: 700; }
+
+.s5-client-card {
+  width: 100%;
+  border-radius: 20px;
+  background: #FFFFFF;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+  overflow: visible;
+  position: relative;
+}
+.s5-client-header {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 20px 24px 16px;
+  border-bottom: 1px solid #F0EBE1;
+}
+.s5-client-project { font-size: 18px; font-weight: 800; color: #1C1915; }
+.s5-client-badge {
+  font-size: 11px; font-weight: 700;
+  padding: 4px 12px; border-radius: 999px;
+  background: rgba(92, 184, 112, 0.12);
+  color: #2D7A3F;
+  text-transform: uppercase; letter-spacing: 0.5px;
+}
+
+.s5-client-stats {
+  display: flex; gap: 1px; background: #F0EBE1;
+  position: relative; z-index: 10;
+}
+.s5-client-stats.pop-out {
+  transform: scale(1.12) translateY(-8px);
+  box-shadow: 0 14px 40px rgba(0,0,0,0.35), 0 0 0 1px rgba(255, 171, 64, 0.12);
+  border-radius: 12px;
+  overflow: hidden;
+}
+.s5-client-stat {
+  flex: 1; padding: 16px 12px;
+  background: #FDFAF4; text-align: center;
+}
+.s5-stat-label {
+  font-size: 11px; font-weight: 600; color: #8A8579;
+  text-transform: uppercase; letter-spacing: 0.3px; margin-bottom: 4px;
+}
+.s5-stat-value { font-size: 18px; font-weight: 800; font-variant-numeric: tabular-nums; }
+
+.s5-expenses { padding: 10px 0; }
+.s5-exp-row {
+  display: flex; align-items: center;
+  padding: 10px 24px; gap: 12px;
+}
+.s5-exp-thumb {
+  width: 44px; height: 44px;
+  border-radius: 10px;
+  flex-shrink: 0;
+  background: #F0EBE1;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 20px;
+  overflow: hidden;
+  border: 1px solid #E0DBD2;
+}
+.s5-exp-thumb.receipt {
+  background: linear-gradient(145deg, #F5F0E5, #E8E2D5);
+  position: relative;
+}
+.s5-exp-thumb.receipt::after {
+  content: '';
+  position: absolute;
+  top: 8px; left: 8px; right: 8px; bottom: 8px;
+  background: repeating-linear-gradient(180deg, #C8C0B2 0px, #C8C0B2 1px, transparent 1px, transparent 6px);
+  opacity: 0.35;
+}
+.s5-exp-info { flex: 1; min-width: 0; }
+.s5-exp-desc { font-size: 14px; font-weight: 600; color: #1C1915; }
+.s5-exp-meta { font-size: 11px; color: #8A8579; }
+.s5-exp-amount { font-size: 15px; font-weight: 800; font-variant-numeric: tabular-nums; flex-shrink: 0; }
+
+.s5-highlights {
+  display: flex; gap: 16px; width: 100%;
+}
+.s5-highlight {
+  flex: 1;
+  display: flex; align-items: center;
+  gap: 12px; padding: 16px 20px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+}
+.s5-hl-icon { font-size: 22px; }
+.s5-hl-text {
+  font-size: 17px; font-weight: 600;
+  color: var(--text-sec);
+  line-height: 1.3;
+}
+
+/* ============================================================
+   SLIDE 6 — CTA
+   ============================================================ */
+.s6-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+}
+.s6-logo {
+  width: 160px; height: 160px;
+  margin-bottom: 12px;
+}
+.s6-logo img {
+  width: 100%; height: 100%;
+  object-fit: contain;
+  filter: drop-shadow(0 0 60px rgba(255, 171, 64, 0.2));
+}
+.s6-brand {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 64px; font-weight: 700;
+  color: var(--text); letter-spacing: -2px;
+}
+.s6-brand span { color: var(--amber); }
+.s6-tagline {
+  font-size: 30px; font-weight: 600;
+  color: var(--text-sec);
+  text-align: center;
+  margin-bottom: 16px;
+}
+.s6-cta {
+  padding: 20px 56px;
+  border-radius: 999px;
+  background: var(--amber);
+  color: #1A1200;
+  font-size: 28px; font-weight: 700;
+  letter-spacing: -0.3px;
+}
+</style>
+</head>
+<body>
+
+<div class="slides-viewport">
+  <div class="slides-track" id="track">
+
+    <!-- SLIDE 1 — COVER -->
+    <div class="slide">
+      <div class="s1-wrap">
+        <div class="s1-topic">Funcionalidades</div>
+        <div class="s1-logo">
+          <img src="https://gastoobra.com/img/logo.png" alt="Gasto Obra">
+        </div>
+        <div class="s1-question">¿Cómo <em>funciona</em>?</div>
+        <p class="s1-sub">Todo lo que necesitás para gestionar tu obra, desde el celular.</p>
+      </div>
+    </div>
+
+    <!-- SLIDE 2 — WHATSAPP -->
+    <div class="slide">
+      <div class="s2-wrap">
+        <p class="s2-title">Registrá gastos <em>por WhatsApp</em></p>
+        <div class="s2-phone">
+          <div class="s2-wa-header">
+            <div class="s2-wa-avatar">
+              <img src="https://gastoobra.com/img/logo.png" alt="GO">
+            </div>
+            <div>
+              <div class="s2-wa-name">Gasto Obra</div>
+              <div class="s2-wa-status">en línea</div>
+            </div>
+          </div>
+          <div class="s2-chat">
+            <div class="s2-bubble sent" style="padding:4px 4px 8px;">
+              <div class="s2-receipt-img"></div>
+              <div style="padding:4px 8px 0; font-size:14px;">Compra de materiales para obra Flores 3B</div>
+              <div class="s2-bubble-time" style="padding-right:8px;">14:32</div>
+            </div>
+            <div class="s2-bubble recv pop-out">
+              <div class="s2-bubble-bold">✅ Gasto registrado</div>
+              <div class="s2-badge-row">
+                <span class="s2-cat-badge">Materiales</span>
+                <span class="s2-amt-badge">$45.000</span>
+              </div>
+              <div class="s2-bubble-detail">Ferretería López · Cemento x3 → Flores 3B</div>
+              <div class="s2-bubble-time">14:32</div>
+            </div>
+          </div>
+        </div>
+        <p class="s2-caption">Mandás un mensaje. <strong>La IA hace el resto.</strong></p>
+      </div>
+      <div class="watermark">
+        <img src="https://gastoobra.com/img/logo.png" alt="">
+        <span class="watermark-text">gasto obra</span>
+      </div>
+    </div>
+
+    <!-- SLIDE 3 — MULTI FORMAT -->
+    <div class="slide">
+      <div class="s3-wrap">
+        <p class="s3-title">Aceptamos <em>cualquier formato</em></p>
+        <div class="s3-formats">
+          <div class="s3-format">
+            <div class="s3-format-icon">📸</div>
+            <div class="s3-format-title">Foto</div>
+            <div class="s3-format-desc">Sacale una foto al ticket y listo.</div>
+          </div>
+          <div class="s3-format">
+            <div class="s3-format-icon">🎙️</div>
+            <div class="s3-format-title">Audio</div>
+            <div class="s3-format-desc">Grabá un audio con los detalles.</div>
+          </div>
+          <div class="s3-format">
+            <div class="s3-format-icon">💬</div>
+            <div class="s3-format-title">Texto</div>
+            <div class="s3-format-desc">Escribí el gasto como se te ocurra.</div>
+          </div>
+          <div class="s3-format">
+            <div class="s3-format-icon">📄</div>
+            <div class="s3-format-title">PDF</div>
+            <div class="s3-format-desc">Mandá la factura directo.</div>
+          </div>
+        </div>
+        <p class="s3-footer">Monto, categoría y detalle: <strong>se extraen solos.</strong></p>
+      </div>
+      <div class="watermark">
+        <img src="https://gastoobra.com/img/logo.png" alt="">
+        <span class="watermark-text">gasto obra</span>
+      </div>
+    </div>
+
+    <!-- SLIDE 4 — DASHBOARD -->
+    <div class="slide">
+      <div class="s4-wrap">
+        <p class="s4-title">Todo en <em>un solo lugar</em></p>
+        <div class="s4-dash">
+          <div class="s4-dash-top">
+            <div class="s4-dash-project">Depto Flores 3B</div>
+            <div class="s4-dash-tag">#flores3b · Av. Rivadavia 1234</div>
+          </div>
+          <div class="s4-kpis pop-out">
+            <div class="s4-kpi">
+              <div class="s4-kpi-label">Gastado</div>
+              <div class="s4-kpi-value amber">$847.500</div>
+            </div>
+            <div class="s4-kpi">
+              <div class="s4-kpi-label">Pagado</div>
+              <div class="s4-kpi-value green">$600.000</div>
+            </div>
+            <div class="s4-kpi">
+              <div class="s4-kpi-label">Balance</div>
+              <div class="s4-kpi-value red">-$247.500</div>
+            </div>
+          </div>
+          <div class="s4-list">
+            <div class="s4-row">
+              <div class="s4-row-dot" style="background:var(--cat-materiales)"></div>
+              <div class="s4-row-info">
+                <div class="s4-row-desc">Cemento Portland x3</div>
+                <div class="s4-row-cat">Materiales · hoy</div>
+              </div>
+              <div class="s4-row-amount amber">$45.000</div>
+            </div>
+            <div class="s4-row">
+              <div class="s4-row-dot" style="background:var(--cat-herramientas)"></div>
+              <div class="s4-row-info">
+                <div class="s4-row-desc">Amoladora Bosch</div>
+                <div class="s4-row-cat">Herramientas · ayer</div>
+              </div>
+              <div class="s4-row-amount" style="color:#1C1915">$89.000</div>
+            </div>
+            <div class="s4-row">
+              <div class="s4-row-dot" style="background:var(--cat-transporte)"></div>
+              <div class="s4-row-info">
+                <div class="s4-row-desc">Flete materiales</div>
+                <div class="s4-row-cat">Transporte · lun</div>
+              </div>
+              <div class="s4-row-amount" style="color:#1C1915">$15.000</div>
+            </div>
+          </div>
+        </div>
+        <p class="s4-caption">Gastos, pagos y balance — <strong>siempre actualizado.</strong></p>
+      </div>
+      <div class="watermark">
+        <img src="https://gastoobra.com/img/logo.png" alt="">
+        <span class="watermark-text">gasto obra</span>
+      </div>
+    </div>
+
+    <!-- SLIDE 5 — CLIENT TRANSPARENCY -->
+    <div class="slide">
+      <div class="s5-wrap">
+        <p class="s5-title">Tu cliente <em>ve todo</em></p>
+        <div class="s5-link-bar">
+          <span style="font-size:22px">🔗</span>
+          <span class="s5-link-domain">gastoobra.com/view/</span>
+          <span class="s5-link-url">a3xK9m</span>
+        </div>
+        <div class="s5-client-card">
+          <div class="s5-client-header">
+            <div class="s5-client-project">Depto Flores 3B</div>
+            <div class="s5-client-badge">En vivo</div>
+          </div>
+          <div class="s5-client-stats pop-out">
+            <div class="s5-client-stat">
+              <div class="s5-stat-label">Gastado</div>
+              <div class="s5-stat-value amber">$847.500</div>
+            </div>
+            <div class="s5-client-stat">
+              <div class="s5-stat-label">Pagado</div>
+              <div class="s5-stat-value green">$600.000</div>
+            </div>
+            <div class="s5-client-stat">
+              <div class="s5-stat-label">Balance</div>
+              <div class="s5-stat-value red">-$247.500</div>
+            </div>
+          </div>
+          <div class="s5-expenses">
+            <div class="s5-exp-row">
+              <div class="s5-exp-thumb receipt"></div>
+              <div class="s5-exp-info">
+                <div class="s5-exp-desc">Cemento Portland x3</div>
+                <div class="s5-exp-meta">Materiales · hoy · 📷 foto</div>
+              </div>
+              <div class="s5-exp-amount amber">$45.000</div>
+            </div>
+            <div class="s5-exp-row">
+              <div class="s5-exp-thumb">🎙️</div>
+              <div class="s5-exp-info">
+                <div class="s5-exp-desc">Amoladora Bosch</div>
+                <div class="s5-exp-meta">Herramientas · ayer · audio</div>
+              </div>
+              <div class="s5-exp-amount" style="color:#1C1915">$89.000</div>
+            </div>
+            <div class="s5-exp-row">
+              <div class="s5-exp-thumb receipt"></div>
+              <div class="s5-exp-info">
+                <div class="s5-exp-desc">Flete materiales</div>
+                <div class="s5-exp-meta">Transporte · lun · 📷 foto</div>
+              </div>
+              <div class="s5-exp-amount" style="color:#1C1915">$15.000</div>
+            </div>
+          </div>
+        </div>
+        <div class="s5-highlights">
+          <div class="s5-highlight">
+            <div class="s5-hl-icon">⚡</div>
+            <div class="s5-hl-text">Tiempo real</div>
+          </div>
+          <div class="s5-highlight">
+            <div class="s5-hl-icon">📲</div>
+            <div class="s5-hl-text">Sin instalar nada</div>
+          </div>
+          <div class="s5-highlight">
+            <div class="s5-hl-icon">🔒</div>
+            <div class="s5-hl-text">Solo lectura</div>
+          </div>
+        </div>
+      </div>
+      <div class="watermark">
+        <img src="https://gastoobra.com/img/logo.png" alt="">
+        <span class="watermark-text">gasto obra</span>
+      </div>
+    </div>
+
+    <!-- SLIDE 6 — CTA -->
+    <div class="slide">
+      <div class="s6-wrap">
+        <div class="s6-logo">
+          <img src="https://gastoobra.com/img/logo.png" alt="Gasto Obra">
+        </div>
+        <div class="s6-brand">gasto <span>obra</span></div>
+        <p class="s6-tagline">Tu obra, bajo control.</p>
+        <div class="s6-cta">gastoobra.com</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Ratio toggle -->
+<div class="ratio-toggle" id="ratioToggle">
+  <button class="ratio-btn active" data-ratio="1350">4:5</button>
+  <button class="ratio-btn" data-ratio="1080">1:1</button>
+</div>
+
+<!-- Dots -->
+<div class="dots" id="dots"></div>
+
+<!-- Nav hint -->
+<div class="nav-hint" id="navHint">← → para navegar</div>
+
+<script>
+(function() {
+  var track = document.getElementById('track');
+  var dotsContainer = document.getElementById('dots');
+  var totalSlides = track.children.length;
+  var current = 0;
+
+  for (var i = 0; i < totalSlides; i++) {
+    var d = document.createElement('div');
+    d.className = 'dot' + (i === 0 ? ' active' : '');
+    d.dataset.index = i;
+    dotsContainer.appendChild(d);
+  }
+
+  function goTo(index) {
+    if (index < 0 || index >= totalSlides) return;
+    current = index;
+    track.style.transform = 'translateX(-' + (current * 1080) + 'px)';
+    var dots = dotsContainer.children;
+    for (var i = 0; i < dots.length; i++) {
+      dots[i].classList.toggle('active', i === current);
+    }
+    var hint = document.getElementById('navHint');
+    if (hint) hint.style.display = 'none';
+  }
+
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown') goTo(current + 1);
+    if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') goTo(current - 1);
+  });
+
+  dotsContainer.addEventListener('click', function(e) {
+    if (e.target.classList.contains('dot')) goTo(+e.target.dataset.index);
+  });
+
+  var startX = 0;
+  var startY = 0;
+  document.addEventListener('touchstart', function(e) {
+    startX = e.touches[0].clientX;
+    startY = e.touches[0].clientY;
+  }, { passive: true });
+  document.addEventListener('touchend', function(e) {
+    var dx = e.changedTouches[0].clientX - startX;
+    var dy = e.changedTouches[0].clientY - startY;
+    if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 50) {
+      if (dx < 0) goTo(current + 1);
+      else goTo(current - 1);
+    }
+  }, { passive: true });
+
+  document.getElementById('ratioToggle').addEventListener('click', function(e) {
+    var btn = e.target.closest('.ratio-btn');
+    if (!btn) return;
+    var h = +btn.dataset.ratio;
+    var viewport = document.querySelector('.slides-viewport');
+    var slides = document.querySelectorAll('.slide');
+    viewport.style.height = h + 'px';
+    for (var i = 0; i < slides.length; i++) slides[i].style.height = h + 'px';
+    document.body.style.height = h + 'px';
+    document.documentElement.style.height = h + 'px';
+    var btns = document.querySelectorAll('.ratio-btn');
+    for (var i = 0; i < btns.length; i++) btns[i].classList.toggle('active', btns[i] === btn);
+  });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1080, initial-scale=1.0, user-scalable=no">
+<title>GastoObra — Quiénes Somos</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Red+Hat+Display:wght@400;500;600;700;800;900&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   BASE
+   ============================================================ */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body {
+  width: 1080px; height: 1350px;
+  overflow: hidden;
+  background: #13100B;
+  font-family: 'Red Hat Display', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+:root {
+  --amber: #FFAB40;
+  --amber-dim: rgba(255, 171, 64, 0.10);
+  --amber-glow: rgba(255, 171, 64, 0.06);
+  --bg: #13100B;
+  --surface: #1E1A14;
+  --elevated: #26211A;
+  --border: #3D362C;
+  --text: #F0EBE1;
+  --text-sec: #B5B0A4;
+  --text-dim: #6B665C;
+  --success: #5CB870;
+}
+
+.amber { color: var(--amber); }
+
+/* ============================================================
+   SLIDE CONTAINER
+   ============================================================ */
+.slides-viewport {
+  width: 1080px; height: 1350px;
+  position: relative;
+  overflow: hidden;
+}
+.slides-track {
+  display: flex;
+  height: 100%;
+  transition: transform 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.slide {
+  width: 1080px; height: 1350px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 80px 90px;
+  position: relative;
+  overflow: hidden;
+  border: 1px dashed rgba(255, 171, 64, 0.25);
+}
+.slide::before {
+  content: '';
+  position: absolute;
+  top: 25%; left: 50%;
+  width: 600px; height: 600px;
+  transform: translate(-50%, -50%);
+  background: radial-gradient(circle, var(--amber-glow) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+/* Watermark */
+.watermark {
+  position: absolute;
+  bottom: 48px; left: 90px;
+  display: flex; align-items: center; gap: 10px;
+  opacity: 0.35;
+}
+.watermark img { width: 28px; height: 28px; object-fit: contain; }
+.watermark-text {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 16px; font-weight: 600;
+  color: var(--text); letter-spacing: -0.3px;
+}
+
+/* Dots */
+.dots {
+  position: fixed;
+  bottom: 48px; left: 50%;
+  transform: translateX(-50%);
+  display: flex; gap: 10px;
+  z-index: 100;
+}
+.dot {
+  width: 10px; height: 10px; border-radius: 50%;
+  background: var(--border);
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+.dot.active { background: var(--amber); transform: scale(1.2); }
+
+/* Ratio toggle */
+.ratio-toggle {
+  position: fixed;
+  top: 20px; right: 20px;
+  z-index: 200;
+  display: flex;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+.ratio-btn {
+  padding: 8px 16px;
+  font-family: 'Red Hat Display', sans-serif;
+  font-size: 13px; font-weight: 600;
+  color: var(--text-dim);
+  background: transparent;
+  border: none; cursor: pointer;
+  transition: all 0.2s ease;
+}
+.ratio-btn.active { background: var(--amber-dim); color: var(--amber); }
+
+/* Nav hint */
+.nav-hint {
+  position: fixed;
+  top: 50%; right: 24px;
+  transform: translateY(-50%);
+  font-size: 13px; color: var(--text-dim);
+  writing-mode: vertical-rl;
+  letter-spacing: 1px; opacity: 0.4;
+  z-index: 100; pointer-events: none;
+}
+
+/* ============================================================
+   SLIDE 1 — COVER
+   ============================================================ */
+.s1-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+}
+.s1-topic {
+  font-size: 20px; font-weight: 700;
+  color: var(--amber);
+  text-transform: uppercase;
+  letter-spacing: 4px;
+  opacity: 0.8;
+}
+.s1-logo {
+  width: 160px; height: 160px;
+  margin-bottom: 8px;
+}
+.s1-logo img {
+  width: 100%; height: 100%;
+  object-fit: contain;
+  filter: drop-shadow(0 0 50px rgba(255, 171, 64, 0.2));
+}
+.s1-brand {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 64px; font-weight: 700;
+  color: var(--text); letter-spacing: -2px;
+}
+.s1-brand span { color: var(--amber); }
+.s1-question {
+  font-size: 40px; font-weight: 800;
+  color: var(--text-sec);
+  margin-top: 8px;
+}
+
+/* ============================================================
+   SLIDE 2 — ORIGIN
+   ============================================================ */
+.s2-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 40px;
+  max-width: 860px;
+}
+.s2-title {
+  font-size: 36px; font-weight: 800;
+  color: var(--text);
+  text-align: center;
+  line-height: 1.3;
+}
+.s2-title em { font-style: normal; color: var(--amber); }
+
+.s2-story {
+  font-size: 26px;
+  font-weight: 500;
+  color: var(--text-sec);
+  line-height: 1.6;
+  text-align: center;
+}
+.s2-story strong {
+  color: var(--text);
+  font-weight: 700;
+}
+
+.s2-divider {
+  width: 60px; height: 3px;
+  border-radius: 2px;
+  background: var(--amber);
+  opacity: 0.4;
+  align-self: center;
+}
+
+.s2-footnote {
+  font-size: 22px;
+  font-weight: 500;
+  color: var(--text-dim);
+  text-align: center;
+  font-style: italic;
+  line-height: 1.5;
+}
+
+/* ============================================================
+   SLIDE 3 — MISSION
+   ============================================================ */
+.s3-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 40px;
+  max-width: 860px;
+}
+.s3-title {
+  font-size: 36px; font-weight: 800;
+  color: var(--text);
+  text-align: center;
+  line-height: 1.3;
+}
+.s3-title em { font-style: normal; color: var(--amber); }
+
+.s3-divider {
+  width: 80px; height: 4px;
+  border-radius: 2px;
+  background: var(--amber);
+  opacity: 0.5;
+}
+
+.s3-body {
+  font-size: 28px;
+  font-weight: 500;
+  color: var(--text-sec);
+  text-align: center;
+  line-height: 1.55;
+}
+.s3-body strong {
+  color: var(--text);
+  font-weight: 700;
+}
+
+.s3-vision {
+  padding: 32px 40px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  width: 100%;
+}
+.s3-vision p {
+  font-size: 24px;
+  font-weight: 600;
+  color: var(--text-sec);
+  text-align: center;
+  line-height: 1.5;
+}
+.s3-vision em {
+  font-style: normal;
+  color: var(--amber);
+}
+
+/* ============================================================
+   SLIDE 4 — WHAT WE DO
+   ============================================================ */
+.s4-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 40px;
+  width: 100%;
+  max-width: 880px;
+}
+.s4-title {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 38px; font-weight: 700;
+  color: var(--text);
+  text-align: center;
+  letter-spacing: -0.5px;
+}
+.s4-title em { font-style: normal; color: var(--amber); }
+
+.s4-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+.s4-step {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  padding: 24px 28px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+}
+.s4-step-num {
+  width: 48px; height: 48px;
+  border-radius: 14px;
+  background: var(--amber-dim);
+  border: 1px solid rgba(255, 171, 64, 0.15);
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 22px; font-weight: 700;
+  color: var(--amber);
+  flex-shrink: 0;
+}
+.s4-step-content { flex: 1; }
+.s4-step-title {
+  font-size: 24px; font-weight: 700;
+  color: var(--text);
+  margin-bottom: 2px;
+}
+.s4-step-desc {
+  font-size: 18px; font-weight: 500;
+  color: var(--text-dim);
+  line-height: 1.4;
+}
+
+.s4-note {
+  font-size: 20px;
+  font-weight: 500;
+  color: var(--text-dim);
+  text-align: center;
+  font-style: italic;
+}
+
+/* ============================================================
+   SLIDE 5 — VALUES
+   ============================================================ */
+.s5-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 48px;
+  max-width: 860px;
+}
+.s5-title {
+  font-size: 36px; font-weight: 800;
+  color: var(--text);
+  text-align: center;
+  line-height: 1.3;
+}
+.s5-title em { font-style: normal; color: var(--amber); }
+
+.s5-values {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+.s5-value {
+  display: flex;
+  align-items: flex-start;
+  gap: 24px;
+  padding: 28px 32px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+}
+.s5-value-icon {
+  width: 52px; height: 52px;
+  border-radius: 14px;
+  background: var(--amber-dim);
+  border: 1px solid rgba(255, 171, 64, 0.15);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 24px;
+  flex-shrink: 0;
+}
+.s5-value-content { flex: 1; }
+.s5-value-title {
+  font-size: 26px; font-weight: 700;
+  color: var(--text);
+  margin-bottom: 6px;
+}
+.s5-value-desc {
+  font-size: 20px; font-weight: 500;
+  color: var(--text-dim);
+  line-height: 1.45;
+}
+
+/* ============================================================
+   SLIDE 6 — CTA
+   ============================================================ */
+.s6-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+}
+.s6-logo {
+  width: 160px; height: 160px;
+  margin-bottom: 12px;
+}
+.s6-logo img {
+  width: 100%; height: 100%;
+  object-fit: contain;
+  filter: drop-shadow(0 0 60px rgba(255, 171, 64, 0.2));
+}
+.s6-brand {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 64px; font-weight: 700;
+  color: var(--text); letter-spacing: -2px;
+}
+.s6-brand span { color: var(--amber); }
+.s6-tagline {
+  font-size: 30px; font-weight: 600;
+  color: var(--text-sec);
+  text-align: center;
+  margin-bottom: 16px;
+}
+.s6-cta {
+  padding: 20px 56px;
+  border-radius: 999px;
+  background: var(--amber);
+  color: #1A1200;
+  font-size: 28px; font-weight: 700;
+  letter-spacing: -0.3px;
+}
+</style>
+</head>
+<body>
+
+<div class="slides-viewport">
+  <div class="slides-track" id="track">
+
+    <!-- SLIDE 1 — COVER -->
+    <div class="slide">
+      <div class="s1-wrap">
+        <div class="s1-topic">Presentación</div>
+        <div class="s1-logo">
+          <img src="https://gastoobra.com/img/logo.png" alt="Gasto Obra">
+        </div>
+        <div class="s1-brand">gasto <span>obra</span></div>
+        <div class="s1-question">¿Quiénes somos?</div>
+      </div>
+    </div>
+
+    <!-- SLIDE 2 — ORIGIN -->
+    <div class="slide">
+      <div class="s2-wrap">
+        <p class="s2-title">Cómo <em>empezó todo</em></p>
+        <p class="s2-story">Nos dedicamos al rubro — construcción, aires acondicionados, plomería. Un día, entre amigos en Córdoba, nos dimos cuenta de algo: <strong>comunicarle los gastos al cliente es un quilombo.</strong></p>
+        <div class="s2-divider"></div>
+        <p class="s2-story">Ese fue el disparador. Arrancamos a construir una herramienta que <strong>evite los dolores comunes</strong> en un proceso de obra — para el proveedor y para el cliente.</p>
+        <p class="s2-footnote">Es un camino largo. Y nos queda mucho por hacer.</p>
+      </div>
+      <div class="watermark">
+        <img src="https://gastoobra.com/img/logo.png" alt="">
+        <span class="watermark-text">gasto obra</span>
+      </div>
+    </div>
+
+    <!-- SLIDE 3 — MISSION -->
+    <div class="slide">
+      <div class="s3-wrap">
+        <p class="s3-title">Lo que <em>buscamos</em></p>
+        <div class="s3-divider"></div>
+        <p class="s3-body">Queremos que el proceso completo — desde que el cliente tiene la necesidad hasta que el técnico la resuelve — sea <strong>fácil, claro, y con la menor cantidad de inconvenientes posibles.</strong></p>
+        <p class="s3-body">Que haya <strong>confianza</strong> entre las partes.</p>
+        <div class="s3-vision">
+          <p>No pretendemos ser una app más. Queremos <em>mejorar la calidad del servicio</em> en el rubro, poniendo la mejor tecnología al alcance de los que trabajan todos los días.</p>
+        </div>
+      </div>
+      <div class="watermark">
+        <img src="https://gastoobra.com/img/logo.png" alt="">
+        <span class="watermark-text">gasto obra</span>
+      </div>
+    </div>
+
+    <!-- SLIDE 4 — WHAT WE DO -->
+    <div class="slide">
+      <div class="s4-wrap">
+        <p class="s4-title">Hoy, <em>esto es Gasto Obra</em></p>
+        <div class="s4-steps">
+          <div class="s4-step">
+            <div class="s4-step-num">1</div>
+            <div class="s4-step-content">
+              <div class="s4-step-title">Registrás gastos por WhatsApp</div>
+              <div class="s4-step-desc">Foto, audio, texto o PDF. La IA hace el resto.</div>
+            </div>
+          </div>
+          <div class="s4-step">
+            <div class="s4-step-num">2</div>
+            <div class="s4-step-content">
+              <div class="s4-step-title">Todo queda organizado</div>
+              <div class="s4-step-desc">Dashboard con gastos, pagos y balance en tiempo real.</div>
+            </div>
+          </div>
+          <div class="s4-step">
+            <div class="s4-step-num">3</div>
+            <div class="s4-step-content">
+              <div class="s4-step-title">Tu cliente ve todo con un link</div>
+              <div class="s4-step-desc">Transparencia total. Sin instalar nada.</div>
+            </div>
+          </div>
+        </div>
+        <p class="s4-note">Esto es recién el principio.</p>
+      </div>
+      <div class="watermark">
+        <img src="https://gastoobra.com/img/logo.png" alt="">
+        <span class="watermark-text">gasto obra</span>
+      </div>
+    </div>
+
+    <!-- SLIDE 5 — VALUES -->
+    <div class="slide">
+      <div class="s5-wrap">
+        <p class="s5-title">Cómo <em>trabajamos</em></p>
+        <div class="s5-values">
+          <div class="s5-value">
+            <div class="s5-value-icon">🔨</div>
+            <div class="s5-value-content">
+              <div class="s5-value-title">Avance chico pero constante</div>
+              <div class="s5-value-desc">Cada semana, algo nuevo. Sin pausa, sin apuro. Progreso real.</div>
+            </div>
+          </div>
+          <div class="s5-value">
+            <div class="s5-value-icon">✂️</div>
+            <div class="s5-value-content">
+              <div class="s5-value-title">Simplicidad primero</div>
+              <div class="s5-value-desc">Si no es fácil de usar, no sirve. La herramienta se tiene que adaptar a tu forma de trabajar.</div>
+            </div>
+          </div>
+          <div class="s5-value">
+            <div class="s5-value-icon">⭐</div>
+            <div class="s5-value-content">
+              <div class="s5-value-title">Estándares altos</div>
+              <div class="s5-value-desc">Construimos con la misma exigencia que esperamos del rubro. Si vamos a hacerlo, lo hacemos bien.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="watermark">
+        <img src="https://gastoobra.com/img/logo.png" alt="">
+        <span class="watermark-text">gasto obra</span>
+      </div>
+    </div>
+
+    <!-- SLIDE 6 — CTA -->
+    <div class="slide">
+      <div class="s6-wrap">
+        <div class="s6-logo">
+          <img src="https://gastoobra.com/img/logo.png" alt="Gasto Obra">
+        </div>
+        <div class="s6-brand">gasto <span>obra</span></div>
+        <p class="s6-tagline">Tu obra, bajo control.</p>
+        <div class="s6-cta">gastoobra.com</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Ratio toggle -->
+<div class="ratio-toggle" id="ratioToggle">
+  <button class="ratio-btn active" data-ratio="1350">4:5</button>
+  <button class="ratio-btn" data-ratio="1080">1:1</button>
+</div>
+
+<!-- Dots -->
+<div class="dots" id="dots"></div>
+
+<!-- Nav hint -->
+<div class="nav-hint" id="navHint">← → para navegar</div>
+
+<script>
+(function() {
+  var track = document.getElementById('track');
+  var dotsContainer = document.getElementById('dots');
+  var totalSlides = track.children.length;
+  var current = 0;
+
+  for (var i = 0; i < totalSlides; i++) {
+    var d = document.createElement('div');
+    d.className = 'dot' + (i === 0 ? ' active' : '');
+    d.dataset.index = i;
+    dotsContainer.appendChild(d);
+  }
+
+  function goTo(index) {
+    if (index < 0 || index >= totalSlides) return;
+    current = index;
+    track.style.transform = 'translateX(-' + (current * 1080) + 'px)';
+    var dots = dotsContainer.children;
+    for (var i = 0; i < dots.length; i++) {
+      dots[i].classList.toggle('active', i === current);
+    }
+    var hint = document.getElementById('navHint');
+    if (hint) hint.style.display = 'none';
+  }
+
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown') goTo(current + 1);
+    if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') goTo(current - 1);
+  });
+
+  dotsContainer.addEventListener('click', function(e) {
+    if (e.target.classList.contains('dot')) goTo(+e.target.dataset.index);
+  });
+
+  var startX = 0;
+  var startY = 0;
+  document.addEventListener('touchstart', function(e) {
+    startX = e.touches[0].clientX;
+    startY = e.touches[0].clientY;
+  }, { passive: true });
+  document.addEventListener('touchend', function(e) {
+    var dx = e.changedTouches[0].clientX - startX;
+    var dy = e.changedTouches[0].clientY - startY;
+    if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 50) {
+      if (dx < 0) goTo(current + 1);
+      else goTo(current - 1);
+    }
+  }, { passive: true });
+
+  document.getElementById('ratioToggle').addEventListener('click', function(e) {
+    var btn = e.target.closest('.ratio-btn');
+    if (!btn) return;
+    var h = +btn.dataset.ratio;
+    var viewport = document.querySelector('.slides-viewport');
+    var slides = document.querySelectorAll('.slide');
+    viewport.style.height = h + 'px';
+    for (var i = 0; i < slides.length; i++) slides[i].style.height = h + 'px';
+    document.body.style.height = h + 'px';
+    document.documentElement.style.height = h + 'px';
+    var btns = document.querySelectorAll('.ratio-btn');
+    for (var i = 0; i < btns.length; i++) btns[i].classList.toggle('active', btns[i] === btn);
+  });
+})();
+</script>
+</body>
+</html>
