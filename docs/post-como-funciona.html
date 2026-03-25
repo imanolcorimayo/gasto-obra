@@ -109,28 +109,6 @@ html, body {
 }
 .dot.active { background: var(--amber); transform: scale(1.2); }
 
-/* Ratio toggle */
-.ratio-toggle {
-  position: fixed;
-  top: 20px; right: 20px;
-  z-index: 200;
-  display: flex;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  overflow: hidden;
-}
-.ratio-btn {
-  padding: 8px 16px;
-  font-family: 'Red Hat Display', sans-serif;
-  font-size: 13px; font-weight: 600;
-  color: var(--text-dim);
-  background: transparent;
-  border: none; cursor: pointer;
-  transition: all 0.2s ease;
-}
-.ratio-btn.active { background: var(--amber-dim); color: var(--amber); }
-
 /* Nav hint */
 .nav-hint {
   position: fixed;
@@ -846,12 +824,6 @@ html, body {
   </div>
 </div>
 
-<!-- Ratio toggle -->
-<div class="ratio-toggle" id="ratioToggle">
-  <button class="ratio-btn active" data-ratio="1350">4:5</button>
-  <button class="ratio-btn" data-ratio="1080">1:1</button>
-</div>
-
 <!-- Dots -->
 <div class="dots" id="dots"></div>
 
@@ -908,19 +880,6 @@ html, body {
     }
   }, { passive: true });
 
-  document.getElementById('ratioToggle').addEventListener('click', function(e) {
-    var btn = e.target.closest('.ratio-btn');
-    if (!btn) return;
-    var h = +btn.dataset.ratio;
-    var viewport = document.querySelector('.slides-viewport');
-    var slides = document.querySelectorAll('.slide');
-    viewport.style.height = h + 'px';
-    for (var i = 0; i < slides.length; i++) slides[i].style.height = h + 'px';
-    document.body.style.height = h + 'px';
-    document.documentElement.style.height = h + 'px';
-    var btns = document.querySelectorAll('.ratio-btn');
-    for (var i = 0; i < btns.length; i++) btns[i].classList.toggle('active', btns[i] === btn);
-  });
 })();
 </script>
 </body>
