@@ -1,0 +1,1608 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Gasto Obra — Reel Presentación</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Red+Hat+Display:wght@400;500;600;700;800;900&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@iconify/iconify@3/dist/iconify.min.js"></script>
+<style>
+/* ============================================================
+   BASE
+   ============================================================ */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body {
+  width: 100vw; height: 100vh;
+  overflow: hidden;
+  background: #0F0C08;
+  font-family: 'Red Hat Display', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -webkit-text-size-adjust: none;
+}
+
+:root {
+  --amber: #FFAB40;
+  --amber-dim: rgba(255, 171, 64, 0.10);
+  --amber-glow: rgba(255, 171, 64, 0.06);
+  --bg: #0F0C08;
+  --surface: #1A1610;
+  --elevated: #22201A;
+  --border: #3D362C;
+  --text: #F0EBE1;
+  --text-sec: #B5B0A4;
+  --text-dim: #6B665C;
+  --success: #5CB870;
+  --danger: #D4544A;
+  --wa-dark: #0B141A;
+  --wa-header: #1F2C34;
+  --wa-sent: #005C4B;
+  --wa-recv: #1F2C34;
+  --cat-materiales: #5A8FB8;
+  --cat-herramientas: #D4793D;
+  --cat-transporte: #BFA63D;
+  --cat-comida: #6B9B6B;
+}
+
+.amber { color: var(--amber); }
+.green { color: var(--success); }
+.red { color: var(--danger); }
+
+/* ============================================================
+   FLASH OVERLAY
+   ============================================================ */
+.flash-overlay {
+  position: fixed; inset: 0;
+  background: #fff;
+  z-index: 150;
+  opacity: 0;
+  pointer-events: none;
+}
+.flash-overlay.fire { animation: flash 300ms ease-out forwards; }
+@keyframes flash {
+  0% { opacity: 0; }
+  12% { opacity: 0.9; background: var(--amber); }
+  35% { opacity: 0.5; background: #fff; }
+  100% { opacity: 0; }
+}
+
+/* ============================================================
+   SCENES
+   ============================================================ */
+.scene {
+  position: fixed; inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+  z-index: 10;
+  padding: 60px 32px;
+}
+.scene.active { opacity: 1; z-index: 20; }
+
+/* Ambient glow — varies per scene */
+.scene::before {
+  content: '';
+  position: absolute;
+  width: 400px; height: 400px;
+  transform: translate(-50%, -50%);
+  background: radial-gradient(circle, var(--amber-glow) 0%, transparent 70%);
+  pointer-events: none;
+  top: 35%; left: 50%;
+}
+
+/* ============================================================
+   SHARED ANIMATION KEYFRAMES
+   ============================================================ */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes fadeDown {
+  from { opacity: 0; transform: translateY(-16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes slideInLeft {
+  from { opacity: 0; transform: translateX(-30px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+@keyframes slideInRight {
+  from { opacity: 0; transform: translateX(30px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+@keyframes scaleSlam {
+  0% { opacity: 0; transform: scale(1.5); }
+  60% { opacity: 1; transform: scale(0.93); }
+  100% { opacity: 1; transform: scale(1); }
+}
+@keyframes popIn {
+  from { opacity: 0; transform: scale(0.85); }
+  to { opacity: 1; transform: scale(1); }
+}
+@keyframes popOut {
+  from { transform: scale(1) rotate(0deg) translate(0, 0); box-shadow: none; }
+  to { transform: scale(1.8) rotate(-3deg) translate(20px, -16px); box-shadow: 0 24px 64px rgba(0,0,0,0.7), 0 0 0 2px rgba(255,171,64,0.2); }
+}
+@keyframes zoomOut {
+  from { transform: scale(1); opacity: 1; }
+  to { transform: scale(4); opacity: 0; }
+}
+@keyframes kpiPop {
+  from { transform: scale(1) translateY(0); box-shadow: none; }
+  to { transform: scale(1.12) translateY(-8px); box-shadow: 0 14px 40px rgba(0,0,0,0.35), 0 0 0 1px rgba(255,171,64,0.12); }
+}
+@keyframes glowPulse {
+  0%, 100% { filter: drop-shadow(0 0 20px rgba(255,171,64,0.15)); }
+  50% { filter: drop-shadow(0 0 40px rgba(255,171,64,0.3)); }
+}
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+@keyframes bubbleIn {
+  from { opacity: 0; transform: translateY(12px) scale(0.95); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes dotBounce {
+  0%, 80%, 100% { transform: translateY(0); opacity: 0.4; }
+  40% { transform: translateY(-5px); opacity: 1; }
+}
+@keyframes barGrow {
+  from { width: 0%; }
+}
+@keyframes shake {
+  0%, 100% { transform: translateY(0); }
+  25% { transform: translateY(-3px); }
+  75% { transform: translateY(3px); }
+}
+@keyframes zoomReveal {
+  from { transform: scale(1.4); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+/* Hidden by default, animated in */
+.anim { opacity: 0; }
+.anim.show { animation-fill-mode: forwards; }
+
+/* ============================================================
+   SCENE 1 — HOOK: CHAOS MONTAGE (0-4s)
+   ============================================================ */
+.s1-frame {
+  position: absolute; inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 40px;
+  opacity: 0;
+  transition: opacity 0.15s ease, transform 0.15s ease;
+  z-index: 1;
+}
+.s1-frame.visible { opacity: 1; }
+.s1-frame.stacked { opacity: 1; z-index: 0; }
+
+/* Frame 1: Crumpled receipt */
+.chaos-receipt {
+  width: 300px; height: 380px;
+  border-radius: 4px;
+  background: linear-gradient(170deg, #F5F0E5 0%, #E2DCCE 60%, #D4CDB8 100%);
+  position: relative;
+  transform: rotate(-3deg);
+  box-shadow: 0 12px 40px rgba(0,0,0,0.5);
+  overflow: hidden;
+}
+.chaos-receipt::before {
+  content: '';
+  position: absolute;
+  top: 60px; left: 24px; right: 24px; bottom: 40px;
+  background: repeating-linear-gradient(180deg, #B8B0A0 0px, #B8B0A0 1.5px, transparent 1.5px, transparent 14px);
+  opacity: 0.3;
+}
+.chaos-receipt-header {
+  padding: 20px 24px 10px;
+  font-size: 12px; font-weight: 700;
+  color: #6B6259;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+.chaos-receipt-total {
+  position: absolute;
+  bottom: 20px; right: 24px;
+  font-size: 28px; font-weight: 800;
+  color: #3D362C;
+  font-family: 'SF Mono', 'Consolas', monospace;
+}
+.chaos-receipt-blur {
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  width: 200px; height: 100px;
+  background: rgba(200, 190, 170, 0.5);
+  filter: blur(8px);
+  border-radius: 8px;
+}
+
+/* Frame 2: WhatsApp chaos */
+.chaos-wa {
+  width: 340px;
+  background: var(--wa-dark);
+  border-radius: 18px;
+  border: 2px solid #2A3942;
+  overflow: hidden;
+  box-shadow: 0 16px 50px rgba(0,0,0,0.5);
+  transform: rotate(1deg);
+}
+.chaos-wa-msg {
+  padding: 8px 12px;
+  margin: 6px 10px;
+  border-radius: 8px;
+  font-size: 13px;
+  color: #E9EDEF;
+  line-height: 1.35;
+}
+.chaos-wa-msg.from-client {
+  background: var(--wa-recv);
+  align-self: flex-start;
+  border-radius: 3px 8px 8px 8px;
+}
+.chaos-wa-msg .msg-name {
+  font-size: 11px;
+  font-weight: 600;
+  color: #53BDEB;
+  margin-bottom: 3px;
+}
+.chaos-wa-msg .msg-time {
+  font-size: 9px;
+  color: rgba(255,255,255,0.35);
+  text-align: right;
+  margin-top: 3px;
+}
+
+/* Frame 3: Messy notes */
+.chaos-notes {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: center;
+}
+.chaos-note {
+  padding: 14px 24px;
+  border-radius: 6px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-sec);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  font-family: 'SF Mono', 'Consolas', monospace;
+}
+.chaos-note.tilted-l { transform: rotate(-2deg); }
+.chaos-note.tilted-r { transform: rotate(1.5deg); }
+.chaos-note .crossed {
+  text-decoration: line-through;
+  opacity: 0.4;
+}
+
+/* Hook question */
+.s1-question {
+  font-size: 34px;
+  font-weight: 800;
+  color: var(--text);
+  text-align: center;
+  line-height: 1.25;
+  max-width: 480px;
+}
+.s1-question em { font-style: normal; color: var(--amber); }
+
+/* ============================================================
+   SCENE 2 — BRAND REVEAL (2.5-5s)
+   ============================================================ */
+.s2-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+}
+.s2-logo {
+  width: 120px; height: 120px;
+}
+.s2-logo img {
+  width: 100%; height: 100%;
+  object-fit: contain;
+}
+.s2-brand {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 48px;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: -1.5px;
+}
+.s2-brand span { color: var(--amber); }
+.s2-tagline {
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--text-sec);
+  text-align: center;
+  max-width: 420px;
+}
+
+/* ============================================================
+   SCENE 3 — WHATSAPP (5-10s)
+   ============================================================ */
+.phone {
+  width: 88%;
+  max-width: 380px;
+  border-radius: 28px;
+  background: var(--wa-dark);
+  border: 2.5px solid #2A3942;
+  overflow: visible;
+  box-shadow: 0 24px 80px rgba(0,0,0,0.6);
+  position: relative;
+}
+.wa-header {
+  display: flex; align-items: center; gap: 10px;
+  padding: 14px 16px;
+  background: var(--wa-header);
+  border-bottom: 1px solid #2A3942;
+  border-radius: 26px 26px 0 0;
+  position: relative; z-index: 2;
+}
+.wa-avatar {
+  width: 34px; height: 34px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: var(--elevated);
+}
+.wa-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.wa-name { font-size: 14px; font-weight: 600; color: #E9EDEF; }
+.wa-status { font-size: 10px; color: #8696A0; }
+
+.chat-area {
+  padding: 14px 12px;
+  min-height: 260px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  overflow: visible;
+  position: relative; z-index: 1;
+}
+
+.bubble {
+  max-width: 84%;
+  padding: 8px 12px;
+  font-size: 13px;
+  line-height: 1.4;
+  color: #E9EDEF;
+  opacity: 0;
+}
+.bubble.sent {
+  align-self: flex-end;
+  background: var(--wa-sent);
+  border-radius: 10px 3px 10px 10px;
+}
+.bubble.recv {
+  align-self: flex-start;
+  background: var(--wa-recv);
+  border-radius: 3px 10px 10px 10px;
+}
+.bubble.show { animation: bubbleIn 0.28s ease forwards; }
+
+.receipt-img {
+  width: 100%; height: 100px;
+  border-radius: 6px;
+  background: linear-gradient(145deg, #F5F0E5, #E8E2D5);
+  position: relative;
+  overflow: hidden;
+  margin-bottom: 4px;
+}
+.receipt-img::before {
+  content: 'FERRETERÍA LÓPEZ';
+  position: absolute;
+  top: 10px; left: 12px;
+  font-size: 9px; font-weight: 700;
+  color: #5E594F;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+.receipt-img::after {
+  content: '$45.000';
+  position: absolute;
+  bottom: 10px; right: 12px;
+  font-size: 13px; font-weight: 800;
+  color: #3D362C;
+  font-family: 'SF Mono', 'Consolas', monospace;
+}
+
+.bubble-time { font-size: 9px; color: rgba(255,255,255,0.4); text-align: right; margin-top: 3px; }
+.bot-header { font-weight: 700; font-size: 13px; margin-bottom: 6px; }
+.badge-row { display: flex; gap: 5px; margin: 5px 0; }
+.cat-badge {
+  padding: 2px 8px; border-radius: 999px;
+  font-size: 11px; font-weight: 600;
+  background: rgba(90,143,184,0.2);
+  color: var(--cat-materiales);
+}
+.amt-badge {
+  padding: 2px 8px; border-radius: 999px;
+  font-size: 11px; font-weight: 700;
+  background: var(--amber-dim);
+  color: var(--amber);
+}
+.bot-detail { font-size: 11px; color: #8696A0; }
+
+.typing-dots { display: flex; gap: 4px; padding: 4px 2px; }
+.typing-dots span {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: #8696A0;
+  animation: dotBounce 0.7s ease infinite;
+}
+.typing-dots span:nth-child(2) { animation-delay: 0.15s; }
+.typing-dots span:nth-child(3) { animation-delay: 0.3s; }
+
+/* Pop-out for bot response — immediate and aggressive */
+.bubble.recv.pop-out {
+  animation: bubbleIn 0.2s ease forwards, popOut 0.3s cubic-bezier(0.34,1.56,0.64,1) 0.15s forwards;
+}
+
+/* Zoom-out transition on whole scene */
+.scene.zoom-exit {
+  animation: zoomOut 0.35s cubic-bezier(0.4, 0, 1, 1) forwards !important;
+  z-index: 25 !important;
+}
+
+.s3-caption {
+  font-size: 18px; font-weight: 600;
+  color: var(--text-sec);
+  text-align: center;
+  margin-top: 20px;
+}
+.s3-caption strong { color: var(--text); font-weight: 700; }
+
+/* ============================================================
+   SCENE 4 — FORMAT CAROUSEL
+   ============================================================ */
+.s4-title {
+  font-size: 30px; font-weight: 800;
+  color: var(--text);
+  text-align: center;
+  margin-bottom: 32px;
+}
+.s4-title em { font-style: normal; color: var(--amber); }
+
+.s4-carousel {
+  position: relative;
+  width: 320px; height: 320px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.s4-format {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  padding: 36px 48px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 24px;
+  text-align: center;
+  opacity: 0;
+  transform: scale(0.8) translateX(60px);
+  transition: all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.s4-format.active {
+  opacity: 1;
+  transform: scale(1) translateX(0);
+  z-index: 5;
+  box-shadow: 0 16px 48px rgba(0,0,0,0.4);
+}
+.s4-format.prev {
+  opacity: 0.25;
+  transform: scale(0.7) translateX(-100px) rotate(-6deg);
+  z-index: 3;
+  filter: blur(2px);
+}
+.s4-format.next {
+  opacity: 0.25;
+  transform: scale(0.7) translateX(100px) rotate(6deg);
+  z-index: 3;
+  filter: blur(2px);
+}
+.s4-format-icon {
+  color: var(--amber);
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.s4-format-title {
+  font-size: 26px; font-weight: 800;
+  color: var(--text);
+}
+.s4-format-ext {
+  font-size: 14px; font-weight: 600;
+  color: var(--amber);
+  font-family: 'SF Mono', 'Consolas', monospace;
+  padding: 4px 12px;
+  background: var(--amber-dim);
+  border-radius: 6px;
+}
+
+.s4-footer {
+  font-size: 18px; font-weight: 600;
+  color: var(--text-sec);
+  text-align: center;
+  margin-top: 32px;
+}
+.s4-footer strong { color: var(--amber); font-weight: 700; }
+
+/* ============================================================
+   SCENE 5 — DASHBOARD (13-18s)
+   ============================================================ */
+.s5-label {
+  font-size: 13px; font-weight: 700;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  margin-bottom: 14px;
+}
+
+.dashboard {
+  width: 90%;
+  max-width: 400px;
+  border-radius: 20px;
+  background: #FFFFFF;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+  overflow: visible;
+  position: relative;
+}
+.dash-top {
+  padding: 18px 20px 14px;
+  border-bottom: 1px solid #F0EBE1;
+}
+.dash-project { font-size: 17px; font-weight: 800; color: #1C1915; margin-bottom: 2px; }
+.dash-tag { font-size: 12px; font-weight: 600; color: #8A8579; }
+
+.dash-kpis {
+  display: flex; gap: 1px; background: #F0EBE1;
+  position: relative; z-index: 10;
+}
+.dash-kpis.pop-out {
+  animation: kpiPop 0.4s cubic-bezier(0.34,1.56,0.64,1) forwards;
+  border-radius: 12px;
+  overflow: hidden;
+}
+.kpi {
+  flex: 1; padding: 14px 10px;
+  background: #FDFAF4; text-align: center;
+  opacity: 0;
+}
+.kpi.show { animation: fadeUp 0.25s ease forwards; }
+.kpi-label {
+  font-size: 9px; font-weight: 600; color: #8A8579;
+  text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 3px;
+}
+.kpi-value { font-size: 16px; font-weight: 800; font-variant-numeric: tabular-nums; }
+
+.dash-list { padding: 6px 0; }
+.dash-row {
+  display: flex; align-items: center;
+  padding: 9px 20px; gap: 10px;
+  opacity: 0;
+}
+.dash-row.show { animation: slideInLeft 0.25s ease forwards; }
+.row-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+.row-info { flex: 1; min-width: 0; }
+.row-desc { font-size: 12px; font-weight: 600; color: #1C1915; }
+.row-cat { font-size: 9px; color: #8A8579; }
+.row-amount { font-size: 13px; font-weight: 800; font-variant-numeric: tabular-nums; flex-shrink: 0; }
+
+.dash-row.glow.show {
+  animation: slideInLeft 0.25s ease forwards, rowGlow 1.2s ease 0.25s;
+}
+@keyframes rowGlow {
+  0% { background: rgba(255,171,64,0.15); }
+  100% { background: transparent; }
+}
+
+/* ============================================================
+   SCENE 5→6 SHARE TRANSITION
+   ============================================================ */
+.share-transition {
+  position: fixed; inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  opacity: 0;
+  z-index: 30;
+  background: rgba(15, 12, 8, 0.85);
+  backdrop-filter: blur(8px);
+}
+.share-transition.show { animation: fadeUp 0.25s ease forwards; }
+
+.share-row {
+  display: flex;
+  align-items: center;
+  gap: 28px;
+}
+
+.share-icon {
+  width: 100px; height: 100px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  flex-direction: column;
+  gap: 6px;
+  opacity: 0;
+}
+.share-icon.show {
+  animation: scaleSlam 0.35s cubic-bezier(0.34,1.56,0.64,1) forwards;
+}
+.share-icon.provider {
+  background: var(--amber-dim);
+  border: 2px solid rgba(255,171,64,0.3);
+}
+.share-icon.client {
+  background: rgba(92,184,112,0.12);
+  border: 2px solid rgba(92,184,112,0.3);
+}
+.share-icon-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-sec);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-top: 8px;
+}
+
+.share-arrow {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  opacity: 0;
+}
+.share-arrow.show {
+  animation: shareArrowFly 0.45s cubic-bezier(0.34,1.56,0.64,1) forwards;
+}
+@keyframes shareArrowFly {
+  0% { opacity: 0; transform: translateX(-40px) scale(0.3); }
+  60% { opacity: 1; transform: translateX(4px) scale(1.1); }
+  100% { opacity: 1; transform: translateX(0) scale(1); }
+}
+.share-arrow-line {
+  width: 60px; height: 3px;
+  background: linear-gradient(90deg, var(--amber), var(--success));
+  border-radius: 2px;
+}
+.share-arrow-head {
+  width: 0; height: 0;
+  border-top: 10px solid transparent;
+  border-bottom: 10px solid transparent;
+  border-left: 14px solid var(--success);
+}
+
+.share-text {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text);
+  text-align: center;
+  opacity: 0;
+}
+.share-text.show { animation: fadeUp 0.3s ease forwards; }
+.share-text em { font-style: normal; color: var(--amber); }
+
+/* ============================================================
+   SCENE 6 — CLIENT VIEW
+   ============================================================ */
+.s6-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 90%;
+  max-width: 400px;
+}
+
+.client-card {
+  width: 100%;
+  border-radius: 20px;
+  background: #FFFFFF;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+  overflow: hidden;
+  position: relative;
+}
+.client-header {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 16px 20px 12px;
+  border-bottom: 1px solid #F0EBE1;
+}
+.client-project { font-size: 16px; font-weight: 800; color: #1C1915; }
+.client-badge {
+  font-size: 9px; font-weight: 700;
+  padding: 3px 10px; border-radius: 999px;
+  background: rgba(92,184,112,0.12);
+  color: #2D7A3F;
+  text-transform: uppercase; letter-spacing: 0.5px;
+}
+.client-stats {
+  display: flex; gap: 1px; background: #F0EBE1;
+  position: relative; z-index: 10;
+}
+.client-stats.pop-out {
+  animation: kpiPop 0.4s cubic-bezier(0.34,1.56,0.64,1) forwards;
+  border-radius: 12px;
+  overflow: hidden;
+}
+.client-stat {
+  flex: 1; padding: 14px 10px;
+  background: #FDFAF4; text-align: center;
+  opacity: 0;
+}
+.client-stat.show { animation: popIn 0.25s ease forwards; }
+.stat-label {
+  font-size: 9px; font-weight: 600; color: #8A8579;
+  text-transform: uppercase; letter-spacing: 0.3px; margin-bottom: 3px;
+}
+.stat-value { font-size: 15px; font-weight: 800; font-variant-numeric: tabular-nums; }
+
+/* Vertical expense carousel */
+.expense-carousel {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 5;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.25s ease;
+}
+.expense-carousel.active { opacity: 1; }
+
+.exp-slot {
+  width: 88%;
+  max-width: 400px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 20px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  margin: 6px 0;
+  transition: all 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+  opacity: 0.2;
+  transform: scale(0.75);
+  filter: blur(2px);
+}
+.exp-slot.focused {
+  opacity: 1;
+  transform: scale(1);
+  filter: none;
+  background: var(--elevated);
+  border-color: rgba(255,171,64,0.2);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,171,64,0.1);
+}
+.exp-slot.near {
+  opacity: 0.4;
+  transform: scale(0.85);
+  filter: blur(1px);
+}
+
+.exp-slot-icon {
+  width: 40px; height: 40px;
+  border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  background: var(--amber-dim);
+  border: 1px solid rgba(255,171,64,0.12);
+}
+.exp-slot-info { flex: 1; min-width: 0; }
+.exp-slot-desc {
+  font-size: 14px; font-weight: 700;
+  color: var(--text);
+  margin-bottom: 2px;
+}
+.exp-slot-meta {
+  font-size: 10px; font-weight: 500;
+  color: var(--text-dim);
+}
+.exp-slot-amount {
+  font-size: 16px; font-weight: 800;
+  color: var(--amber);
+  font-variant-numeric: tabular-nums;
+  flex-shrink: 0;
+}
+
+.realtime-pill {
+  display: flex; align-items: center; justify-content: center;
+  gap: 6px; padding: 8px 14px; margin-top: 14px;
+  font-size: 12px; font-weight: 600;
+  color: var(--success);
+  opacity: 0;
+}
+.realtime-pill.show { animation: fadeUp 0.3s ease forwards; }
+.rt-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--success);
+  animation: pulse 1.2s ease infinite;
+}
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(1.4); }
+}
+
+/* ============================================================
+   SCENE 7 — MISSION (22-26s)
+   ============================================================ */
+.s7-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  max-width: 480px;
+}
+.s7-line {
+  font-size: 32px;
+  font-weight: 800;
+  color: var(--text);
+  text-align: center;
+  line-height: 1.3;
+  opacity: 0;
+}
+.s7-line.show { animation-fill-mode: forwards; }
+.s7-line em { font-style: normal; color: var(--amber); }
+.s7-divider {
+  width: 60px; height: 3px;
+  border-radius: 2px;
+  background: var(--amber);
+  opacity: 0.5;
+}
+.s7-body {
+  font-size: 20px;
+  font-weight: 500;
+  color: var(--text-sec);
+  text-align: center;
+  line-height: 1.5;
+  opacity: 0;
+}
+.s7-body.show { animation-fill-mode: forwards; }
+
+/* ============================================================
+   SCENE 8 — BRAND LOCK (26-30s)
+   ============================================================ */
+.s8-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+.s8-logo {
+  width: 120px; height: 120px;
+  opacity: 0;
+}
+.s8-logo.show { animation: scaleSlam 0.4s cubic-bezier(0.34,1.56,0.64,1) forwards; }
+.s8-logo img {
+  width: 100%; height: 100%;
+  object-fit: contain;
+}
+.s8-brand {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 48px; font-weight: 700;
+  color: var(--text); letter-spacing: -1.5px;
+  opacity: 0;
+}
+.s8-brand.show { animation: fadeUp 0.35s ease forwards; }
+.s8-brand span { color: var(--amber); }
+.s8-tagline {
+  font-size: 20px; font-weight: 600;
+  color: var(--text-sec);
+  opacity: 0;
+}
+.s8-tagline.show { animation: fadeUp 0.3s ease forwards; }
+.s8-cta {
+  margin-top: 8px;
+  padding: 14px 40px;
+  border-radius: 999px;
+  background: var(--amber);
+  color: #1A1200;
+  font-size: 20px; font-weight: 700;
+  opacity: 0;
+}
+.s8-cta.show { animation: popIn 0.3s ease forwards; }
+.s8-glow {
+  animation: glowPulse 2s ease infinite;
+}
+</style>
+</head>
+<body>
+
+<div class="flash-overlay" id="flashOverlay"></div>
+
+<!-- SCENE 1 — HOOK: CHAOS MONTAGE -->
+<div class="scene" id="s1">
+  <!-- Frame 1: Crumpled receipt -->
+  <div class="s1-frame" id="s1f1">
+    <div class="chaos-receipt">
+      <div class="chaos-receipt-header">Ferretería López</div>
+      <div class="chaos-receipt-blur"></div>
+      <div class="chaos-receipt-total">$45.000</div>
+    </div>
+  </div>
+
+  <!-- Frame 2: WhatsApp from client -->
+  <div class="s1-frame" id="s1f2">
+    <div class="chaos-wa">
+      <div style="padding:10px 12px 4px;">
+        <div class="chaos-wa-msg from-client">
+          <div class="msg-name">Juan Pérez (Cliente)</div>
+          ¿Cuánto llevamos gastado? Me pasás los números?
+          <div class="msg-time">10:47</div>
+        </div>
+        <div class="chaos-wa-msg from-client" style="margin-top:4px;">
+          <div class="msg-name">Juan Pérez (Cliente)</div>
+          Necesito saber antes del viernes 🙏
+          <div class="msg-time">10:48</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Frame 3: Messy notes -->
+  <div class="s1-frame" id="s1f3">
+    <div class="chaos-notes">
+      <div class="chaos-note tilted-l">cemento x3 ... 45.000</div>
+      <div class="chaos-note tilted-r"><span class="crossed">amoladora 85.000</span> 89.000</div>
+      <div class="chaos-note tilted-l">flete?? 15k o 18k</div>
+      <div class="chaos-note tilted-r">arena 2m³ ... no me acuerdo</div>
+    </div>
+  </div>
+
+  <!-- Frame 4: The question -->
+  <div class="s1-frame" id="s1f4">
+    <p class="s1-question">¿Seguís anotando gastos <em>en un papel?</em></p>
+  </div>
+</div>
+
+<!-- SCENE 2 — BRAND REVEAL -->
+<div class="scene" id="s2">
+  <div class="s2-wrap">
+    <div class="s2-logo anim" id="s2Logo">
+      <img src="https://gastoobra.com/img/logo.png" alt="Gasto Obra">
+    </div>
+    <div class="s2-brand anim" id="s2Brand">gasto <span>obra</span></div>
+    <p class="s2-tagline anim" id="s2Tag">Herramientas profesionales para el rubro.</p>
+  </div>
+</div>
+
+<!-- SCENE 3 — WHATSAPP -->
+<div class="scene" id="s3">
+  <div class="phone anim" id="s3Phone">
+    <div class="wa-header">
+      <div class="wa-avatar"><img src="https://gastoobra.com/img/logo.png" alt="GO"></div>
+      <div>
+        <div class="wa-name">Gasto Obra</div>
+        <div class="wa-status">en línea</div>
+      </div>
+    </div>
+    <div class="chat-area" id="chatArea"></div>
+  </div>
+  <p class="s3-caption anim" id="s3Caption">Mandás un mensaje. <strong>La IA hace el resto.</strong></p>
+</div>
+
+<!-- SCENE 4 — FORMAT CAROUSEL -->
+<div class="scene" id="s4">
+  <p class="s4-title anim" id="s4Title">Mandá lo que tengas</p>
+  <div class="s4-carousel" id="s4Carousel">
+    <div class="s4-format" id="s4F0" data-idx="0">
+      <div class="s4-format-icon" style="color:#5A8FB8"><span class="iconify" data-icon="mdi:camera" data-width="42"></span></div>
+      <div class="s4-format-title">Foto del ticket</div>
+      <div class="s4-format-ext" style="color:#5A8FB8;background:rgba(90,143,184,0.12)">.jpg .png</div>
+    </div>
+    <div class="s4-format" id="s4F1" data-idx="1">
+      <div class="s4-format-icon" style="color:#25D366"><span class="iconify" data-icon="mdi:microphone" data-width="42"></span></div>
+      <div class="s4-format-title">Audio</div>
+      <div class="s4-format-ext" style="color:#25D366;background:rgba(37,211,102,0.12)">.ogg .mp3</div>
+    </div>
+    <div class="s4-format" id="s4F2" data-idx="2">
+      <div class="s4-format-icon" style="color:var(--amber)"><span class="iconify" data-icon="mdi:message-text" data-width="42"></span></div>
+      <div class="s4-format-title">Texto libre</div>
+      <div class="s4-format-ext">WhatsApp</div>
+    </div>
+    <div class="s4-format" id="s4F3" data-idx="3">
+      <div class="s4-format-icon" style="color:#D4544A"><span class="iconify" data-icon="mdi:file-pdf-box" data-width="42"></span></div>
+      <div class="s4-format-title">Factura PDF</div>
+      <div class="s4-format-ext" style="color:#D4544A;background:rgba(212,84,74,0.12)">.pdf</div>
+    </div>
+  </div>
+  <p class="s4-footer anim" id="s4Footer"><strong>La IA extrae todo sola.</strong></p>
+</div>
+
+<!-- SCENE 5 — DASHBOARD -->
+<div class="scene" id="s5">
+  <div class="s5-label anim" id="s5Label">Tu dashboard</div>
+  <div class="dashboard anim" id="s5Dash">
+    <div class="dash-top">
+      <div class="dash-project">Depto Flores 3B</div>
+      <div class="dash-tag">#flores3b · Av. Rivadavia 1234</div>
+    </div>
+    <div class="dash-kpis" id="s5Kpis">
+      <div class="kpi" data-delay="200">
+        <div class="kpi-label">Gastado</div>
+        <div class="kpi-value amber">$847.500</div>
+      </div>
+      <div class="kpi" data-delay="350">
+        <div class="kpi-label">Pagado</div>
+        <div class="kpi-value green">$600.000</div>
+      </div>
+      <div class="kpi" data-delay="500">
+        <div class="kpi-label">Balance</div>
+        <div class="kpi-value red">-$247.500</div>
+      </div>
+    </div>
+    <div class="dash-list">
+      <div class="dash-row glow" data-delay="700">
+        <div class="row-dot" style="background:var(--cat-materiales)"></div>
+        <div class="row-info"><div class="row-desc">Cemento Portland x3</div><div class="row-cat">Materiales · hoy</div></div>
+        <div class="row-amount amber">$45.000</div>
+      </div>
+      <div class="dash-row" data-delay="850">
+        <div class="row-dot" style="background:var(--cat-herramientas)"></div>
+        <div class="row-info"><div class="row-desc">Amoladora Bosch</div><div class="row-cat">Herramientas · ayer</div></div>
+        <div class="row-amount" style="color:#1C1915">$89.000</div>
+      </div>
+      <div class="dash-row" data-delay="1000">
+        <div class="row-dot" style="background:var(--cat-transporte)"></div>
+        <div class="row-info"><div class="row-desc">Flete materiales</div><div class="row-cat">Transporte · lun</div></div>
+        <div class="row-amount" style="color:#1C1915">$15.000</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SHARE TRANSITION (overlays scene 5) -->
+<div class="share-transition" id="shareTransition">
+  <div class="share-row">
+    <div>
+      <div class="share-icon provider" id="shareProvider"><span class="iconify" data-icon="mdi:hard-hat" data-width="44" style="color:var(--amber)"></span></div>
+      <div class="share-icon-label" style="color:var(--amber)">Proveedor</div>
+    </div>
+    <div class="share-arrow" id="shareArrow">
+      <div class="share-arrow-line"></div>
+      <div class="share-arrow-head"></div>
+    </div>
+    <div>
+      <div class="share-icon client" id="shareClient"><span class="iconify" data-icon="mdi:account" data-width="44" style="color:var(--success)"></span></div>
+      <div class="share-icon-label" style="color:var(--success)">Cliente</div>
+    </div>
+  </div>
+  <div class="share-text" id="shareText">Un link. <em>Transparencia total.</em></div>
+</div>
+
+<!-- SCENE 6 — CLIENT VIEW -->
+<div class="scene" id="s6">
+  <div class="s6-wrap">
+    <div class="client-card" id="s6Card" style="opacity:0;">
+      <div class="client-header">
+        <div class="client-project">Depto Flores 3B</div>
+        <div class="client-badge">En vivo</div>
+      </div>
+      <div class="client-stats" id="s6Stats">
+        <div class="client-stat" data-delay="150">
+          <div class="stat-label">Gastado</div>
+          <div class="stat-value amber">$847.500</div>
+        </div>
+        <div class="client-stat" data-delay="250">
+          <div class="stat-label">Pagado</div>
+          <div class="stat-value green">$600.000</div>
+        </div>
+        <div class="client-stat" data-delay="350">
+          <div class="stat-label">Balance</div>
+          <div class="stat-value red">-$247.500</div>
+        </div>
+      </div>
+    </div>
+    <div class="realtime-pill" id="s6Realtime">
+      <span class="rt-dot"></span>
+      Tu cliente ve todo en tiempo real
+    </div>
+  </div>
+  <!-- Expense carousel overlays the scene -->
+  <div class="expense-carousel" id="expCarousel">
+    <div class="exp-slot" id="expSlot0"></div>
+    <div class="exp-slot" id="expSlot1"></div>
+    <div class="exp-slot focused" id="expSlot2"></div>
+    <div class="exp-slot" id="expSlot3"></div>
+    <div class="exp-slot" id="expSlot4"></div>
+  </div>
+</div>
+
+<!-- SCENE 7 — MISSION -->
+<div class="scene" id="s7">
+  <div class="s7-wrap">
+    <p class="s7-line" id="s7L1">Creemos que el que trabaja bien merece <em>herramientas a la altura.</em></p>
+    <div class="s7-divider anim" id="s7Div"></div>
+    <p class="s7-body" id="s7L2">Gestión clara. Registro profesional. Y una forma de mostrar tu trabajo con respaldo.</p>
+  </div>
+</div>
+
+<!-- SCENE 8 — BRAND LOCK -->
+<div class="scene" id="s8">
+  <div class="s8-wrap">
+    <div class="s8-logo s8-glow" id="s8Logo">
+      <img src="https://gastoobra.com/img/logo.png" alt="Gasto Obra">
+    </div>
+    <div class="s8-brand" id="s8Brand">gasto <span>obra</span></div>
+    <div class="s8-tagline" id="s8Tag">Tu obra, bajo control.</div>
+    <div class="s8-cta" id="s8Cta">gastoobra.com</div>
+  </div>
+</div>
+
+<!-- ============================================================
+     SEQUENCER
+     ============================================================ -->
+<script>
+(function() {
+  var scenes = ['s1','s2','s3','s4','s5','s6','s7','s8'];
+  //               Chaos Brand  WA    Fmt   Dash  Client Mission Lock
+  var durations = [7500,  2000,  3000, 2500, 3800, 3200,  3000,   3500];
+  var currentScene = 0;
+
+  function showScene(id) {
+    var all = document.querySelectorAll('.scene');
+    for (var i = 0; i < all.length; i++) all[i].classList.remove('active');
+    document.getElementById(id).classList.add('active');
+  }
+
+  function fireFlash() {
+    var f = document.getElementById('flashOverlay');
+    f.classList.remove('fire');
+    void f.offsetWidth;
+    f.classList.add('fire');
+  }
+
+  function staggerShow(selector, baseDelay) {
+    var els = document.querySelectorAll(selector);
+    for (var i = 0; i < els.length; i++) {
+      els[i].classList.remove('show');
+      (function(el) {
+        var d = +(el.dataset.delay || 0) + (baseDelay || 0);
+        setTimeout(function(){ el.classList.add('show'); }, d);
+      })(els[i]);
+    }
+  }
+
+  function animEl(id, animName, delay, dur) {
+    setTimeout(function() {
+      var el = document.getElementById(id);
+      el.classList.add('show');
+      el.style.animation = animName + ' ' + (dur || '0.4s') + ' ease forwards';
+    }, delay || 0);
+  }
+
+  // ── Scene players ──
+
+  function playHook() {
+    var frames = ['s1f1', 's1f2', 's1f3'];
+    var questionId = 's1f4';
+    var scene = document.getElementById('s1');
+
+    // Stack positions for each frame — multiple positions for the rapid loop
+    var stackPositions = [
+      // Round 1 positions
+      [
+        'translate(-60px, -80px) rotate(-4deg) scale(0.72)',
+        'translate(50px, -40px) rotate(2deg) scale(0.68)',
+        'translate(-40px, 60px) rotate(-1deg) scale(0.65)'
+      ],
+      // Round 2 positions (shifted)
+      [
+        'translate(70px, 70px) rotate(3deg) scale(0.60)',
+        'translate(-50px, -30px) rotate(-3deg) scale(0.55)',
+        'translate(30px, -70px) rotate(2deg) scale(0.58)'
+      ],
+      // Round 3 positions (more scattered)
+      [
+        'translate(-80px, 30px) rotate(-5deg) scale(0.50)',
+        'translate(60px, 90px) rotate(4deg) scale(0.48)',
+        'translate(-20px, -90px) rotate(-2deg) scale(0.52)'
+      ]
+    ];
+
+    var zCounter = 10;
+
+    function doShake() {
+      scene.style.animation = 'none';
+      void scene.offsetWidth;
+      scene.style.animation = 'shake 0.12s ease';
+    }
+
+    function showFrame(id, zIndex) {
+      var el = document.getElementById(id);
+      el.style.zIndex = zIndex;
+      el.style.opacity = '1';
+      el.style.filter = 'none';
+      el.style.transform = 'none';
+      el.classList.add('visible');
+      el.classList.remove('stacked');
+      doShake();
+    }
+
+    function stackFrame(id, transform, opacity) {
+      var el = document.getElementById(id);
+      el.classList.remove('visible');
+      el.classList.add('stacked');
+      el.style.transform = transform;
+      el.style.opacity = String(opacity);
+      el.style.filter = 'blur(1px)';
+    }
+
+    // Round 1: Normal speed (1.1s each)
+    var t = 0;
+    for (var i = 0; i < frames.length; i++) {
+      (function(idx, time) {
+        setTimeout(function() {
+          // Stack previous
+          if (idx > 0) stackFrame(frames[idx - 1], stackPositions[0][idx - 1], 0.5);
+          showFrame(frames[idx], ++zCounter);
+        }, time);
+      })(i, t);
+      t += 1100;
+    }
+    // Stack last of round 1
+    var r1End = t;
+    setTimeout(function() {
+      stackFrame(frames[2], stackPositions[0][2], 0.5);
+    }, r1End);
+
+    // Round 2: 2x faster (550ms each), higher opacity stacks
+    for (var i = 0; i < frames.length; i++) {
+      (function(idx, time) {
+        setTimeout(function() {
+          if (idx > 0) stackFrame(frames[idx - 1], stackPositions[1][idx - 1], 0.55);
+          showFrame(frames[idx], ++zCounter);
+        }, time);
+      })(i, r1End + i * 550);
+    }
+    var r2End = r1End + frames.length * 550;
+    setTimeout(function() {
+      stackFrame(frames[2], stackPositions[1][2], 0.55);
+    }, r2End);
+
+    // Round 3: 3x faster (350ms each), even more chaos
+    for (var i = 0; i < frames.length; i++) {
+      (function(idx, time) {
+        setTimeout(function() {
+          if (idx > 0) stackFrame(frames[idx - 1], stackPositions[2][idx - 1], 0.6);
+          showFrame(frames[idx], ++zCounter);
+        }, time);
+      })(i, r2End + i * 350);
+    }
+    var r3End = r2End + frames.length * 350;
+    setTimeout(function() {
+      stackFrame(frames[2], stackPositions[2][2], 0.6);
+    }, r3End);
+
+    // Question cuts through the pile
+    setTimeout(function() {
+      showFrame(questionId, ++zCounter);
+    }, r3End + 200);
+  }
+
+  function playBrand() {
+    fireFlash();
+    animEl('s2Logo', 'scaleSlam', 200, '0.4s');
+    animEl('s2Brand', 'fadeUp', 450, '0.35s');
+    animEl('s2Tag', 'fadeUp', 650, '0.3s');
+  }
+
+  function playChat() {
+    var phone = document.getElementById('s3Phone');
+    phone.classList.add('show');
+    phone.style.animation = 'popIn 0.25s ease forwards';
+    var area = document.getElementById('chatArea');
+    while (area.firstChild) area.removeChild(area.firstChild);
+
+    // Sent: receipt photo + context (fast)
+    setTimeout(function() {
+      var b = document.createElement('div');
+      b.className = 'bubble sent';
+      b.style.padding = '4px 4px 8px';
+
+      var img = document.createElement('div');
+      img.className = 'receipt-img';
+      b.appendChild(img);
+
+      var cap = document.createElement('div');
+      cap.style.cssText = 'padding:4px 8px 0;font-size:12px;';
+      cap.textContent = 'Compra de materiales para obra Flores 3B';
+      b.appendChild(cap);
+
+      var t = document.createElement('div');
+      t.className = 'bubble-time';
+      t.style.paddingRight = '8px';
+      t.textContent = '14:32';
+      b.appendChild(t);
+
+      area.appendChild(b);
+      requestAnimationFrame(function(){ b.classList.add('show'); });
+    }, 200);
+
+    // Typing (quick)
+    setTimeout(function() {
+      var tb = document.createElement('div');
+      tb.className = 'bubble recv show';
+      tb.id = 'typingBubble';
+      var dots = document.createElement('div');
+      dots.className = 'typing-dots';
+      for (var i = 0; i < 3; i++) dots.appendChild(document.createElement('span'));
+      tb.appendChild(dots);
+      area.appendChild(tb);
+    }, 700);
+
+    // Bot response — pop-out immediately
+    setTimeout(function() {
+      var old = document.getElementById('typingBubble');
+      if (old && old.parentNode) old.parentNode.removeChild(old);
+
+      var b = document.createElement('div');
+      b.className = 'bubble recv pop-out';
+
+      var h = document.createElement('div');
+      h.className = 'bot-header';
+      h.textContent = '\u2705 Gasto registrado';
+      b.appendChild(h);
+
+      var badges = document.createElement('div');
+      badges.className = 'badge-row';
+      var c = document.createElement('span');
+      c.className = 'cat-badge';
+      c.textContent = 'Materiales';
+      badges.appendChild(c);
+      var a = document.createElement('span');
+      a.className = 'amt-badge';
+      a.textContent = '$45.000';
+      badges.appendChild(a);
+      b.appendChild(badges);
+
+      var d = document.createElement('div');
+      d.className = 'bot-detail';
+      d.textContent = 'Ferretería López \u00B7 Cemento x3 \u2192 Flores 3B';
+      b.appendChild(d);
+
+      var t = document.createElement('div');
+      t.className = 'bubble-time';
+      t.textContent = '14:32';
+      b.appendChild(t);
+
+      area.appendChild(b);
+    }, 1200);
+
+    animEl('s3Caption', 'fadeUp', 1800, '0.25s');
+
+    // Zoom-out transition into next scene
+    setTimeout(function() {
+      document.getElementById('s3').classList.add('zoom-exit');
+    }, 2600);
+  }
+
+  function playFormats() {
+    animEl('s4Title', 'fadeDown', 0, '0.3s');
+    var formats = ['s4F0', 's4F1', 's4F2', 's4F3'];
+
+    function showFormat(idx) {
+      for (var i = 0; i < formats.length; i++) {
+        var el = document.getElementById(formats[i]);
+        el.classList.remove('active', 'prev', 'next');
+        if (i === idx) el.classList.add('active');
+        else if (i === (idx - 1 + formats.length) % formats.length) el.classList.add('prev');
+        else if (i === (idx + 1) % formats.length) el.classList.add('next');
+      }
+    }
+
+    setTimeout(function() { showFormat(0); }, 200);
+    setTimeout(function() { showFormat(1); }, 700);
+    setTimeout(function() { showFormat(2); }, 1200);
+    setTimeout(function() { showFormat(3); }, 1700);
+    animEl('s4Footer', 'fadeUp', 1900, '0.25s');
+  }
+
+  function playDash() {
+    animEl('s5Label', 'fadeUp', 0, '0.25s');
+    var dash = document.getElementById('s5Dash');
+    dash.classList.add('show');
+    dash.style.animation = 'zoomReveal 0.4s ease forwards';
+
+    staggerShow('#s5 .kpi', 200);
+
+    setTimeout(function() {
+      document.getElementById('s5Kpis').classList.add('pop-out');
+    }, 900);
+
+    staggerShow('#s5 .dash-row', 200);
+
+    // Fade dashboard and show share transition
+    setTimeout(function() {
+      dash.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+      dash.style.opacity = '0.15';
+      dash.style.transform = 'scale(0.92)';
+      document.getElementById('s5Label').style.opacity = '0';
+    }, 2200);
+    setTimeout(function() {
+      var st = document.getElementById('shareTransition');
+      st.classList.add('show');
+    }, 2300);
+    setTimeout(function() {
+      document.getElementById('shareProvider').classList.add('show');
+    }, 2400);
+    setTimeout(function() {
+      document.getElementById('shareArrow').classList.add('show');
+    }, 2600);
+    setTimeout(function() {
+      document.getElementById('shareClient').classList.add('show');
+    }, 2800);
+    setTimeout(function() {
+      document.getElementById('shareText').classList.add('show');
+    }, 3000);
+  }
+
+  // Expense data with icons for the carousel
+  var expenseData = [
+    { desc: 'Cemento Portland x3', cat: 'Materiales \u00B7 Foto', icon: 'mdi:camera', iconColor: '#5A8FB8', amt: '$45.000' },
+    { desc: 'Amoladora Bosch', cat: 'Herramientas \u00B7 Audio', icon: 'mdi:microphone', iconColor: '#25D366', amt: '$89.000' },
+    { desc: 'Flete materiales', cat: 'Transporte \u00B7 Texto', icon: 'mdi:message-text', iconColor: 'var(--amber)', amt: '$15.000' },
+    { desc: 'Arena x 2m\u00B3', cat: 'Materiales \u00B7 PDF', icon: 'mdi:file-pdf-box', iconColor: '#D4544A', amt: '$32.000' },
+    { desc: 'Almuerzo equipo', cat: 'Comida \u00B7 Foto', icon: 'mdi:camera', iconColor: '#5A8FB8', amt: '$12.500' },
+    { desc: 'Ca\u00F1os PVC x8', cat: 'Materiales \u00B7 Audio', icon: 'mdi:microphone', iconColor: '#25D366', amt: '$28.000' },
+    { desc: 'Pintura l\u00E1tex 20L', cat: 'Materiales \u00B7 Foto', icon: 'mdi:camera', iconColor: '#5A8FB8', amt: '$67.000' },
+    { desc: 'Sierra caladora', cat: 'Herramientas \u00B7 PDF', icon: 'mdi:file-pdf-box', iconColor: '#D4544A', amt: '$45.500' },
+    { desc: 'Delivery materiales', cat: 'Transporte \u00B7 Texto', icon: 'mdi:message-text', iconColor: 'var(--amber)', amt: '$8.000' },
+    { desc: 'Membrana asf\u00E1ltica', cat: 'Materiales \u00B7 Foto', icon: 'mdi:camera', iconColor: '#5A8FB8', amt: '$54.000' },
+    { desc: 'Llave t\u00E9rmica', cat: 'Herramientas \u00B7 Audio', icon: 'mdi:microphone', iconColor: '#25D366', amt: '$18.200' },
+    { desc: 'Merienda equipo', cat: 'Comida \u00B7 Texto', icon: 'mdi:message-text', iconColor: 'var(--amber)', amt: '$6.800' }
+  ];
+
+  function renderExpSlot(slotId, dataIdx) {
+    var slot = document.getElementById(slotId);
+    var e = expenseData[((dataIdx % expenseData.length) + expenseData.length) % expenseData.length];
+    slot.textContent = '';
+
+    var iconWrap = document.createElement('div');
+    iconWrap.className = 'exp-slot-icon';
+    var iconEl = document.createElement('span');
+    iconEl.className = 'iconify';
+    iconEl.dataset.icon = e.icon;
+    iconEl.dataset.width = '22';
+    iconEl.style.color = e.iconColor;
+    iconWrap.appendChild(iconEl);
+    slot.appendChild(iconWrap);
+
+    var info = document.createElement('div');
+    info.className = 'exp-slot-info';
+    var desc = document.createElement('div');
+    desc.className = 'exp-slot-desc';
+    desc.textContent = e.desc;
+    info.appendChild(desc);
+    var meta = document.createElement('div');
+    meta.className = 'exp-slot-meta';
+    meta.textContent = e.cat;
+    info.appendChild(meta);
+    slot.appendChild(info);
+
+    var amt = document.createElement('div');
+    amt.className = 'exp-slot-amount';
+    amt.textContent = e.amt;
+    slot.appendChild(amt);
+
+    // Re-scan for iconify
+    if (window.Iconify) Iconify.scan(slot);
+  }
+
+  function playClient() {
+    // Hide share transition
+    var st = document.getElementById('shareTransition');
+    st.style.transition = 'opacity 0.2s ease';
+    st.style.opacity = '0';
+    setTimeout(function() { st.classList.remove('show'); st.style.opacity = ''; }, 250);
+
+    // Show card with KPIs
+    var card = document.getElementById('s6Card');
+    card.style.opacity = '1';
+    card.style.animation = 'popIn 0.3s ease forwards';
+
+    staggerShow('#s6 .client-stat', 100);
+
+    setTimeout(function() {
+      document.getElementById('s6Stats').classList.add('pop-out');
+    }, 600);
+
+    // Start expense carousel after KPIs pop
+    setTimeout(function() {
+      // Fade the card to background
+      card.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+      card.style.opacity = '0.12';
+      card.style.transform = 'scale(0.9)';
+
+      var carousel = document.getElementById('expCarousel');
+      carousel.classList.add('active');
+
+      var currentIdx = 0;
+      var slots = ['expSlot0', 'expSlot1', 'expSlot2', 'expSlot3', 'expSlot4'];
+
+      // Initial render: 5 visible slots, center is focused
+      for (var i = 0; i < 5; i++) {
+        renderExpSlot(slots[i], currentIdx - 2 + i);
+        var el = document.getElementById(slots[i]);
+        el.classList.remove('focused', 'near');
+        if (i === 2) el.classList.add('focused');
+        else if (i === 1 || i === 3) el.classList.add('near');
+      }
+
+      // Cycle through expenses fast
+      var cycleInterval = setInterval(function() {
+        currentIdx++;
+        for (var i = 0; i < 5; i++) {
+          renderExpSlot(slots[i], currentIdx - 2 + i);
+          var el = document.getElementById(slots[i]);
+          el.classList.remove('focused', 'near');
+          if (i === 2) el.classList.add('focused');
+          else if (i === 1 || i === 3) el.classList.add('near');
+        }
+      }, 280);
+
+      // Stop after scene ends
+      setTimeout(function() {
+        clearInterval(cycleInterval);
+      }, 2000);
+    }, 900);
+
+    setTimeout(function() {
+      document.getElementById('s6Realtime').classList.add('show');
+      document.getElementById('s6Realtime').style.animation = 'fadeUp 0.3s ease forwards';
+    }, 1000);
+  }
+
+  function playMission() {
+    animEl('s7L1', 'fadeUp', 200, '0.4s');
+    animEl('s7Div', 'fadeUp', 800, '0.3s');
+    animEl('s7L2', 'fadeUp', 1200, '0.4s');
+  }
+
+  function playLock() {
+    fireFlash();
+    setTimeout(function() {
+      document.getElementById('s8Logo').classList.add('show');
+    }, 200);
+    setTimeout(function() {
+      document.getElementById('s8Brand').classList.add('show');
+    }, 500);
+    setTimeout(function() {
+      document.getElementById('s8Tag').classList.add('show');
+    }, 700);
+    setTimeout(function() {
+      document.getElementById('s8Cta').classList.add('show');
+    }, 900);
+  }
+
+  var players = [playHook, playBrand, playChat, playFormats, playDash, playClient, playMission, playLock];
+
+  function advance() {
+    if (currentScene >= scenes.length) return;
+    showScene(scenes[currentScene]);
+    players[currentScene]();
+
+    setTimeout(function() {
+      currentScene++;
+      advance();
+    }, durations[currentScene]);
+  }
+
+  setTimeout(advance, 200);
+})();
+</script>
+</body>
+</html>
