@@ -9,7 +9,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const MAIL_DIR = resolve(__dirname, '../../mail');
 
 class ResendHandler {
-  constructor(apiKey, { from = 'Gasto Obra <gastoobra@wiseutils.com>' } = {}) {
+  constructor(apiKey, { from = 'Gasto Obra <gastoobra@gastoobra.com>' } = {}) {
     this.resend = new Resend(apiKey);
     this.from = from;
     this._cache = {};
