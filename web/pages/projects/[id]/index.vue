@@ -88,9 +88,9 @@
           <MdiMapMarkerOutline class="text-base text-go-text-muted" />
           <span>{{ project.address }}</span>
         </div>
-        <div v-if="project.budget" class="flex items-center gap-1.5">
+        <div v-if="effectiveBudget > 0" class="flex items-center gap-1.5">
           <MdiCurrencyUsd class="text-base text-go-text-muted" />
-          <span>Presupuesto: {{ formatPrice(project.budget) }}</span>
+          <span>Presupuesto: {{ formatPrice(effectiveBudget) }}</span>
         </div>
         <div v-if="project.startDate || project.estimatedEndDate" class="flex items-center gap-1.5">
           <MdiCalendarRange class="text-base text-go-text-muted" />
@@ -120,7 +120,7 @@
             <span class="text-[11px] font-semibold uppercase tracking-wider text-go-text-muted">Gastado</span>
           </div>
           <span class="font-display font-bold text-lg tabular-nums text-go-primary block leading-tight">{{ formatPrice(totalExpenses) }}</span>
-          <span v-if="project.budget" class="text-xs text-go-text-muted tabular-nums">{{ budgetSpentPercent.toFixed(0) }}% del presupuesto</span>
+          <span v-if="effectiveBudget > 0" class="text-xs text-go-text-muted tabular-nums">{{ budgetSpentPercent.toFixed(0) }}% del presupuesto</span>
         </div>
 
         <!-- Cobrado -->
@@ -132,7 +132,7 @@
             <span class="text-[11px] font-semibold uppercase tracking-wider text-go-text-muted">Cobrado</span>
           </div>
           <span class="font-display font-bold text-lg tabular-nums text-go-secondary block leading-tight">{{ formatPrice(totalPayments) }}</span>
-          <span v-if="project.budget" class="text-xs text-go-text-muted tabular-nums">{{ budgetCollectedPercent.toFixed(0) }}% del presupuesto</span>
+          <span v-if="effectiveBudget > 0" class="text-xs text-go-text-muted tabular-nums">{{ budgetCollectedPercent.toFixed(0) }}% del presupuesto</span>
         </div>
 
         <!-- Saldo -->
@@ -172,6 +172,15 @@
           <span class="text-xs text-go-text-muted">No cobrables</span>
         </div>
       </div>
+
+      <!-- Items -->
+      <ProjectItemsSection
+        v-if="project.id && project.providerId"
+        :project-id="project.id"
+        :provider-id="project.providerId"
+        :readonly="false"
+        @edit-expense="openEditModal"
+      />
 
       <!-- Actions: share link + add buttons -->
       <div class="flex flex-col sm:flex-row gap-2 mb-2">
@@ -245,6 +254,7 @@
             :expenses="expenseStore.expenses"
             :editable="true"
             :categories="resolvedCategories"
+            :items="itemStore.items"
             :loading="expenseStore.isLoading"
             @edit="openEditModal"
             @add-installment="handleAddInstallment"
@@ -348,6 +358,7 @@
         :expense="detailExpense"
         :expenses="expenseStore.expenses"
         :categories="resolvedCategories"
+        :items="itemStore.items"
         :editable="true"
         @close="showDetailModal = false"
         @edit="handleDetailEdit"
@@ -360,6 +371,7 @@
         :expense="editingExpense"
         :projects="projectStore.projects"
         :categories="resolvedCategories"
+        :items="itemStore.items"
         :is-saving="isEditingExpense"
         :is-deleting="isDeletingExpense"
         :management-fee-percent="managementFeePercent"
@@ -406,6 +418,7 @@ import { useVendorStore } from '~/stores/vendor';
 import { useDeliveryStore } from '~/stores/delivery';
 import { useWhatsappStore } from '~/stores/whatsapp';
 import { useProviderStore } from '~/stores/provider';
+import { useProjectItemStore } from '~/stores/projectItem';
 import { formatPrice, formatDate } from '~/utils';
 import { generatePaymentReport, generateReportNumber } from '~/utils/pdfReport';
 import { getCurrentUser } from '~/utils/firebase';
@@ -423,6 +436,7 @@ const vendorStore = useVendorStore();
 const deliveryStore = useDeliveryStore();
 const whatsappStore = useWhatsappStore();
 const providerStore = useProviderStore();
+const itemStore = useProjectItemStore();
 
 const managementFeePercent = ref(0);
 
@@ -486,14 +500,21 @@ const totalProviderExpenses = computed(() =>
 
 const balance = computed(() => totalPayments.value - totalExpenses.value);
 
+// When the project has items, the effective budget is the sum of item budgets.
+// Otherwise fall back to the legacy project-level budget field.
+const effectiveBudget = computed(() => {
+  if (itemStore.items.length > 0) return itemStore.totalBudget;
+  return project.value?.budget || 0;
+});
+
 const budgetSpentPercent = computed(() => {
-  if (!project.value?.budget || project.value.budget <= 0) return 0;
-  return (totalExpenses.value / project.value.budget) * 100;
+  if (effectiveBudget.value <= 0) return 0;
+  return (totalExpenses.value / effectiveBudget.value) * 100;
 });
 
 const budgetCollectedPercent = computed(() => {
-  if (!project.value?.budget || project.value.budget <= 0) return 0;
-  return (totalPayments.value / project.value.budget) * 100;
+  if (effectiveBudget.value <= 0) return 0;
+  return (totalPayments.value / effectiveBudget.value) * 100;
 });
 
 const unassignedExpenses = computed(() =>
@@ -546,7 +567,8 @@ onMounted(async () => {
       recipientStore.fetchAll(),
       deliveryStore.fetchByProjectId(id),
       whatsappStore.fetchLinkedAccount(),
-      providerStore.fetchOrCreate()
+      providerStore.fetchOrCreate(),
+      itemStore.fetchByProjectId(id)
     ]);
     managementFeePercent.value = providerStore.managementFeePercent;
     // Load all projects for the edit modal's "move" feature
@@ -623,7 +645,7 @@ async function handleExportPdf() {
         reportNumber,
         startDate: project.value.startDate?.toDate?.() || project.value.startDate || null,
         estimatedEndDate: project.value.estimatedEndDate?.toDate?.() || project.value.estimatedEndDate || null,
-        budget: project.value.budget || null,
+        budget: effectiveBudget.value || null,
       },
       expenses: expenseStore.expenses,
       deliveries: deliveryStore.deliveries,

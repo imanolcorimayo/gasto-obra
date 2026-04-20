@@ -29,7 +29,7 @@
     </div>
 
     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-      <div>
+      <div v-if="!hasItems">
         <label class="block text-[11px] font-semibold uppercase tracking-wider text-go-text-muted mb-1.5">Presupuesto</label>
         <div class="flex">
           <span class="bg-go-surface border border-go-border border-r-0 rounded-l-go-md px-3 py-2.5 text-go-text-muted text-sm">$</span>
@@ -43,6 +43,13 @@
           />
         </div>
         <p class="text-[11px] text-go-text-muted mt-1">Solo referencia</p>
+      </div>
+
+      <div v-else>
+        <label class="block text-[11px] font-semibold uppercase tracking-wider text-go-text-muted mb-1.5">Presupuesto</label>
+        <div class="flex items-center bg-go-surface border border-dashed border-go-border rounded-go-md px-3 py-2.5 text-sm text-go-text-muted">
+          Calculado automáticamente desde los items.
+        </div>
       </div>
 
       <div>
@@ -134,7 +141,8 @@
 const props = defineProps({
   initialData: { type: Object, default: () => ({}) },
   submitLabel: { type: String, default: 'Crear Proyecto' },
-  isSubmitting: { type: Boolean, default: false }
+  isSubmitting: { type: Boolean, default: false },
+  hasItems: { type: Boolean, default: false }
 });
 
 const emit = defineEmits(['submit', 'cancel']);
@@ -157,7 +165,10 @@ function normalizeTag() {
 
 function handleSubmit() {
   const data = { ...form };
-  if (data.budget) {
+  // When items drive the budget, don't overwrite the project-level field.
+  if (props.hasItems) {
+    delete data.budget;
+  } else if (data.budget) {
     data.budget = parseFloat(data.budget);
   } else {
     data.budget = null;

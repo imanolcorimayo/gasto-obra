@@ -24,11 +24,11 @@
       <section class="bg-go-surface border border-go-border rounded-go-xl p-5 mb-6">
         <h3 class="font-display font-semibold text-go-text mb-4">Presupuesto</h3>
 
-        <template v-if="project.budget">
+        <template v-if="effectiveBudget > 0">
           <div class="flex items-end justify-between mb-2">
             <div>
               <span class="font-display font-bold text-2xl tabular-nums text-go-primary">{{ formatPrice(totalExpenses) }}</span>
-              <span class="text-sm text-go-text-muted"> / {{ formatPrice(project.budget) }}</span>
+              <span class="text-sm text-go-text-muted"> / {{ formatPrice(effectiveBudget) }}</span>
             </div>
             <span
               class="text-sm font-semibold tabular-nums"
@@ -55,12 +55,12 @@
               <span class="text-xs font-semibold uppercase tracking-wider text-go-text-muted block mb-0.5">Proyección total</span>
               <span
                 class="font-display font-bold text-lg tabular-nums"
-                :class="projectedTotal > project.budget ? 'text-go-danger' : 'text-go-text'"
+                :class="projectedTotal > effectiveBudget ? 'text-go-danger' : 'text-go-text'"
               >{{ formatPrice(projectedTotal) }}</span>
               <span
-                v-if="projectedTotal > project.budget"
+                v-if="projectedTotal > effectiveBudget"
                 class="text-xs text-go-danger block"
-              >Supera el presupuesto en {{ formatPrice(projectedTotal - project.budget) }}</span>
+              >Supera el presupuesto en {{ formatPrice(projectedTotal - effectiveBudget) }}</span>
             </div>
             <div>
               <span class="text-xs font-semibold uppercase tracking-wider text-go-text-muted block mb-0.5">Restante</span>
@@ -306,6 +306,7 @@ import MdiChevronDown from '~icons/mdi/chevron-down';
 import { useProjectStore } from '~/stores/project';
 import { useExpenseStore } from '~/stores/expense';
 import { useCategoryStore } from '~/stores/category';
+import { useProjectItemStore } from '~/stores/projectItem';
 import { formatPrice, formatDate, getCategoryLabel, getCategoryColor, getManagementFeeAmount } from '~/utils';
 import { getCurrentUserAsync } from '~/utils/firebase';
 
@@ -317,6 +318,7 @@ const route = useRoute();
 const projectStore = useProjectStore();
 const expenseStore = useExpenseStore();
 const categoryStore = useCategoryStore();
+const itemStore = useProjectItemStore();
 
 const isLoading = ref(true);
 const project = ref(null);
@@ -355,15 +357,19 @@ const totalPayments = computed(() =>
 
 const balance = computed(() => totalPayments.value - totalExpenses.value);
 
-const budgetSpentPercent = computed(() => {
-  if (!project.value?.budget || project.value.budget <= 0) return 0;
-  return (totalExpenses.value / project.value.budget) * 100;
+// When the project has items, the effective budget is the sum of item budgets.
+// Otherwise fall back to the legacy project-level budget field.
+const effectiveBudget = computed(() => {
+  if (itemStore.items.length > 0) return itemStore.totalBudget;
+  return project.value?.budget || 0;
 });
 
-const budgetRemaining = computed(() => {
-  if (!project.value?.budget) return 0;
-  return project.value.budget - totalExpenses.value;
+const budgetSpentPercent = computed(() => {
+  if (effectiveBudget.value <= 0) return 0;
+  return (totalExpenses.value / effectiveBudget.value) * 100;
 });
+
+const budgetRemaining = computed(() => effectiveBudget.value - totalExpenses.value);
 
 // --- Scope breakdown ---
 
@@ -681,7 +687,8 @@ onMounted(async () => {
     project.value = result;
     await Promise.all([
       expenseStore.fetchByProjectIdPublic(id),
-      categoryStore.fetchForProjectFromAPI(id)
+      categoryStore.fetchForProjectFromAPI(id),
+      itemStore.fetchByProjectIdPublic(id)
     ]);
   }
 

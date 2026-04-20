@@ -68,6 +68,7 @@ export interface Expense {
   linkedExpenseId: string | null;
   linkedPaymentId: string | null;
   deliveryId: string | null;
+  itemId: string | null;
   installmentPercent: number | null;
   installmentGroupId: string | null;
   vendor: string | null;
@@ -90,6 +91,24 @@ export interface CategoryDoc extends ExpenseCategory {
   userId: string;
   projectId: string | null;
 }
+
+export interface ProjectItem {
+  id: string;
+  projectId: string;
+  providerId: string;
+  name: string;
+  laborBudget: number;
+  materialsBudgetMin: number;
+  materialsBudgetMax: number;
+  plannedStartDate: any;
+  plannedEndDate: any;
+  actualStartDate: any | null;
+  actualEndDate: any | null;
+  createdAt: any;
+  updatedAt: any;
+}
+
+export type ProjectItemStatus = 'pendiente' | 'en_progreso' | 'completado';
 
 export interface Delivery {
   id: string;

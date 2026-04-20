@@ -67,7 +67,7 @@
             <span class="text-[11px] font-semibold uppercase tracking-wider text-go-text-muted">Gastado</span>
           </div>
           <span class="font-display font-bold text-lg tabular-nums text-go-primary block leading-tight">{{ formatPrice(totalExpenses) }}</span>
-          <span v-if="project.budget" class="text-xs text-go-text-muted tabular-nums">{{ budgetSpentPercent.toFixed(0) }}% del presupuesto</span>
+          <span v-if="effectiveBudget > 0" class="text-xs text-go-text-muted tabular-nums">{{ budgetSpentPercent.toFixed(0) }}% del presupuesto</span>
         </div>
 
         <!-- Total cobrado -->
@@ -79,7 +79,7 @@
             <span class="text-[11px] font-semibold uppercase tracking-wider text-go-text-muted">Cobrado</span>
           </div>
           <span class="font-display font-bold text-lg tabular-nums text-go-secondary block leading-tight">{{ formatPrice(totalPayments) }}</span>
-          <span v-if="project.budget" class="text-xs text-go-text-muted tabular-nums">{{ budgetCollectedPercent.toFixed(0) }}% del presupuesto</span>
+          <span v-if="effectiveBudget > 0" class="text-xs text-go-text-muted tabular-nums">{{ budgetCollectedPercent.toFixed(0) }}% del presupuesto</span>
         </div>
 
         <!-- Saldo pendiente -->
@@ -156,6 +156,14 @@
           <span class="text-xs text-go-text-muted">{{ paymentCount }} {{ paymentCount === 1 ? 'pago' : 'pagos' }}</span>
         </div>
       </div>
+
+      <!-- Items (read-only) -->
+      <ProjectItemsSection
+        v-if="project.id && project.providerId"
+        :project-id="project.id"
+        :provider-id="project.providerId"
+        :readonly="true"
+      />
 
       <!-- Expense history -->
       <div class="mb-6">
@@ -246,6 +254,7 @@
                 :key="expense.id"
                 :expense="expense"
                 :categories="resolvedCategories"
+                :items="itemStore.items"
                 @view-detail="openDetailModal"
               />
             </div>
@@ -259,6 +268,7 @@
         :expense="detailExpense"
         :expenses="allClientExpenses"
         :categories="resolvedCategories"
+        :items="itemStore.items"
         :editable="false"
         @close="showDetailModal = false"
         @view-expense="handleDetailViewExpense"
@@ -284,6 +294,7 @@ import MdiChartBox from '~icons/mdi/chart-box';
 import { useProjectStore } from '~/stores/project';
 import { useExpenseStore } from '~/stores/expense';
 import { useCategoryStore } from '~/stores/category';
+import { useProjectItemStore } from '~/stores/projectItem';
 import { formatPrice, getCategoryLabel } from '~/utils';
 import { getCurrentUserAsync } from '~/utils/firebase';
 
@@ -295,6 +306,7 @@ const route = useRoute();
 const projectStore = useProjectStore();
 const expenseStore = useExpenseStore();
 const categoryStore = useCategoryStore();
+const itemStore = useProjectItemStore();
 
 const isLoading = ref(true);
 const project = ref(null);
@@ -358,14 +370,21 @@ const totalPayments = computed(() =>
 
 const balance = computed(() => totalPayments.value - totalExpenses.value);
 
+// When the project has items, the effective budget is the sum of item budgets.
+// Otherwise fall back to the legacy project-level budget field.
+const effectiveBudget = computed(() => {
+  if (itemStore.items.length > 0) return itemStore.totalBudget;
+  return project.value?.budget || 0;
+});
+
 const budgetSpentPercent = computed(() => {
-  if (!project.value?.budget || project.value.budget <= 0) return 0;
-  return (totalExpenses.value / project.value.budget) * 100;
+  if (effectiveBudget.value <= 0) return 0;
+  return (totalExpenses.value / effectiveBudget.value) * 100;
 });
 
 const budgetCollectedPercent = computed(() => {
-  if (!project.value?.budget || project.value.budget <= 0) return 0;
-  return (totalPayments.value / project.value.budget) * 100;
+  if (effectiveBudget.value <= 0) return 0;
+  return (totalPayments.value / effectiveBudget.value) * 100;
 });
 
 // Timeline KPI
@@ -572,7 +591,8 @@ onMounted(async () => {
     project.value = result;
     await Promise.all([
       expenseStore.fetchByProjectIdPublic(id),
-      categoryStore.fetchForProjectFromAPI(id)
+      categoryStore.fetchForProjectFromAPI(id),
+      itemStore.fetchByProjectIdPublic(id)
     ]);
   }
 

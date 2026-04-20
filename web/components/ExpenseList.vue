@@ -166,8 +166,11 @@
                 <!-- Concepto -->
                 <td class="py-2.5 pr-3 text-go-text max-w-[200px]">
                   <span class="truncate block">{{ row.title }}</span>
-                  <div class="flex items-center gap-1.5 mt-0.5">
+                  <div class="flex items-center gap-1.5 mt-0.5 flex-wrap">
                     <span v-if="row.vendor" class="text-go-text-muted text-[11px] truncate">{{ row.vendor }}</span>
+                    <span v-if="row.itemName" class="text-[11px] font-medium px-1.5 py-0.5 rounded-go-sm bg-go-primary/10 text-go-primary truncate max-w-[140px]" :title="row.itemName">
+                      {{ row.itemName }}
+                    </span>
                     <span v-if="row.items > 1" class="text-go-text-muted text-[11px]">({{ row.items }} items)</span>
                     <MdiAlertCircle v-if="row.hasItemsMismatch" class="text-amber-500 text-xs" title="La suma de items no coincide con el total" />
                   </div>
@@ -298,7 +301,14 @@ const props = defineProps({
   expenses: { type: Array, default: () => [] },
   editable: { type: Boolean, default: false },
   categories: { type: Array, default: () => [] },
+  items: { type: Array, default: () => [] },
   loading: { type: Boolean, default: false }
+});
+
+const itemNameById = computed(() => {
+  const map = new Map();
+  for (const i of props.items) map.set(i.id, i.name);
+  return map;
 });
 
 const resolvedCategories = computed(() =>
@@ -461,6 +471,7 @@ const allRows = computed(() => {
       date: formatDateShort(e),
       title: e.title,
       vendor: e.vendor || null,
+      itemName: e.itemId ? (itemNameById.value.get(e.itemId) || null) : null,
       items: e.items?.length || 0,
       hasItemsMismatch,
       scopeType: e.scopeType || 'original',

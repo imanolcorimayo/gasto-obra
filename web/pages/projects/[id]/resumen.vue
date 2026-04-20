@@ -24,11 +24,11 @@
       <section class="bg-go-surface border border-go-border rounded-go-xl p-5 mb-6">
         <h3 class="font-display font-semibold text-go-text mb-4">Presupuesto</h3>
 
-        <template v-if="project.budget">
+        <template v-if="effectiveBudget > 0">
           <div class="flex items-end justify-between mb-2">
             <div>
               <span class="font-display font-bold text-2xl tabular-nums text-go-primary">{{ formatPrice(totalExpenses) }}</span>
-              <span class="text-sm text-go-text-muted"> / {{ formatPrice(project.budget) }}</span>
+              <span class="text-sm text-go-text-muted"> / {{ formatPrice(effectiveBudget) }}</span>
             </div>
             <span
               class="text-sm font-semibold tabular-nums"
@@ -452,6 +452,7 @@ import { useExpenseStore } from '~/stores/expense';
 import { useCategoryStore } from '~/stores/category';
 import { useDeliveryStore } from '~/stores/delivery';
 import { useProviderStore } from '~/stores/provider';
+import { useProjectItemStore } from '~/stores/projectItem';
 import { formatPrice, getCategoryLabel, getCategoryColor, getManagementFeeAmount } from '~/utils';
 import { getCurrentUserAsync } from '~/utils/firebase';
 
@@ -465,6 +466,7 @@ const expenseStore = useExpenseStore();
 const categoryStore = useCategoryStore();
 const deliveryStore = useDeliveryStore();
 const providerStore = useProviderStore();
+const itemStore = useProjectItemStore();
 
 const isLoading = ref(true);
 const project = ref(null);
@@ -512,15 +514,19 @@ const totalProviderExpenses = computed(() =>
 
 const balance = computed(() => totalPayments.value - totalExpenses.value);
 
-const budgetSpentPercent = computed(() => {
-  if (!project.value?.budget || project.value.budget <= 0) return 0;
-  return (totalExpenses.value / project.value.budget) * 100;
+// When the project has items, the effective budget is the sum of item budgets.
+// Otherwise fall back to the legacy project-level budget field.
+const effectiveBudget = computed(() => {
+  if (itemStore.items.length > 0) return itemStore.totalBudget;
+  return project.value?.budget || 0;
 });
 
-const budgetRemaining = computed(() => {
-  if (!project.value?.budget) return 0;
-  return project.value.budget - totalExpenses.value;
+const budgetSpentPercent = computed(() => {
+  if (effectiveBudget.value <= 0) return 0;
+  return (totalExpenses.value / effectiveBudget.value) * 100;
 });
+
+const budgetRemaining = computed(() => effectiveBudget.value - totalExpenses.value);
 
 // --- Scope breakdown ---
 
@@ -945,7 +951,8 @@ onMounted(async () => {
       categoryStore.fetchGlobal(),
       categoryStore.fetchForProject(id),
       deliveryStore.fetchByProjectId(id),
-      providerStore.fetchOrCreate()
+      providerStore.fetchOrCreate(),
+      itemStore.fetchByProjectId(id)
     ]);
   }
 

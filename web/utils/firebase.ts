@@ -1,5 +1,11 @@
 import { initializeApp, type FirebaseApp } from 'firebase/app'
-import { getFirestore, type Firestore } from 'firebase/firestore'
+import {
+  getFirestore,
+  initializeFirestore,
+  persistentLocalCache,
+  persistentMultipleTabManager,
+  type Firestore,
+} from 'firebase/firestore'
 import {
   getAuth,
   type Auth,
@@ -56,7 +62,18 @@ export const getFirestoreInstance = (): Firestore => {
   }
 
   const app = initializeFirebase()
-  firestore = getFirestore(app)
+
+  if (typeof window !== 'undefined') {
+    try {
+      firestore = initializeFirestore(app, {
+        localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }),
+      })
+    } catch {
+      firestore = getFirestore(app)
+    }
+  } else {
+    firestore = getFirestore(app)
+  }
 
   return firestore
 }

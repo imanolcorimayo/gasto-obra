@@ -55,6 +55,18 @@ service cloud.firestore {
                             && resource.data.providerId == request.auth.uid;
     }
 
+    // ── Project Items ─────────────────────────────────────────
+    // Same pattern as expenses: read for participants, write for provider
+    match /projectItems/{itemId} {
+      allow read: if request.auth != null
+                  && isProjectParticipant(resource.data.projectId);
+
+      allow create: if request.auth != null
+                    && request.resource.data.providerId == request.auth.uid;
+      allow update, delete: if request.auth != null
+                            && resource.data.providerId == request.auth.uid;
+    }
+
     // ── Deliveries ────────────────────────────────────────────
     // Same pattern as expenses: read for participants, write for provider
     match /deliveries/{deliveryId} {

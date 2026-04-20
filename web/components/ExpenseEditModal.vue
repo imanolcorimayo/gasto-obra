@@ -145,6 +145,21 @@
             <VendorCombobox v-model="form.vendor" :vendors="vendorStore.vendors" />
           </div>
 
+          <!-- Item assignment (expense only) -->
+          <div v-if="form.type === 'expense' && items.length > 0">
+            <label class="block text-[11px] font-semibold uppercase tracking-wider text-go-text-muted mb-1.5">Item de la obra</label>
+            <div class="relative">
+              <select
+                v-model="form.itemId"
+                class="w-full bg-go-bg border border-go-border rounded-go-md px-3 py-2.5 text-sm text-go-text focus:outline-none focus:ring-2 focus:ring-go-primary/40 focus:border-go-primary transition-colors appearance-none"
+              >
+                <option :value="null">Sin asignar</option>
+                <option v-for="i in items" :key="i.id" :value="i.id">{{ i.name }}</option>
+              </select>
+              <svg class="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-go-text-muted" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+            </div>
+          </div>
+
           <!-- Description -->
           <div>
             <label class="block text-[11px] font-semibold uppercase tracking-wider text-go-text-muted mb-1.5">Descripción</label>
@@ -322,6 +337,7 @@ const props = defineProps({
   expense: { type: Object, default: null },
   projects: { type: Array, default: () => [] },
   categories: { type: Array, default: () => [] },
+  items: { type: Array, default: () => [] },
   isSaving: { type: Boolean, default: false },
   isDeleting: { type: Boolean, default: false },
   managementFeePercent: { type: Number, default: 0 }
@@ -375,6 +391,7 @@ const form = reactive({
   recipientPlatform: '',
   recipientCuit: '',
   items: [],
+  itemId: null,
   projectId: '',
   installmentPercent: 100,
   installmentGroupId: null,
@@ -406,6 +423,7 @@ watch(() => props.expense, (expense) => {
     form.recipientPlatform = expense.recipientPlatform || '';
     form.recipientCuit = expense.recipientCuit || '';
     form.items = expense.items ? expense.items.map(i => ({ ...i })) : [];
+    form.itemId = expense.itemId || null;
     form.projectId = expense.projectId || '';
     form.installmentPercent = percent;
     form.installmentGroupId = expense.installmentGroupId || null;
@@ -496,6 +514,7 @@ function handleSave() {
     recipientPlatform: form.recipientPlatform || null,
     recipientCuit: form.recipientCuit || null,
     items: form.items.length > 0 ? form.items.filter(i => i.name) : null,
+    itemId: form.type === 'expense' ? (form.itemId || null) : null,
     projectId: form.projectId,
     installmentPercent: percent,
     installmentGroupId: needsGroup ? (form.installmentGroupId || crypto.randomUUID()) : null,

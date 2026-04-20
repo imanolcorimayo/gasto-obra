@@ -36,6 +36,10 @@
         <p>gasto obra</p>
       </div>
     </footer>
+
+    <ClientOnly>
+      <InstallAppBanner v-if="user" />
+    </ClientOnly>
   </div>
 </template>
 

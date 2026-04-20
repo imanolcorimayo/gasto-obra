@@ -105,6 +105,10 @@ export class ExpenseSchema extends Schema {
       type: 'string',
       required: false
     },
+    itemId: {
+      type: 'string',
+      required: false
+    },
     installmentPercent: {
       type: 'number',
       required: false
@@ -174,6 +178,27 @@ export class ExpenseSchema extends Schema {
     } catch (error) {
       console.error('Error batch updating deliveryId:', error);
       return { success: false, error: `Error al asignar entregas: ${error}` };
+    }
+  }
+
+  async batchUpdateItemId(assignments: Array<{ expenseId: string; itemId: string | null }>): Promise<{ success: boolean; error?: string }> {
+    try {
+      const db = getFirestoreInstance();
+      const batch = writeBatch(db);
+      const colRef = collection(db, this.collectionName);
+
+      for (const { expenseId, itemId } of assignments) {
+        batch.update(doc(colRef, expenseId), {
+          itemId: itemId || null,
+          updatedAt: serverTimestamp()
+        });
+      }
+
+      await batch.commit();
+      return { success: true };
+    } catch (error) {
+      console.error('Error batch updating itemId:', error);
+      return { success: false, error: `Error al asignar items: ${error}` };
     }
   }
 
