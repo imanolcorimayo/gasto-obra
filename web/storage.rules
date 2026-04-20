@@ -16,6 +16,19 @@ service firebase.storage {
       allow write: if false;
     }
 
+    // ── Project images (items, proposals) ────────────────────
+    // Path: projects/{projectId}/items/{itemId}/{imageId}(_thumb).jpg
+    //       projects/{projectId}/proposals/{proposalId}/{imageId}(_thumb).jpg
+    // Server uploads via Admin SDK after validating project participation.
+    // Read: download token URLs bypass rules, so unauthenticated clients
+    // with a share link can still see images. Authenticated users can also
+    // read directly.
+    // Write: denied from client SDKs (only server uploads).
+    match /projects/{allPaths=**} {
+      allow read: if request.auth != null;
+      allow write: if false;
+    }
+
     // Deny everything else by default
     match /{allPaths=**} {
       allow read, write: if false;

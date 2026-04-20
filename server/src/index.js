@@ -1,5 +1,6 @@
 import 'dotenv/config';
 import express from 'express';
+import multer from 'multer';
 import { db, COLLECTIONS } from './config/firebase.js';
 import logger from '../lib/logger.js';
 import { requireAuth } from './middleware/auth.js';
@@ -7,6 +8,10 @@ import { GetProjectCategories } from './actions/categories/GetProjectCategories.
 import { SendContactEmail } from './actions/contact/SendContactEmail.js';
 import { ParseExpense } from './actions/expenses/ParseExpense.js';
 import { DemoParseExpense, DemoParseStatus } from './actions/expenses/DemoParseExpense.js';
+import { UploadEntityImage } from './actions/images/UploadEntityImage.js';
+import { DeleteEntityImage } from './actions/images/DeleteEntityImage.js';
+import { CreateMaterial, UpdateMaterial, DeleteMaterial } from './actions/materials/MaterialActions.js';
+import { CreateProposal, UpdateProposal, DeleteProposal } from './actions/proposals/ProposalActions.js';
 import redis from './handlers/RedisHandler.js';
 
 redis.connect();
@@ -83,7 +88,7 @@ app.use((req, res, next) => {
   } else if (origin) {
     logger.warn('CORS rejected origin', { origin });
   }
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PATCH, DELETE, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   if (req.method === 'OPTIONS') return res.sendStatus(204);
   next();
@@ -172,6 +177,29 @@ app.post('/api/demo-parse', DemoParseExpense);
 
 app.get('/api/projects/:projectId/categories', requireAuth, GetProjectCategories);
 app.post('/api/parse-expense', requireAuth, ParseExpense);
+
+// Image uploads (multipart) — server validates project participation,
+// resizes with sharp, uploads to Storage, updates Firestore.
+const uploadImage = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 10 * 1024 * 1024 } // 10 MB max raw
+});
+
+app.post('/api/items/:id/image', requireAuth, uploadImage.single('image'), UploadEntityImage('item'));
+app.delete('/api/items/:id/image/:imageId', requireAuth, DeleteEntityImage('item'));
+app.post('/api/proposals/:id/image', requireAuth, uploadImage.single('image'), UploadEntityImage('proposal'));
+app.delete('/api/proposals/:id/image/:imageId', requireAuth, DeleteEntityImage('proposal'));
+
+// Materials + proposals CRUD (server-mediated so clients can write without
+// needing complex Firestore rules). Server validates the caller's role
+// (provider or client) and enforces ownership on update/delete.
+app.post('/api/materials', requireAuth, CreateMaterial);
+app.patch('/api/materials/:id', requireAuth, UpdateMaterial);
+app.delete('/api/materials/:id', requireAuth, DeleteMaterial);
+
+app.post('/api/proposals', requireAuth, CreateProposal);
+app.patch('/api/proposals/:id', requireAuth, UpdateProposal);
+app.delete('/api/proposals/:id', requireAuth, DeleteProposal);
 
 // ============================================
 // Start Server

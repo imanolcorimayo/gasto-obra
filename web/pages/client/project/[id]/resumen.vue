@@ -307,6 +307,7 @@ import { useProjectStore } from '~/stores/project';
 import { useExpenseStore } from '~/stores/expense';
 import { useCategoryStore } from '~/stores/category';
 import { useProjectItemStore } from '~/stores/projectItem';
+import { useProjectMaterialStore, effectiveItemBudget } from '~/stores/projectMaterial';
 import { formatPrice, formatDate, getCategoryLabel, getCategoryColor, getManagementFeeAmount } from '~/utils';
 import { getCurrentUserAsync } from '~/utils/firebase';
 
@@ -319,6 +320,7 @@ const projectStore = useProjectStore();
 const expenseStore = useExpenseStore();
 const categoryStore = useCategoryStore();
 const itemStore = useProjectItemStore();
+const materialStore = useProjectMaterialStore();
 
 const isLoading = ref(true);
 const project = ref(null);
@@ -360,7 +362,12 @@ const balance = computed(() => totalPayments.value - totalExpenses.value);
 // When the project has items, the effective budget is the sum of item budgets.
 // Otherwise fall back to the legacy project-level budget field.
 const effectiveBudget = computed(() => {
-  if (itemStore.items.length > 0) return itemStore.totalBudget;
+  if (itemStore.items.length > 0) {
+    return itemStore.items.reduce(
+      (sum, item) => sum + effectiveItemBudget(item, materialStore).totalMidpoint,
+      0
+    );
+  }
   return project.value?.budget || 0;
 });
 
@@ -688,7 +695,8 @@ onMounted(async () => {
     await Promise.all([
       expenseStore.fetchByProjectIdPublic(id),
       categoryStore.fetchForProjectFromAPI(id),
-      itemStore.fetchByProjectIdPublic(id)
+      itemStore.fetchByProjectIdPublic(id),
+      materialStore.fetchByProjectIdPublic(id)
     ]);
   }
 

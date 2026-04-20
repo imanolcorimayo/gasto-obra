@@ -1,0 +1,79 @@
+<style>
+  .go-splash {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+    background: #F5F0E8;
+    font-family: 'Red Hat Display', system-ui, -apple-system, sans-serif;
+    z-index: 9999;
+  }
+  .go-casquito {
+    width: 160px;
+    animation: go-bob 3s ease-in-out infinite;
+  }
+  .go-casquito__hammer {
+    transform-origin: 85% 15%;
+    animation: go-hammer 1.8s ease-in-out infinite;
+  }
+  .go-splash__dots {
+    display: flex;
+    gap: 6px;
+  }
+  .go-splash__dots span {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #FFAB40;
+    animation: go-pulse 1.2s ease-in-out infinite;
+  }
+  .go-splash__dots span:nth-child(2) { animation-delay: 0.15s; }
+  .go-splash__dots span:nth-child(3) { animation-delay: 0.3s; }
+  @keyframes go-bob {
+    0%, 100% { transform: translateY(0); }
+    25%      { transform: translateY(-5px); }
+    75%      { transform: translateY(3px); }
+  }
+  @keyframes go-hammer {
+    0%, 100% { transform: rotate(0deg); }
+    30%      { transform: rotate(-25deg); }
+    60%      { transform: rotate(8deg); }
+  }
+  @keyframes go-pulse {
+    0%, 100% { opacity: 0.25; transform: scale(0.85); }
+    50%      { opacity: 1;    transform: scale(1); }
+  }
+</style>
+<div class="go-splash" role="status" aria-label="Cargando">
+  <div class="go-casquito">
+    <svg viewBox="0 0 200 230" xmlns="http://www.w3.org/2000/svg" width="100%" aria-hidden="true">
+      <path d="M 52,118 L 50,205 Q 100,220 148,205 L 148,118 Z" stroke="#FFAB40" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round" fill="#FFAB40" fill-opacity="0.06"/>
+      <line x1="56" y1="140" x2="144" y2="140" stroke="#FFAB40" stroke-width="5.5" stroke-dasharray="10 14" stroke-linecap="round" opacity="0.5"/>
+      <path d="M 35,112 C 35,38 165,38 165,112 Z" fill="#FFAB40"/>
+      <path d="M 14,110 Q 14,100 38,106 L 162,106 Q 186,100 186,110 L 186,120 Q 186,128 162,122 L 38,122 Q 14,128 14,120 Z" fill="#E99A35"/>
+      <path d="M 38,108 Q 100,102 162,108" stroke="rgba(255,255,255,0.15)" stroke-width="2" fill="none" stroke-linecap="round"/>
+      <path d="M 62,56 Q 78,40 108,48" stroke="rgba(255,255,255,0.35)" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+      <path d="M 68,68 Q 78,58 96,63" stroke="rgba(255,255,255,0.25)" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+      <circle cx="76" cy="86" r="5" fill="#2C261E"/>
+      <circle cx="124" cy="86" r="5" fill="#2C261E"/>
+      <g class="go-casquito__hammer" opacity="0.6">
+        <line x1="175" y1="60" x2="190" y2="42" stroke="#4A443D" stroke-width="2.5" stroke-linecap="round"/>
+        <rect x="185" y="34" width="12" height="8" rx="2" fill="#4A443D" transform="rotate(-35, 191, 38)"/>
+      </g>
+      <circle cx="30" cy="180" r="2" fill="#6B6259">
+        <animate attributeName="opacity" values="0.4;0" dur="2s" repeatCount="indefinite"/>
+        <animate attributeName="cy" values="180;162" dur="2s" repeatCount="indefinite"/>
+      </circle>
+      <circle cx="170" cy="185" r="1.5" fill="#6B6259">
+        <animate attributeName="opacity" values="0.3;0" dur="2.5s" repeatCount="indefinite" begin="0.8s"/>
+        <animate attributeName="cy" values="185;167" dur="2.5s" repeatCount="indefinite" begin="0.8s"/>
+      </circle>
+    </svg>
+  </div>
+  <div class="go-splash__dots" aria-hidden="true">
+    <span></span><span></span><span></span>
+  </div>
+</div>

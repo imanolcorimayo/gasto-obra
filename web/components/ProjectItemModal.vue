@@ -45,7 +45,7 @@
           </div>
 
           <!-- Estimativo de materiales -->
-          <div>
+          <div v-if="!hasMaterials">
             <div class="flex items-baseline justify-between mb-1.5">
               <label class="block text-[11px] font-semibold uppercase tracking-wider text-go-text-muted">Estimativo de materiales *</label>
               <span class="text-[10px] text-go-text-muted italic">Puede variar</span>
@@ -82,7 +82,19 @@
                 </div>
               </div>
             </div>
-            <p class="text-[11px] text-go-text-muted mt-1">Los materiales son un estimativo: el costo real puede caer en cualquier punto del rango. Si tenés una cifra única, poné el mismo valor en ambos.</p>
+            <p class="text-[11px] text-go-text-muted mt-1">Los materiales son un estimativo: el costo real puede caer en cualquier punto del rango. Si tenés una cifra única, poné el mismo valor en ambos. Si después agregás una lista de materiales, el cálculo pasa a hacerse desde la lista.</p>
+          </div>
+
+          <!-- Materials list mode notice -->
+          <div v-else>
+            <label class="block text-[11px] font-semibold uppercase tracking-wider text-go-text-muted mb-1.5">Estimativo de materiales</label>
+            <div class="bg-go-surface border border-dashed border-go-border rounded-go-md px-3 py-2.5">
+              <div class="flex items-center justify-between text-sm">
+                <span class="text-go-text-muted">Calculado desde la lista de materiales</span>
+                <span class="font-display font-semibold tabular-nums text-go-text">{{ derivedMaterialsLabel }}</span>
+              </div>
+            </div>
+            <p class="text-[11px] text-go-text-muted mt-1">Para editar, usá la lista de materiales en la card del item.</p>
           </div>
 
           <!-- Live total preview -->
@@ -141,7 +153,17 @@ import { formatPrice } from '~/utils';
 const props = defineProps({
   show: { type: Boolean, default: false },
   item: { type: Object, default: null },
+  hasMaterials: { type: Boolean, default: false },
+  derivedMaterialsMin: { type: Number, default: 0 },
+  derivedMaterialsMax: { type: Number, default: 0 },
   isSubmitting: { type: Boolean, default: false }
+});
+
+const derivedMaterialsLabel = computed(() => {
+  if (props.derivedMaterialsMin === props.derivedMaterialsMax) {
+    return formatPrice(props.derivedMaterialsMin);
+  }
+  return `${formatPrice(props.derivedMaterialsMin)} – ${formatPrice(props.derivedMaterialsMax)}`;
 });
 
 const emit = defineEmits(['close', 'submit']);
@@ -165,6 +187,7 @@ const dateError = computed(() => {
 });
 
 const materialsError = computed(() => {
+  if (props.hasMaterials) return '';
   const min = parseFloat(form.materialsBudgetMin);
   const max = parseFloat(form.materialsBudgetMax);
   if (!isNaN(min) && !isNaN(max) && max < min) {
@@ -175,11 +198,10 @@ const materialsError = computed(() => {
 
 const totalPreview = computed(() => {
   const labor = parseFloat(form.laborBudget);
-  const min = parseFloat(form.materialsBudgetMin);
-  const max = parseFloat(form.materialsBudgetMax);
-  if (isNaN(labor) || isNaN(min) || isNaN(max)) {
-    return { show: false, label: '' };
-  }
+  if (isNaN(labor)) return { show: false, label: '' };
+  const min = props.hasMaterials ? props.derivedMaterialsMin : parseFloat(form.materialsBudgetMin);
+  const max = props.hasMaterials ? props.derivedMaterialsMax : parseFloat(form.materialsBudgetMax);
+  if (isNaN(min) || isNaN(max)) return { show: false, label: '' };
   if (min === max) {
     return { show: true, label: formatPrice(labor + min) };
   }

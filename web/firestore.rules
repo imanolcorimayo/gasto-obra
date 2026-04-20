@@ -67,6 +67,32 @@ service cloud.firestore {
                             && resource.data.providerId == request.auth.uid;
     }
 
+    // ── Project Materials ─────────────────────────────────────
+    // Materials needed for an item. Same pattern: read for participants,
+    // write for provider. Step 7 will extend writes to clients.
+    match /projectMaterials/{materialId} {
+      allow read: if request.auth != null
+                  && isProjectParticipant(resource.data.projectId);
+
+      allow create: if request.auth != null
+                    && request.resource.data.providerId == request.auth.uid;
+      allow update, delete: if request.auth != null
+                            && resource.data.providerId == request.auth.uid;
+    }
+
+    // ── Project Material Proposals ────────────────────────────
+    // Vendor/price proposals per material (1 material → many proposals).
+    // Min/max of an item's materials budget is derived from these.
+    match /projectMaterialProposals/{proposalId} {
+      allow read: if request.auth != null
+                  && isProjectParticipant(resource.data.projectId);
+
+      allow create: if request.auth != null
+                    && request.resource.data.providerId == request.auth.uid;
+      allow update, delete: if request.auth != null
+                            && resource.data.providerId == request.auth.uid;
+    }
+
     // ── Deliveries ────────────────────────────────────────────
     // Same pattern as expenses: read for participants, write for provider
     match /deliveries/{deliveryId} {

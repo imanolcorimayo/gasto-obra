@@ -92,6 +92,14 @@ export interface CategoryDoc extends ExpenseCategory {
   projectId: string | null;
 }
 
+export interface ProjectImage {
+  id: string;
+  url: string;
+  thumbUrl: string;
+  uploadedBy: 'provider' | 'client';
+  createdAt: any;
+}
+
 export interface ProjectItem {
   id: string;
   projectId: string;
@@ -104,11 +112,39 @@ export interface ProjectItem {
   plannedEndDate: any;
   actualStartDate: any | null;
   actualEndDate: any | null;
+  images: ProjectImage[] | null;
   createdAt: any;
   updatedAt: any;
 }
 
 export type ProjectItemStatus = 'pendiente' | 'en_progreso' | 'completado';
+
+export interface ProjectMaterial {
+  id: string;
+  projectId: string;
+  providerId: string;
+  itemId: string;
+  name: string;
+  notes: string | null;
+  addedBy: 'provider' | 'client';
+  createdAt: any;
+  updatedAt: any;
+}
+
+export interface ProjectMaterialProposal {
+  id: string;
+  projectId: string;
+  providerId: string;
+  itemId: string;
+  materialId: string;
+  vendor: string | null;
+  amount: number;
+  notes: string | null;
+  addedBy: 'provider' | 'client';
+  images: ProjectImage[] | null;
+  createdAt: any;
+  updatedAt: any;
+}
 
 export interface Delivery {
   id: string;

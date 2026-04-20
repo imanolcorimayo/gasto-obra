@@ -194,6 +194,21 @@ export const useProjectItemStore = defineStore('projectItem', {
       }
     },
 
+    // Local mutations applied after the server writes an image
+    addImageToItem(itemId: string, image: any) {
+      const idx = this.items.findIndex(i => i.id === itemId);
+      if (idx === -1) return;
+      const current = Array.isArray(this.items[idx].images) ? this.items[idx].images! : [];
+      this.items[idx] = { ...this.items[idx], images: [...current, image] };
+    },
+
+    removeImageFromItem(itemId: string, imageId: string) {
+      const idx = this.items.findIndex(i => i.id === itemId);
+      if (idx === -1) return;
+      const current = Array.isArray(this.items[idx].images) ? this.items[idx].images! : [];
+      this.items[idx] = { ...this.items[idx], images: current.filter(img => img.id !== imageId) };
+    },
+
     clearState() {
       this.items = [];
       this.isLoading = false;

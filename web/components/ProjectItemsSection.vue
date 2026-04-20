@@ -3,13 +3,13 @@
     <!-- Header -->
     <div class="flex items-center justify-between mb-3 gap-3">
       <div class="flex items-baseline gap-2 min-w-0">
-        <h2 class="font-display font-semibold text-go-text">Items</h2>
+        <h2 class="font-display font-semibold text-go-text">Items de la obra</h2>
         <span v-if="itemStore.items.length > 0" class="text-xs text-go-text-muted">
           · {{ itemStore.items.length }}{{ itemStore.items.length === 1 ? ' item' : ' items' }}
         </span>
       </div>
       <button
-        v-if="!readonly"
+        v-if="!readonly && !isClient"
         @click="openCreate"
         class="btn-primary text-sm flex items-center gap-1.5 shrink-0"
       >
@@ -21,7 +21,7 @@
 
     <!-- Sin asignar badge (provider only) -->
     <button
-      v-if="!readonly && itemStore.items.length > 0 && unassignedExpenses.length > 0"
+      v-if="!readonly && !isClient && itemStore.items.length > 0 && unassignedExpenses.length > 0"
       @click="showUnassignedModal = true"
       class="w-full flex items-center gap-3 px-4 py-2.5 bg-go-surface border border-go-border rounded-go-md border-l-[3px] border-l-go-warning text-left hover:bg-go-surface-alt/50 transition-colors group mb-3"
     >
@@ -38,12 +38,12 @@
       class="bg-go-surface border border-dashed border-go-border rounded-go-xl px-4 py-8 text-center"
     >
       <MdiViewList class="text-3xl text-go-text-muted/50 mx-auto mb-2" />
-      <p class="font-display text-go-text-secondary">Sin items todavía</p>
+      <p class="font-display text-go-text-secondary">Sin items de la obra todavía</p>
       <p class="text-sm text-go-text-muted mt-1 max-w-md mx-auto">
         Dividí la obra en partes (ej: "Remodelación del baño", "Cocina") para hacer seguimiento del progreso y presupuesto por etapa.
       </p>
       <button
-        v-if="!readonly"
+        v-if="!readonly && !isClient"
         @click="openCreate"
         class="btn-secondary text-sm mt-4 inline-flex items-center gap-1.5"
       >
@@ -73,11 +73,11 @@
           ></div>
         </div>
         <div class="flex items-center justify-between mt-2 text-xs text-go-text-muted tabular-nums">
-          <span>{{ formatPrice(itemStore.completedBudget) }} completado</span>
-          <span>de {{ formatPrice(itemStore.totalBudget) }}</span>
+          <span>{{ formatPrice(aggregateBudget.completedMidpoint) }} completado</span>
+          <span>de {{ formatPrice(aggregateBudget.totalMidpoint) }}</span>
         </div>
-        <div v-if="itemStore.hasMaterialsRange" class="text-[10px] text-go-text-muted/80 mt-1 italic text-right tabular-nums">
-          Materiales estimados entre {{ formatPrice(itemStore.totalBudgetRange.min) }} y {{ formatPrice(itemStore.totalBudgetRange.max) }}
+        <div v-if="aggregateBudget.hasAnyRange" class="text-[10px] text-go-text-muted/80 mt-1 italic text-right tabular-nums">
+          Materiales estimados entre {{ formatPrice(aggregateBudget.totalMin) }} y {{ formatPrice(aggregateBudget.totalMax) }}
         </div>
       </div>
 
@@ -132,6 +132,28 @@
             </div>
           </div>
 
+          <!-- Item images -->
+          <div class="mt-3 pt-3 border-t border-go-border-subtle">
+            <div class="flex items-center justify-between mb-2 text-xs">
+              <span class="font-semibold uppercase tracking-wider text-go-text-muted">Imágenes</span>
+              <span v-if="item.images && item.images.length > 0" class="text-go-text-muted">
+                {{ item.images.length }}
+              </span>
+            </div>
+            <ProjectImageGallery
+              :images="item.images || []"
+              :endpoint-base="`/api/items/${item.id}`"
+              :readonly="readonly"
+              @uploaded="(img) => itemStore.addImageToItem(item.id, img)"
+              @deleted="(id) => itemStore.removeImageFromItem(item.id, id)"
+            />
+          </div>
+
+          <!-- Materials list per item -->
+          <div class="mt-3 pt-3 border-t border-go-border-subtle">
+            <ProjectMaterialList :item="item" :readonly="readonly" :is-client="isClient" />
+          </div>
+
           <!-- Materiales real vs estimativo -->
           <div class="mt-3 pt-3 border-t border-go-border-subtle bg-go-bg/40 -mx-4 px-4 pb-3">
             <div class="flex items-center justify-between mb-1">
@@ -150,8 +172,8 @@
             </p>
           </div>
 
-          <!-- Provider actions -->
-          <div v-if="!readonly" class="flex flex-wrap items-center gap-2 mt-3 pt-3 border-t border-go-border-subtle">
+          <!-- Provider actions (hidden for client) -->
+          <div v-if="!readonly && !isClient" class="flex flex-wrap items-center gap-2 mt-3 pt-3 border-t border-go-border-subtle">
             <button
               v-if="!item.actualStartDate"
               @click="markStarted(item)"
@@ -223,8 +245,8 @@
                 v-for="expense in itemExpenses(item)"
                 :key="expense.id"
                 class="flex items-center gap-3 py-2"
-                :class="!readonly ? 'cursor-pointer hover:bg-go-surface-alt/50 -mx-4 px-4 transition-colors' : ''"
-                @click="!readonly && $emit('editExpense', expense)"
+                :class="(!readonly && !isClient) ? 'cursor-pointer hover:bg-go-surface-alt/50 -mx-4 px-4 transition-colors' : ''"
+                @click="(!readonly && !isClient) && $emit('editExpense', expense)"
               >
                 <div class="flex-1 min-w-0">
                   <div class="text-sm text-go-text">{{ expense.title }}</div>
@@ -245,17 +267,22 @@
       </div>
     </template>
 
-    <!-- Item create/edit modal -->
+    <!-- Item create/edit modal (provider only) -->
     <ProjectItemModal
+      v-if="!isClient"
       :show="showModal"
       :item="editingItem"
+      :has-materials="editingItem ? hasMaterialsForItem(editingItem.id) : false"
+      :derived-materials-min="editingItem ? effective(editingItem).materialsMin : 0"
+      :derived-materials-max="editingItem ? effective(editingItem).materialsMax : 0"
       :is-submitting="isSubmitting"
       @close="closeModal"
       @submit="handleSubmit"
     />
 
-    <!-- Assign modal -->
+    <!-- Assign modal (provider only) -->
     <ProjectItemAssignModal
+      v-if="!isClient"
       :show="showAssignModal"
       :item="assigningItem"
       :expenses="expenseStore.expenses"
@@ -265,7 +292,7 @@
     />
 
     <!-- Unassigned expenses modal (provider only) -->
-    <div v-if="showUnassignedModal" class="modal-backdrop" @click.self="showUnassignedModal = false">
+    <div v-if="!isClient && showUnassignedModal" class="modal-backdrop" @click.self="showUnassignedModal = false">
       <div class="modal-container">
         <div class="modal-header">
           <div>
@@ -329,20 +356,23 @@ import MdiViewList from '~icons/mdi/view-list';
 import MdiPlaylistPlus from '~icons/mdi/playlist-plus';
 import MdiChevronDown from '~icons/mdi/chevron-down';
 import MdiClose from '~icons/mdi/close';
-import { useProjectItemStore, itemMidpoint, itemRangeMin, itemRangeMax } from '~/stores/projectItem';
+import { useProjectItemStore } from '~/stores/projectItem';
 import { useExpenseStore } from '~/stores/expense';
+import { useProjectMaterialStore, effectiveItemBudget } from '~/stores/projectMaterial';
 import { formatPrice, formatDate, getCategoryLabel } from '~/utils';
 
 const props = defineProps({
   projectId: { type: String, required: true },
   providerId: { type: String, required: true },
-  readonly: { type: Boolean, default: false }
+  readonly: { type: Boolean, default: false },
+  isClient: { type: Boolean, default: false }
 });
 
 defineEmits(['editExpense']);
 
 const itemStore = useProjectItemStore();
 const expenseStore = useExpenseStore();
+const materialStore = useProjectMaterialStore();
 
 // Modal & UI state
 const showModal = ref(false);
@@ -355,38 +385,69 @@ const assigningItem = ref(null);
 const showUnassignedModal = ref(false);
 const quickBusyId = ref(null);
 
-// Aggregate progress
-const progressLabel = computed(() => itemStore.progressPercentage.toFixed(0));
+// Effective per-item budget — picks list-derived if materials exist, else manual.
+function effective(item) {
+  return effectiveItemBudget(item, materialStore);
+}
+
+// Aggregate (uses effective per item)
+const aggregateBudget = computed(() => {
+  let totalMin = 0;
+  let totalMax = 0;
+  let totalMidpoint = 0;
+  let completedMidpoint = 0;
+  let hasAnyRange = false;
+  for (const item of itemStore.items) {
+    const eff = effective(item);
+    totalMin += eff.totalMin;
+    totalMax += eff.totalMax;
+    totalMidpoint += eff.totalMidpoint;
+    if (eff.materialsMin !== eff.materialsMax) hasAnyRange = true;
+    if (item.actualEndDate) completedMidpoint += eff.totalMidpoint;
+  }
+  return { totalMin, totalMax, totalMidpoint, completedMidpoint, hasAnyRange };
+});
+
+const progressPercentage = computed(() => {
+  const total = aggregateBudget.value.totalMidpoint;
+  if (total <= 0) return 0;
+  return (aggregateBudget.value.completedMidpoint / total) * 100;
+});
+
+const progressLabel = computed(() => progressPercentage.value.toFixed(0));
 const progressBarWidth = computed(() => {
-  const pct = Math.min(100, Math.max(0, itemStore.progressPercentage));
+  const pct = Math.min(100, Math.max(0, progressPercentage.value));
   return `${pct}%`;
 });
 const progressBarColor = computed(() => {
-  const pct = itemStore.progressPercentage;
+  const pct = progressPercentage.value;
   if (pct >= 100) return 'bg-go-success';
   if (pct >= 50) return 'bg-go-primary';
   return 'bg-go-info';
 });
 
-// Item card helpers
+// Item card helpers (all use effective)
 function pctOfTotal(item) {
-  if (itemStore.totalBudget <= 0) return '0';
-  return ((itemMidpoint(item) / itemStore.totalBudget) * 100).toFixed(0);
+  const total = aggregateBudget.value.totalMidpoint;
+  if (total <= 0) return '0';
+  return ((effective(item).totalMidpoint / total) * 100).toFixed(0);
 }
 function hasItemRange(item) {
-  return (item.materialsBudgetMin || 0) !== (item.materialsBudgetMax || 0);
+  const eff = effective(item);
+  return eff.materialsMin !== eff.materialsMax;
 }
 function materialsLabel(item) {
-  const min = item.materialsBudgetMin || 0;
-  const max = item.materialsBudgetMax || 0;
-  if (min === max) return formatPrice(min);
-  return `${formatPrice(min)} – ${formatPrice(max)}`;
+  const eff = effective(item);
+  if (eff.materialsMin === eff.materialsMax) return formatPrice(eff.materialsMin);
+  return `${formatPrice(eff.materialsMin)} – ${formatPrice(eff.materialsMax)}`;
 }
 function itemTotalLabel(item) {
-  const min = itemRangeMin(item);
-  const max = itemRangeMax(item);
-  if (min === max) return formatPrice(min);
-  return `${formatPrice(min)} – ${formatPrice(max)}`;
+  const eff = effective(item);
+  if (eff.totalMin === eff.totalMax) return formatPrice(eff.totalMin);
+  return `${formatPrice(eff.totalMin)} – ${formatPrice(eff.totalMax)}`;
+}
+function hasMaterialsForItem(itemId) {
+  return materialStore.materialsForItem(itemId).length > 0;
 }
 function statusLabel(item) {
   if (item.actualEndDate) return 'Completada';
@@ -429,8 +490,9 @@ function itemStats(item) {
 
 function materialsStatus(item) {
   const real = itemStats(item).realMaterials;
-  const min = item.materialsBudgetMin || 0;
-  const max = item.materialsBudgetMax || 0;
+  const eff = effective(item);
+  const min = eff.materialsMin;
+  const max = eff.materialsMax;
   if (real === 0) return { color: 'text-go-text-muted', label: '' };
   if (max === 0) {
     return { color: 'text-go-warning', label: '(sin estimar)' };

@@ -419,6 +419,7 @@ import { useDeliveryStore } from '~/stores/delivery';
 import { useWhatsappStore } from '~/stores/whatsapp';
 import { useProviderStore } from '~/stores/provider';
 import { useProjectItemStore } from '~/stores/projectItem';
+import { useProjectMaterialStore, effectiveItemBudget } from '~/stores/projectMaterial';
 import { formatPrice, formatDate } from '~/utils';
 import { generatePaymentReport, generateReportNumber } from '~/utils/pdfReport';
 import { getCurrentUser } from '~/utils/firebase';
@@ -437,6 +438,7 @@ const deliveryStore = useDeliveryStore();
 const whatsappStore = useWhatsappStore();
 const providerStore = useProviderStore();
 const itemStore = useProjectItemStore();
+const materialStore = useProjectMaterialStore();
 
 const managementFeePercent = ref(0);
 
@@ -503,7 +505,12 @@ const balance = computed(() => totalPayments.value - totalExpenses.value);
 // When the project has items, the effective budget is the sum of item budgets.
 // Otherwise fall back to the legacy project-level budget field.
 const effectiveBudget = computed(() => {
-  if (itemStore.items.length > 0) return itemStore.totalBudget;
+  if (itemStore.items.length > 0) {
+    return itemStore.items.reduce(
+      (sum, item) => sum + effectiveItemBudget(item, materialStore).totalMidpoint,
+      0
+    );
+  }
   return project.value?.budget || 0;
 });
 
@@ -568,7 +575,8 @@ onMounted(async () => {
       deliveryStore.fetchByProjectId(id),
       whatsappStore.fetchLinkedAccount(),
       providerStore.fetchOrCreate(),
-      itemStore.fetchByProjectId(id)
+      itemStore.fetchByProjectId(id),
+      materialStore.fetchByProjectId(id)
     ]);
     managementFeePercent.value = providerStore.managementFeePercent;
     // Load all projects for the edit modal's "move" feature
