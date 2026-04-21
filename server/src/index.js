@@ -1,3 +1,4 @@
+import '../lib/instrument.js';
 import 'dotenv/config';
 import express from 'express';
 import multer from 'multer';
