@@ -12,6 +12,26 @@ input[type="number"] {
   -moz-appearance: textfield;
 }
 
+/* Prevent Safari landscape text auto-inflation */
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+/* Soften the default iOS/Android blue tap flash */
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Prevent iOS Safari auto-zoom on input focus (triggers when font-size < 16px) */
+@media (max-width: 767px) {
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]):not([type="file"]),
+  select,
+  textarea {
+    font-size: 16px;
+  }
+}
+
 /* ── Gasto Obra — Tokens (fuente de verdad) ── */
 :root {
   /* Fonts */

@@ -109,6 +109,20 @@ function reset() {
   cropperRef.value?.reset();
 }
 
+const MAX_OUTPUT_DIM = 1600;
+
+function downscaleIfNeeded(canvas) {
+  const { width, height } = canvas;
+  const max = Math.max(width, height);
+  if (max <= MAX_OUTPUT_DIM) return canvas;
+  const scale = MAX_OUTPUT_DIM / max;
+  const target = document.createElement('canvas');
+  target.width = Math.round(width * scale);
+  target.height = Math.round(height * scale);
+  target.getContext('2d').drawImage(canvas, 0, 0, target.width, target.height);
+  return target;
+}
+
 async function handleConfirm() {
   if (!cropperRef.value) return;
   isBusy.value = true;
@@ -118,7 +132,8 @@ async function handleConfirm() {
       useToast('error', 'No se pudo recortar la imagen.');
       return;
     }
-    const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.92));
+    const output = downscaleIfNeeded(canvas);
+    const blob = await new Promise((resolve) => output.toBlob(resolve, 'image/jpeg', 0.92));
     if (!blob) {
       useToast('error', 'No se pudo procesar la imagen.');
       return;

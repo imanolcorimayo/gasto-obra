@@ -22,7 +22,13 @@ definePageMeta({ layout: false })
 
 useHead({ title: 'Sin conexión — Gasto Obra' })
 
-const retry = () => {
-  if (typeof window !== 'undefined') window.location.reload()
+const retry = async () => {
+  if (typeof window === 'undefined') return
+  try {
+    await fetch('/manifest.webmanifest', { cache: 'no-store' })
+    window.location.href = '/'
+  } catch {
+    // still offline, leave user on this page
+  }
 }
 </script>

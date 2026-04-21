@@ -20,7 +20,7 @@ export default defineNuxtConfig({
   ],
 
   pwa: {
-    registerType: "autoUpdate",
+    registerType: "prompt",
     manifest: {
       name: "Gasto Obra",
       short_name: "Gasto Obra",
@@ -55,8 +55,6 @@ export default defineNuxtConfig({
     },
     workbox: {
       globPatterns: ["**/*.{js,css,html,svg,png,webp,woff2}"],
-      navigateFallback: "/offline",
-      navigateFallbackDenylist: [/^\/api\//],
     },
     devOptions: { enabled: false },
   },
