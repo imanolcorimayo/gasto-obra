@@ -233,7 +233,8 @@ ${captionBlock}
 - "recipientId": debe ser EXACTAMENTE uno de los IDs listados, o null
 - "projectId": debe ser EXACTAMENTE uno de los IDs listados, o null
 - "vendorId": debe ser EXACTAMENTE uno de los IDs de comercios listados, o null si no coincide con ninguno
-- "vendorName": nombre del comercio/local si se detecta uno nuevo no listado, o null${feeBlock}
+- "vendorName": nombre del comercio/local si se detecta uno nuevo no listado, o null
+- PRIORIDAD DE COMERCIO: Si el texto del usuario menciona explícitamente un nombre de comercio/proveedor (ej: "compra en Easy", "ticket de Sodimac", "Maderera López"), usá ESE nombre para "vendorId"/"vendorName", incluso si el logo, encabezado o datos de la imagen sugieren otro comercio. El texto del usuario tiene prioridad sobre lo que aparece en la imagen cuando hay conflicto.${feeBlock}
 Si no podés extraer algún campo, usa null.
 ${projectList}
 ${recipientList}
@@ -594,7 +595,8 @@ ${captionBlock}
 - "recipientId": debe ser EXACTAMENTE uno de los IDs listados, o null
 - "projectId": debe ser EXACTAMENTE uno de los IDs listados, o null
 - "vendorId": debe ser EXACTAMENTE uno de los IDs de comercios listados, o null si no coincide con ninguno
-- "vendorName": nombre del comercio/local si se detecta uno nuevo no listado, o null${managementFeePercent > 0 ? '\n- "applyManagementFee": true si el texto dice "con gestión", "con fee", "con comisión". false en caso contrario. Solo aplica a expenses.' : ''}
+- "vendorName": nombre del comercio/local si se detecta uno nuevo no listado, o null
+- PRIORIDAD DE COMERCIO: Si el texto del usuario menciona explícitamente un nombre de comercio/proveedor (ej: "compra en Easy", "factura de Sodimac", "Maderera López"), usá ESE nombre para "vendorId"/"vendorName", incluso si el encabezado, logo o datos del documento sugieren otro comercio. El texto del usuario tiene prioridad sobre lo que aparece en el documento cuando hay conflicto.${managementFeePercent > 0 ? '\n- "applyManagementFee": true si el texto dice "con gestión", "con fee", "con comisión". false en caso contrario. Solo aplica a expenses.' : ''}
 Si no podés extraer algún campo, usa null.
 ${projectList}
 ${recipientList}
