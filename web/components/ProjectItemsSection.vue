@@ -81,191 +81,61 @@
         </div>
       </div>
 
-      <!-- Item cards -->
+      <!-- Compact item rows -->
       <div class="space-y-2">
-        <div
+        <button
           v-for="item in itemStore.items"
           :key="item.id"
-          class="bg-go-surface border border-go-border rounded-go-xl px-4 py-3 hover:border-go-border-strong transition-colors"
+          type="button"
+          @click="openItem(item.id)"
+          class="w-full text-left bg-go-surface border border-go-border rounded-go-xl overflow-hidden relative hover:bg-go-surface-hover transition-colors"
         >
-          <!-- Header row -->
-          <div class="flex items-start justify-between gap-3">
-            <div class="min-w-0 flex-1">
-              <div class="flex items-center gap-2 flex-wrap">
-                <h3 class="font-display font-semibold text-go-text">{{ item.name }}</h3>
-                <span
-                  class="text-[11px] font-semibold px-2 py-0.5 rounded-full"
-                  :class="statusClasses(item)"
-                >
-                  {{ statusLabel(item) }}
-                </span>
-              </div>
-              <div class="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1.5 text-xs text-go-text-muted">
-                <div class="flex items-center gap-1">
-                  <MdiCalendarRange class="text-sm" />
-                  <span class="tabular-nums">
-                    {{ formatDate(item.plannedStartDate) }} → {{ formatDate(item.plannedEndDate) }}
-                  </span>
+          <!-- Left status accent -->
+          <div class="absolute left-0 top-0 bottom-0 w-1" :style="{ background: statusAccent(item) }" />
+
+          <div class="px-4 py-3 pl-5">
+            <div class="flex items-start gap-3">
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center gap-2 flex-wrap">
+                  <h3 class="font-display font-semibold text-go-text text-[14.5px] truncate">{{ item.name }}</h3>
+                  <span
+                    class="text-[10.5px] font-semibold px-2 py-0.5 rounded-full shrink-0"
+                    :class="statusClasses(item)"
+                  >{{ statusLabel(item) }}</span>
                 </div>
-                <div v-if="item.actualStartDate" class="flex items-center gap-1">
-                  <MdiPlayCircleOutline class="text-sm text-go-info" />
-                  <span class="tabular-nums">Inició {{ formatDate(item.actualStartDate) }}</span>
-                </div>
-                <div v-if="item.actualEndDate" class="flex items-center gap-1">
-                  <MdiCheckCircleOutline class="text-sm text-go-success" />
-                  <span class="tabular-nums">Finalizó {{ formatDate(item.actualEndDate) }}</span>
+                <div class="text-[11px] text-go-text-muted mt-0.5 tabular-nums truncate">
+                  {{ formatPrice(itemStats(item).realMaterials) }}
+                  <span class="text-go-text-muted/60">de</span>
+                  {{ itemMaterialsLabel(item) }}<span v-if="hasItemRange(item)" class="italic text-go-text-muted/80"> (estim.)</span>
+                  <span class="text-go-text-muted/60"> · </span>
+                  <span class="text-go-text">{{ itemSpendPct(item) }}%</span>
                 </div>
               </div>
-              <div class="text-xs text-go-text-muted mt-1 tabular-nums">
-                Mano de obra {{ formatPrice(item.laborBudget) }}
-                <span class="text-go-text-muted/60">·</span>
-                Materiales {{ materialsLabel(item) }}<span v-if="hasItemRange(item)" class="italic text-go-text-muted/80"> (estimativo)</span>
-              </div>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-go-text-muted shrink-0 mt-1"><path d="m9 18 6-6-6-6"/></svg>
             </div>
-            <div class="text-right shrink-0">
-              <div class="font-display font-bold text-lg tabular-nums text-go-primary leading-tight">
-                {{ itemTotalLabel(item) }}
-              </div>
-              <div class="text-[11px] text-go-text-muted">
-                {{ pctOfTotal(item) }}% de la obra
-              </div>
-            </div>
-          </div>
-
-          <!-- Item images -->
-          <div class="mt-3 pt-3 border-t border-go-border-subtle">
-            <div class="flex items-center justify-between mb-2 text-xs">
-              <span class="font-semibold uppercase tracking-wider text-go-text-muted">Imágenes</span>
-              <span v-if="item.images && item.images.length > 0" class="text-go-text-muted">
-                {{ item.images.length }}
-              </span>
-            </div>
-            <ProjectImageGallery
-              :images="item.images || []"
-              :endpoint-base="`/api/items/${item.id}`"
-              :readonly="readonly"
-              @uploaded="(img) => itemStore.addImageToItem(item.id, img)"
-              @deleted="(id) => itemStore.removeImageFromItem(item.id, id)"
-            />
-          </div>
-
-          <!-- Materials list per item -->
-          <div class="mt-3 pt-3 border-t border-go-border-subtle">
-            <ProjectMaterialList :item="item" :readonly="readonly" :is-client="isClient" />
-          </div>
-
-          <!-- Materiales real vs estimativo -->
-          <div class="mt-3 pt-3 border-t border-go-border-subtle bg-go-bg/40 -mx-4 px-4 pb-3">
-            <div class="flex items-center justify-between mb-1">
-              <span class="text-[11px] font-semibold uppercase tracking-wider text-go-text-muted">Materiales real</span>
-              <span
-                class="font-display font-bold text-sm tabular-nums"
-                :class="materialsStatus(item).color"
-              >{{ formatPrice(itemStats(item).realMaterials) }}</span>
-            </div>
-            <div class="flex items-center justify-between text-xs tabular-nums">
-              <span class="text-go-text-muted">Estimativo: {{ materialsLabel(item) }}</span>
-              <span class="text-[10px]" :class="materialsStatus(item).color">{{ materialsStatus(item).label }}</span>
-            </div>
-            <p v-if="itemStats(item).expensesCount === 0" class="text-[11px] text-go-text-muted/80 mt-1.5 italic">
-              Sin gastos asignados todavía.
-            </p>
-          </div>
-
-          <!-- Provider actions (hidden for client) -->
-          <div v-if="!readonly && !isClient" class="flex flex-wrap items-center gap-2 mt-3 pt-3 border-t border-go-border-subtle">
-            <button
-              v-if="!item.actualStartDate"
-              @click="markStarted(item)"
-              :disabled="busyId === item.id"
-              class="text-xs font-medium px-2.5 py-1 rounded-go-sm border border-go-info/40 text-go-info hover:bg-go-info/10 transition-colors disabled:opacity-50 inline-flex items-center gap-1"
-            >
-              <MdiPlayCircleOutline class="text-sm" />
-              Marcar iniciada
-            </button>
-            <button
-              v-if="item.actualStartDate && !item.actualEndDate"
-              @click="markCompleted(item)"
-              :disabled="busyId === item.id"
-              class="text-xs font-medium px-2.5 py-1 rounded-go-sm border border-go-success/40 text-go-success hover:bg-go-success/10 transition-colors disabled:opacity-50 inline-flex items-center gap-1"
-            >
-              <MdiCheckCircleOutline class="text-sm" />
-              Marcar completada
-            </button>
-            <button
-              v-if="item.actualStartDate || item.actualEndDate"
-              @click="resetProgress(item)"
-              :disabled="busyId === item.id"
-              class="text-xs font-medium px-2.5 py-1 rounded-go-sm border border-go-border text-go-text-muted hover:text-go-text hover:border-go-text-muted transition-colors disabled:opacity-50 inline-flex items-center gap-1"
-            >
-              <MdiRestore class="text-sm" />
-              Reiniciar progreso
-            </button>
-            <button
-              @click="openAssign(item)"
-              :disabled="busyId === item.id"
-              class="text-xs font-medium px-2.5 py-1 rounded-go-sm border border-go-primary/40 text-go-primary hover:bg-go-primary/10 transition-colors disabled:opacity-50 inline-flex items-center gap-1"
-            >
-              <MdiPlaylistPlus class="text-sm" />
-              Asignar gastos
-            </button>
-            <div class="ml-auto flex items-center gap-1">
-              <button
-                @click="openEdit(item)"
-                class="text-xs text-go-text-muted hover:text-go-text transition-colors p-1.5 rounded-go-sm hover:bg-go-surface-alt"
-                title="Editar"
-              >
-                <MdiPencil class="text-base" />
-              </button>
-              <button
-                @click="confirmDelete(item)"
-                :disabled="busyId === item.id"
-                class="text-xs text-go-text-muted hover:text-go-danger transition-colors p-1.5 rounded-go-sm hover:bg-go-danger/10 disabled:opacity-50"
-                title="Eliminar"
-              >
-                <MdiDelete class="text-base" />
-              </button>
-            </div>
-          </div>
-
-          <!-- Expansion toggle + assigned expenses list -->
-          <div v-if="itemStats(item).expensesCount > 0" class="mt-3 pt-3 border-t border-go-border-subtle">
-            <button
-              @click="toggleExpanded(item.id)"
-              class="text-xs text-go-text-muted hover:text-go-text transition-colors inline-flex items-center gap-1"
-            >
-              <MdiChevronDown class="transition-transform text-base" :class="{ '-rotate-90': !expanded.has(item.id) }" />
-              {{ expanded.has(item.id) ? 'Ocultar' : 'Ver' }}
-              {{ itemStats(item).expensesCount }}
-              {{ itemStats(item).expensesCount === 1 ? 'gasto asignado' : 'gastos asignados' }}
-            </button>
-
-            <div v-if="expanded.has(item.id)" class="mt-2 divide-y divide-go-border-subtle">
+            <div class="w-full h-1 rounded-full bg-go-surface-alt overflow-hidden mt-2">
               <div
-                v-for="expense in itemExpenses(item)"
-                :key="expense.id"
-                class="flex items-center gap-3 py-2"
-                :class="(!readonly && !isClient) ? 'cursor-pointer hover:bg-go-surface-alt/50 -mx-4 px-4 transition-colors' : ''"
-                @click="(!readonly && !isClient) && $emit('editExpense', expense)"
-              >
-                <div class="flex-1 min-w-0">
-                  <div class="text-sm text-go-text">{{ expense.title }}</div>
-                  <div class="text-[11px] text-go-text-muted">
-                    <span class="tabular-nums">{{ formatExpenseDate(expense.date || expense.createdAt) }}</span>
-                    <span v-if="expense.category"> · {{ getCategoryLabel(expense.category) }}</span>
-                  </div>
-                </div>
-                <span class="font-display font-semibold text-sm tabular-nums whitespace-nowrap"
-                  :class="isLaborCategory(expense.category) ? 'text-go-secondary' : 'text-go-primary'"
-                >
-                  {{ formatPrice(expense.amount) }}
-                </span>
-              </div>
+                class="h-full transition-all duration-500"
+                :class="itemSpendBarBg(item)"
+                :style="{ width: Math.min(100, itemSpendPct(item)) + '%' }"
+              />
             </div>
           </div>
-        </div>
+        </button>
       </div>
     </template>
+
+    <!-- Detail panel (URL-synced) -->
+    <ProjectItemDetailPanel
+      :show="!!selectedItem"
+      :item="selectedItem"
+      :readonly="readonly"
+      :is-client="isClient"
+      @close="closeItem"
+      @edit="(item) => openEdit(item)"
+      @assign="(item) => openAssign(item)"
+      @editExpense="(expense) => $emit('editExpense', expense)"
+    />
 
     <!-- Item create/edit modal (provider only) -->
     <ProjectItemModal
@@ -346,20 +216,12 @@
 
 <script setup>
 import MdiPlus from '~icons/mdi/plus';
-import MdiPencil from '~icons/mdi/pencil';
-import MdiDelete from '~icons/mdi/delete';
-import MdiCalendarRange from '~icons/mdi/calendar-range';
-import MdiCheckCircleOutline from '~icons/mdi/check-circle-outline';
-import MdiPlayCircleOutline from '~icons/mdi/play-circle-outline';
-import MdiRestore from '~icons/mdi/restore';
 import MdiViewList from '~icons/mdi/view-list';
-import MdiPlaylistPlus from '~icons/mdi/playlist-plus';
-import MdiChevronDown from '~icons/mdi/chevron-down';
 import MdiClose from '~icons/mdi/close';
 import { useProjectItemStore } from '~/stores/projectItem';
 import { useExpenseStore } from '~/stores/expense';
 import { useProjectMaterialStore, effectiveItemBudget } from '~/stores/projectMaterial';
-import { formatPrice, formatDate, getCategoryLabel } from '~/utils';
+import { formatPrice, getCategoryLabel } from '~/utils';
 
 const props = defineProps({
   projectId: { type: String, required: true },
@@ -373,24 +235,39 @@ defineEmits(['editExpense']);
 const itemStore = useProjectItemStore();
 const expenseStore = useExpenseStore();
 const materialStore = useProjectMaterialStore();
+const route = useRoute();
+const router = useRouter();
 
 // Modal & UI state
 const showModal = ref(false);
 const editingItem = ref(null);
 const isSubmitting = ref(false);
-const busyId = ref(null);
-const expanded = ref(new Set());
 const showAssignModal = ref(false);
 const assigningItem = ref(null);
 const showUnassignedModal = ref(false);
 const quickBusyId = ref(null);
 
-// Effective per-item budget — picks list-derived if materials exist, else manual.
+// Selected item (derived from ?item=<id>)
+const selectedItem = computed(() => {
+  const id = route.query.item;
+  if (!id) return null;
+  return itemStore.items.find(i => i.id === id) || null;
+});
+
+function openItem(id) {
+  router.replace({ query: { ...route.query, item: id } });
+}
+function closeItem() {
+  const { item, ...rest } = route.query;
+  router.replace({ query: rest });
+}
+
+// Effective per-item budget
 function effective(item) {
   return effectiveItemBudget(item, materialStore);
 }
 
-// Aggregate (uses effective per item)
+// Aggregate
 const aggregateBudget = computed(() => {
   let totalMin = 0;
   let totalMax = 0;
@@ -426,20 +303,10 @@ const progressBarColor = computed(() => {
   return 'bg-go-info';
 });
 
-// Item card helpers (all use effective)
-function pctOfTotal(item) {
-  const total = aggregateBudget.value.totalMidpoint;
-  if (total <= 0) return '0';
-  return ((effective(item).totalMidpoint / total) * 100).toFixed(0);
-}
+// Item row helpers
 function hasItemRange(item) {
   const eff = effective(item);
   return eff.materialsMin !== eff.materialsMax;
-}
-function materialsLabel(item) {
-  const eff = effective(item);
-  if (eff.materialsMin === eff.materialsMax) return formatPrice(eff.materialsMin);
-  return `${formatPrice(eff.materialsMin)} – ${formatPrice(eff.materialsMax)}`;
 }
 function itemTotalLabel(item) {
   const eff = effective(item);
@@ -449,6 +316,7 @@ function itemTotalLabel(item) {
 function hasMaterialsForItem(itemId) {
   return materialStore.materialsForItem(itemId).length > 0;
 }
+
 function statusLabel(item) {
   if (item.actualEndDate) return 'Completada';
   if (item.actualStartDate) return 'En progreso';
@@ -459,18 +327,16 @@ function statusClasses(item) {
   if (item.actualStartDate) return 'bg-go-info/15 text-go-info';
   return 'bg-go-surface-alt text-go-text-muted';
 }
+function statusAccent(item) {
+  if (item.actualEndDate) return '#2D7A3F';
+  if (item.actualStartDate) return '#2D6A8A';
+  return '#CFC7BA';
+}
 
-// Category bucketing: only the literal "mano de obra" category counts as labor.
 function isLaborCategory(category) {
   return (category || '').toLowerCase() === 'mano de obra';
 }
 
-// Per-item assigned expense stats
-function itemExpenses(item) {
-  return expenseStore.expenses.filter(
-    e => e.itemId === item.id && (!e.type || e.type === 'expense')
-  );
-}
 function itemStats(item) {
   let realLabor = 0;
   let realMaterials = 0;
@@ -488,26 +354,30 @@ function itemStats(item) {
   return { realLabor, realMaterials, realTotal, expensesCount: count };
 }
 
-function materialsStatus(item) {
-  const real = itemStats(item).realMaterials;
+function itemMaterialsLabel(item) {
   const eff = effective(item);
-  const min = eff.materialsMin;
-  const max = eff.materialsMax;
-  if (real === 0) return { color: 'text-go-text-muted', label: '' };
-  if (max === 0) {
-    return { color: 'text-go-warning', label: '(sin estimar)' };
-  }
-  if (real < min) return { color: 'text-go-text', label: '(por debajo del rango)' };
-  if (real <= max) return { color: 'text-go-success', label: '(dentro del rango)' };
-  // Over max
-  const overPct = ((real - max) / max) * 100;
-  if (overPct <= 25) {
-    return { color: 'text-go-warning', label: `(+${Math.round(overPct)}% sobre el máximo)` };
-  }
-  return { color: 'text-go-danger', label: `(+${Math.round(overPct)}% sobre el máximo)` };
+  if (eff.materialsMin === eff.materialsMax) return formatPrice(eff.materialsMin);
+  return `${formatPrice(eff.materialsMin)} – ${formatPrice(eff.materialsMax)}`;
+}
+function itemSpendPct(item) {
+  const eff = effective(item);
+  const mid = (eff.materialsMin + eff.materialsMax) / 2;
+  if (mid <= 0) return 0;
+  return Math.round((itemStats(item).realMaterials / mid) * 100);
+}
+function itemSpendBarBg(item) {
+  const eff = effective(item);
+  const real = itemStats(item).realMaterials;
+  if (real === 0) return 'bg-go-surface-alt';
+  if (eff.materialsMax === 0) return 'bg-go-warning';
+  if (real < eff.materialsMin) return 'bg-go-primary';
+  if (real <= eff.materialsMax) return 'bg-go-success';
+  const overPct = ((real - eff.materialsMax) / eff.materialsMax) * 100;
+  if (overPct <= 25) return 'bg-go-warning';
+  return 'bg-go-danger';
 }
 
-// Unassigned expenses (only client-cobrable expense type)
+// Unassigned expenses
 const unassignedExpenses = computed(() =>
   expenseStore.expenses
     .filter(e => (!e.type || e.type === 'expense') && !e.itemId)
@@ -521,13 +391,6 @@ const unassignedExpenses = computed(() =>
 const unassignedTotal = computed(() =>
   unassignedExpenses.value.reduce((sum, e) => sum + (e.amount || 0), 0)
 );
-
-function toggleExpanded(id) {
-  const next = new Set(expanded.value);
-  if (next.has(id)) next.delete(id);
-  else next.add(id);
-  expanded.value = next;
-}
 
 function formatExpenseDate(timestamp) {
   if (!timestamp) return '';
@@ -578,65 +441,6 @@ async function handleSubmit(data) {
   }
 }
 
-async function markStarted(item) {
-  busyId.value = item.id;
-  try {
-    const result = await itemStore.updateItem(item.id, { actualStartDate: new Date() });
-    if (result.success) useToast('success', 'Item iniciado');
-    else useToast('error', result.error || 'Error al actualizar');
-  } finally {
-    busyId.value = null;
-  }
-}
-
-async function markCompleted(item) {
-  busyId.value = item.id;
-  try {
-    const result = await itemStore.updateItem(item.id, { actualEndDate: new Date() });
-    if (result.success) useToast('success', 'Item completado');
-    else useToast('error', result.error || 'Error al actualizar');
-  } finally {
-    busyId.value = null;
-  }
-}
-
-async function resetProgress(item) {
-  if (!confirm('¿Reiniciar el progreso de este item? Se borrarán las fechas reales de inicio y fin.')) return;
-  busyId.value = item.id;
-  try {
-    const result = await itemStore.updateItem(item.id, {
-      actualStartDate: null,
-      actualEndDate: null
-    });
-    if (result.success) useToast('success', 'Progreso reiniciado');
-    else useToast('error', result.error || 'Error al actualizar');
-  } finally {
-    busyId.value = null;
-  }
-}
-
-async function confirmDelete(item) {
-  const assigned = itemExpenses(item);
-  const message = assigned.length > 0
-    ? `¿Eliminar el item "${item.name}"? Los ${assigned.length} ${assigned.length === 1 ? 'gasto asignado quedará' : 'gastos asignados quedarán'} sin asignar. Esta acción no se puede deshacer.`
-    : `¿Eliminar el item "${item.name}"? Esta acción no se puede deshacer.`;
-  if (!confirm(message)) return;
-  busyId.value = item.id;
-  try {
-    // Auto-unassign first to avoid orphan itemId references
-    if (assigned.length > 0) {
-      await expenseStore.batchUpdateItemId(
-        assigned.map(e => ({ expenseId: e.id, itemId: null }))
-      );
-    }
-    const ok = await itemStore.deleteItem(item.id);
-    if (ok) useToast('success', 'Item eliminado');
-    else useToast('error', itemStore.error || 'Error al eliminar');
-  } finally {
-    busyId.value = null;
-  }
-}
-
 // Assignment
 function openAssign(item) {
   assigningItem.value = item;
@@ -648,8 +452,6 @@ function closeAssign() {
 }
 
 async function handleAssignSave({ itemId, expenseIds }) {
-  // Build the assignment list: include current expenses now selected + previously
-  // assigned-but-now-unselected (to clear them).
   const previouslyAssigned = expenseStore.expenses
     .filter(e => e.itemId === itemId)
     .map(e => e.id);
@@ -662,7 +464,6 @@ async function handleAssignSave({ itemId, expenseIds }) {
   }
   for (const id of expenseIds) {
     const expense = expenseStore.expenses.find(e => e.id === id);
-    // Only emit a write if itemId is actually changing
     if (expense && expense.itemId !== itemId) {
       assignments.push({ expenseId: id, itemId });
     }

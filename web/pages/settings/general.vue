@@ -1,26 +1,8 @@
 <template>
   <div>
-    <!-- Settings Sub-Nav -->
-    <div class="flex gap-2 border-b border-go-border pb-3 mb-8">
-      <NuxtLink to="/settings/general" class="text-sm px-3 py-1.5 rounded-go-md transition-colors bg-go-surface-alt text-go-text">
-        General
-      </NuxtLink>
-      <NuxtLink to="/settings/categories" class="text-sm px-3 py-1.5 rounded-go-md transition-colors text-go-text-tertiary hover:text-go-text hover:bg-go-surface-hover">
-        Categorías
-      </NuxtLink>
-      <NuxtLink to="/settings/recipients" class="text-sm px-3 py-1.5 rounded-go-md transition-colors text-go-text-tertiary hover:text-go-text hover:bg-go-surface-hover">
-        Destinatarios
-      </NuxtLink>
-      <NuxtLink to="/settings/vendors" class="text-sm px-3 py-1.5 rounded-go-md transition-colors text-go-text-tertiary hover:text-go-text hover:bg-go-surface-hover">
-        Comercios
-      </NuxtLink>
-    </div>
+    <SettingsHeader subtitle="Tu perfil, porcentaje de gestión y cuenta de WhatsApp." />
 
-    <!-- Page Header -->
-    <div class="mb-8">
-      <h1 class="font-display font-bold text-2xl text-go-text">General</h1>
-      <p class="text-go-text-muted text-sm mt-1">Tu perfil, porcentaje de gestión y cuenta de WhatsApp.</p>
-    </div>
+    <div class="px-4 lg:px-5 py-4 lg:py-5">
 
     <!-- Loading State -->
     <div v-if="isLoading" class="bg-go-surface border border-go-border rounded-go-xl p-6">
@@ -246,6 +228,7 @@
         </div>
       </div>
     </template>
+    </div>
   </div>
 </template>
 
@@ -257,6 +240,7 @@ import { useWhatsappStore } from '~/stores/whatsapp';
 import { useProviderStore } from '~/stores/provider';
 
 definePageMeta({
+  layout: 'app',
   middleware: ['auth']
 });
 

@@ -3,9 +3,17 @@
     <!-- Desktop sidebar -->
     <aside class="hidden lg:flex flex-col bg-go-bg-elevated border-r border-go-border-subtle">
       <!-- Brand -->
-      <NuxtLink to="/projects" class="px-4 pt-4 pb-4 border-b border-go-border-subtle block">
+      <div class="px-4 pt-4 pb-3 border-b border-go-border-subtle">
         <div class="font-display font-extrabold text-[17px] text-go-primary tracking-tight leading-none">gastoobra</div>
-        <div class="text-[10.5px] text-go-text-muted mt-0.5">Panel de obras</div>
+      </div>
+
+      <!-- Back to projects list -->
+      <NuxtLink
+        to="/projects"
+        class="px-4 py-2.5 flex items-center gap-1.5 text-[12px] font-semibold text-go-text-secondary hover:text-go-primary hover:bg-go-surface-hover border-b border-go-border-subtle transition-colors"
+      >
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+        Mis obras
       </NuxtLink>
 
       <!-- Primary nav -->

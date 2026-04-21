@@ -1,26 +1,8 @@
 <template>
   <div>
-    <!-- Settings Sub-Nav -->
-    <div class="flex gap-2 border-b border-go-border pb-3 mb-8">
-      <NuxtLink to="/settings/general" class="text-sm px-3 py-1.5 rounded-go-md transition-colors text-go-text-tertiary hover:text-go-text hover:bg-go-surface-hover">
-        General
-      </NuxtLink>
-      <NuxtLink to="/settings/categories" class="text-sm px-3 py-1.5 rounded-go-md transition-colors text-go-text-tertiary hover:text-go-text hover:bg-go-surface-hover">
-        Categorías
-      </NuxtLink>
-      <NuxtLink to="/settings/recipients" class="text-sm px-3 py-1.5 rounded-go-md transition-colors text-go-text-tertiary hover:text-go-text hover:bg-go-surface-hover">
-        Destinatarios
-      </NuxtLink>
-      <NuxtLink to="/settings/vendors" class="text-sm px-3 py-1.5 rounded-go-md transition-colors bg-go-surface-alt text-go-text">
-        Comercios
-      </NuxtLink>
-    </div>
+    <SettingsHeader subtitle="Comercios frecuentes — se usan para sugerir al cargar gastos." />
 
-    <!-- Page Header -->
-    <div class="mb-8">
-      <h1 class="font-display font-bold text-2xl text-go-text">Comercios frecuentes</h1>
-      <p class="text-go-text-muted text-sm mt-1">Comercios o proveedores donde compras seguido. Se usan para sugerir al cargar gastos.</p>
-    </div>
+    <div class="px-4 lg:px-5 py-4 lg:py-5">
 
     <!-- Loading State -->
     <div v-if="vendorStore.isLoading && !hasLoaded" class="bg-go-surface border border-go-border rounded-go-xl p-6">
@@ -45,6 +27,7 @@
         Guardar
       </button>
     </div>
+    </div>
   </div>
 </template>
 
@@ -52,6 +35,7 @@
 import { useVendorStore } from '~/stores/vendor';
 
 definePageMeta({
+  layout: 'app',
   middleware: ['auth']
 });
 

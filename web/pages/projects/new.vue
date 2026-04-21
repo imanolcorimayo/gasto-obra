@@ -1,15 +1,17 @@
 <template>
-  <div class="mb-8">
+  <div>
     <!-- Step 1: Create project form -->
     <template v-if="!showLinkStep">
-      <div class="mb-6">
-        <NuxtLink to="/projects" class="text-go-text-tertiary hover:text-go-text text-sm mb-2 inline-flex items-center gap-1">
-          <MdiArrowLeft class="text-lg" />
-          Volver a proyectos
+      <header class="sticky top-0 z-20 bg-go-bg-elevated border-b border-go-border-subtle px-4 lg:px-5 py-3">
+        <NuxtLink to="/projects" class="text-go-text-tertiary hover:text-go-text text-xs mb-1 inline-flex items-center gap-1">
+          <MdiArrowLeft class="text-sm" />
+          Volver a Mis obras
         </NuxtLink>
-        <h1 class="text-[28px] font-bold tracking-tight mt-2">Nuevo Proyecto</h1>
-        <p class="text-go-text-tertiary text-sm mt-1">Creá un nuevo proyecto de obra o refacción</p>
-      </div>
+        <h1 class="font-display font-bold text-lg text-go-text">Nueva obra</h1>
+        <p class="text-[11px] text-go-text-muted mt-0.5">Creá un nuevo proyecto de obra o refacción</p>
+      </header>
+
+      <div class="px-4 lg:px-5 py-4 lg:py-5">
 
       <div class="max-w-xl mx-auto">
         <div class="bg-go-surface rounded-go-xl border border-go-border p-6">
@@ -20,6 +22,7 @@
             @cancel="navigateTo('/projects')"
           />
         </div>
+      </div>
       </div>
     </template>
 
@@ -85,6 +88,7 @@ import { useProjectStore } from '~/stores/project';
 import { useWhatsappStore } from '~/stores/whatsapp';
 
 definePageMeta({
+  layout: 'app',
   middleware: ['auth']
 });
 

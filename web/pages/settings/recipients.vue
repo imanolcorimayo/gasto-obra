@@ -1,26 +1,8 @@
 <template>
   <div>
-    <!-- Settings Sub-Nav -->
-    <div class="flex gap-2 border-b border-go-border pb-3 mb-8">
-      <NuxtLink to="/settings/general" class="text-sm px-3 py-1.5 rounded-go-md transition-colors text-go-text-tertiary hover:text-go-text hover:bg-go-surface-hover">
-        General
-      </NuxtLink>
-      <NuxtLink to="/settings/categories" class="text-sm px-3 py-1.5 rounded-go-md transition-colors text-go-text-tertiary hover:text-go-text hover:bg-go-surface-hover">
-        Categorías
-      </NuxtLink>
-      <NuxtLink to="/settings/recipients" class="text-sm px-3 py-1.5 rounded-go-md transition-colors bg-go-surface-alt text-go-text">
-        Destinatarios
-      </NuxtLink>
-      <NuxtLink to="/settings/vendors" class="text-sm px-3 py-1.5 rounded-go-md transition-colors text-go-text-tertiary hover:text-go-text hover:bg-go-surface-hover">
-        Comercios
-      </NuxtLink>
-    </div>
+    <SettingsHeader subtitle="Destinatarios de pago — personas o empresas a las que realizás pagos frecuentes." />
 
-    <!-- Page Header -->
-    <div class="mb-8">
-      <h1 class="font-display font-bold text-2xl text-go-text">Destinatarios de pago</h1>
-      <p class="text-go-text-muted text-sm mt-1">Personas o empresas a las que realizás pagos frecuentes.</p>
-    </div>
+    <div class="px-4 lg:px-5 py-4 lg:py-5">
 
     <!-- Loading State -->
     <div v-if="recipientStore.isLoading && !hasLoaded" class="bg-go-surface border border-go-border rounded-go-xl p-6">
@@ -45,6 +27,7 @@
         Guardar
       </button>
     </div>
+    </div>
   </div>
 </template>
 
@@ -53,6 +36,7 @@ import MdiInformation from '~icons/mdi/information';
 import { useRecipientStore } from '~/stores/recipient';
 
 definePageMeta({
+  layout: 'app',
   middleware: ['auth']
 });
 

@@ -79,6 +79,27 @@
       ]
     },
     {
+      "collectionGroup": "projectItems",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "projectId", "order": "ASCENDING" },
+        { "fieldPath": "providerId", "order": "ASCENDING" },
+        { "fieldPath": "laborBudget", "order": "ASCENDING" },
+        { "fieldPath": "materialsBudgetMax", "order": "ASCENDING" },
+        { "fieldPath": "materialsBudgetMin", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "projectItems",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "projectId", "order": "ASCENDING" },
+        { "fieldPath": "laborBudget", "order": "ASCENDING" },
+        { "fieldPath": "materialsBudgetMax", "order": "ASCENDING" },
+        { "fieldPath": "materialsBudgetMin", "order": "ASCENDING" }
+      ]
+    },
+    {
       "collectionGroup": "projectMaterials",
       "queryScope": "COLLECTION",
       "fields": [

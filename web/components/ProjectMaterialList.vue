@@ -1,125 +1,136 @@
 <template>
   <div>
-    <!-- Header -->
-    <div class="flex items-center justify-between text-xs mb-2">
-      <span class="font-semibold uppercase tracking-wider text-go-text-muted">
-        Materiales{{ materials.length > 0 ? ` (${materials.length})` : '' }}
+    <!-- Header (editorial rule) -->
+    <div class="flex items-center gap-2.5 mb-3">
+      <span class="text-[10px] font-bold tracking-[0.14em] uppercase text-go-text-muted whitespace-nowrap">
+        Materiales{{ materials.length > 0 ? ` · ${materials.length}` : '' }}
       </span>
-      <span v-if="materials.length > 0" class="tabular-nums text-go-text-muted">
-        {{ totalLabel }}
-      </span>
+      <span class="flex-1 h-px bg-go-border-subtle"></span>
+      <span v-if="materials.length > 0" class="text-[10.5px] tabular-nums text-go-text-muted">{{ totalLabel }}</span>
     </div>
 
-    <!-- Material rows -->
-    <div v-if="materials.length > 0" class="space-y-1">
+    <!-- Material rows (flat, editorial) -->
+    <div v-if="materials.length > 0" class="divide-y divide-go-border-subtle border-b border-go-border-subtle">
       <div
         v-for="material in materials"
         :key="material.id"
-        class="border border-go-border-subtle rounded-go-sm bg-go-surface"
       >
-        <!-- Row header (always visible) -->
+        <!-- Row header -->
         <button
           type="button"
-          class="w-full flex items-center gap-2 px-2.5 py-1.5 text-left hover:bg-go-surface-alt/40 transition-colors"
+          class="w-full flex items-center gap-2.5 py-2.5 text-left transition-colors hover:bg-go-surface-hover -mx-1 px-1 rounded-go-sm"
           @click="toggleExpanded(material.id)"
         >
           <MdiChevronDown
-            class="text-sm text-go-text-muted transition-transform shrink-0"
+            class="text-[14px] text-go-text-muted transition-transform shrink-0"
             :class="{ '-rotate-90': !expanded.has(material.id) }"
           />
-          <span class="flex-1 text-xs text-go-text truncate">{{ material.name }}</span>
-          <span class="text-[10px] text-go-text-muted whitespace-nowrap">
+          <span class="flex-1 text-[13px] font-medium text-go-text truncate">{{ material.name }}</span>
+          <span class="text-[10px] text-go-text-muted whitespace-nowrap hidden sm:inline">
             {{ proposalCountLabel(material.id) }}
           </span>
-          <span class="text-xs tabular-nums whitespace-nowrap" :class="proposalCountFor(material.id) === 0 ? 'text-go-text-muted italic' : 'text-go-text font-medium'">
+          <span
+            class="text-[12.5px] font-display tabular-nums whitespace-nowrap"
+            :class="proposalCountFor(material.id) === 0 ? 'text-go-text-muted italic' : 'text-go-text font-semibold'"
+          >
             {{ priceLabel(material.id) }}
           </span>
         </button>
 
         <!-- Expanded content -->
-        <div v-if="expanded.has(material.id)" class="px-2.5 pb-2 pt-1 border-t border-go-border-subtle">
+        <div v-if="expanded.has(material.id)" class="pb-3 pl-6 pr-1 -mt-1">
           <!-- Notes -->
-          <p v-if="material.notes" class="text-[11px] text-go-text-muted italic mb-2">{{ material.notes }}</p>
+          <p v-if="material.notes" class="text-[11.5px] text-go-text-muted italic mb-2.5 border-l-2 border-go-border-subtle pl-2.5">{{ material.notes }}</p>
 
           <!-- Proposals list -->
-          <div v-if="proposalsFor(material.id).length > 0" class="space-y-1">
+          <div v-if="proposalsFor(material.id).length > 0" class="space-y-2">
             <div
-              v-for="prop in proposalsFor(material.id)"
+              v-for="prop in sortedProposalsFor(material.id)"
               :key="prop.id"
-              class="px-2 py-1.5 rounded-go-sm bg-go-bg/40 text-xs"
+              class="flex items-start gap-3 py-1.5"
             >
-              <div class="flex items-center gap-2">
-                <div class="flex-1 min-w-0">
-                  <div class="flex items-center gap-1.5">
-                    <span class="text-go-text truncate">{{ prop.vendor || 'Sin comercio' }}</span>
-                    <span
-                      v-if="prop.addedBy === 'client'"
-                      class="text-[9px] uppercase font-semibold px-1 py-0.5 rounded-go-sm bg-go-info/15 text-go-info"
-                    >Cliente</span>
-                  </div>
-                  <div v-if="prop.notes" class="text-[10px] text-go-text-muted truncate" :title="prop.notes">{{ prop.notes }}</div>
+              <!-- Left: vendor + notes + images -->
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center gap-1.5 flex-wrap">
+                  <span class="text-[12.5px] font-medium text-go-text truncate">{{ prop.vendor || 'Sin comercio' }}</span>
+                  <span
+                    v-if="isBestProposal(material.id, prop.id)"
+                    class="text-[9px] uppercase font-bold tracking-[0.08em] px-1.5 py-0.5 rounded-full bg-go-success-muted text-go-success"
+                    title="Mejor precio"
+                  >Mejor</span>
+                  <span
+                    v-if="prop.addedBy === 'client'"
+                    class="text-[9px] uppercase font-semibold tracking-[0.06em] px-1.5 py-0.5 rounded-full bg-go-info-muted text-go-info"
+                  >Cliente</span>
                 </div>
-                <span class="font-display font-semibold tabular-nums text-go-primary whitespace-nowrap">{{ formatPrice(prop.amount) }}</span>
-                <div v-if="!readonly && canModifyProposal(prop)" class="flex items-center gap-0.5">
+                <div v-if="prop.notes" class="text-[10.5px] text-go-text-muted mt-0.5 line-clamp-2" :title="prop.notes">{{ prop.notes }}</div>
+                <div v-if="(prop.images && prop.images.length > 0) || !readonly" class="mt-1.5">
+                  <ProjectImageGallery
+                    :images="prop.images || []"
+                    :endpoint-base="`/api/proposals/${prop.id}`"
+                    :readonly="readonly"
+                    @uploaded="(img) => materialStore.addImageToProposal(prop.id, img)"
+                    @deleted="(id) => materialStore.removeImageFromProposal(prop.id, id)"
+                  />
+                </div>
+              </div>
+              <!-- Right: amount + actions -->
+              <div class="flex items-start gap-1 shrink-0">
+                <div class="text-right">
+                  <div class="font-display font-bold text-[13.5px] tabular-nums text-go-primary">{{ formatPrice(prop.amount) }}</div>
+                </div>
+                <div v-if="!readonly && canModifyProposal(prop)" class="flex items-center gap-0.5 ml-1">
                   <button
                     type="button"
                     @click="openEditProposal(material, prop)"
-                    class="text-go-text-muted hover:text-go-text transition-colors p-1 rounded-go-sm"
+                    class="w-6 h-6 flex items-center justify-center text-go-text-muted hover:text-go-text hover:bg-go-surface-hover rounded-go-sm transition-colors"
                     title="Editar"
                   >
-                    <MdiPencil class="text-xs" />
+                    <MdiPencil class="text-[12px]" />
                   </button>
                   <button
                     type="button"
                     @click="confirmDeleteProposal(prop)"
                     :disabled="busy"
-                    class="text-go-text-muted hover:text-go-danger transition-colors p-1 rounded-go-sm disabled:opacity-50"
+                    class="w-6 h-6 flex items-center justify-center text-go-text-muted hover:text-go-danger hover:bg-go-danger/10 rounded-go-sm transition-colors disabled:opacity-50"
                     title="Eliminar"
                   >
-                    <MdiDelete class="text-xs" />
+                    <MdiDelete class="text-[12px]" />
                   </button>
                 </div>
               </div>
-              <div v-if="(prop.images && prop.images.length > 0) || !readonly" class="mt-1.5">
-                <ProjectImageGallery
-                  :images="prop.images || []"
-                  :endpoint-base="`/api/proposals/${prop.id}`"
-                  :readonly="readonly"
-                  @uploaded="(img) => materialStore.addImageToProposal(prop.id, img)"
-                  @deleted="(id) => materialStore.removeImageFromProposal(prop.id, id)"
-                />
-              </div>
             </div>
           </div>
-          <p v-else class="text-[11px] text-go-text-muted italic">Sin propuestas todavía. Agregá precios de distintos comercios.</p>
+          <p v-else class="text-[11.5px] text-go-text-muted italic">Sin propuestas todavía. Agregá precios de distintos comercios.</p>
 
-          <!-- Actions -->
-          <div v-if="!readonly" class="flex items-center gap-2 mt-2 pt-2 border-t border-go-border-subtle">
+          <!-- Material actions -->
+          <div class="flex items-center gap-3 mt-2.5 pt-2 border-t border-dashed border-go-border-subtle">
             <button
+              v-if="!readonly"
               type="button"
               @click="openAddProposal(material)"
-              class="text-[11px] font-medium text-go-primary hover:text-go-primary/80 transition-colors inline-flex items-center gap-1"
+              class="text-[11.5px] font-semibold text-go-primary hover:text-go-primary-hover transition-colors inline-flex items-center gap-1"
             >
-              <MdiPlus class="text-sm" />
+              <MdiPlus class="text-[14px]" />
               {{ isClient ? 'Sugerir propuesta' : 'Agregar propuesta' }}
             </button>
-            <div v-if="canModifyMaterial(material)" class="ml-auto flex items-center gap-0.5">
+            <div v-if="!readonly && canModifyMaterial(material)" class="ml-auto flex items-center gap-0.5">
               <button
                 type="button"
                 @click="openEditMaterial(material)"
-                class="text-go-text-muted hover:text-go-text transition-colors p-1 rounded-go-sm"
+                class="w-6 h-6 flex items-center justify-center text-go-text-muted hover:text-go-text hover:bg-go-surface-hover rounded-go-sm transition-colors"
                 title="Editar material"
               >
-                <MdiPencil class="text-xs" />
+                <MdiPencil class="text-[12px]" />
               </button>
               <button
                 type="button"
                 @click="confirmDeleteMaterial(material)"
                 :disabled="busy"
-                class="text-go-text-muted hover:text-go-danger transition-colors p-1 rounded-go-sm disabled:opacity-50"
+                class="w-6 h-6 flex items-center justify-center text-go-text-muted hover:text-go-danger hover:bg-go-danger/10 rounded-go-sm transition-colors disabled:opacity-50"
                 title="Eliminar material"
               >
-                <MdiDelete class="text-xs" />
+                <MdiDelete class="text-[12px]" />
               </button>
             </div>
           </div>
@@ -132,9 +143,9 @@
       v-if="!readonly"
       type="button"
       @click="openAddMaterial"
-      class="text-[11px] font-medium text-go-primary hover:text-go-primary/80 transition-colors inline-flex items-center gap-1 mt-2"
+      class="text-[11.5px] font-semibold text-go-primary hover:text-go-primary-hover transition-colors inline-flex items-center gap-1 mt-3"
     >
-      <MdiPlus class="text-sm" />
+      <MdiPlus class="text-[14px]" />
       {{ isClient ? 'Sugerir material' : 'Agregar material' }}
     </button>
 
@@ -209,6 +220,18 @@ const totalLabel = computed(() => {
 
 function proposalsFor(materialId) {
   return materialStore.proposalsForMaterial(materialId);
+}
+
+function sortedProposalsFor(materialId) {
+  return proposalsFor(materialId).slice().sort((a, b) => (a.amount || 0) - (b.amount || 0));
+}
+
+function isBestProposal(materialId, proposalId) {
+  const props_ = proposalsFor(materialId);
+  if (props_.length < 2) return false;
+  const cheapest = Math.min(...props_.map(p => p.amount || 0));
+  const prop = props_.find(p => p.id === proposalId);
+  return prop && (prop.amount || 0) === cheapest;
 }
 
 function proposalCountFor(materialId) {
