@@ -227,6 +227,15 @@
           <p class="text-go-text-muted text-sm mt-1">{{ hasActiveFilters ? 'Probá ajustar los filtros.' : 'Todavía no hay gastos registrados en esta obra.' }}</p>
         </div>
         <div v-else class="space-y-3">
+          <!-- Filtered totals -->
+          <div class="flex items-center justify-between py-2.5 px-3 rounded-go-md bg-go-surface-alt border border-go-border-subtle">
+            <span class="text-xs font-semibold uppercase tracking-wider text-go-text-muted">{{ hasActiveFilters ? 'Total filtrado' : 'Total' }}</span>
+            <div class="flex items-center gap-3">
+              <span v-if="filteredTotalPayments > 0" class="text-sm tabular-nums text-go-secondary font-medium">+{{ formatPrice(filteredTotalPayments) }}</span>
+              <span class="font-display font-bold text-lg tabular-nums text-go-primary">{{ formatPrice(filteredTotalExpenses) }}</span>
+            </div>
+          </div>
+
           <div v-for="(group, groupIdx) in weekGroups" :key="group.key">
             <!-- Week header -->
             <button
@@ -497,6 +506,18 @@ const filteredCards = computed(() => {
 
   return list;
 });
+
+const filteredTotalExpenses = computed(() =>
+  filteredCards.value
+    .filter(e => !e.type || e.type === 'expense')
+    .reduce((sum, e) => sum + (e.amount || 0), 0)
+);
+
+const filteredTotalPayments = computed(() =>
+  filteredCards.value
+    .filter(e => e.type === 'payment')
+    .reduce((sum, e) => sum + (e.amount || 0), 0)
+);
 
 // Group filtered expenses by week (Monday-based)
 function getExpenseDate(e) {
