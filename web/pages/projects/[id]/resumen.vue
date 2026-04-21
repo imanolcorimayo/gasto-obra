@@ -1,5 +1,14 @@
 <template>
-  <div class="mb-8">
+  <div>
+    <!-- Page header (sticky) -->
+    <header class="sticky top-0 z-20 bg-go-bg-elevated border-b border-go-border-subtle px-4 lg:px-5 py-3.5 flex items-center gap-3">
+      <div class="flex-1 min-w-0">
+        <h1 class="font-display font-bold text-lg lg:text-[18px] text-go-text truncate">Resumen financiero</h1>
+        <p v-if="project" class="text-[11px] text-go-text-muted mt-0.5 truncate">{{ project.name }}<span v-if="project.tag"> · <span class="font-mono">#{{ project.tag }}</span></span></p>
+      </div>
+    </header>
+
+    <div class="px-4 lg:px-5 py-4 lg:py-5">
     <AppLoader v-if="isLoading" />
 
     <div v-else-if="!project" class="text-center py-16">
@@ -8,17 +17,6 @@
     </div>
 
     <template v-else>
-      <!-- Back link -->
-      <NuxtLink
-        :to="`/projects/${route.params.id}`"
-        class="text-go-text-muted text-sm hover:text-go-text inline-flex items-center gap-1 mb-4"
-      >
-        <MdiArrowLeft class="text-lg" />
-        Volver al proyecto
-      </NuxtLink>
-
-      <h1 class="font-display font-bold text-2xl text-go-text mb-1">Resumen financiero</h1>
-      <p class="text-sm text-go-text-muted mb-6">{{ project.name }}</p>
 
       <!-- ==================== 1. BUDGET CONSUMPTION TRACKER ==================== -->
       <section class="bg-go-surface border border-go-border rounded-go-xl p-5 mb-6">
@@ -389,7 +387,7 @@
         <div v-else class="flex flex-col items-center py-4">
           <CasquitoNeutral :size="180" />
           <p class="text-sm text-go-text-muted mt-3">Organizá los gastos en entregas para llevar un mejor control.</p>
-          <NuxtLink :to="`/projects/${route.params.id}?tab=entregas`" class="text-sm text-go-primary hover:underline mt-1 inline-block">Crear entrega →</NuxtLink>
+          <NuxtLink :to="`/projects/${route.params.id}/gastos?tab=entregas`" class="text-sm text-go-primary hover:underline mt-1 inline-block">Crear entrega →</NuxtLink>
         </div>
       </section>
 
@@ -439,6 +437,7 @@
         </div>
       </section>
     </template>
+    </div>
   </div>
 </template>
 
@@ -458,6 +457,7 @@ import { formatPrice, getCategoryLabel, getCategoryColor, getManagementFeeAmount
 import { getCurrentUserAsync } from '~/utils/firebase';
 
 definePageMeta({
+  layout: 'project',
   middleware: ['auth']
 });
 
