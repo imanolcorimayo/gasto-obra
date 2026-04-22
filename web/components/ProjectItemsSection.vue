@@ -73,11 +73,17 @@
           ></div>
         </div>
         <div class="flex items-center justify-between mt-2 text-xs text-go-text-muted tabular-nums">
-          <span>{{ formatPrice(aggregateBudget.completedMidpoint) }} completado</span>
-          <span>de {{ formatPrice(aggregateBudget.totalMidpoint) }}</span>
+          <span>{{ formatPrice(aggregateBudget.completedLabor) }} de mano de obra lista</span>
+          <span>de {{ formatPrice(aggregateBudget.totalLabor) }}</span>
         </div>
-        <div v-if="aggregateBudget.hasAnyRange" class="text-[10px] text-go-text-muted/80 mt-1 italic text-right tabular-nums">
-          Materiales estimados entre {{ formatPrice(aggregateBudget.totalMin) }} y {{ formatPrice(aggregateBudget.totalMax) }}
+        <div v-if="aggregateBudget.materialsMax > 0" class="text-[10px] text-go-text-muted/80 mt-1 italic text-right tabular-nums">
+          Materiales estimados
+          <template v-if="aggregateBudget.hasMaterialsRange">
+            entre {{ formatPrice(aggregateBudget.materialsMin) }} y {{ formatPrice(aggregateBudget.materialsMax) }}
+          </template>
+          <template v-else>
+            en {{ formatPrice(aggregateBudget.materialsMax) }}
+          </template>
         </div>
       </div>
 
@@ -104,9 +110,12 @@
                   >{{ statusLabel(item) }}</span>
                 </div>
                 <div class="text-[11px] text-go-text-muted mt-0.5 tabular-nums truncate">
-                  {{ formatPrice(itemStats(item).realMaterials) }}
+                  Mano de obra <span class="text-go-text font-semibold">{{ formatPrice(item.laborBudget || 0) }}</span>
+                </div>
+                <div class="text-[11px] text-go-text-muted mt-0.5 tabular-nums truncate">
+                  {{ formatPrice(itemStats(item).realTotal) }}
                   <span class="text-go-text-muted/60">de</span>
-                  {{ itemMaterialsLabel(item) }}<span v-if="hasItemRange(item)" class="italic text-go-text-muted/80"> (estim.)</span>
+                  {{ itemTotalLabel(item) }}<span v-if="hasItemRange(item)" class="italic text-go-text-muted/80"> (estim.)</span>
                   <span class="text-go-text-muted/60"> · </span>
                   <span class="text-go-text">{{ itemSpendPct(item) }}%</span>
                 </div>
@@ -269,26 +278,27 @@ function effective(item) {
 
 // Aggregate
 const aggregateBudget = computed(() => {
-  let totalMin = 0;
-  let totalMax = 0;
-  let totalMidpoint = 0;
-  let completedMidpoint = 0;
-  let hasAnyRange = false;
+  let totalLabor = 0;
+  let completedLabor = 0;
+  let materialsMin = 0;
+  let materialsMax = 0;
+  let hasMaterialsRange = false;
   for (const item of itemStore.items) {
     const eff = effective(item);
-    totalMin += eff.totalMin;
-    totalMax += eff.totalMax;
-    totalMidpoint += eff.totalMidpoint;
-    if (eff.materialsMin !== eff.materialsMax) hasAnyRange = true;
-    if (item.actualEndDate) completedMidpoint += eff.totalMidpoint;
+    const labor = item.laborBudget || 0;
+    totalLabor += labor;
+    materialsMin += eff.materialsMin;
+    materialsMax += eff.materialsMax;
+    if (eff.materialsMin !== eff.materialsMax) hasMaterialsRange = true;
+    if (item.actualEndDate) completedLabor += labor;
   }
-  return { totalMin, totalMax, totalMidpoint, completedMidpoint, hasAnyRange };
+  return { totalLabor, completedLabor, materialsMin, materialsMax, hasMaterialsRange };
 });
 
 const progressPercentage = computed(() => {
-  const total = aggregateBudget.value.totalMidpoint;
-  if (total <= 0) return 0;
-  return (aggregateBudget.value.completedMidpoint / total) * 100;
+  const { totalLabor, completedLabor } = aggregateBudget.value;
+  if (totalLabor <= 0) return 0;
+  return (completedLabor / totalLabor) * 100;
 });
 
 const progressLabel = computed(() => progressPercentage.value.toFixed(0));
@@ -361,18 +371,17 @@ function itemMaterialsLabel(item) {
 }
 function itemSpendPct(item) {
   const eff = effective(item);
-  const mid = (eff.materialsMin + eff.materialsMax) / 2;
-  if (mid <= 0) return 0;
-  return Math.round((itemStats(item).realMaterials / mid) * 100);
+  if (eff.totalMidpoint <= 0) return 0;
+  return Math.round((itemStats(item).realTotal / eff.totalMidpoint) * 100);
 }
 function itemSpendBarBg(item) {
   const eff = effective(item);
-  const real = itemStats(item).realMaterials;
+  const real = itemStats(item).realTotal;
   if (real === 0) return 'bg-go-surface-alt';
-  if (eff.materialsMax === 0) return 'bg-go-warning';
-  if (real < eff.materialsMin) return 'bg-go-primary';
-  if (real <= eff.materialsMax) return 'bg-go-success';
-  const overPct = ((real - eff.materialsMax) / eff.materialsMax) * 100;
+  if (eff.totalMax === 0) return 'bg-go-warning';
+  if (real < eff.totalMin) return 'bg-go-primary';
+  if (real <= eff.totalMax) return 'bg-go-success';
+  const overPct = ((real - eff.totalMax) / eff.totalMax) * 100;
   if (overPct <= 25) return 'bg-go-warning';
   return 'bg-go-danger';
 }

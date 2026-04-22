@@ -47,8 +47,8 @@
           <!-- Estimativo de materiales -->
           <div v-if="!hasMaterials">
             <div class="flex items-baseline justify-between mb-1.5">
-              <label class="block text-[11px] font-semibold uppercase tracking-wider text-go-text-muted">Estimativo de materiales *</label>
-              <span class="text-[10px] text-go-text-muted italic">Puede variar</span>
+              <label class="block text-[11px] font-semibold uppercase tracking-wider text-go-text-muted">Estimativo de materiales</label>
+              <span class="text-[10px] text-go-text-muted italic">Opcional · puede variar</span>
             </div>
             <div class="grid grid-cols-2 gap-2">
               <div>
@@ -58,7 +58,6 @@
                   <input
                     v-model="form.materialsBudgetMin"
                     type="number"
-                    required
                     min="0"
                     step="1"
                     placeholder="0"
@@ -73,7 +72,6 @@
                   <input
                     v-model="form.materialsBudgetMax"
                     type="number"
-                    required
                     min="0"
                     step="1"
                     placeholder="0"
@@ -244,11 +242,16 @@ watch(() => props.show, (show) => {
 
 function handleSubmit() {
   if (dateError.value || materialsError.value) return;
+  let min = parseFloat(form.materialsBudgetMin);
+  let max = parseFloat(form.materialsBudgetMax);
+  if (isNaN(min) && isNaN(max)) { min = 0; max = 0; }
+  else if (isNaN(min)) min = max;
+  else if (isNaN(max)) max = min;
   const data = {
     name: form.name.trim(),
     laborBudget: parseFloat(form.laborBudget) || 0,
-    materialsBudgetMin: parseFloat(form.materialsBudgetMin) || 0,
-    materialsBudgetMax: parseFloat(form.materialsBudgetMax) || 0,
+    materialsBudgetMin: min,
+    materialsBudgetMax: max,
     plannedStartDate: new Date(form.plannedStartDate),
     plannedEndDate: new Date(form.plannedEndDate)
   };

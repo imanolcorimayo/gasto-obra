@@ -135,20 +135,10 @@ export const getCurrentUser = (): User | null => {
   return auth.currentUser
 }
 
-export const getCurrentUserAsync = (): Promise<User | null> => {
-  return new Promise((resolve) => {
-    const auth = getAuthInstance()
-
-    if (auth.currentUser) {
-      resolve(auth.currentUser)
-      return
-    }
-
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      unsubscribe()
-      resolve(user)
-    })
-  })
+export const getCurrentUserAsync = async (): Promise<User | null> => {
+  const auth = getAuthInstance()
+  await auth.authStateReady()
+  return auth.currentUser
 }
 
 export const onAuthStateChange = (callback: (user: User | null) => void): (() => void) => {

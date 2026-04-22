@@ -214,7 +214,6 @@ onMounted(async () => {
   const id = route.params.id;
   const result = await projectStore.fetchProject(id);
   project.value = result;
-  isLoading.value = false;
 
   if (result) {
     await Promise.all([
@@ -233,6 +232,7 @@ onMounted(async () => {
       await projectStore.fetchProjects();
     }
   }
+  isLoading.value = false;
 });
 
 async function updateStatus() {
