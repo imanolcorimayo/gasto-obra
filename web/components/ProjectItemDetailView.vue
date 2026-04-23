@@ -191,6 +191,7 @@
     >
       <ProjectMaterialDetail
         v-if="drawerMode === 'material'"
+        ref="materialDetailRef"
         :material-id="drawerId"
         :item="item"
         :readonly="isClient"
@@ -199,10 +200,41 @@
       />
       <ProjectTaskDetail
         v-else-if="drawerMode === 'task'"
+        ref="taskDetailRef"
         :task-id="drawerId"
         :readonly="isClient"
         @deleted="closeDrawer"
       />
+      <template v-if="showDrawerFooter" #footer>
+        <div v-if="drawerMode === 'task'" class="px-5 py-3 flex items-center justify-end">
+          <button
+            type="button"
+            @click="taskDetailRef?.confirmDelete()"
+            class="inline-flex items-center gap-1.5 text-[12.5px] font-semibold text-go-danger px-2.5 py-1.5 rounded-go-md hover:bg-go-danger/10 transition-colors"
+          >
+            <MdiDelete class="text-[14px]" />
+            Eliminar tarea
+          </button>
+        </div>
+        <div v-else-if="drawerMode === 'material'" class="px-5 py-3 flex items-center justify-between">
+          <button
+            type="button"
+            @click="materialDetailRef?.openEditMaterial()"
+            class="inline-flex items-center gap-1.5 text-[12.5px] font-semibold text-go-text-secondary hover:text-go-text px-2.5 py-1.5 rounded-go-md hover:bg-go-surface-hover transition-colors"
+          >
+            <MdiPencil class="text-[14px]" />
+            Editar material
+          </button>
+          <button
+            type="button"
+            @click="materialDetailRef?.confirmDeleteMaterial()"
+            class="inline-flex items-center gap-1.5 text-[12.5px] font-semibold text-go-danger px-2.5 py-1.5 rounded-go-md hover:bg-go-danger/10 transition-colors"
+          >
+            <MdiDelete class="text-[14px]" />
+            Eliminar material
+          </button>
+        </div>
+      </template>
     </AppDrawer>
   </div>
 </template>
@@ -210,6 +242,8 @@
 <script setup>
 import MdiCheckCircleOutline from '~icons/mdi/check-circle-outline';
 import MdiPlayCircleOutline from '~icons/mdi/play-circle-outline';
+import MdiPencil from '~icons/mdi/pencil';
+import MdiDelete from '~icons/mdi/delete';
 import { useProjectItemStore } from '~/stores/projectItem';
 import { useExpenseStore } from '~/stores/expense';
 import { useProjectMaterialStore, effectiveItemBudget } from '~/stores/projectMaterial';
@@ -365,6 +399,8 @@ const materialsBarBg = computed(() => {
 // ═════════ DRAWER STATE ═════════
 const drawerMode = ref(null);
 const drawerId = ref(null);
+const materialDetailRef = ref(null);
+const taskDetailRef = ref(null);
 
 function openMaterialDrawer(materialId) {
   drawerMode.value = 'material';
@@ -395,8 +431,24 @@ const drawerEyebrow = computed(() => {
 });
 const drawerTitle = computed(() => {
   if (drawerMode.value === 'material') return drawerMaterial.value?.name || 'Material';
-  if (drawerMode.value === 'task') return drawerTask.value?.description || 'Tarea';
+  if (drawerMode.value === 'task') {
+    const t = drawerTask.value;
+    return t?.name || t?.description || 'Tarea';
+  }
   return '';
+});
+
+const canModifyDrawerMaterial = computed(() => {
+  const m = drawerMaterial.value;
+  if (!m) return false;
+  return !props.isClient || m.addedBy === 'client';
+});
+
+const showDrawerFooter = computed(() => {
+  if (!drawerMode.value) return false;
+  if (drawerMode.value === 'material') return canModifyDrawerMaterial.value;
+  if (drawerMode.value === 'task') return !props.isClient;
+  return false;
 });
 const drawerSubtitle = computed(() => {
   if (drawerMode.value === 'material') {

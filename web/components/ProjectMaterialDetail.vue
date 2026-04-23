@@ -1,5 +1,6 @@
 <template>
-  <div v-if="material" class="px-5 py-5 space-y-5">
+  <div v-if="material">
+    <div class="px-5 py-5 space-y-5">
     <!-- Material notes -->
     <section>
       <h3 class="text-[10px] font-bold tracking-[0.14em] uppercase text-go-text-muted mb-1.5">Notas</h3>
@@ -103,26 +104,7 @@
       </div>
     </section>
 
-    <!-- Material actions -->
-    <section v-if="!readonly && canModifyMaterial" class="pt-4 border-t border-go-border-subtle flex items-center justify-between">
-      <button
-        type="button"
-        @click="openEditMaterial"
-        class="inline-flex items-center gap-1.5 text-[12.5px] font-semibold text-go-text-secondary hover:text-go-text px-2.5 py-1.5 rounded-go-md hover:bg-go-surface-hover transition-colors"
-      >
-        <MdiPencil class="text-[14px]" />
-        Editar material
-      </button>
-      <button
-        type="button"
-        @click="confirmDeleteMaterial"
-        :disabled="busy"
-        class="inline-flex items-center gap-1.5 text-[12.5px] font-semibold text-go-danger px-2.5 py-1.5 rounded-go-md hover:bg-go-danger/10 transition-colors disabled:opacity-50"
-      >
-        <MdiDelete class="text-[14px]" />
-        Eliminar material
-      </button>
-    </section>
+    </div>
 
     <!-- Modals -->
     <ProjectMaterialModal
@@ -340,4 +322,6 @@ async function confirmDeleteProposal(proposal) {
     busy.value = false;
   }
 }
+
+defineExpose({ canModifyMaterial, openEditMaterial, confirmDeleteMaterial });
 </script>

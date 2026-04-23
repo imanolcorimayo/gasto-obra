@@ -17,10 +17,15 @@ export class ProjectTaskSchema extends Schema {
       type: 'string',
       required: true
     },
+    name: {
+      type: 'string',
+      required: false,
+      maxLength: 120
+    },
     description: {
       type: 'string',
-      required: true,
-      maxLength: 300
+      required: false,
+      maxLength: 2000
     },
     status: {
       type: 'string',

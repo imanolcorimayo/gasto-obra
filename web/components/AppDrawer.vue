@@ -46,9 +46,9 @@
           <slot />
         </div>
 
-        <footer v-if="$slots.footer" class="shrink-0 border-t border-go-border-subtle px-5 py-3 bg-go-surface">
+        <div v-if="$slots.footer" class="shrink-0 border-t border-go-border-subtle bg-go-bg-elevated">
           <slot name="footer" />
-        </footer>
+        </div>
       </div>
     </Transition>
   </Teleport>

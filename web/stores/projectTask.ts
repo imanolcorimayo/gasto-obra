@@ -158,6 +158,18 @@ export const useProjectTaskStore = defineStore('projectTask', {
       }
     },
 
+    addImageToTask(id: string, image: any) {
+      const task = this.tasks.find(t => t.id === id);
+      if (!task) return;
+      task.images = [...(task.images || []), image];
+    },
+
+    removeImageFromTask(id: string, imageId: string) {
+      const task = this.tasks.find(t => t.id === id);
+      if (!task || !task.images) return;
+      task.images = task.images.filter((img: any) => img.id !== imageId);
+    },
+
     nextOrderForItem(itemId: string): number {
       let max = -1;
       for (const t of this.tasks) {

@@ -153,7 +153,8 @@ export interface ProjectTask {
   projectId: string;
   providerId: string;
   itemId: string;
-  description: string;
+  name: string | null;
+  description: string | null;
   status: TaskStatus;
   order: number;
   plannedDate: any | null;
