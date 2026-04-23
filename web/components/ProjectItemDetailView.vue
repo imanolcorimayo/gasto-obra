@@ -72,7 +72,6 @@
       <section class="bg-go-surface border border-go-border-subtle rounded-go-xl p-5 lg:p-6">
         <ProjectMaterialList
           :item="item"
-          :readonly="isClient"
           :is-client="isClient"
           @open-material="openMaterialDrawer"
         />
@@ -194,7 +193,6 @@
         ref="materialDetailRef"
         :material-id="drawerId"
         :item="item"
-        :readonly="isClient"
         :is-client="isClient"
         @deleted="closeDrawer"
       />
