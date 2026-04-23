@@ -190,6 +190,8 @@ app.post('/api/items/:id/image', requireAuth, uploadImage.single('image'), Uploa
 app.delete('/api/items/:id/image/:imageId', requireAuth, DeleteEntityImage('item'));
 app.post('/api/proposals/:id/image', requireAuth, uploadImage.single('image'), UploadEntityImage('proposal'));
 app.delete('/api/proposals/:id/image/:imageId', requireAuth, DeleteEntityImage('proposal'));
+app.post('/api/tasks/:id/image', requireAuth, uploadImage.single('image'), UploadEntityImage('task'));
+app.delete('/api/tasks/:id/image/:imageId', requireAuth, DeleteEntityImage('task'));
 
 // Materials + proposals CRUD (server-mediated so clients can write without
 // needing complex Firestore rules). Server validates the caller's role

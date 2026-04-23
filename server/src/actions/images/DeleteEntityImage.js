@@ -14,6 +14,10 @@ const CONFIG = {
   proposal: {
     collection: 'projectMaterialProposals',
     pathPrefix: 'proposals'
+  },
+  task: {
+    collection: 'projectTasks',
+    pathPrefix: 'tasks'
   }
 };
 

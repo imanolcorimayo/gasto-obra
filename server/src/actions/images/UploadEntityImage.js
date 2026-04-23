@@ -8,7 +8,7 @@ import * as Sentry from '@sentry/node';
 
 const storage = new StorageHandler(bucket);
 
-// entityKind is 'item' (projectItems) or 'proposal' (projectMaterialProposals).
+// entityKind is 'item' (projectItems), 'proposal' (projectMaterialProposals), or 'task' (projectTasks).
 // Routes to the right collection and storage path.
 const CONFIG = {
   item: {
@@ -18,6 +18,10 @@ const CONFIG = {
   proposal: {
     collection: 'projectMaterialProposals',
     pathPrefix: 'proposals'
+  },
+  task: {
+    collection: 'projectTasks',
+    pathPrefix: 'tasks'
   }
 };
 
