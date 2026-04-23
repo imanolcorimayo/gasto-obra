@@ -148,6 +148,37 @@ export interface ProjectMaterialProposal {
 
 export type TaskStatus = 'pendiente' | 'en_progreso' | 'completada';
 
+export type CertificationStatus = 'draft' | 'issued';
+export type CertificationLineKind = 'item' | 'task';
+
+export interface CertificationLine {
+  id: string;
+  kind: CertificationLineKind;
+  refId: string;
+  label: string;
+  percentCumulative: number | null;
+  percentPeriod: number | null;
+  amount: number;
+  notes: string | null;
+}
+
+export interface ProjectCertification {
+  id: string;
+  projectId: string;
+  providerId: string;
+  number: number;
+  title: string | null;
+  periodStart: any | null;
+  periodEnd: any | null;
+  issueDate: any;
+  lines: CertificationLine[];
+  totalAmount: number;
+  notes: string | null;
+  status: CertificationStatus;
+  createdAt: any;
+  updatedAt: any;
+}
+
 export interface ProjectTask {
   id: string;
   projectId: string;

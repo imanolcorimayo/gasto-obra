@@ -108,6 +108,23 @@ service cloud.firestore {
                             && resource.data.providerId == request.auth.uid;
     }
 
+    // ── Project Certifications ────────────────────────────────
+    // Periodic progress certifications. Read: participants (client
+    // will view these once a client-facing view ships). Write: the
+    // owning provider. Note: issued certifications should be treated
+    // as immutable by the UI — the rules don't enforce this yet so
+    // we can iterate, but consider locking `status == 'issued'` once
+    // the feature stabilizes (see issue tracking for certifications).
+    match /projectCertifications/{certId} {
+      allow read: if request.auth != null
+                  && isProjectParticipant(resource.data.projectId);
+
+      allow create: if request.auth != null
+                    && request.resource.data.providerId == request.auth.uid;
+      allow update, delete: if request.auth != null
+                            && resource.data.providerId == request.auth.uid;
+    }
+
     // ── Collaborators (private, provider-scoped) ──────────────
     // Provider-owned profiles of subcontractors (albanil, electricista,
     // etc.). No client access. When collaborators get their own auth,

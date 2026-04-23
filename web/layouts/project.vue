@@ -61,7 +61,7 @@
     </main>
 
     <!-- Mobile bottom nav -->
-    <nav class="lg:hidden fixed bottom-0 inset-x-0 z-40 bg-go-bg-elevated border-t border-go-border-subtle grid grid-cols-4 pt-1.5 pb-[max(8px,env(safe-area-inset-bottom))]">
+    <nav class="lg:hidden fixed bottom-0 inset-x-0 z-40 bg-go-bg-elevated border-t border-go-border-subtle grid grid-cols-5 pt-1.5 pb-[max(8px,env(safe-area-inset-bottom))]">
       <NuxtLink
         v-for="item in navItems"
         :key="item.key"
@@ -145,11 +145,13 @@ const projectId = computed(() => route.params.id);
 const IconHome     = () => h('svg', { viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', 'stroke-width': 2, 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }, [h('path', { d: 'M3 10.5L12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1v-9.5z' })]);
 const IconItems    = () => h('svg', { viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', 'stroke-width': 2, 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }, [h('path', { d: 'M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z' }), h('path', { d: 'M3.3 7l8.7 5 8.7-5M12 22V12' })]);
 const IconReceipt  = () => h('svg', { viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', 'stroke-width': 2, 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }, [h('rect', { x: 2, y: 6, width: 20, height: 12, rx: 2 }), h('circle', { cx: 12, cy: 12, r: 3 }), h('path', { d: 'M6 10v.01M18 14v.01' })]);
+const IconCertificate = () => h('svg', { viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', 'stroke-width': 2, 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }, [h('path', { d: 'M14 3v4a1 1 0 0 0 1 1h4' }), h('path', { d: 'M17 21H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7l5 5v11a2 2 0 0 1-2 2z' }), h('circle', { cx: 12, cy: 14, r: 2 }), h('path', { d: 'M10 16v3l2-1 2 1v-3' })]);
 
 const navItems = computed(() => [
-  { key: 'resumen', label: 'Resumen', to: `/projects/${projectId.value}/resumen`, icon: IconHome },
-  { key: 'items',   label: 'Items',   to: `/projects/${projectId.value}/items`,   icon: IconItems },
-  { key: 'gastos',  label: 'Gastos',  to: `/projects/${projectId.value}/gastos`,  icon: IconReceipt },
+  { key: 'resumen',        label: 'Resumen',        to: `/projects/${projectId.value}/resumen`,        icon: IconHome },
+  { key: 'items',          label: 'Items',          to: `/projects/${projectId.value}/items`,          icon: IconItems },
+  { key: 'gastos',         label: 'Gastos',         to: `/projects/${projectId.value}/gastos`,         icon: IconReceipt },
+  { key: 'certificaciones', label: 'Certificados',  to: `/projects/${projectId.value}/certifications`, icon: IconCertificate },
 ]);
 
 // Desktop sidebar surfaces Resumen at the bottom (less frequent than day-to-day items/gastos work).
@@ -162,8 +164,9 @@ const sidebarNavItems = computed(() => {
 function isActive(key) {
   const path = route.path;
   if (key === 'resumen') return path.endsWith('/resumen');
-  if (key === 'items')   return path.endsWith('/items') || /\/projects\/[^/]+\/?$/.test(path);
+  if (key === 'items')   return /\/projects\/[^/]+\/items(\/|$)/.test(path) || /\/projects\/[^/]+\/?$/.test(path);
   if (key === 'gastos')  return path.endsWith('/gastos');
+  if (key === 'certificaciones') return /\/projects\/[^/]+\/certifications(\/|$)/.test(path);
   return false;
 }
 

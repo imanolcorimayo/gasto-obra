@@ -6,7 +6,7 @@
  */
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
-import type { Expense, Delivery, ExpenseCategory } from '~/interfaces';
+import type { Expense, Delivery, ExpenseCategory, ProjectCertification } from '~/interfaces';
 import { getCategoryLabel, getPaymentMethodLabel, getManagementFeeAmount } from '~/utils';
 
 // ============================================
@@ -586,4 +586,244 @@ export function generatePaymentReport(data: ReportData): void {
   // ----------------------------------------
   const filename = `Documento_Pago_${data.project.name.replace(/\s+/g, '_')}_${data.project.reportNumber}.pdf`;
   doc.save(filename);
+}
+
+// ============================================
+// Certification Report
+// ============================================
+
+export interface CertificationReportData {
+  provider: ReportProviderInfo;
+  project: {
+    name: string;
+    clientName: string;
+    address: string;
+  };
+  certification: ProjectCertification;
+}
+
+export function generateCertificationReport(data: CertificationReportData): void {
+  const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+  const cert = data.certification;
+  const now = new Date();
+
+  let headerDrawnOnPage = 0;
+
+  function drawHeader() {
+    const currentPage = doc.getNumberOfPages();
+    if (headerDrawnOnPage === currentPage) return;
+    headerDrawnOnPage = currentPage;
+
+    const y = 15;
+
+    doc.setFillColor(...COLORS.primary);
+    doc.rect(0, 0, 5, 297, 'F');
+
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(...COLORS.textSecondary);
+    let contactY = y;
+    if (data.provider.phone) {
+      doc.text(data.provider.phone, PAGE_MARGIN, contactY);
+      contactY += 3.5;
+    }
+    if (data.provider.email) {
+      doc.text(data.provider.email, PAGE_MARGIN, contactY);
+    }
+
+    doc.setFontSize(11);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(...COLORS.primary);
+    doc.text('Gasto Obra', 210 - PAGE_MARGIN, y, { align: 'right' });
+
+    doc.setDrawColor(...COLORS.border);
+    doc.setLineWidth(0.3);
+    doc.line(PAGE_MARGIN, HEADER_BOTTOM, 210 - PAGE_MARGIN, HEADER_BOTTOM);
+  }
+
+  drawHeader();
+
+  let y = 40;
+
+  // Title
+  doc.setFontSize(18);
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(...COLORS.text);
+  doc.text('CERTIFICACIÓN DE AVANCE', PAGE_MARGIN, y);
+
+  y += 6;
+  doc.setFontSize(10);
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(...COLORS.textSecondary);
+  const subtitle = cert.title
+    ? `N° ${cert.number} · ${cert.title}`
+    : `N° ${cert.number}`;
+  doc.text(subtitle, PAGE_MARGIN, y);
+
+  // Status pill (right-aligned)
+  const statusLabel = cert.status === 'issued' ? 'EMITIDA' : 'BORRADOR';
+  doc.setFontSize(8);
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(...(cert.status === 'issued' ? COLORS.success : COLORS.textMuted));
+  doc.text(statusLabel, 210 - PAGE_MARGIN, y, { align: 'right' });
+
+  y += 12;
+
+  // Metadata block
+  const start = cert.periodStart ? fmtDateFull(cert.periodStart) : NA;
+  const end = cert.periodEnd ? fmtDateFull(cert.periodEnd) : NA;
+  const issue = cert.issueDate ? fmtDateFull(cert.issueDate) : fmtDateFull(now);
+
+  const meta: [string, string, string, string][] = [
+    ['ENCARGADO', (data.provider.name || NA).toUpperCase(), 'FECHA DE EMISIÓN', issue],
+    ['CLIENTE', (data.project.clientName || NA).toUpperCase(), 'PERÍODO DESDE', start],
+    ['UBICACIÓN', (data.project.address || NA).toUpperCase(), 'PERÍODO HASTA', end],
+    ['PROYECTO', (data.project.name || NA).toUpperCase(), '', '']
+  ];
+
+  for (const [leftLabel, leftVal, rightLabel, rightVal] of meta) {
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(...COLORS.textMuted);
+    doc.setFontSize(7);
+    doc.text(leftLabel, PAGE_MARGIN, y);
+    if (rightLabel) doc.text(rightLabel, 125, y);
+
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(...COLORS.text);
+    doc.setFontSize(9);
+    doc.text(leftVal, PAGE_MARGIN, y + 4.5);
+    if (rightVal) doc.text(rightVal, 125, y + 4.5);
+
+    y += 11;
+  }
+
+  // Divider
+  doc.setDrawColor(...COLORS.border);
+  doc.line(PAGE_MARGIN, y, 210 - PAGE_MARGIN, y);
+  y += 8;
+
+  // Detail
+  doc.setFontSize(12);
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(...COLORS.text);
+  doc.text('DETALLE DEL PERÍODO', PAGE_MARGIN, y);
+  y += 6;
+
+  const lines = cert.lines || [];
+
+  if (lines.length === 0) {
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(...COLORS.textMuted);
+    doc.text('Sin líneas certificadas.', PAGE_MARGIN, y + 4);
+    y += 12;
+  } else {
+    const body = lines.map(l => [
+      l.kind === 'item' ? 'Ítem' : 'Tarea',
+      l.label,
+      l.kind === 'item' && l.percentCumulative != null ? `${l.percentCumulative}%` : '—',
+      l.kind === 'item' && l.percentPeriod != null ? `${l.percentPeriod}%` : '—',
+      fmtAmount(l.amount || 0)
+    ]);
+
+    autoTable(doc, {
+      startY: y,
+      head: [['Tipo', 'Concepto', '% Acum.', '% Período', 'Importe']],
+      body,
+      margin: { left: PAGE_MARGIN, right: PAGE_MARGIN, top: CONTENT_START },
+      styles: {
+        fontSize: 8,
+        cellPadding: 3,
+        textColor: COLORS.text,
+        lineColor: COLORS.border,
+        lineWidth: 0.2
+      },
+      headStyles: {
+        fillColor: COLORS.surface,
+        textColor: COLORS.text,
+        fontStyle: 'bold',
+        fontSize: 8
+      },
+      columnStyles: {
+        0: { cellWidth: 18, fontStyle: 'bold' },
+        1: { cellWidth: 80 },
+        2: { cellWidth: 22, halign: 'right' },
+        3: { cellWidth: 22, halign: 'right' },
+        4: { cellWidth: 28, halign: 'right', fontStyle: 'bold' }
+      },
+      alternateRowStyles: { fillColor: [250, 248, 243] },
+      didDrawPage: () => drawHeader()
+    });
+
+    y = (doc as any).lastAutoTable.finalY + 8;
+  }
+
+  // Total
+  if (y > 255) {
+    doc.addPage();
+    drawHeader();
+    y = CONTENT_START;
+  }
+
+  doc.setDrawColor(...COLORS.border);
+  doc.line(PAGE_MARGIN, y, 210 - PAGE_MARGIN, y);
+  y += 8;
+
+  doc.setFontSize(10);
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(...COLORS.text);
+  doc.text('TOTAL A CERTIFICAR:', PAGE_MARGIN, y);
+  doc.setTextColor(...COLORS.primary);
+  doc.text(fmtAmount(cert.totalAmount || 0), 210 - PAGE_MARGIN, y, { align: 'right' });
+  y += 12;
+
+  // Notes
+  if (cert.notes) {
+    if (y > 250) {
+      doc.addPage();
+      drawHeader();
+      y = CONTENT_START;
+    }
+    doc.setFontSize(11);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(...COLORS.text);
+    doc.text('OBSERVACIONES', PAGE_MARGIN, y);
+    y += 6;
+
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(...COLORS.textSecondary);
+    const wrapped = doc.splitTextToSize(cert.notes, CONTENT_WIDTH);
+    doc.text(wrapped, PAGE_MARGIN, y);
+    y += wrapped.length * 4.2 + 4;
+  }
+
+  // Footer on last page
+  if (y > 265) {
+    doc.addPage();
+    drawHeader();
+    y = CONTENT_START;
+  }
+  y += 8;
+  doc.setFontSize(9);
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(...COLORS.primary);
+  doc.text('Gasto Obra', PAGE_MARGIN, y);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(...COLORS.textMuted);
+  doc.text(`Generado el ${fmtDateFull(now)}`, 210 - PAGE_MARGIN, y, { align: 'right' });
+
+  // Page numbers
+  const totalPages = doc.getNumberOfPages();
+  for (let i = 1; i <= totalPages; i++) {
+    doc.setPage(i);
+    doc.setFontSize(7);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(...COLORS.textMuted);
+    doc.text(`${i} / ${totalPages}`, 105, 290, { align: 'center' });
+  }
+
+  const safeName = (data.project.name || 'Proyecto').replace(/\s+/g, '_');
+  doc.save(`Certificacion_${safeName}_N${cert.number}.pdf`);
 }
