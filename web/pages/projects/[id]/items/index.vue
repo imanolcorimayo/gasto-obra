@@ -46,15 +46,15 @@
             v-if="showActionsMenu"
             class="absolute right-0 top-full mt-1 w-64 bg-go-bg-elevated border border-go-border-subtle rounded-go-md shadow-go-lg py-1 z-30"
           >
-            <button class="actions-menu-item sm:hidden" @click="copyShareLink(); showActionsMenu = false">
+            <button class="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-go-text-secondary hover:bg-go-surface-hover hover:text-go-text transition-colors sm:hidden" @click="copyShareLink(); showActionsMenu = false">
               <MdiLinkVariant class="text-go-secondary text-base" />
               Copiar link cliente
             </button>
-            <button class="actions-menu-item" @click="showProjectEditModal = true; showActionsMenu = false">
+            <button class="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-go-text-secondary hover:bg-go-surface-hover hover:text-go-text transition-colors disabled:opacity-50" @click="showProjectEditModal = true; showActionsMenu = false">
               <MdiPencil class="text-base" />
               Editar proyecto
             </button>
-            <button class="actions-menu-item" :disabled="isExportingPdf" @click="handleExportPdf(); showActionsMenu = false">
+            <button class="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-go-text-secondary hover:bg-go-surface-hover hover:text-go-text transition-colors disabled:opacity-50" :disabled="isExportingPdf" @click="handleExportPdf(); showActionsMenu = false">
               <MdiFileDocument class="text-base" />
               {{ isExportingPdf ? 'Generando...' : 'Exportar PDF' }}
             </button>
@@ -93,7 +93,6 @@
         :project-id="project.id"
         :provider-id="project.providerId"
         :readonly="false"
-        @edit-expense="openEditModal"
       />
     </div>
 
@@ -103,21 +102,6 @@
       :project="project"
       @close="showProjectEditModal = false"
       @save="handleProjectEditSave"
-    />
-
-    <!-- Edit expense modal (for item-expanded expense edits) -->
-    <ExpenseEditModal
-      :show="showEditModal"
-      :expense="editingExpense"
-      :projects="projectStore.projects"
-      :categories="resolvedCategories"
-      :items="itemStore.items"
-      :is-saving="isEditingExpense"
-      :is-deleting="isDeletingExpense"
-      :management-fee-percent="managementFeePercent"
-      @close="showEditModal = false"
-      @save="handleEditSave"
-      @delete="handleDeleteExpense"
     />
   </div>
 </template>
@@ -132,12 +116,12 @@ import { useProjectStore } from '~/stores/project';
 import { useExpenseStore } from '~/stores/expense';
 import { useCategoryStore } from '~/stores/category';
 import { useRecipientStore } from '~/stores/recipient';
-import { useVendorStore } from '~/stores/vendor';
 import { useDeliveryStore } from '~/stores/delivery';
 import { useWhatsappStore } from '~/stores/whatsapp';
 import { useProviderStore } from '~/stores/provider';
 import { useProjectItemStore } from '~/stores/projectItem';
 import { useProjectMaterialStore, effectiveItemBudget } from '~/stores/projectMaterial';
+import { useProjectTaskStore } from '~/stores/projectTask';
 import { formatPrice } from '~/utils';
 import { generatePaymentReport, generateReportNumber } from '~/utils/pdfReport';
 import { getCurrentUser } from '~/utils/firebase';
@@ -152,24 +136,19 @@ const projectStore = useProjectStore();
 const expenseStore = useExpenseStore();
 const categoryStore = useCategoryStore();
 const recipientStore = useRecipientStore();
-const vendorStore = useVendorStore();
 const deliveryStore = useDeliveryStore();
 const whatsappStore = useWhatsappStore();
 const providerStore = useProviderStore();
 const itemStore = useProjectItemStore();
 const materialStore = useProjectMaterialStore();
+const taskStore = useProjectTaskStore();
 
 const isLoading = ref(true);
 const project = ref(null);
 const copied = ref(false);
 const showActionsMenu = ref(false);
 const showProjectEditModal = ref(false);
-const showEditModal = ref(false);
-const editingExpense = ref(null);
-const isEditingExpense = ref(false);
-const isDeletingExpense = ref(false);
 const isExportingPdf = ref(false);
-const managementFeePercent = ref(0);
 
 const resolvedCategories = computed(() => categoryStore.getResolved(route.params.id));
 
@@ -225,9 +204,9 @@ onMounted(async () => {
       whatsappStore.fetchLinkedAccount(),
       providerStore.fetchOrCreate(),
       itemStore.fetchByProjectId(id),
-      materialStore.fetchByProjectId(id)
+      materialStore.fetchByProjectId(id),
+      taskStore.fetchByProjectId(id)
     ]);
-    managementFeePercent.value = providerStore.managementFeePercent;
     if (projectStore.projects.length === 0) {
       await projectStore.fetchProjects();
     }
@@ -306,77 +285,6 @@ async function handleProjectEditSave(data) {
   }
 }
 
-function openEditModal(expense) {
-  editingExpense.value = expense;
-  showEditModal.value = true;
-}
-
-async function handleEditSave({ id, data, createLinkedPayment, deleteLinkedPaymentId }) {
-  isEditingExpense.value = true;
-  try {
-    const result = await expenseStore.updateExpense(id, data);
-    if (result.success) {
-      if (deleteLinkedPaymentId) {
-        await expenseStore.deleteExpense(deleteLinkedPaymentId);
-        await expenseStore.updateExpense(id, { linkedPaymentId: null });
-      }
-      if (createLinkedPayment) {
-        const paymentData = {
-          projectId: data.projectId || project.value.id,
-          providerId: project.value.providerId,
-          title: `Pago: ${data.title}`,
-          description: '',
-          amount: data.amount,
-          category: 'pago',
-          type: 'payment',
-          paymentMethod: data.paymentMethod,
-          recipientName: data.recipientName,
-          recipientBankInfo: data.recipientBankInfo,
-          recipientPlatform: data.recipientPlatform,
-          recipientCuit: data.recipientCuit,
-          linkedExpenseId: id,
-          items: null,
-          vendor: data.vendor || null
-        };
-        const paymentResult = await expenseStore.createExpense(paymentData);
-        if (paymentResult.success) {
-          await expenseStore.updateExpense(id, { linkedPaymentId: paymentResult.data.id });
-        }
-      }
-      if (data.vendor) vendorStore.addVendor(data.vendor);
-      useToast('success', 'Registro actualizado');
-      showEditModal.value = false;
-      if (data.projectId && data.projectId !== project.value.id) {
-        expenseStore.expenses = expenseStore.expenses.filter(e => e.id !== id);
-      }
-    } else {
-      useToast('error', result.error || 'Error al actualizar');
-    }
-  } finally {
-    isEditingExpense.value = false;
-  }
-}
-
-async function handleDeleteExpense(expense) {
-  isDeletingExpense.value = true;
-  try {
-    if (expense.linkedPaymentId) await expenseStore.deleteExpense(expense.linkedPaymentId);
-    if (expense.linkedExpenseId) await expenseStore.updateExpense(expense.linkedExpenseId, { linkedPaymentId: null });
-    const deleted = await expenseStore.deleteExpense(expense.id);
-    if (deleted) {
-      useToast('success', 'Registro eliminado');
-      showEditModal.value = false;
-    } else {
-      useToast('error', 'Error al eliminar');
-    }
-  } catch (error) {
-    console.error('Error deleting expense:', error);
-    useToast('error', 'Error al eliminar');
-  } finally {
-    isDeletingExpense.value = false;
-  }
-}
-
 // Close overflow menu on outside click — lightweight, no directive lib.
 const vClickOutside = {
   mounted(el, binding) {
@@ -390,12 +298,3 @@ const vClickOutside = {
   }
 };
 </script>
-
-<style scoped>
-.actions-menu-item {
-  @apply w-full flex items-center gap-2.5 px-3 py-2 text-sm text-go-text-secondary hover:bg-go-surface-hover hover:text-go-text transition-colors;
-}
-.actions-menu-item:disabled {
-  @apply opacity-50 cursor-not-allowed;
-}
-</style>

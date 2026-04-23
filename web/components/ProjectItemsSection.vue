@@ -62,7 +62,7 @@
             <span class="font-display font-semibold text-go-text tabular-nums">{{ progressLabel }}%</span>
           </div>
           <div class="text-go-text-muted tabular-nums text-xs">
-            {{ itemStore.completedItems.length }} / {{ itemStore.items.length }} completados
+            {{ completedItemCount }} / {{ itemStore.items.length }} completados
           </div>
         </div>
         <div class="w-full bg-go-surface-alt rounded-full h-2 overflow-hidden">
@@ -89,12 +89,11 @@
 
       <!-- Compact item rows -->
       <div class="space-y-2">
-        <button
+        <NuxtLink
           v-for="item in itemStore.items"
           :key="item.id"
-          type="button"
-          @click="openItem(item.id)"
-          class="w-full text-left bg-go-surface border border-go-border rounded-go-xl overflow-hidden relative hover:bg-go-surface-hover transition-colors"
+          :to="itemDetailRoute(item)"
+          class="block w-full text-left bg-go-surface border border-go-border rounded-go-xl overflow-hidden relative hover:bg-go-surface-hover transition-colors"
         >
           <!-- Left status accent -->
           <div class="absolute left-0 top-0 bottom-0 w-1" :style="{ background: statusAccent(item) }" />
@@ -111,6 +110,12 @@
                 </div>
                 <div class="text-[11px] text-go-text-muted mt-0.5 tabular-nums truncate">
                   Mano de obra <span class="text-go-text font-semibold">{{ formatPrice(item.laborBudget || 0) }}</span>
+                  <template v-if="taskCounts(item).total > 0">
+                    <span class="text-go-text-muted/60"> · </span>
+                    <span
+                      :class="taskCounts(item).done === taskCounts(item).total ? 'text-go-success' : 'text-go-text'"
+                    >{{ taskCounts(item).done }}/{{ taskCounts(item).total }} tareas</span>
+                  </template>
                 </div>
                 <div class="text-[11px] text-go-text-muted mt-0.5 tabular-nums truncate">
                   {{ formatPrice(itemStats(item).realTotal) }}
@@ -130,44 +135,21 @@
               />
             </div>
           </div>
-        </button>
+        </NuxtLink>
       </div>
     </template>
 
-    <!-- Detail panel (URL-synced) -->
-    <ProjectItemDetailPanel
-      :show="!!selectedItem"
-      :item="selectedItem"
-      :readonly="readonly"
-      :is-client="isClient"
-      @close="closeItem"
-      @edit="(item) => openEdit(item)"
-      @assign="(item) => openAssign(item)"
-      @editExpense="(expense) => $emit('editExpense', expense)"
-    />
-
-    <!-- Item create/edit modal (provider only) -->
+    <!-- Item create modal (provider only) -->
     <ProjectItemModal
       v-if="!isClient"
       :show="showModal"
-      :item="editingItem"
-      :has-materials="editingItem ? hasMaterialsForItem(editingItem.id) : false"
-      :derived-materials-min="editingItem ? effective(editingItem).materialsMin : 0"
-      :derived-materials-max="editingItem ? effective(editingItem).materialsMax : 0"
+      :item="null"
+      :has-materials="false"
+      :derived-materials-min="0"
+      :derived-materials-max="0"
       :is-submitting="isSubmitting"
       @close="closeModal"
       @submit="handleSubmit"
-    />
-
-    <!-- Assign modal (provider only) -->
-    <ProjectItemAssignModal
-      v-if="!isClient"
-      :show="showAssignModal"
-      :item="assigningItem"
-      :expenses="expenseStore.expenses"
-      :items="itemStore.items"
-      @close="closeAssign"
-      @save="handleAssignSave"
     />
 
     <!-- Unassigned expenses modal (provider only) -->
@@ -230,6 +212,7 @@ import MdiClose from '~icons/mdi/close';
 import { useProjectItemStore } from '~/stores/projectItem';
 import { useExpenseStore } from '~/stores/expense';
 import { useProjectMaterialStore, effectiveItemBudget } from '~/stores/projectMaterial';
+import { useProjectTaskStore } from '~/stores/projectTask';
 import { formatPrice, getCategoryLabel } from '~/utils';
 
 const props = defineProps({
@@ -239,41 +222,33 @@ const props = defineProps({
   isClient: { type: Boolean, default: false }
 });
 
-defineEmits(['editExpense']);
-
 const itemStore = useProjectItemStore();
 const expenseStore = useExpenseStore();
 const materialStore = useProjectMaterialStore();
-const route = useRoute();
-const router = useRouter();
+const taskStore = useProjectTaskStore();
 
 // Modal & UI state
 const showModal = ref(false);
-const editingItem = ref(null);
 const isSubmitting = ref(false);
-const showAssignModal = ref(false);
-const assigningItem = ref(null);
 const showUnassignedModal = ref(false);
 const quickBusyId = ref(null);
 
-// Selected item (derived from ?item=<id>)
-const selectedItem = computed(() => {
-  const id = route.query.item;
-  if (!id) return null;
-  return itemStore.items.find(i => i.id === id) || null;
-});
-
-function openItem(id) {
-  router.replace({ query: { ...route.query, item: id } });
-}
-function closeItem() {
-  const { item, ...rest } = route.query;
-  router.replace({ query: rest });
+function itemDetailRoute(item) {
+  if (props.isClient) return `/client/project/${props.projectId}/items/${item.id}`;
+  return `/projects/${props.projectId}/items/${item.id}`;
 }
 
 // Effective per-item budget
 function effective(item) {
   return effectiveItemBudget(item, materialStore);
+}
+
+// Per-item progress in [0,1]: tasks-based when any task exists,
+// else binary on actualEndDate.
+function itemProgress(item) {
+  const taskProg = taskStore.itemTaskProgress(item.id);
+  if (taskProg !== null) return taskProg;
+  return item.actualEndDate ? 1 : 0;
 }
 
 // Aggregate
@@ -290,7 +265,7 @@ const aggregateBudget = computed(() => {
     materialsMin += eff.materialsMin;
     materialsMax += eff.materialsMax;
     if (eff.materialsMin !== eff.materialsMax) hasMaterialsRange = true;
-    if (item.actualEndDate) completedLabor += labor;
+    completedLabor += labor * itemProgress(item);
   }
   return { totalLabor, completedLabor, materialsMin, materialsMax, hasMaterialsRange };
 });
@@ -300,6 +275,10 @@ const progressPercentage = computed(() => {
   if (totalLabor <= 0) return 0;
   return (completedLabor / totalLabor) * 100;
 });
+
+const completedItemCount = computed(() =>
+  itemStore.items.filter(i => effectiveState(i) === 'completada').length
+);
 
 const progressLabel = computed(() => progressPercentage.value.toFixed(0));
 const progressBarWidth = computed(() => {
@@ -327,19 +306,38 @@ function hasMaterialsForItem(itemId) {
   return materialStore.materialsForItem(itemId).length > 0;
 }
 
+function taskCounts(item) {
+  return taskStore.itemTaskCounts(item.id);
+}
+
+// An item's effective state: tasks-derived when present, else actual* dates.
+function effectiveState(item) {
+  const { done, total } = taskCounts(item);
+  if (total > 0) {
+    if (done === 0) return 'pendiente';
+    if (done === total) return 'completada';
+    return 'en_progreso';
+  }
+  if (item.actualEndDate) return 'completada';
+  if (item.actualStartDate) return 'en_progreso';
+  return 'pendiente';
+}
 function statusLabel(item) {
-  if (item.actualEndDate) return 'Completada';
-  if (item.actualStartDate) return 'En progreso';
+  const s = effectiveState(item);
+  if (s === 'completada') return 'Completada';
+  if (s === 'en_progreso') return 'En progreso';
   return 'Pendiente';
 }
 function statusClasses(item) {
-  if (item.actualEndDate) return 'bg-go-success/15 text-go-success';
-  if (item.actualStartDate) return 'bg-go-info/15 text-go-info';
+  const s = effectiveState(item);
+  if (s === 'completada') return 'bg-go-success/15 text-go-success';
+  if (s === 'en_progreso') return 'bg-go-info/15 text-go-info';
   return 'bg-go-surface-alt text-go-text-muted';
 }
 function statusAccent(item) {
-  if (item.actualEndDate) return '#2D7A3F';
-  if (item.actualStartDate) return '#2D6A8A';
+  const s = effectiveState(item);
+  if (s === 'completada') return '#2D7A3F';
+  if (s === 'en_progreso') return '#2D6A8A';
   return '#CFC7BA';
 }
 
@@ -407,88 +405,26 @@ function formatExpenseDate(timestamp) {
   return date.toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit' });
 }
 
-// CRUD for items
-function openCreate() {
-  editingItem.value = null;
-  showModal.value = true;
-}
-function openEdit(item) {
-  editingItem.value = item;
-  showModal.value = true;
-}
-function closeModal() {
-  showModal.value = false;
-  editingItem.value = null;
-}
+// Create item (editing happens on the item detail page)
+function openCreate() { showModal.value = true; }
+function closeModal() { showModal.value = false; }
 
 async function handleSubmit(data) {
   isSubmitting.value = true;
   try {
-    if (editingItem.value) {
-      const result = await itemStore.updateItem(editingItem.value.id, data);
-      if (result.success) {
-        useToast('success', 'Item actualizado');
-        closeModal();
-      } else {
-        useToast('error', result.error || 'Error al actualizar');
-      }
+    const result = await itemStore.createItem({
+      ...data,
+      projectId: props.projectId,
+      providerId: props.providerId
+    });
+    if (result.success) {
+      useToast('success', 'Item creado');
+      closeModal();
     } else {
-      const result = await itemStore.createItem({
-        ...data,
-        projectId: props.projectId,
-        providerId: props.providerId
-      });
-      if (result.success) {
-        useToast('success', 'Item creado');
-        closeModal();
-      } else {
-        useToast('error', result.error || 'Error al crear');
-      }
+      useToast('error', result.error || 'Error al crear');
     }
   } finally {
     isSubmitting.value = false;
-  }
-}
-
-// Assignment
-function openAssign(item) {
-  assigningItem.value = item;
-  showAssignModal.value = true;
-}
-function closeAssign() {
-  showAssignModal.value = false;
-  assigningItem.value = null;
-}
-
-async function handleAssignSave({ itemId, expenseIds }) {
-  const previouslyAssigned = expenseStore.expenses
-    .filter(e => e.itemId === itemId)
-    .map(e => e.id);
-
-  const assignments = [];
-  for (const id of previouslyAssigned) {
-    if (!expenseIds.includes(id)) {
-      assignments.push({ expenseId: id, itemId: null });
-    }
-  }
-  for (const id of expenseIds) {
-    const expense = expenseStore.expenses.find(e => e.id === id);
-    if (expense && expense.itemId !== itemId) {
-      assignments.push({ expenseId: id, itemId });
-    }
-  }
-
-  if (assignments.length === 0) {
-    closeAssign();
-    return;
-  }
-
-  const result = await expenseStore.batchUpdateItemId(assignments);
-  if (result.success) {
-    useToast('success', 'Gastos asignados');
-    closeAssign();
-  } else {
-    useToast('error', result.error || 'Error al asignar gastos');
   }
 }
 

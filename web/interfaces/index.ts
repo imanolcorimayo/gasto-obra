@@ -146,6 +146,47 @@ export interface ProjectMaterialProposal {
   updatedAt: any;
 }
 
+export type TaskStatus = 'pendiente' | 'en_progreso' | 'completada';
+
+export interface ProjectTask {
+  id: string;
+  projectId: string;
+  providerId: string;
+  itemId: string;
+  description: string;
+  status: TaskStatus;
+  order: number;
+  plannedDate: any | null;
+  completedAt: any | null;
+  collaboratorId: string | null;
+  notes: string | null;
+  images: ProjectImage[] | null;
+  createdAt: any;
+  updatedAt: any;
+}
+
+export type CollaboratorRole =
+  | 'albanil'
+  | 'electricista'
+  | 'plomero'
+  | 'pintor'
+  | 'carpintero'
+  | 'yesero'
+  | 'otro';
+
+export interface Collaborator {
+  id: string;
+  providerId: string;
+  name: string;
+  role: CollaboratorRole;
+  phone: string | null;
+  email: string | null;
+  notes: string | null;
+  rating: number | null;
+  createdAt: any;
+  updatedAt: any;
+}
+
 export interface Delivery {
   id: string;
   projectId: string;

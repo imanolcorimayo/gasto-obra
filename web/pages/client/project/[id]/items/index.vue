@@ -45,6 +45,7 @@ import { useExpenseStore } from '~/stores/expense';
 import { useCategoryStore } from '~/stores/category';
 import { useProjectItemStore } from '~/stores/projectItem';
 import { useProjectMaterialStore } from '~/stores/projectMaterial';
+import { useProjectTaskStore } from '~/stores/projectTask';
 import { getCurrentUserAsync } from '~/utils/firebase';
 
 definePageMeta({
@@ -58,6 +59,7 @@ const expenseStore = useExpenseStore();
 const categoryStore = useCategoryStore();
 const itemStore = useProjectItemStore();
 const materialStore = useProjectMaterialStore();
+const taskStore = useProjectTaskStore();
 
 const isLoading = ref(true);
 const project = ref(null);
@@ -97,7 +99,8 @@ onMounted(async () => {
       expenseStore.fetchByProjectIdPublic(id),
       categoryStore.fetchForProjectFromAPI(id),
       itemStore.fetchByProjectIdPublic(id),
-      materialStore.fetchByProjectIdPublic(id)
+      materialStore.fetchByProjectIdPublic(id),
+      taskStore.fetchByProjectIdPublic(id)
     ]);
   }
   isLoading.value = false;
