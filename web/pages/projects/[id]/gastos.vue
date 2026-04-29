@@ -41,6 +41,36 @@
       </div>
 
       <template v-else>
+        <!-- Financial KPI strip -->
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
+          <div class="bg-go-surface border border-go-border rounded-go-xl px-3.5 py-3">
+            <span class="text-[11px] font-semibold uppercase tracking-wider text-go-text-muted block mb-1">Gastado</span>
+            <span class="font-display font-bold text-lg tabular-nums text-go-primary block leading-tight">{{ formatPrice(totalExpenses) }}</span>
+          </div>
+          <div class="bg-go-surface border border-go-border rounded-go-xl px-3.5 py-3">
+            <span class="text-[11px] font-semibold uppercase tracking-wider text-go-text-muted block mb-1">Cobrado</span>
+            <span class="font-display font-bold text-lg tabular-nums text-go-secondary block leading-tight">{{ formatPrice(totalPayments) }}</span>
+          </div>
+          <div
+            class="border rounded-go-xl px-3.5 py-3"
+            :class="balance >= 0 ? 'bg-go-success-muted border-go-success/30' : 'bg-go-danger-muted border-go-danger/30'"
+          >
+            <span class="text-[11px] font-semibold uppercase tracking-wider text-go-text-muted block mb-1">Saldo</span>
+            <span
+              class="font-display font-bold text-lg tabular-nums block leading-tight"
+              :class="balance >= 0 ? 'text-go-success' : 'text-go-danger'"
+            >{{ formatPrice(Math.abs(balance)) }}</span>
+            <span
+              class="text-xs font-medium"
+              :class="balance >= 0 ? 'text-go-success' : 'text-go-danger'"
+            >{{ balance >= 0 ? 'Al día' : 'Falta cobrar' }}</span>
+          </div>
+          <div class="bg-go-surface border border-go-border rounded-go-xl px-3.5 py-3">
+            <span class="text-[11px] font-semibold uppercase tracking-wider text-go-text-muted block mb-1">Propios</span>
+            <span class="font-display font-bold text-lg tabular-nums block leading-tight" :class="totalProviderExpenses > 0 ? 'text-go-text' : 'text-go-text-muted'">{{ formatPrice(totalProviderExpenses) }}</span>
+          </div>
+        </div>
+
         <!-- Tab bar -->
         <div class="flex items-center mb-4">
           <div class="flex bg-go-surface border border-go-border rounded-go-md p-0.5 gap-0.5">
@@ -269,6 +299,15 @@ const unassignedExpenses = computed(() =>
 const unassignedTotal = computed(() =>
   unassignedExpenses.value.reduce((sum, e) => sum + (e.amount || 0), 0)
 );
+
+const totalExpenses = computed(() => clientExpenses.value.reduce((sum, e) => sum + (e.amount || 0), 0));
+const totalPayments = computed(() =>
+  expenseStore.expenses.filter(e => e.type === 'payment').reduce((sum, e) => sum + (e.amount || 0), 0)
+);
+const totalProviderExpenses = computed(() =>
+  expenseStore.expenses.filter(e => e.type === 'provider_expense').reduce((sum, e) => sum + (e.amount || 0), 0)
+);
+const balance = computed(() => totalPayments.value - totalExpenses.value);
 
 function formatExpenseDate(timestamp) {
   if (!timestamp) return '';

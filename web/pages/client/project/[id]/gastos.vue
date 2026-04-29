@@ -22,6 +22,32 @@
       </div>
 
       <template v-else>
+        <!-- Financial KPI strip -->
+        <div class="grid grid-cols-3 gap-3 mb-4">
+          <div class="bg-go-surface border border-go-border rounded-go-xl px-3.5 py-3">
+            <span class="text-[11px] font-semibold uppercase tracking-wider text-go-text-muted block mb-1">Gastado</span>
+            <span class="font-display font-bold text-lg tabular-nums text-go-primary block leading-tight">{{ formatPrice(totalExpenses) }}</span>
+          </div>
+          <div class="bg-go-surface border border-go-border rounded-go-xl px-3.5 py-3">
+            <span class="text-[11px] font-semibold uppercase tracking-wider text-go-text-muted block mb-1">Pagado</span>
+            <span class="font-display font-bold text-lg tabular-nums text-go-secondary block leading-tight">{{ formatPrice(totalPayments) }}</span>
+          </div>
+          <div
+            class="border rounded-go-xl px-3.5 py-3"
+            :class="balance >= 0 ? 'bg-go-success-muted border-go-success/30' : 'bg-go-danger-muted border-go-danger/30'"
+          >
+            <span class="text-[11px] font-semibold uppercase tracking-wider text-go-text-muted block mb-1">Saldo</span>
+            <span
+              class="font-display font-bold text-lg tabular-nums block leading-tight"
+              :class="balance >= 0 ? 'text-go-success' : 'text-go-danger'"
+            >{{ formatPrice(Math.abs(balance)) }}</span>
+            <span
+              class="text-xs font-medium"
+              :class="balance >= 0 ? 'text-go-success' : 'text-go-danger'"
+            >{{ balance >= 0 ? 'Al día' : 'A pagar' }}</span>
+          </div>
+        </div>
+
         <!-- Filters -->
         <div class="flex flex-wrap items-center gap-2 mb-4">
           <div class="relative flex-1 min-w-[180px] max-w-xs">
@@ -169,6 +195,14 @@ const allClientExpenses = computed(() =>
 const cardExpenses = computed(() =>
   allClientExpenses.value.filter(e => !e.linkedExpenseId)
 );
+
+const totalExpenses = computed(() =>
+  allClientExpenses.value.filter(e => !e.type || e.type === 'expense').reduce((sum, e) => sum + (e.amount || 0), 0)
+);
+const totalPayments = computed(() =>
+  allClientExpenses.value.filter(e => e.type === 'payment').reduce((sum, e) => sum + (e.amount || 0), 0)
+);
+const balance = computed(() => totalPayments.value - totalExpenses.value);
 
 const usedCategories = computed(() => {
   const seen = new Set();
