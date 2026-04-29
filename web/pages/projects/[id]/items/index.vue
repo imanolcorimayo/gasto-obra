@@ -26,11 +26,11 @@
         <button
           @click="copyShareLink"
           class="hidden sm:inline-flex btn-secondary text-[12px] items-center gap-1.5"
-          title="Copiar link cliente"
+          title="Copiar código de invitación para el cliente"
         >
           <MdiCheck v-if="copied" class="text-go-success text-base" />
           <MdiLinkVariant v-else class="text-go-secondary text-base" />
-          <span>{{ copied ? 'Copiado' : 'Link cliente' }}</span>
+          <span>{{ copied ? 'Copiado' : 'Código cliente' }}</span>
         </button>
 
         <!-- Overflow menu -->
@@ -48,7 +48,7 @@
           >
             <button class="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-go-text-secondary hover:bg-go-surface-hover hover:text-go-text transition-colors sm:hidden" @click="copyShareLink(); showActionsMenu = false">
               <MdiLinkVariant class="text-go-secondary text-base" />
-              Copiar link cliente
+              Copiar código cliente
             </button>
             <button class="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-go-text-secondary hover:bg-go-surface-hover hover:text-go-text transition-colors disabled:opacity-50" @click="showProjectEditModal = true; showActionsMenu = false">
               <MdiPencil class="text-base" />
@@ -222,11 +222,11 @@ async function updateStatus() {
 
 async function copyShareLink() {
   if (!project.value?.shareToken) return;
-  const url = `${window.location.origin}/view/${project.value.shareToken}`;
+  const message = `Te invito a seguir los gastos de la obra "${project.value.name}" en Gasto Obra.\n\n1. Entrá a https://gastoobra.com/client\n2. Ingresá con tu cuenta de Google\n3. Pegá este código de invitación:\n\n${project.value.shareToken}`;
   try {
-    await navigator.clipboard.writeText(url);
+    await navigator.clipboard.writeText(message);
     copied.value = true;
-    useToast('success', 'Link copiado');
+    useToast('success', 'Mensaje de invitación copiado');
     setTimeout(() => { copied.value = false; }, 2000);
   } catch {
     useToast('error', 'Error al copiar');

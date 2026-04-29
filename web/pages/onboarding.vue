@@ -50,18 +50,27 @@
       <div v-if="showClientInfo" class="w-full max-w-lg mt-6 bg-go-surface border border-go-border rounded-go-xl p-6">
         <div class="flex items-start gap-3">
           <MdiInformationOutline class="w-5 h-5 text-go-primary shrink-0 mt-0.5" />
-          <div>
+          <div class="flex-1">
             <p class="text-go-text text-sm font-medium mb-2">
-              Tu proveedor tiene que compartirte un link de acceso.
+              Necesitás un código de invitación de tu proveedor.
             </p>
-            <p class="text-go-text-muted text-sm leading-relaxed">
-              Pedile que entre a su proyecto en Gasto Obra y te comparta el enlace.
-              Cuando lo abras, vas a poder unirte y ver todos los gastos en tiempo real.
+            <p class="text-go-text-muted text-sm leading-relaxed mb-4">
+              Pedile que entre a su proyecto en Gasto Obra y te comparta el código.
+              Pegalo abajo y vas a poder ver todos los gastos en tiempo real.
             </p>
+            <button
+              @click="showJoinModal = true"
+              class="btn-primary w-full text-sm inline-flex items-center justify-center gap-2"
+            >
+              <MdiKeyOutline class="text-base" />
+              Tengo un código
+            </button>
           </div>
         </div>
       </div>
     </Transition>
+
+    <JoinProjectModal :show="showJoinModal" @close="showJoinModal = false" />
 
     <!-- Skip link -->
     <button
@@ -77,6 +86,7 @@
 import MdiHardHat from '~icons/mdi/hard-hat';
 import MdiHomeOutline from '~icons/mdi/home-outline';
 import MdiInformationOutline from '~icons/mdi/information-outline';
+import MdiKeyOutline from '~icons/mdi/key-outline';
 
 definePageMeta({
   middleware: ['auth']
@@ -87,6 +97,7 @@ useHead({
 });
 
 const showClientInfo = ref(false);
+const showJoinModal = ref(false);
 
 function goProvider() {
   navigateTo('/projects/new');

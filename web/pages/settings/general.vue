@@ -134,7 +134,28 @@
         </div>
       </div>
 
-      <!-- ═══ Section 3: WhatsApp ═══ -->
+      <!-- ═══ Section 3: Como cliente ═══ -->
+      <div class="mt-10 pt-8 border-t border-go-border">
+        <div class="mb-6">
+          <h2 class="font-display font-bold text-xl text-go-text">Como cliente</h2>
+          <p class="text-go-text-muted text-sm mt-1">¿Sos cliente de otra obra en Gasto Obra? Pegá el código de invitación que te compartió tu proveedor.</p>
+        </div>
+
+        <div class="bg-go-surface border border-go-border rounded-go-xl p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <p class="text-sm text-go-text-secondary">
+            Tu cuenta puede actuar como proveedor y como cliente al mismo tiempo.
+          </p>
+          <button
+            @click="showJoinModal = true"
+            class="btn-secondary text-sm inline-flex items-center justify-center gap-2 shrink-0"
+          >
+            <MdiKeyOutline class="text-base" />
+            Tengo un código
+          </button>
+        </div>
+      </div>
+
+      <!-- ═══ Section 4: WhatsApp ═══ -->
       <div class="mt-10 pt-8 border-t border-go-border">
         <div class="mb-6">
           <h2 class="font-display font-bold text-xl text-go-text">WhatsApp</h2>
@@ -229,6 +250,8 @@
       </div>
     </template>
     </div>
+
+    <JoinProjectModal :show="showJoinModal" @close="showJoinModal = false" />
   </div>
 </template>
 
@@ -236,6 +259,7 @@
 import MdiWhatsapp from '~icons/mdi/whatsapp';
 import MdiLinkOff from '~icons/mdi/link-off';
 import MdiCheck from '~icons/mdi/check';
+import MdiKeyOutline from '~icons/mdi/key-outline';
 import { useWhatsappStore } from '~/stores/whatsapp';
 import { useProviderStore } from '~/stores/provider';
 
@@ -255,6 +279,7 @@ const { linkedAccount, pendingCode, isLoading, isGenerating } = storeToRefs(what
 
 const gestionSectionRef = ref(null);
 const highlightGestion = ref(false);
+const showJoinModal = ref(false);
 
 const config = useRuntimeConfig();
 const whatsappNumber = config.public.whatsappNumber;
