@@ -56,6 +56,20 @@ export async function sendWhatsAppButtons(to, body, buttons) {
     return;
   }
 
+  // WhatsApp interactive button body must be 1–1024 chars
+  const MAX_BODY = 1024;
+  if (!body || body.length === 0) {
+    body = 'No pude generar el detalle. Confirmá igual o respondé *NO* para descartar.';
+  } else if (body.length > MAX_BODY) {
+    const suffix = '\n…(detalle recortado)';
+    const limit = MAX_BODY - suffix.length;
+    let cut = body.slice(0, limit);
+    const lastNewline = cut.lastIndexOf('\n');
+    if (lastNewline > limit * 0.5) cut = cut.slice(0, lastNewline);
+    body = cut + suffix;
+    logger.warn('WhatsApp button body exceeded 1024 chars, truncating', { to: normalizedTo, originalLength: body.length });
+  }
+
   try {
     const response = await fetch(
       `https://graph.facebook.com/v21.0/${WP_PHONE_NUMBER_ID}/messages`,

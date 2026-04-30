@@ -1119,7 +1119,12 @@ function buildExpenseConfirmationMessage(data, mismatch = null) {
   }
 
   if (data.items && data.items.length > 1) {
-    msg += data.items.map(i => `  - ${i.name}: ${formatAmount(i.amount)}`).join('\n') + '\n';
+    const MAX_ITEMS = 12;
+    const shown = data.items.slice(0, MAX_ITEMS);
+    msg += shown.map(i => `  - ${i.name}: ${formatAmount(i.amount)}`).join('\n') + '\n';
+    if (data.items.length > MAX_ITEMS) {
+      msg += `  …y ${data.items.length - MAX_ITEMS} ítem(s) más\n`;
+    }
   }
 
   msg += `${capitalizeFirst(data.category)} - ${data.projectName}`;
