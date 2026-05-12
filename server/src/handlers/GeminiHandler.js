@@ -3,7 +3,7 @@ import logger from '../../lib/logger.js';
 
 const MODELS = [
   'gemini-2.5-flash-lite',          // Stable — primary
-  'gemini-3.1-flash-lite-preview',  // Preview — fallback 1
+  'gemini-3.1-flash-lite',          // GA — fallback 1
   'gemini-2.5-flash',               // Stable — fallback 2
 ];
 
