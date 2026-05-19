@@ -284,7 +284,7 @@ ${vendorList}`;
     ];
 
     const text = await this.generateContent(null, {
-      maxOutputTokens: 1000,
+      maxOutputTokens: 4000,
       temperature: 0.3,
       parts,
       responseSchema: schema
@@ -409,7 +409,7 @@ Si no podés extraer algún campo, usa null.`;
     ];
 
     const text = await this.generateContent(null, {
-      maxOutputTokens: 1000,
+      maxOutputTokens: 4000,
       temperature: 0.3,
       parts,
       responseSchema: schema
@@ -533,7 +533,7 @@ Si no podés extraer algún campo, usa null.`;
     };
 
     const responseText = await this.generateContent(prompt, {
-      maxOutputTokens: 800,
+      maxOutputTokens: 2000,
       temperature: 0.3,
       responseSchema: schema
     });
@@ -649,7 +649,7 @@ ${vendorList}`;
     ];
 
     const text = await this.generateContent(null, {
-      maxOutputTokens: 1000,
+      maxOutputTokens: 4000,
       temperature: 0.3,
       parts,
       responseSchema: schema
