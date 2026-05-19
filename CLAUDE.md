@@ -7,6 +7,15 @@ Expense reporting system for apartment renovation projects. Service providers re
 
 Both packages share the same Firebase project and Firestore database. See each package's `CLAUDE.md` for domain-specific context.
 
+## Deployment
+
+Auto-deploys on push to `main` via GitHub Actions:
+- `server/**` changes → `.github/workflows/deploy-server.yml` SSHes into the DO droplet, pulls, `npm install`, and `pm2 restart gasto-obra-webhook gasto-obra-api`.
+- `docs/**` changes → `.github/workflows/deploy-docs.yml`.
+- `web/**` deploys via Firebase Hosting (Nuxt build).
+
+Do NOT instruct the user to manually `git pull` / `pm2 restart` after a push — pushing to `main` is enough. Only suggest manual steps for hotfixes done directly on the droplet.
+
 ## Key Concepts
 
 - **Provider (Proveedor)**: The service provider doing the renovation work. Has Firebase Auth account, sends expenses via WhatsApp.

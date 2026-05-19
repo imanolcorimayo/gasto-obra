@@ -305,7 +305,8 @@ ${vendorList}`;
       }
       return parsed;
     } catch (error) {
-      logger.error('Error parsing receipt JSON', { error });
+      logger.error('Error parsing receipt JSON', { error: error.message, text });
+      Sentry.captureException(error, { extra: { rawText: text } });
       return null;
     }
   }
@@ -427,7 +428,8 @@ Si no podés extraer algún campo, usa null.`;
       }
       return parsed;
     } catch (error) {
-      logger.error('Error parsing audio transcription JSON', { error });
+      logger.error('Error parsing audio transcription JSON', { error: error.message, text });
+      Sentry.captureException(error, { extra: { rawText: text } });
       return null;
     }
   }
@@ -549,7 +551,8 @@ Si no podés extraer algún campo, usa null.`;
       }
       return parsed;
     } catch (error) {
-      logger.error('Error parsing text expense JSON', { error });
+      logger.error('Error parsing text expense JSON', { error: error.message, text: responseText });
+      Sentry.captureException(error, { extra: { rawText: responseText } });
       return null;
     }
   }
@@ -666,7 +669,8 @@ ${vendorList}`;
       }
       return parsed;
     } catch (error) {
-      logger.error('Error parsing document JSON', { error });
+      logger.error('Error parsing document JSON', { error: error.message, text });
+      Sentry.captureException(error, { extra: { rawText: text } });
       return null;
     }
   }
@@ -760,7 +764,8 @@ Pregunta del usuario: "${question}"`;
     try {
       return JSON.parse(responseText);
     } catch (error) {
-      logger.error('Error parsing support answer JSON', { error });
+      logger.error('Error parsing support answer JSON', { error: error.message, text: responseText });
+      Sentry.captureException(error, { extra: { rawText: responseText } });
       return null;
     }
   }
