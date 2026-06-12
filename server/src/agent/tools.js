@@ -1,6 +1,7 @@
 import { createExpense, updateExpense, deleteExpense, getExpense } from '../helpers/expenseWrite.js';
 import { getProjectSummary, searchProjectExpenses } from '../helpers/expenseSummary.js';
 import { formatMovementConfirmation } from '../helpers/movementConfirmation.js';
+import { createProject } from '../helpers/projects.js';
 
 // Parse an agent-supplied date ("YYYY-MM-DD") to a Date at local noon, avoiding
 // timezone day-shift. Returns null for anything unparseable.
@@ -58,6 +59,24 @@ export const TOOL_DECLARATIONS = [
           type: 'object',
           properties: { projectId: { type: 'string', description: 'id exacto de la obra' } },
           required: ['projectId'],
+        },
+      },
+      {
+        name: 'create_project',
+        description:
+          'Crea una obra nueva para el profesional. Lo único obligatorio es el nombre; el tag se genera solo. ' +
+          'Usala cuando el profesional quiera registrar en una obra que NO está en su lista y pida crearla. ' +
+          'Por defecto la deja como obra activa. Cliente y dirección son opcionales: sumalos solo si el profesional los da, no lo frenes pidiéndolos.',
+        parameters: {
+          type: 'object',
+          properties: {
+            name: { type: 'string', description: 'nombre de la obra (obligatorio)' },
+            clientName: { type: 'string', description: 'nombre del cliente/dueño (opcional)' },
+            clientPhone: { type: 'string', description: 'teléfono del cliente (opcional)' },
+            address: { type: 'string', description: 'dirección de la obra (opcional)' },
+            setActive: { type: 'boolean', description: 'dejar esta obra como activa; por defecto true' },
+          },
+          required: ['name'],
         },
       },
       {
@@ -199,6 +218,34 @@ export function makeDispatcher(ctx) {
         }
         await ctx.setActiveProject(target.id);
         return { ok: true, activeProject: { id: target.id, name: target.name } };
+      }
+
+      case 'create_project': {
+        const created = await createProject(ctx.userId, {
+          name: args.name,
+          clientName: args.clientName,
+          clientPhone: args.clientPhone,
+          address: args.address,
+        });
+        if (!created.ok) return created;
+
+        // Make the new obra usable for the rest of THIS turn (e.g. an immediate
+        // record_expense or a move of the pending expense via edit_expense): it
+        // isn't in ctx.activeProjects, which was snapshotted before this call.
+        projects.push(created.project);
+
+        // Default to making it active so the next expense lands there.
+        const setActive = args.setActive !== false;
+        if (setActive && typeof ctx.setActiveProject === 'function') {
+          await ctx.setActiveProject(created.project.id);
+          ctx.activeProject = { id: created.project.id, name: created.project.name, tag: created.project.tag };
+        }
+
+        return {
+          ok: true,
+          project: { id: created.project.id, name: created.project.name, tag: created.project.tag },
+          active: setActive,
+        };
       }
 
       case 'record_expense': {

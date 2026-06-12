@@ -58,3 +58,50 @@ export async function autoSelectProject(userId, phoneNumber) {
 
   return { project: selected, activeProjects: projects, autoCreated };
 }
+
+// Derive a URL-safe tag from the obra name (mirrors the web schema's normalization)
+// and make it unique against the provider's existing tags by suffixing a number.
+function deriveUniqueTag(name, existingTags) {
+  let base = (name || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
+    .replace(/[^a-z0-9]/g, '').slice(0, 30);
+  if (!base) base = 'obra';
+  const taken = new Set(existingTags);
+  if (!taken.has(base)) return base;
+  for (let i = 2; i < 1000; i++) {
+    const candidate = `${base.slice(0, 28)}${i}`;
+    if (!taken.has(candidate)) return candidate;
+  }
+  return `${base.slice(0, 24)}${Date.now().toString().slice(-5)}`;
+}
+
+/**
+ * Create a new obra for `userId`. `name` is the only required field; `tag` is
+ * auto-derived and deduped. Optional: clientName, clientPhone, address, description.
+ * Returns the created project (with its id), shaped like getActiveProjects entries.
+ */
+export async function createProject(userId, { name, clientName, clientPhone, address, description } = {}) {
+  const trimmedName = (name || '').trim();
+  if (!trimmedName) return { ok: false, error: 'Falta el nombre de la obra.' };
+
+  const existing = await getActiveProjects(userId);
+  const tag = deriveUniqueTag(trimmedName, existing.map((p) => p.tag).filter(Boolean));
+
+  const projectData = {
+    name: trimmedName.slice(0, 100),
+    tag,
+    description: description?.trim().slice(0, 500) || null,
+    address: address?.trim().slice(0, 200) || null,
+    clientName: clientName?.trim().slice(0, 100) || null,
+    clientPhone: clientPhone?.trim().slice(0, 20) || null,
+    providerId: userId,
+    status: 'active',
+    shareToken: crypto.randomUUID(),
+    clientUserId: null,
+    createdAt: admin.firestore.FieldValue.serverTimestamp(),
+    updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+  };
+
+  const ref = await db.collection(COLLECTIONS.PROJECTS).add(projectData);
+  logger.info('Created project via agent', { userId, projectId: ref.id, tag });
+  return { ok: true, project: { id: ref.id, ...projectData } };
+}
