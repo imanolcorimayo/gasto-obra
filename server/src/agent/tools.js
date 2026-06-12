@@ -96,12 +96,16 @@ export function makeDispatcher(ctx) {
         if (!projectId) {
           return { ok: false, error: 'No hay obra activa. Pedile al profesional que elija una.' };
         }
+        // Authorization: only ever act on a project the authenticated user owns.
+        // `projects` is the user's own active-project list; never trust a raw id.
+        const project = projects.find((p) => p.id === projectId);
+        if (!project) return { ok: false, error: 'No encontré esa obra entre las tuyas.' };
+
         const amount = Number(args.amount);
         if (!amount || amount <= 0) return { ok: false, error: 'Falta el monto o es inválido.' };
 
-        const project = projects.find((p) => p.id === projectId) || ctx.activeProject;
         const { expenseId } = await createExpense(ctx.userId, {
-          projectId,
+          projectId: project.id,
           type: args.type || 'expense',
           title: args.title || args.items?.[0]?.name || 'Gasto',
           amount,
@@ -121,7 +125,7 @@ export function makeDispatcher(ctx) {
             title: args.title || 'Gasto',
             amount,
             category: args.category || 'otros',
-            project: project?.name || null,
+            project: project.name,
           },
         };
       }
@@ -129,9 +133,12 @@ export function makeDispatcher(ctx) {
       case 'get_summary': {
         const projectId = args.projectId || ctx.activeProject?.id;
         if (!projectId) return { ok: false, error: 'No hay obra activa.' };
-        const summary = await getProjectSummary(projectId);
-        const project = projects.find((p) => p.id === projectId) || ctx.activeProject;
-        return { ok: true, project: project?.name || null, summary };
+        // Authorization: only summarize a project the authenticated user owns.
+        const project = projects.find((p) => p.id === projectId);
+        if (!project) return { ok: false, error: 'No encontré esa obra entre las tuyas.' };
+
+        const summary = await getProjectSummary(project.id);
+        return { ok: true, project: project.name, summary };
       }
 
       default:
