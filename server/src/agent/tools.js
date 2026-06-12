@@ -1,9 +1,10 @@
+import { createExpense } from '../helpers/expenseWrite.js';
+import { getProjectSummary } from '../helpers/expenseSummary.js';
+
 // Tool declarations (sent to Gemini) + the dispatcher that executes them.
-// Tools act through the per-turn `ctx` (data + capability callbacks the channel
-// adapter provides), so the agent core stays transport- and storage-agnostic.
-//
-// Starting small: list_projects (read) + switch_project (write via capability).
-// record_expense / get_summary land in Phase 0.4.
+// The agent core stays transport/storage-agnostic; TOOLS are the domain bridge —
+// they read contextual data + channel capabilities from the per-turn `ctx`, and
+// may touch Firestore directly (that's the "domain behind tools" design).
 
 export const TOOL_DECLARATIONS = [
   {
@@ -21,6 +22,50 @@ export const TOOL_DECLARATIONS = [
           type: 'object',
           properties: { projectId: { type: 'string', description: 'id exacto de la obra' } },
           required: ['projectId'],
+        },
+      },
+      {
+        name: 'record_expense',
+        description:
+          'Registra una transacción en la obra activa. Extraé los datos del mensaje del profesional. ' +
+          'Tipos: "expense" (gasto/compra para la obra, lo debe el cliente), "payment" (cobro: plata que pagó el cliente), ' +
+          '"provider_expense" (gasto propio: lo pagó el profesional de su bolsillo). ' +
+          'Si falta el monto o no se entiende qué es, NO llames esta tool: preguntá primero.',
+        parameters: {
+          type: 'object',
+          properties: {
+            type: { type: 'string', enum: ['expense', 'payment', 'provider_expense'] },
+            title: { type: 'string', description: 'título corto y legible' },
+            amount: { type: 'number', description: 'monto total en ARS' },
+            category: { type: 'string', description: 'una de las categorías válidas del contexto' },
+            description: { type: 'string' },
+            items: {
+              type: 'array',
+              description: 'desglose opcional cuando hay varios ítems',
+              items: {
+                type: 'object',
+                properties: { name: { type: 'string' }, amount: { type: 'number' } },
+                required: ['name', 'amount'],
+              },
+            },
+            paymentMethod: { type: 'string', description: 'transferencia, efectivo, tarjeta, mercadopago' },
+            installmentPercent: {
+              type: 'number',
+              description: '100 solo si el cliente YA pagó este gasto; si no, 0',
+            },
+            projectId: { type: 'string', description: 'id de la obra; omitilo para usar la activa' },
+          },
+          required: ['type', 'title', 'amount'],
+        },
+      },
+      {
+        name: 'get_summary',
+        description:
+          'Devuelve el resumen de la obra: cantidad de gastos, total de gastos, pagos recibidos, saldo, gastos propios y desglose por categoría.',
+        parameters: {
+          type: 'object',
+          properties: { projectId: { type: 'string', description: 'id de la obra; omitilo para usar la activa' } },
+          required: [],
         },
       },
     ],
@@ -44,6 +89,49 @@ export function makeDispatcher(ctx) {
         }
         await ctx.setActiveProject(target.id);
         return { ok: true, activeProject: { id: target.id, name: target.name } };
+      }
+
+      case 'record_expense': {
+        const projectId = args.projectId || ctx.activeProject?.id;
+        if (!projectId) {
+          return { ok: false, error: 'No hay obra activa. Pedile al profesional que elija una.' };
+        }
+        const amount = Number(args.amount);
+        if (!amount || amount <= 0) return { ok: false, error: 'Falta el monto o es inválido.' };
+
+        const project = projects.find((p) => p.id === projectId) || ctx.activeProject;
+        const { expenseId } = await createExpense(ctx.userId, {
+          projectId,
+          type: args.type || 'expense',
+          title: args.title || args.items?.[0]?.name || 'Gasto',
+          amount,
+          category: args.category || 'otros',
+          description: args.description || '',
+          items: args.items || null,
+          paymentMethod: args.paymentMethod || null,
+          installmentPercent: args.installmentPercent ?? 0,
+          source: ctx.source || 'app',
+          originalMessage: ctx.originalMessage || '',
+        });
+        return {
+          ok: true,
+          expenseId,
+          registered: {
+            type: args.type || 'expense',
+            title: args.title || 'Gasto',
+            amount,
+            category: args.category || 'otros',
+            project: project?.name || null,
+          },
+        };
+      }
+
+      case 'get_summary': {
+        const projectId = args.projectId || ctx.activeProject?.id;
+        if (!projectId) return { ok: false, error: 'No hay obra activa.' };
+        const summary = await getProjectSummary(projectId);
+        const project = projects.find((p) => p.id === projectId) || ctx.activeProject;
+        return { ok: true, project: project?.name || null, summary };
       }
 
       default:

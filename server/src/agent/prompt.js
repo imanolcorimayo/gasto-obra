@@ -53,5 +53,9 @@ export function buildContextBlock(ctx = {}) {
       lines.push(`- ${p.name}${p.tag ? ` (#${p.tag})` : ''} [id: ${p.id}]`);
     }
   }
+
+  if (ctx.categories && ctx.categories.length) {
+    lines.push(`Categorías válidas: ${ctx.categories.join(', ')}`);
+  }
   return lines.join('\n');
 }
