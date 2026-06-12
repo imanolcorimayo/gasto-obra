@@ -10,20 +10,15 @@ import StorageHandler from '../handlers/StorageHandler.js';
 import { sendWhatsAppMessage, sendWhatsAppButtons, downloadWhatsAppMedia } from '../helpers/whatsapp.js';
 import { compressImage } from '../helpers/compression.js';
 import { PDFParse } from 'pdf-parse';
-import { formatAmount, capitalizeFirst, stripHtml } from '../helpers/responseFormatter.js';
+import { stripHtml } from '../helpers/responseFormatter.js';
 import logger from '../../lib/logger.js';
 import {
-  CONFIRMATION_TTL, getPendingExpense, getRawPendingExpense, clearPendingExpense, setRawPendingExpense,
-  setPendingProjectSelection, getPendingProjectSelection, clearPendingProjectSelection,
-  setPendingProjectSwitchExpense, getPendingProjectSwitchExpense, clearPendingProjectSwitchExpense,
-  setPendingResumenSelection, getPendingResumenSelection, clearPendingResumenSelection,
-  createAISupportSession, getAISupportSession, clearAISupportSession, resetSessionTimers,
+  getAISupportSession, clearAISupportSession,
   getOnboardingState, clearOnboarding, setOnboardingState,
   checkMessageRateLimit
 } from '../helpers/pendingState.js';
 import { normalizePhoneNumber } from '../helpers/phone.js';
 import { getActiveProjects, resolveProject, autoSelectProject } from '../helpers/projects.js';
-import { sendGlobalResumen, sendWeeklyResumen } from '../handlers/resumen.js';
 import { handleLinkCommand, handleUnlinkCommand, sendHelpMessage, handleAISupport } from '../handlers/commands.js';
 import { runAgentTurn, startFreshSession } from '../agent/core.js';
 
@@ -60,6 +55,10 @@ function isDuplicateMessage(id) {
 // ============================================
 const DEFAULT_EXPENSE_CATEGORIES = ['materiales', 'herramientas', 'transporte', 'mano de obra', 'comida', 'otros'];
 const VALID_PAYMENT_METHODS = ['transferencia', 'efectivo', 'tarjeta', 'mercadopago'];
+
+// PDF intake limits (the agentic document handler enforces these before reading).
+const MAX_PDF_SIZE = 5 * 1024 * 1024; // 5 MB
+const MAX_PDF_PAGES = 5;
 
 async function getProviderCategories(providerId, projectId = null) {
   try {
@@ -111,12 +110,6 @@ async function getProviderRecipients(userId) {
   }
 }
 
-function vendorSlug(name) {
-  return name.trim().toLowerCase()
-    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-    .replace(/[^a-z0-9\s]/g, '').replace(/\s+/g, ' ');
-}
-
 async function getProviderVendors(userId) {
   try {
     const snap = await db.collection(COLLECTIONS.VENDORS)
@@ -127,56 +120,6 @@ async function getProviderVendors(userId) {
     logger.error('Error fetching provider vendors', { error });
     return [];
   }
-}
-
-// ============================================
-// Transaction Type Helpers
-// ============================================
-
-function isGeminiError(result) {
-  return result && typeof result === 'object' && result.error;
-}
-
-function getGeminiErrorMessage() {
-  return `El servicio de procesamiento no está disponible en este momento.\n\nPodés registrar el gasto desde la app web: ${APP_URL}\n\nIntentá nuevamente en unos minutos.`;
-}
-
-function resolveTransactionType(aiType) {
-  if (aiType && ['expense', 'payment', 'provider_expense'].includes(aiType)) return aiType;
-  return null;
-}
-
-function getTypeDefaults(type) {
-  if (type === 'payment') return { installmentPercent: null, category: 'pago' };
-  if (type === 'provider_expense') return { installmentPercent: null };
-  return { installmentPercent: 0 };
-}
-
-function getTypeLabel(type) {
-  if (type === 'payment') return 'Cobro';
-  if (type === 'provider_expense') return 'Gasto propio';
-  return 'Gasto';
-}
-
-function applyFeeToExpenseData(expenseData, aiResult, providerData) {
-  const feePercent = providerData.managementFeePercent || 0;
-  if (feePercent > 0 && aiResult.applyManagementFee && expenseData.type === 'expense') {
-    expenseData.amountBase = expenseData.amount;
-    expenseData.managementFeePercent = feePercent;
-    expenseData.amount = Math.round(expenseData.amount * (1 + feePercent / 100));
-  } else {
-    expenseData.amountBase = null;
-    expenseData.managementFeePercent = null;
-  }
-}
-
-function checkItemsTotalMismatch(items, totalAmount) {
-  if (!items || items.length <= 1 || !totalAmount) return null;
-  const itemsSum = items.reduce((sum, i) => sum + (i.amount || 0), 0);
-  if (itemsSum === 0) return null;
-  const diff = Math.abs(totalAmount - itemsSum);
-  if (diff <= 1) return null;
-  return { itemsSum, totalAmount, diff };
 }
 
 // ============================================
@@ -525,66 +468,7 @@ app.post('/webhook', verifyWebhookSignature, async (req, res) => {
 async function processMessage(phoneNumber, text, contactName) {
   const normalizedText = text.trim().toLowerCase();
 
-  // 1. Pending confirmation → si/no
-  const pending = getPendingExpense(phoneNumber);
-  if (pending && pending.pendingConfirmation) {
-    if (['si', 'sí', 'ok', 'dale', 'yes', 'confirmar'].includes(normalizedText)) {
-      await confirmPendingExpense(phoneNumber, pending);
-      return;
-    }
-    if (['no', 'cancelar', 'cancel'].includes(normalizedText)) {
-      clearPendingExpense(phoneNumber);
-      await sendWhatsAppMessage(phoneNumber, 'Gasto cancelado.');
-      return;
-    }
-  }
-
-  // 2. Pending project switch → si/no
-  const pendingSwitch = getPendingProjectSwitchExpense(phoneNumber);
-  if (pendingSwitch) {
-    if (['si', 'sí', 'ok', 'dale', 'yes', 'confirmar'].includes(normalizedText)) {
-      clearPendingProjectSwitchExpense(phoneNumber);
-      const syntheticPending = { data: pendingSwitch.expenseData, userId: pendingSwitch.userId };
-      await confirmPendingExpense(phoneNumber, syntheticPending);
-      return;
-    }
-    if (['no', 'cancelar', 'cancel'].includes(normalizedText)) {
-      clearPendingProjectSwitchExpense(phoneNumber);
-      await sendWhatsAppMessage(phoneNumber, 'Gasto cancelado.');
-      return;
-    }
-  }
-
-  // 3. Pending project selection → number
-  const pendingSelection = getPendingProjectSelection(phoneNumber);
-  if (pendingSelection) {
-    const num = parseInt(normalizedText, 10);
-    if (!isNaN(num) && num >= 1 && num <= pendingSelection.projects.length) {
-      const selected = pendingSelection.projects[num - 1];
-      clearPendingProjectSelection(phoneNumber);
-      await db.collection(COLLECTIONS.WHATSAPP_LINKS).doc(phoneNumber).update({ activeProjectId: selected.id });
-      await sendWhatsAppMessage(phoneNumber, `Proyecto activo: *${selected.name}* (${selected.tag})`);
-      return;
-    }
-  }
-
-  // 4. Pending resumen selection
-  const pendingResumen = getPendingResumenSelection(phoneNumber);
-  if (pendingResumen) {
-    if (normalizedText === '1' || normalizedText === 'global') {
-      clearPendingResumenSelection(phoneNumber);
-      await sendGlobalResumen(phoneNumber, pendingResumen);
-      return;
-    }
-    if (normalizedText === '2' || normalizedText === 'semanal') {
-      clearPendingResumenSelection(phoneNumber);
-      await sendWeeklyResumen(phoneNumber, pendingResumen);
-      return;
-    }
-    clearPendingResumenSelection(phoneNumber);
-  }
-
-  // 5. Active AI support session
+  // 1. Active AI support session
   const activeSession = getAISupportSession(phoneNumber);
   if (activeSession) {
     if (['listo, gracias', 'listo gracias', 'listo'].includes(normalizedText)) {
@@ -596,39 +480,39 @@ async function processMessage(phoneNumber, text, contactName) {
     return;
   }
 
-  // 7. Onboarding flow (unlinked users)
+  // 2. Onboarding flow (unlinked users)
   const onboardingState = getOnboardingState(phoneNumber);
   if (onboardingState) {
     const handled = await handleOnboardingStep(phoneNumber, text);
     if (handled) return;
   }
 
-  // 8. VINCULAR
+  // 3. VINCULAR
   if (normalizedText.startsWith('vincular ')) {
     const code = text.trim().split(' ')[1]?.toUpperCase();
     await handleLinkCommand(phoneNumber, code, contactName);
     return;
   }
 
-  // 9. DESVINCULAR
+  // 4. DESVINCULAR
   if (normalizedText === 'desvincular') {
     await handleUnlinkCommand(phoneNumber);
     return;
   }
 
-  // 10. AYUDA
+  // 5. AYUDA
   if (normalizedText === 'ayuda' || normalizedText === 'help' || normalizedText === 'comandos') {
     await sendHelpMessage(phoneNumber);
     return;
   }
 
-  // 10b. NUEVO → start a fresh agent conversation (drops prior context).
+  // 6. NUEVO → start a fresh agent conversation (drops prior context).
   if (normalizedText === 'nuevo' || normalizedText === '/nuevo') {
     await handleFreshSession(phoneNumber);
     return;
   }
 
-  // 11. Everything else → agentic chat. The agent handles expenses, corrections,
+  // 7. Everything else → agentic chat. The agent handles expenses, corrections,
   // project switching (PROYECTO), summaries (RESUMEN), and questions as tools.
   await handleAgentMessage(phoneNumber, text);
 }
@@ -873,112 +757,6 @@ async function handleDocumentMessage(phoneNumber, documentId, caption, filename)
     attachments: [{ mimeType: 'application/pdf', data: media.base64 }],
     mediaUrls: { imageUrl: null, audioUrl: null, audioTranscription: null, fileUrl },
   });
-}
-
-// ============================================
-// Confirmation Handler
-// ============================================
-
-async function confirmPendingExpense(phoneNumber, pending) {
-  clearPendingExpense(phoneNumber);
-
-  const { data, userId } = pending;
-
-  const expenseDoc = {
-    projectId: data.projectId,
-    providerId: userId,
-    title: data.title,
-    description: data.description || '',
-    amount: data.amount,
-    amountBase: data.amountBase || null,
-    managementFeePercent: data.managementFeePercent || null,
-    category: data.category,
-    type: data.type || 'expense',
-    installmentPercent: data.installmentPercent ?? null,
-    paymentMethod: data.paymentMethod || null,
-    recipientName: data.recipientName || null,
-    recipientBankInfo: data.recipientBankInfo || null,
-    recipientPlatform: data.recipientPlatform || null,
-    recipientCuit: data.recipientCuit || null,
-    linkedExpenseId: data.linkedExpenseId || null,
-    linkedPaymentId: data.linkedPaymentId || null,
-    items: data.items || null,
-    imageUrl: data.imageUrl || null,
-    audioUrl: data.audioUrl || null,
-    audioTranscription: data.audioTranscription || null,
-    fileUrl: data.fileUrl || null,
-    vendor: data.vendor || null,
-    originalMessage: data.originalMessage || '',
-    source: 'whatsapp',
-    date: admin.firestore.FieldValue.serverTimestamp(),
-    createdAt: admin.firestore.FieldValue.serverTimestamp()
-  };
-
-  const expenseRef = await db.collection(COLLECTIONS.EXPENSES).add(expenseDoc);
-
-  // Auto-add new vendor to provider's vendor list (slug-based dedup)
-  if (data.vendor) {
-    try {
-      const existingVendors = await getProviderVendors(userId);
-      const newSlug = vendorSlug(data.vendor);
-      const match = existingVendors.find(v => vendorSlug(v.name) === newSlug);
-      if (match) {
-        await expenseRef.update({ vendor: match.name });
-      } else {
-        await db.collection(COLLECTIONS.VENDORS).add({ userId, name: data.vendor });
-      }
-    } catch (e) {
-      logger.error('Error auto-adding vendor', { error: e });
-    }
-  }
-
-  // Create linked payment if fully paid
-  if (data.installmentPercent >= 100 && (data.type === 'expense' || !data.type)) {
-    const paymentDoc = {
-      projectId: data.projectId,
-      providerId: userId,
-      title: `Pago: ${data.title}`,
-      description: '',
-      amount: data.amount,
-      category: 'pago',
-      type: 'payment',
-      installmentPercent: null,
-      paymentMethod: data.paymentMethod || null,
-      recipientName: data.recipientName || null,
-      recipientBankInfo: data.recipientBankInfo || null,
-      recipientPlatform: data.recipientPlatform || null,
-      recipientCuit: data.recipientCuit || null,
-      linkedExpenseId: expenseRef.id,
-      linkedPaymentId: null,
-      items: null,
-      imageUrl: null,
-      audioUrl: null,
-      audioTranscription: null,
-      fileUrl: null,
-      vendor: data.vendor || null,
-      originalMessage: '',
-      source: 'whatsapp',
-      date: admin.firestore.FieldValue.serverTimestamp(),
-      createdAt: admin.firestore.FieldValue.serverTimestamp()
-    };
-    const paymentRef = await db.collection(COLLECTIONS.EXPENSES).add(paymentDoc);
-    await expenseRef.update({ linkedPaymentId: paymentRef.id });
-  }
-
-  const formattedAmount = formatAmount(data.amount);
-  const typeLabel = data.type === 'payment' ? 'Pago registrado' : data.type === 'provider_expense' ? 'Gasto propio registrado' : 'Gasto registrado';
-
-  await sendWhatsAppMessage(
-    phoneNumber,
-    `${typeLabel}!\n\n*${data.title}*\n${formattedAmount}\n${data.projectName} - ${capitalizeFirst(data.category)}\n${data.description ? `_${data.description}_` : ''}`
-  );
-
-  if (data.projectAutoCreated) {
-    await sendWhatsAppMessage(
-      phoneNumber,
-      `Se creó un proyecto automáticamente. Entrá a ${APP_URL} y completá los datos para una mejor experiencia.`
-    );
-  }
 }
 
 // ============================================
