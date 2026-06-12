@@ -30,3 +30,41 @@ export async function getProjectSummary(projectId) {
     byCategory,
   };
 }
+
+/**
+ * Search a project's expenses with optional filters. All filtering is in memory
+ * (one project's expenses fit easily), so no Firestore composite indexes needed.
+ *
+ * @param {string} projectId
+ * @param {object} f { from?: Date, to?: Date, query?: string, type?: string, category?: string, limit?: number }
+ *   from/to: inclusive date bounds. query: case-insensitive substring over title/vendor/description/items.
+ */
+export async function searchProjectExpenses(projectId, f = {}) {
+  const snap = await db.collection(COLLECTIONS.EXPENSES).where('projectId', '==', projectId).get();
+  let items = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+
+  const dateMs = (e) => e.date?.toMillis?.() ?? e.createdAt?.toMillis?.() ?? 0;
+  if (f.from instanceof Date) items = items.filter((e) => dateMs(e) >= f.from.getTime());
+  if (f.to instanceof Date) items = items.filter((e) => dateMs(e) <= f.to.getTime());
+  if (f.type) items = items.filter((e) => (e.type || 'expense') === f.type);
+  if (f.category) items = items.filter((e) => (e.category || '') === f.category);
+
+  if (f.query) {
+    const q = f.query.toLowerCase();
+    items = items.filter((e) => {
+      const hay = [e.title, e.vendor, e.description, ...(e.items || []).map((i) => i.name)]
+        .filter(Boolean).join(' ').toLowerCase();
+      return hay.includes(q);
+    });
+  }
+
+  items.sort((a, b) => dateMs(b) - dateMs(a));
+  return items.slice(0, f.limit || 10).map((e) => ({
+    id: e.id,
+    type: e.type || 'expense',
+    title: e.title,
+    amount: e.amount,
+    category: e.category || null,
+    date: e.date?.toDate?.()?.toISOString().slice(0, 10) || null,
+  }));
+}

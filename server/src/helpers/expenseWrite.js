@@ -51,7 +51,10 @@ export async function createExpense(userId, data) {
     vendor: data.vendor || null,
     originalMessage: data.originalMessage || '',
     source: data.source || 'agent',
-    date: admin.firestore.FieldValue.serverTimestamp(),
+    // Optional backdating: a Date → that moment; omitted → now.
+    date: data.date instanceof Date
+      ? admin.firestore.Timestamp.fromDate(data.date)
+      : admin.firestore.FieldValue.serverTimestamp(),
     createdAt: admin.firestore.FieldValue.serverTimestamp(),
   };
 
@@ -102,4 +105,47 @@ export async function createExpense(userId, data) {
   }
 
   return { expenseId: expenseRef.id, paymentId };
+}
+
+const EDITABLE_FIELDS = ['title', 'amount', 'category', 'type', 'description', 'paymentMethod', 'installmentPercent', 'items', 'date', 'vendor', 'recipientName', 'recipientPlatform', 'recipientCuit'];
+
+/** Fetch one expense, but only if it belongs to `userId`. Returns a slim view or null. */
+export async function getExpense(userId, expenseId) {
+  const doc = await db.collection(COLLECTIONS.EXPENSES).doc(expenseId).get();
+  if (!doc.exists) return null;
+  const e = doc.data();
+  if (e.providerId !== userId) return null; // ownership guard (IDOR)
+  return { id: doc.id, type: e.type || 'expense', title: e.title, amount: e.amount, category: e.category || null, projectId: e.projectId };
+}
+
+/** Update an owned expense (trusted, no confirm). Only whitelisted fields. */
+export async function updateExpense(userId, expenseId, fields) {
+  const ref = db.collection(COLLECTIONS.EXPENSES).doc(expenseId);
+  const doc = await ref.get();
+  if (!doc.exists) return { ok: false, error: 'No existe ese registro.' };
+  if (doc.data().providerId !== userId) return { ok: false, error: 'Ese registro no es tuyo.' };
+
+  const update = {};
+  for (const k of EDITABLE_FIELDS) if (fields[k] !== undefined) update[k] = fields[k];
+  if (Object.keys(update).length === 0) return { ok: false, error: 'No hay cambios para aplicar.' };
+  if (update.date instanceof Date) update.date = admin.firestore.Timestamp.fromDate(update.date);
+
+  update.updatedAt = admin.firestore.FieldValue.serverTimestamp();
+  await ref.update(update);
+  return { ok: true, expenseId, updated: update };
+}
+
+/** Delete an owned expense (and its linked payment, if any). Confirm gate lives in the tool. */
+export async function deleteExpense(userId, expenseId) {
+  const ref = db.collection(COLLECTIONS.EXPENSES).doc(expenseId);
+  const doc = await ref.get();
+  if (!doc.exists) return { ok: false, error: 'No existe ese registro.' };
+  const data = doc.data();
+  if (data.providerId !== userId) return { ok: false, error: 'Ese registro no es tuyo.' };
+
+  if (data.linkedPaymentId) {
+    await db.collection(COLLECTIONS.EXPENSES).doc(data.linkedPaymentId).delete().catch(() => {});
+  }
+  await ref.delete();
+  return { ok: true, expenseId };
 }
