@@ -36,6 +36,25 @@ const VERIFY_TOKEN = process.env.WP_VERIFY_TOKEN || 'gasto_obra_verify';
 const APP_URL = process.env.APP_URL || 'https://gastoobra.com';
 const META_APP_SECRET = process.env.META_APP_SECRET;
 
+// Meta delivers webhooks at-least-once: the same message id (wamid) can arrive
+// more than once (retries, redeliveries when our ack is slow). Dedup by id so a
+// message is processed exactly once. In-memory is fine — duplicates land within
+// seconds, and a restart only risks reprocessing a message mid-flight.
+const SEEN_MESSAGE_TTL_MS = 10 * 60 * 1000;
+const seenMessageIds = new Map(); // wamid -> first-seen epoch ms
+
+function isDuplicateMessage(id) {
+  if (!id) return false;
+  const now = Date.now();
+  if (seenMessageIds.size > 2000) {
+    for (const [k, ts] of seenMessageIds) if (now - ts > SEEN_MESSAGE_TTL_MS) seenMessageIds.delete(k);
+  }
+  const prev = seenMessageIds.get(id);
+  if (prev && now - prev <= SEEN_MESSAGE_TTL_MS) return true;
+  seenMessageIds.set(id, now);
+  return false;
+}
+
 // ============================================
 // Default expense categories
 // ============================================
@@ -195,40 +214,6 @@ async function getFaqData() {
     logger.error('Error fetching FAQ data', { error });
     return faqCache?.data || [];
   }
-}
-
-// ============================================
-// Pending Confirmation Wrapper
-// ============================================
-async function setPendingConfirmation(phoneNumber, userId, expenseData) {
-  const existing = getPendingExpense(phoneNumber);
-  if (existing && existing.pendingConfirmation) {
-    try {
-      await confirmPendingExpense(phoneNumber, existing);
-    } catch (error) {
-      Sentry.captureException(error);
-      logger.error('Error auto-confirming previous expense', { error, phoneNumber });
-    }
-  }
-
-  const timestamp = Date.now();
-  setRawPendingExpense(phoneNumber, {
-    data: expenseData,
-    userId,
-    timestamp,
-    pendingConfirmation: true
-  });
-  setTimeout(async () => {
-    const pending = getRawPendingExpense(phoneNumber);
-    if (pending && pending.pendingConfirmation && pending.timestamp === timestamp) {
-      try {
-        await confirmPendingExpense(phoneNumber, pending);
-      } catch (error) {
-        Sentry.captureException(error);
-        logger.error('Error auto-confirming expense', { error, phoneNumber });
-      }
-    }
-  }, CONFIRMATION_TTL);
 }
 
 // ============================================
@@ -483,6 +468,12 @@ app.post('/webhook', verifyWebhookSignature, async (req, res) => {
     const from = normalizePhoneNumber(rawFrom);
     const contactName = value.contacts?.[0]?.profile?.name || 'Usuario';
 
+    // Drop redelivered duplicates before doing any work (Meta at-least-once).
+    if (isDuplicateMessage(message.id)) {
+      logger.info('Duplicate message skipped', { id: message.id, from });
+      return;
+    }
+
     if (!checkMessageRateLimit(from)) {
       logger.warn('Rate limit exceeded', { from });
       Sentry.captureMessage('Rate limit exceeded', { level: 'warning', extra: { from } });
@@ -695,361 +686,6 @@ async function prepareExpenseContext(phoneNumber) {
 
   return { linkData, providerData, userId, activeProjectId, activeProjects, resolvedProject, providerCats, recipients, vendors, aiContext, projectAutoCreated };
 }
-
-async function processExpenseResult({
-  phoneNumber, userId, activeProjectId, activeProjects,
-  resolvedProject: preResolvedProject,
-  aiResult, linkData, providerData, providerCats, recipients,
-  mediaUrls, originalMessage, defaultTitle,
-  useAITitle = false, useAIDescription = false,
-  filterItems = false, sumItemAmounts = false,
-  trustAICategory = false, checkMismatch = false,
-  projectAutoCreated = false
-}) {
-  const transactionType = resolveTransactionType(aiResult.transactionType) || 'expense';
-  const typeDefaults = getTypeDefaults(transactionType);
-  const installmentPercent = aiResult.installmentPercent === 100 ? 100 : (typeDefaults.installmentPercent ?? 0);
-
-  const vendor = aiResult.vendor || null;
-
-  // Normalize items
-  let items;
-  if (filterItems) {
-    items = Array.isArray(aiResult.items) && aiResult.items.length > 0
-      ? aiResult.items.filter(i => i && i.name && i.amount > 0)
-      : null;
-    if (items && items.length === 0) items = null;
-  } else {
-    items = aiResult.items && aiResult.items.length > 0
-      ? aiResult.items.map(i => typeof i === 'string' ? { name: i, amount: 0 } : { name: i.name || '', amount: i.amount || 0 })
-      : null;
-  }
-
-  // Resolve title
-  let title;
-  if (useAITitle) {
-    title = aiResult.title || items?.[0]?.name || defaultTitle;
-  } else {
-    title = vendor || (items?.[0]?.name) || (aiResult.items?.[0]?.name) || defaultTitle;
-  }
-
-  // Resolve description
-  const description = useAIDescription
-    ? (aiResult.description || '')
-    : (aiResult.items ? aiResult.items.map(i => typeof i === 'string' ? i : i.name).join(', ') : '');
-
-  // Resolve amount
-  let amount;
-  if (sumItemAmounts && items && items.length > 0) {
-    amount = items.reduce((sum, i) => sum + i.amount, 0);
-  } else {
-    amount = aiResult.totalAmount || 0;
-  }
-
-  // Validate payment method
-  const paymentMethod = VALID_PAYMENT_METHODS.includes(aiResult.paymentMethod) ? aiResult.paymentMethod : null;
-
-  // Resolve recipient
-  let recipientName = null, recipientBankInfo = null, recipientPlatform = null, recipientCuit = null;
-  if (aiResult.recipientId) {
-    const matched = recipients.find(r => r.id === aiResult.recipientId);
-    if (matched) {
-      recipientName = matched.name || null;
-      recipientBankInfo = matched.bankInfo || null;
-      recipientPlatform = matched.platform || null;
-      recipientCuit = matched.cuit || null;
-    }
-  }
-
-  // Detect project
-  const detectedProjectId = aiResult.projectId && activeProjects.some(p => p.id === aiResult.projectId)
-    ? aiResult.projectId : null;
-
-  // Resolve category
-  let category;
-  if (transactionType === 'payment') {
-    category = 'pago';
-  } else if (trustAICategory && aiResult.category) {
-    category = providerCats.includes(aiResult.category)
-      ? aiResult.category
-      : await geminiHandler.categorizeExpense(title, description, providerCats);
-  } else {
-    category = await geminiHandler.categorizeExpense(title, description, providerCats);
-  }
-
-  const mismatch = checkMismatch ? checkItemsTotalMismatch(items, aiResult.totalAmount) : null;
-
-  // Build base expense fields
-  const baseFields = {
-    providerId: userId,
-    title,
-    description,
-    amount,
-    category,
-    type: transactionType,
-    installmentPercent,
-    paymentMethod,
-    recipientName,
-    recipientBankInfo,
-    recipientPlatform,
-    recipientCuit,
-    vendor,
-    linkedExpenseId: null,
-    linkedPaymentId: null,
-    items: items || null,
-    ...mediaUrls,
-    originalMessage,
-    source: 'whatsapp',
-    timestamp: Date.now(),
-    projectAutoCreated
-  };
-
-  // Project switching
-  const isProjectSwitch = detectedProjectId && detectedProjectId !== activeProjectId;
-
-  if (isProjectSwitch) {
-    const detectedProject = activeProjects.find(p => p.id === detectedProjectId);
-    const expenseData = {
-      ...baseFields,
-      projectId: detectedProject.id,
-      projectTag: detectedProject.tag,
-      projectName: detectedProject.name,
-    };
-
-    applyFeeToExpenseData(expenseData, aiResult, providerData);
-    setPendingProjectSwitchExpense(phoneNumber, userId, expenseData, detectedProject);
-
-    const confirmMsg = buildExpenseConfirmationMessage(expenseData, mismatch);
-    const switchBody = `${confirmMsg}\nEste gasto se guardaría en *${detectedProject.name}* (no tu proyecto activo).\n\nSi querés guardar automáticamente a este proyecto, usá el comando *PROYECTO*.`;
-    await sendWhatsAppButtons(phoneNumber, switchBody, [
-      { id: 'confirm_yes', title: 'Sí' },
-      { id: 'confirm_no', title: 'No' }
-    ]);
-    return;
-  }
-
-  const project = preResolvedProject || await resolveProject(userId, activeProjectId);
-  if (!project) {
-    logger.warn('Project resolution failed after prepareExpenseContext', { userId, activeProjectId });
-    await sendWhatsAppMessage(phoneNumber, 'No tenés un proyecto activo. Enviá *PROYECTO* para seleccionar uno.');
-    return;
-  }
-
-  const expenseData = {
-    ...baseFields,
-    projectId: project.id,
-    projectTag: project.tag,
-    projectName: project.name,
-  };
-
-  applyFeeToExpenseData(expenseData, aiResult, providerData);
-  await setPendingConfirmation(phoneNumber, userId, expenseData);
-
-  const confirmMsg = buildExpenseConfirmationMessage(expenseData, mismatch);
-  await sendWhatsAppButtons(phoneNumber, confirmMsg, [
-    { id: 'confirm_yes', title: 'Sí' },
-    { id: 'confirm_no', title: 'No' }
-  ]);
-}
-
-// ============================================
-// Image Message Processing
-// ============================================
-
-async function processImageMessage(phoneNumber, imageId, caption, contactName) {
-  const ctx = await prepareExpenseContext(phoneNumber);
-  if (!ctx) return;
-
-  if (!geminiHandler) {
-    await sendWhatsAppMessage(phoneNumber, 'El procesamiento de imágenes no está disponible.');
-    return;
-  }
-
-  await sendWhatsAppMessage(phoneNumber, 'Procesando imagen...');
-
-  const imageData = await downloadWhatsAppMedia(imageId);
-  if (!imageData) {
-    await sendWhatsAppMessage(phoneNumber, 'Error al descargar la imagen. Intentá nuevamente.');
-    return;
-  }
-
-  const receiptData = await geminiHandler.parseReceiptImage(
-    imageData.base64, imageData.mimeType, { ...ctx.aiContext, caption }
-  );
-  if (isGeminiError(receiptData)) {
-    await sendWhatsAppMessage(phoneNumber, getGeminiErrorMessage());
-    return;
-  }
-  if (!receiptData || !receiptData.totalAmount) {
-    await sendWhatsAppMessage(phoneNumber, 'No pude leer el ticket. Intentá con una foto más clara o registrá el gasto manualmente.');
-    return;
-  }
-
-  let imageUrl = null;
-  try {
-    const compressed = await compressImage(imageData.base64, imageData.mimeType);
-    if (compressed) {
-      const storagePath = storageHandler.generatePath('expenses', 'receipt.jpg');
-      imageUrl = await storageHandler.uploadFile(compressed.buffer, storagePath, compressed.mimeType);
-    }
-  } catch (error) {
-    Sentry.captureException(error);
-    logger.error('Error uploading receipt image', { error });
-  }
-
-  await processExpenseResult({
-    phoneNumber, ...ctx, aiResult: receiptData,
-    mediaUrls: { imageUrl, audioUrl: null, audioTranscription: null, fileUrl: null },
-    originalMessage: `[Imagen] ${caption}`,
-    defaultTitle: 'Ticket',
-    checkMismatch: true,
-  });
-}
-
-// ============================================
-// Document (PDF) Message Processing
-// ============================================
-
-const MAX_PDF_SIZE = 5 * 1024 * 1024;
-const MAX_PDF_PAGES = 5;
-
-async function processDocumentMessage(phoneNumber, documentId, caption, filename, contactName) {
-  const ctx = await prepareExpenseContext(phoneNumber);
-  if (!ctx) return;
-
-  if (!geminiHandler) {
-    await sendWhatsAppMessage(phoneNumber, 'El procesamiento de documentos no está disponible.');
-    return;
-  }
-
-  await sendWhatsAppMessage(phoneNumber, 'Procesando documento...');
-
-  const documentData = await downloadWhatsAppMedia(documentId);
-  if (!documentData) {
-    await sendWhatsAppMessage(phoneNumber, 'Error al descargar el documento. Intentá nuevamente.');
-    return;
-  }
-
-  const pdfBuffer = Buffer.from(documentData.base64, 'base64');
-  if (pdfBuffer.length > MAX_PDF_SIZE) {
-    await sendWhatsAppMessage(phoneNumber, `El documento es muy grande (${(pdfBuffer.length / 1024 / 1024).toFixed(1)} MB). El máximo es ${MAX_PDF_SIZE / 1024 / 1024} MB.`);
-    return;
-  }
-
-  let pdfParser;
-  try {
-    pdfParser = new PDFParse({ data: pdfBuffer });
-    const doc = await pdfParser.load();
-    if (doc.numPages > MAX_PDF_PAGES) {
-      await pdfParser.destroy();
-      await sendWhatsAppMessage(phoneNumber, `El documento tiene ${doc.numPages} páginas. Solo se aceptan PDFs de hasta ${MAX_PDF_PAGES} páginas.`);
-      return;
-    }
-    await pdfParser.destroy();
-  } catch (error) {
-    if (pdfParser) await pdfParser.destroy().catch(() => {});
-    Sentry.captureException(error);
-    logger.error('Error parsing PDF for page count', { error });
-    await sendWhatsAppMessage(phoneNumber, 'No se pudo leer el PDF. Asegurate de que sea un archivo válido.');
-    return;
-  }
-
-  const documentResult = await geminiHandler.parseDocument(
-    documentData.base64, 'application/pdf', { ...ctx.aiContext, caption }
-  );
-  if (isGeminiError(documentResult)) {
-    await sendWhatsAppMessage(phoneNumber, getGeminiErrorMessage());
-    return;
-  }
-  if (!documentResult || !documentResult.totalAmount) {
-    await sendWhatsAppMessage(phoneNumber, 'No pude leer el documento. Intentá con una foto del mismo o registrá el gasto manualmente.');
-    return;
-  }
-
-  let fileUrl = null;
-  try {
-    const storagePath = storageHandler.generatePath('expenses', filename || 'document.pdf');
-    fileUrl = await storageHandler.uploadFile(pdfBuffer, storagePath, 'application/pdf');
-  } catch (error) {
-    Sentry.captureException(error);
-    logger.error('Error uploading PDF document', { error });
-  }
-
-  await processExpenseResult({
-    phoneNumber, ...ctx, aiResult: documentResult,
-    mediaUrls: { imageUrl: null, audioUrl: null, audioTranscription: null, fileUrl },
-    originalMessage: `[Documento] ${caption || filename}`,
-    defaultTitle: 'Documento',
-    checkMismatch: true,
-  });
-}
-
-// ============================================
-// Audio Message Processing
-// ============================================
-
-async function processAudioMessage(phoneNumber, audioId, caption, contactName) {
-  const ctx = await prepareExpenseContext(phoneNumber);
-  if (!ctx) return;
-
-  if (!geminiHandler) {
-    await sendWhatsAppMessage(phoneNumber, 'El procesamiento de audio no está disponible.');
-    return;
-  }
-
-  await sendWhatsAppMessage(phoneNumber, 'Procesando audio...');
-
-  const audioData = await downloadWhatsAppMedia(audioId);
-  if (!audioData) {
-    await sendWhatsAppMessage(phoneNumber, 'Error al descargar el audio. Intentá nuevamente.');
-    return;
-  }
-
-  const transcription = await geminiHandler.transcribeAudio(audioData.base64, audioData.mimeType, ctx.aiContext);
-
-  if (isGeminiError(transcription)) {
-    await sendWhatsAppMessage(phoneNumber, getGeminiErrorMessage());
-    return;
-  }
-  if (!transcription || (!transcription.totalAmount && !transcription.items?.length && !transcription.title)) {
-    await sendWhatsAppMessage(phoneNumber, 'No pude entender el audio. Intentá nuevamente o enviá una foto del ticket.');
-    return;
-  }
-
-  let audioUrl = null;
-  try {
-    const audioBuffer = Buffer.from(audioData.base64, 'base64');
-    const ext = audioData.mimeType === 'audio/ogg' ? 'ogg' : 'audio';
-    const storagePath = storageHandler.generatePath('expenses', `audio.${ext}`);
-    audioUrl = await storageHandler.uploadFile(audioBuffer, storagePath, audioData.mimeType);
-  } catch (error) {
-    Sentry.captureException(error);
-    logger.error('Error uploading audio file', { error });
-  }
-
-  // Early amount check (audio may transcribe but not parse a valid amount)
-  const preItems = Array.isArray(transcription.items) && transcription.items.length > 0
-    ? transcription.items.filter(i => i && i.name && i.amount > 0) : null;
-  const preAmount = preItems && preItems.length > 0
-    ? preItems.reduce((sum, i) => sum + i.amount, 0)
-    : (transcription.totalAmount || 0);
-
-  if (preAmount <= 0) {
-    await sendWhatsAppMessage(phoneNumber, `Transcripción: "${transcription.transcription}"\n\nNo pude determinar el monto. Enviá una foto del ticket.`);
-    return;
-  }
-
-  await processExpenseResult({
-    phoneNumber, ...ctx, aiResult: transcription,
-    mediaUrls: { imageUrl: null, audioUrl, audioTranscription: transcription.transcription || null, fileUrl: null },
-    originalMessage: `[Audio] ${caption}`,
-    defaultTitle: 'Gasto por audio',
-    useAITitle: true, useAIDescription: true,
-    filterItems: true, sumItemAmounts: true,
-    trustAICategory: true,
-  });
-}
-
 // ============================================
 // Agent Chat (new agentic flow — text)
 // ============================================
@@ -1240,94 +876,6 @@ async function handleDocumentMessage(phoneNumber, documentId, caption, filename)
 }
 
 // ============================================
-// Text Message Expense Processing
-// ============================================
-
-async function handleTextExpense(phoneNumber, text) {
-  const ctx = await prepareExpenseContext(phoneNumber);
-  if (!ctx) return;
-
-  if (!geminiHandler) {
-    await sendWhatsAppMessage(phoneNumber, 'El procesamiento de texto no está disponible.');
-    return;
-  }
-
-  const result = await geminiHandler.parseTextExpense(text, ctx.aiContext);
-
-  if (!isGeminiError(result) && result?.isSupportQuestion && (!result.totalAmount || result.totalAmount === 0)) {
-    const session = createAISupportSession(phoneNumber);
-    await sendWhatsAppMessage(phoneNumber, '💡 Modo soporte activado — Escribí *listo* para volver a registrar gastos.');
-    await handleAISupport(phoneNumber, text, session, { geminiHandler, getFaqData });
-    return;
-  }
-
-  if (isGeminiError(result)) {
-    await sendWhatsAppMessage(phoneNumber, getGeminiErrorMessage());
-    return;
-  }
-
-  if (!result || !result.totalAmount) {
-    await sendWhatsAppMessage(phoneNumber, 'No pude entender el mensaje.\n\nPodés registrar gastos con un texto como:\n- "500 clavos"\n- "1500 cemento y 800 arena"\n- "me pagaron 5000 por transferencia"\n\nTambién podés enviar una *foto*, *audio* o *PDF*.\n\nEscribí *AYUDA* para más info.');
-    return;
-  }
-
-  await processExpenseResult({
-    phoneNumber, ...ctx, aiResult: result,
-    mediaUrls: { imageUrl: null, audioUrl: null, audioTranscription: null, fileUrl: null },
-    originalMessage: text,
-    defaultTitle: 'Gasto por texto',
-    useAITitle: true, useAIDescription: true,
-    filterItems: true, sumItemAmounts: true,
-    trustAICategory: true,
-  });
-}
-
-// ============================================
-// Confirmation Message Builder
-// ============================================
-
-function buildExpenseConfirmationMessage(data, mismatch = null) {
-  const typeLabel = getTypeLabel(data.type);
-  const formattedAmount = formatAmount(data.amount);
-  let msg = `${typeLabel}: ${formattedAmount} - ${data.title}\n`;
-
-  if (data.amountBase && data.managementFeePercent) {
-    const feeAmount = data.amount - data.amountBase;
-    msg += `  Base: ${formatAmount(data.amountBase)} + ${data.managementFeePercent}% gestión (${formatAmount(feeAmount)})\n`;
-  }
-
-  if (data.items && data.items.length > 1) {
-    const MAX_ITEMS = 12;
-    const shown = data.items.slice(0, MAX_ITEMS);
-    msg += shown.map(i => `  - ${i.name}: ${formatAmount(i.amount)}`).join('\n') + '\n';
-    if (data.items.length > MAX_ITEMS) {
-      msg += `  …y ${data.items.length - MAX_ITEMS} ítem(s) más\n`;
-    }
-  }
-
-  msg += `${capitalizeFirst(data.category)} - ${data.projectName}`;
-
-  if (data.paymentMethod) {
-    msg += `\nMétodo: ${capitalizeFirst(data.paymentMethod)}`;
-  }
-  if (data.vendor) {
-    msg += `\nComercio: ${data.vendor}`;
-  }
-  if (data.recipientName) {
-    msg += `\nDestinatario: ${data.recipientName}`;
-  }
-  if (data.installmentPercent >= 100) {
-    msg += `\nEstado: Pagado`;
-  }
-
-  if (mismatch) {
-    msg += `\n\n⚠️ La suma de items (${formatAmount(mismatch.itemsSum)}) no coincide con el total del comprobante (${formatAmount(mismatch.totalAmount)}). Diferencia: ${formatAmount(mismatch.diff)}. Verificá que los montos sean correctos.`;
-  }
-
-  return msg;
-}
-
-// ============================================
 // Confirmation Handler
 // ============================================
 
@@ -1430,81 +978,6 @@ async function confirmPendingExpense(phoneNumber, pending) {
       phoneNumber,
       `Se creó un proyecto automáticamente. Entrá a ${APP_URL} y completá los datos para una mejor experiencia.`
     );
-  }
-}
-
-// ============================================
-// Command Handlers (depend on checkLinkedOrOnboard)
-// ============================================
-
-async function handleProyectoCommand(phoneNumber) {
-  const linkData = await checkLinkedOrOnboard(phoneNumber);
-  if (!linkData) return;
-
-  const userId = linkData.userId;
-  const activeProjectId = linkData.activeProjectId || null;
-
-  try {
-    const projects = await getActiveProjects(userId);
-
-    if (projects.length <= 1) {
-      const result = await autoSelectProject(userId, phoneNumber);
-      await sendWhatsAppMessage(phoneNumber, `Proyecto activo: *${result.project.name}* (${result.project.tag})`);
-      return;
-    }
-
-    let message = 'Estos son tus proyectos, mandá el número que querés seleccionar:\n\n';
-    projects.forEach((p, i) => {
-      const active = p.id === activeProjectId ? ' (Actualmente activo)' : '';
-      message += `${i + 1}. ${p.name} - ${p.tag}${active}\n`;
-    });
-
-    setPendingProjectSelection(phoneNumber, userId, projects);
-    await sendWhatsAppMessage(phoneNumber, message.trim());
-  } catch (error) {
-    Sentry.captureException(error);
-    logger.error('Error in PROYECTO command', { error });
-    await sendWhatsAppMessage(phoneNumber, 'Error al obtener los proyectos.');
-  }
-}
-
-async function handleResumenCommand(phoneNumber) {
-  const linkData = await checkLinkedOrOnboard(phoneNumber);
-  if (!linkData) return;
-
-  const userId = linkData.userId;
-
-  let project = await resolveProject(userId, linkData.activeProjectId);
-  if (!project) {
-    const result = await autoSelectProject(userId, phoneNumber);
-    project = result.project;
-  }
-
-  try {
-    const expensesSnapshot = await db
-      .collection(COLLECTIONS.EXPENSES)
-      .where('projectId', '==', project.id)
-      .get();
-
-    if (expensesSnapshot.empty) {
-      await sendWhatsAppMessage(phoneNumber, `*${project.name}*\n\nNo hay gastos registrados en este proyecto.`);
-      return;
-    }
-
-    const expenses = expensesSnapshot.docs.map(doc => doc.data());
-
-    setPendingResumenSelection(phoneNumber, { project, expenses });
-
-    const body = `📊 *Resumen - ${project.name}*\n\nSeleccioná una opción:\n1️⃣ *Global* - Resumen completo del proyecto\n2️⃣ *Semanal* - Gastos de esta semana día por día`;
-    const buttons = [
-      { id: 'resumen_global', title: 'Global' },
-      { id: 'resumen_semanal', title: 'Semanal' },
-    ];
-    await sendWhatsAppButtons(phoneNumber, body, buttons);
-  } catch (error) {
-    Sentry.captureException(error);
-    logger.error('Error in RESUMEN command', { error });
-    await sendWhatsAppMessage(phoneNumber, 'Error al obtener el resumen.');
   }
 }
 

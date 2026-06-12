@@ -1,8 +1,8 @@
 import { query } from '../config/mysql.js';
 
 // Persistence for agentic-chat conversation state (MySQL). Sessions are bounded
-// by a 2h inactivity gap; within a session we keep the whole transcript.
-const SESSION_TTL_MS = 2 * 60 * 60 * 1000;
+// by a 10min inactivity gap; within a session we keep the whole transcript.
+const SESSION_TTL_MS = 10 * 60 * 1000;
 
 /**
  * Return the live session for (user, channel) if its last activity is within the
