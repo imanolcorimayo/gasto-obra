@@ -2,8 +2,8 @@ import * as Sentry from '@sentry/node';
 import logger from '../../lib/logger.js';
 import { normalizePhoneNumber } from './phone.js';
 
-const WP_PHONE_NUMBER_ID = process.env.IDENTIFIER_WP_NUMBER;
-const WP_ACCESS_TOKEN = process.env.ACCESS_TOKEN_WP_BUSINESS;
+const WP_PHONE_NUMBER_ID = process.env.WHATSAPP_PHONE_NUMBER_ID || process.env.IDENTIFIER_WP_NUMBER;
+const WP_ACCESS_TOKEN = process.env.WHATSAPP_ACCESS_TOKEN || process.env.ACCESS_TOKEN_WP_BUSINESS;
 
 export async function sendWhatsAppMessage(to, message) {
   const normalizedTo = normalizePhoneNumber(to);

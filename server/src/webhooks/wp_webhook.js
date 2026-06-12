@@ -25,6 +25,7 @@ import { normalizePhoneNumber } from '../helpers/phone.js';
 import { getActiveProjects, resolveProject, autoSelectProject } from '../helpers/projects.js';
 import { sendGlobalResumen, sendWeeklyResumen } from '../handlers/resumen.js';
 import { handleLinkCommand, handleUnlinkCommand, sendHelpMessage, handleAISupport } from '../handlers/commands.js';
+import { runAgentTurn } from '../agent/core.js';
 
 // ============================================
 // Configuration
@@ -630,27 +631,9 @@ async function processMessage(phoneNumber, text, contactName) {
     return;
   }
 
-  // 10b. SOPORTE AI
-  if (normalizedText === 'soporte' || normalizedText === 'soporte ai') {
-    createAISupportSession(phoneNumber);
-    await sendWhatsAppMessage(phoneNumber, 'Escribí tu consulta y te ayudo 💡');
-    return;
-  }
-
-  // 11. PROYECTO / PROYECTOS
-  if (normalizedText === 'proyecto' || normalizedText === 'proyectos') {
-    await handleProyectoCommand(phoneNumber);
-    return;
-  }
-
-  // 12. RESUMEN
-  if (normalizedText === 'resumen' || normalizedText.startsWith('resumen ')) {
-    await handleResumenCommand(phoneNumber);
-    return;
-  }
-
-  // 13. Fallback → text expense (support detection happens inside)
-  await handleTextExpense(phoneNumber, text);
+  // 11. Everything else → agentic chat. The agent handles expenses, corrections,
+  // project switching (PROYECTO), summaries (RESUMEN), and questions as tools.
+  await handleAgentMessage(phoneNumber, text);
 }
 
 // ============================================
@@ -1059,6 +1042,55 @@ async function processAudioMessage(phoneNumber, audioId, caption, contactName) {
     filterItems: true, sumItemAmounts: true,
     trustAICategory: true,
   });
+}
+
+// ============================================
+// Agent Chat (new agentic flow — text)
+// ============================================
+
+// The model speaks Markdown; WhatsApp's flavor differs. Normalize so it renders.
+function toWhatsAppMarkdown(s = '') {
+  return s
+    .replace(/\*\*(.+?)\*\*/gs, '*$1*')   // **bold** → *bold*
+    .replace(/^#{1,6}\s+/gm, '')          // strip md headers
+    .replace(/^\s*[-*]\s+/gm, '• ');      // list bullets → •
+}
+
+// WhatsApp adapter for the transport-agnostic agent core. Resolves the user +
+// active project (reusing prepareExpenseContext), builds the live context with a
+// setActiveProject capability that persists the active obra, runs one agent turn,
+// and renders the reply. Text-only for now (media still uses the legacy flow).
+async function handleAgentMessage(phoneNumber, text) {
+  const ctx = await prepareExpenseContext(phoneNumber);
+  if (!ctx) return; // unlinked → onboarding already triggered inside
+
+  const activeProjects = ctx.activeProjects.map(p => ({ id: p.id, name: p.name, tag: p.tag }));
+  const activeProject = activeProjects.find(p => p.id === ctx.activeProjectId) || null;
+  const today = new Date().toLocaleDateString('es-AR', {
+    weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
+  });
+
+  const context = {
+    userId: ctx.userId,
+    source: 'whatsapp',
+    originalMessage: text,
+    today,
+    activeProjects,
+    activeProject,
+    categories: ctx.providerCats,
+    setActiveProject: async (id) => {
+      await db.collection(COLLECTIONS.WHATSAPP_LINKS).doc(phoneNumber).update({ activeProjectId: id });
+    },
+  };
+
+  try {
+    const res = await runAgentTurn({ userId: ctx.userId, channel: 'whatsapp', userText: text, context });
+    await sendWhatsAppMessage(phoneNumber, toWhatsAppMarkdown(res.reply));
+  } catch (error) {
+    Sentry.captureException(error);
+    logger.error('Error in agent turn', { error, phoneNumber });
+    await sendWhatsAppMessage(phoneNumber, 'Tuve un problema procesando tu mensaje. Probá de nuevo en un momento.');
+  }
 }
 
 // ============================================
