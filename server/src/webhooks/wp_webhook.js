@@ -630,10 +630,20 @@ async function runAgentForWhatsApp(phoneNumber, { userText, originalMessage, att
     const needsDeleteConfirm = res.timeline?.some(
       (t) => t.tool === 'delete_expense' && t.result?.needs_confirmation
     );
+    // Just created an obra → offer a one-tap shortcut into the "completar datos"
+    // flow. Tapping sends the title as text; the agent then explains what's useful
+    // and takes all the fields at once (update_project), never field-by-field.
+    const justCreatedProject = res.timeline?.some(
+      (t) => t.tool === 'create_project' && t.result?.ok
+    );
     if (needsDeleteConfirm) {
       await sendWhatsAppButtons(phoneNumber, reply, [
         { id: 'confirm_yes', title: 'Sí, borrar' },
         { id: 'confirm_no', title: 'No' },
+      ]);
+    } else if (justCreatedProject) {
+      await sendWhatsAppButtons(phoneNumber, reply, [
+        { id: 'fill_project_data', title: 'Completar datos' },
       ]);
     } else {
       await sendWhatsAppMessage(phoneNumber, reply);
