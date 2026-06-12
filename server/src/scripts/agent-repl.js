@@ -50,7 +50,11 @@ function context() {
 console.log(bold('\n  Gasto Obra — agente (CLI)'));
 console.log(dim(`  user: ${uid}${isStub ? '  (stub projects — no real data)' : '  (REAL — record_expense escribe en Firestore)'}`));
 console.log(dim(`  obras: ${projects.map((p) => p.name).join(', ') || '(ninguna)'}`));
-console.log(dim('  comandos: /obras  /obra  /salir\n'));
+console.log(dim('  comandos: /obras  /obra  /nuevo  /salir\n'));
+
+// Each REPL launch starts a fresh session; /nuevo resets mid-run. (Real channels
+// keep the 2h-inactivity rule — this flag is a testing convenience.)
+let forceNewSession = true;
 
 const rl = readline.createInterface({ input: process.stdin, output: process.stdout, prompt: bold('vos> ') });
 
@@ -91,9 +95,16 @@ async function handle(text) {
     console.log(dim(`  obra activa: ${context().activeProject?.name || '(ninguna)'}`));
     return;
   }
+  if (text === '/nuevo') {
+    forceNewSession = true;
+    console.log(dim('  nueva conversación — el agente no recuerda lo anterior'));
+    return;
+  }
 
   try {
-    const res = await runAgentTurn({ userId: uid, channel: 'cli', userText: text, context: context() });
+    const res = await runAgentTurn({ userId: uid, channel: 'cli', userText: text, context: context(), forceNewSession });
+    forceNewSession = false; // only the first turn of a fresh session forces new
+    if (res.isNewSession) console.log(dim(`  · nueva sesión #${res.sessionId}`));
     for (const t of res.timeline || []) {
       console.log(dim(`  · ${t.tool}(${JSON.stringify(t.args)}) → ${t.status} ${t.durationMs}ms`));
     }

@@ -17,11 +17,12 @@ import logger from '../../lib/logger.js';
  * @param {string}   opts.channel     'whatsapp' | 'app'.
  * @param {string}   opts.userText    The incoming message text.
  * @param {object}   opts.context     { today, activeProject, activeProjects, setActiveProject, ... }
+ * @param {boolean}  [opts.forceNewSession]  Open a fresh session instead of continuing the live one.
  * @returns {Promise<{ reply, sessionId, isNewSession, timeline, error }>}
  */
-export async function runAgentTurn({ userId, channel, userText, context = {} }) {
+export async function runAgentTurn({ userId, channel, userText, context = {}, forceNewSession = false }) {
   const now = Date.now();
-  const { session, isNew } = await repo.resolveOrCreateSession(userId, channel, now);
+  const { session, isNew } = await repo.resolveOrCreateSession(userId, channel, now, forceNewSession);
 
   await repo.appendUserMessage(session.id, userText, now);
 

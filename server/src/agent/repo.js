@@ -7,15 +7,18 @@ const SESSION_TTL_MS = 2 * 60 * 60 * 1000;
 /**
  * Return the live session for (user, channel) if its last activity is within the
  * 2h window; otherwise open a fresh one. `now` is epoch ms (passed in for testability).
+ * `forceNew` always opens a fresh session (explicit "new conversation").
  */
-export async function resolveOrCreateSession(userId, channel, now = Date.now()) {
-  const rows = await query(
-    'SELECT * FROM agent_session WHERE user_id = ? AND channel = ? ORDER BY updated_ts DESC LIMIT 1',
-    [userId, channel]
-  );
-  const last = rows[0];
-  if (last && now - Number(last.updated_ts) <= SESSION_TTL_MS) {
-    return { session: last, isNew: false };
+export async function resolveOrCreateSession(userId, channel, now = Date.now(), forceNew = false) {
+  if (!forceNew) {
+    const rows = await query(
+      'SELECT * FROM agent_session WHERE user_id = ? AND channel = ? ORDER BY updated_ts DESC LIMIT 1',
+      [userId, channel]
+    );
+    const last = rows[0];
+    if (last && now - Number(last.updated_ts) <= SESSION_TTL_MS) {
+      return { session: last, isNew: false };
+    }
   }
   const res = await query(
     'INSERT INTO agent_session (user_id, channel, created_ts, updated_ts) VALUES (?, ?, ?, ?)',
