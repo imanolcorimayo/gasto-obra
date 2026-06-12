@@ -1,5 +1,6 @@
 import { createExpense, updateExpense, deleteExpense, getExpense } from '../helpers/expenseWrite.js';
 import { getProjectSummary, searchProjectExpenses } from '../helpers/expenseSummary.js';
+import { formatMovementConfirmation } from '../helpers/movementConfirmation.js';
 
 // Parse an agent-supplied date ("YYYY-MM-DD") to a Date at local noon, avoiding
 // timezone day-shift. Returns null for anything unparseable.
@@ -132,12 +133,13 @@ export const TOOL_DECLARATIONS = [
       {
         name: 'edit_expense',
         description:
-          'Corrige un registro YA existente. Pasá su expenseId (lo tenés de tus acciones previas o de look_up_expenses) y solo los campos a cambiar. ' +
-          'Usá esto para corregir montos, títulos, categorías o tipo — NUNCA crees un gasto de "ajuste" para compensar un error.',
+          'Corrige o MUEVE un registro YA existente. Pasá su expenseId (lo tenés de tus acciones previas o de look_up_expenses) y solo los campos a cambiar. ' +
+          'Usá esto para corregir montos, títulos, categorías o tipo, o para mover el registro a otra obra (projectId) — NUNCA crees un gasto de "ajuste" ni lo borres y rehagas para corregir.',
         parameters: {
           type: 'object',
           properties: {
             expenseId: { type: 'string' },
+            projectId: { type: 'string', description: 'mover el registro a otra obra: id exacto de una obra del profesional' },
             title: { type: 'string' },
             amount: { type: 'number' },
             category: { type: 'string' },
@@ -212,12 +214,16 @@ export function makeDispatcher(ctx) {
         const { amount, warning } = resolveAmount(args);
         if (!amount || amount <= 0) return { ok: false, error: 'Falta el monto o es inválido.' };
 
+        const type = args.type || 'expense';
+        const title = args.title || args.items?.[0]?.name || 'Gasto';
+        const category = args.category || 'otros';
+
         const { expenseId } = await createExpense(ctx.userId, {
           projectId: project.id,
-          type: args.type || 'expense',
-          title: args.title || args.items?.[0]?.name || 'Gasto',
+          type,
+          title,
           amount,
-          category: args.category || 'otros',
+          category,
           description: args.description || '',
           items: args.items || null,
           paymentMethod: args.paymentMethod || null,
@@ -229,20 +235,24 @@ export function makeDispatcher(ctx) {
           date: parseDate(args.date) || undefined,
           source: ctx.source || 'app',
           originalMessage: ctx.originalMessage || '',
+          // Receipt media (when the turn came from a photo/PDF/audio) — attached so
+          // the expense links to its comprobante in the web dashboard.
+          imageUrl: ctx.mediaUrls?.imageUrl || null,
+          audioUrl: ctx.mediaUrls?.audioUrl || null,
+          audioTranscription: ctx.mediaUrls?.audioTranscription || null,
+          fileUrl: ctx.mediaUrls?.fileUrl || null,
+        });
+
+        const confirmation = formatMovementConfirmation({
+          action: 'registrado', type, project: project.name, title, amount, category,
+          vendor: args.vendor || null, recipient: args.recipient || null, date: args.date || null,
         });
         return {
           ok: true,
           expenseId,
+          confirmation,
           warning: warning || undefined,
-          registered: {
-            type: args.type || 'expense',
-            title: args.title || 'Gasto',
-            amount,
-            category: args.category || 'otros',
-            vendor: args.vendor || null,
-            recipient: args.recipient || null,
-            project: project.name,
-          },
+          registered: { type, title, amount, category, vendor: args.vendor || null, recipient: args.recipient || null, project: project.name },
         };
       }
 
@@ -272,7 +282,7 @@ export function makeDispatcher(ctx) {
       }
 
       case 'edit_expense': {
-        // Ownership enforced inside updateExpense (expense.providerId === userId).
+        // Ownership of the EXPENSE enforced inside updateExpense (providerId === userId).
         const patch = {};
         for (const k of ['title', 'category', 'type', 'description', 'paymentMethod', 'vendor', 'recipientPlatform', 'recipientCuit', 'items']) {
           if (args[k] !== undefined) patch[k] = args[k];
@@ -280,6 +290,16 @@ export function makeDispatcher(ctx) {
         if (args.recipient !== undefined) patch.recipientName = args.recipient;
         const d = parseDate(args.date);
         if (d) patch.date = d;
+
+        // Move to another obra: authorize the TARGET (must be one of the user's own
+        // obras) and update the denormalized name/tag so the dashboard stays correct.
+        if (args.projectId !== undefined) {
+          const target = projects.find((p) => p.id === args.projectId);
+          if (!target) return { ok: false, error: 'No encontré esa obra entre las tuyas.' };
+          patch.projectId = target.id;
+          patch.projectName = target.name;
+          patch.projectTag = target.tag || null;
+        }
 
         // Amount: recompute from items if those were edited; else take the given amount.
         let warning;
@@ -292,7 +312,19 @@ export function makeDispatcher(ctx) {
         }
 
         const res = await updateExpense(ctx.userId, args.expenseId, patch);
-        return warning && res.ok ? { ...res, warning } : res;
+        if (!res.ok) return res;
+
+        // Build the confirmation from the expense's full post-edit state.
+        const full = await getExpense(ctx.userId, args.expenseId);
+        const projName = projects.find((p) => p.id === full?.projectId)?.name || patch.projectName || null;
+        const confirmation = full
+          ? formatMovementConfirmation({
+              action: 'actualizado', type: full.type, project: projName,
+              title: full.title, amount: full.amount, category: full.category,
+              vendor: full.vendor, recipient: full.recipientName, date: args.date || null,
+            })
+          : undefined;
+        return { ok: true, expenseId: args.expenseId, confirmation, warning: warning || undefined };
       }
 
       case 'delete_expense': {

@@ -25,7 +25,7 @@ import { normalizePhoneNumber } from '../helpers/phone.js';
 import { getActiveProjects, resolveProject, autoSelectProject } from '../helpers/projects.js';
 import { sendGlobalResumen, sendWeeklyResumen } from '../handlers/resumen.js';
 import { handleLinkCommand, handleUnlinkCommand, sendHelpMessage, handleAISupport } from '../handlers/commands.js';
-import { runAgentTurn } from '../agent/core.js';
+import { runAgentTurn, startFreshSession } from '../agent/core.js';
 
 // ============================================
 // Configuration
@@ -497,12 +497,12 @@ app.post('/webhook', verifyWebhookSignature, async (req, res) => {
       const caption = message.image?.caption || '';
       const imageId = message.image?.id;
       logger.info('Image message received', { from, contactName, caption });
-      await processImageMessage(from, imageId, caption, contactName);
+      await handleImageMessage(from, imageId, caption);
     } else if (message.type === 'audio') {
       const caption = message.audio?.caption || '';
       const audioId = message.audio?.id;
       logger.info('Audio message received', { from, contactName });
-      await processAudioMessage(from, audioId, caption, contactName);
+      await handleAudioMessage(from, audioId, caption);
     } else if (message.type === 'document') {
       const caption = message.document?.caption || '';
       const documentId = message.document?.id;
@@ -513,7 +513,7 @@ app.post('/webhook', verifyWebhookSignature, async (req, res) => {
       if (documentMimeType !== 'application/pdf') {
         await sendWhatsAppMessage(from, 'Solo se aceptan documentos PDF. Para otros formatos, enviá una foto del documento.');
       } else {
-        await processDocumentMessage(from, documentId, caption, filename, contactName);
+        await handleDocumentMessage(from, documentId, caption, filename);
       }
     } else if (message.type === 'interactive') {
       const buttonId = message.interactive?.button_reply?.id;
@@ -628,6 +628,12 @@ async function processMessage(phoneNumber, text, contactName) {
   // 10. AYUDA
   if (normalizedText === 'ayuda' || normalizedText === 'help' || normalizedText === 'comandos') {
     await sendHelpMessage(phoneNumber);
+    return;
+  }
+
+  // 10b. NUEVO → start a fresh agent conversation (drops prior context).
+  if (normalizedText === 'nuevo' || normalizedText === '/nuevo') {
+    await handleFreshSession(phoneNumber);
     return;
   }
 
@@ -1059,8 +1065,10 @@ function toWhatsAppMarkdown(s = '') {
 // WhatsApp adapter for the transport-agnostic agent core. Resolves the user +
 // active project (reusing prepareExpenseContext), builds the live context with a
 // setActiveProject capability that persists the active obra, runs one agent turn,
-// and renders the reply. Text-only for now (media still uses the legacy flow).
-async function handleAgentMessage(phoneNumber, text) {
+// and renders the reply. Handles both text and media (image/PDF/audio) — media
+// callers pass `attachments` (inline base64 for the model) + `mediaUrls` (storage
+// links the record_expense tool attaches to the saved expense).
+async function runAgentForWhatsApp(phoneNumber, { userText, originalMessage, attachments = [], mediaUrls = null }) {
   const ctx = await prepareExpenseContext(phoneNumber);
   if (!ctx) return; // unlinked → onboarding already triggered inside
 
@@ -1073,24 +1081,162 @@ async function handleAgentMessage(phoneNumber, text) {
   const context = {
     userId: ctx.userId,
     source: 'whatsapp',
-    originalMessage: text,
+    originalMessage: originalMessage ?? userText,
     today,
     activeProjects,
     activeProject,
     categories: ctx.providerCats,
+    mediaUrls,
     setActiveProject: async (id) => {
       await db.collection(COLLECTIONS.WHATSAPP_LINKS).doc(phoneNumber).update({ activeProjectId: id });
     },
   };
 
   try {
-    const res = await runAgentTurn({ userId: ctx.userId, channel: 'whatsapp', userText: text, context });
-    await sendWhatsAppMessage(phoneNumber, toWhatsAppMarkdown(res.reply));
+    const res = await runAgentTurn({ userId: ctx.userId, channel: 'whatsapp', userText, context, attachments });
+    const reply = toWhatsAppMarkdown(res.reply);
+
+    // A delete that needs confirmation → render the agent's question as Sí/No
+    // buttons. Tapping a button sends its title back as text, which routes to the
+    // agent (with the just-asked delete in context) to fire delete with confirm.
+    const needsDeleteConfirm = res.timeline?.some(
+      (t) => t.tool === 'delete_expense' && t.result?.needs_confirmation
+    );
+    if (needsDeleteConfirm) {
+      await sendWhatsAppButtons(phoneNumber, reply, [
+        { id: 'confirm_yes', title: 'Sí, borrar' },
+        { id: 'confirm_no', title: 'No' },
+      ]);
+    } else {
+      await sendWhatsAppMessage(phoneNumber, reply);
+    }
   } catch (error) {
     Sentry.captureException(error);
     logger.error('Error in agent turn', { error, phoneNumber });
     await sendWhatsAppMessage(phoneNumber, 'Tuve un problema procesando tu mensaje. Probá de nuevo en un momento.');
   }
+}
+
+async function handleAgentMessage(phoneNumber, text) {
+  await runAgentForWhatsApp(phoneNumber, { userText: text });
+}
+
+// "NUEVO" → open a fresh agent session so the next message starts with no prior
+// context. Lightweight: just resolves the user and rolls the session boundary.
+async function handleFreshSession(phoneNumber) {
+  const linkData = await checkLinkedOrOnboard(phoneNumber);
+  if (!linkData) return; // unlinked → onboarding already triggered inside
+  await startFreshSession({ userId: linkData.userId, channel: 'whatsapp' });
+  await sendWhatsAppMessage(phoneNumber, 'Listo, arrancamos de cero. Contame qué necesitás.');
+}
+
+// ---- Agentic media handlers ----
+// Download the media, store it (so the expense links to its comprobante), then run
+// the agent with the bytes inline + the storage URL. The agent reads the receipt,
+// decides the type (gasto / gasto propio / cobro), and saves directly when confident.
+
+async function handleImageMessage(phoneNumber, imageId, caption) {
+  await sendWhatsAppMessage(phoneNumber, 'Recibí la foto, dame un segundo que la leo…');
+  const media = await downloadWhatsAppMedia(imageId);
+  if (!media) {
+    await sendWhatsAppMessage(phoneNumber, 'Error al descargar la imagen. Intentá de nuevo.');
+    return;
+  }
+
+  let imageUrl = null;
+  try {
+    const compressed = await compressImage(media.base64, media.mimeType);
+    if (compressed) {
+      const storagePath = storageHandler.generatePath('expenses', 'receipt.jpg');
+      imageUrl = await storageHandler.uploadFile(compressed.buffer, storagePath, compressed.mimeType);
+    }
+  } catch (error) {
+    Sentry.captureException(error);
+    logger.error('Error uploading receipt image', { error });
+  }
+
+  await runAgentForWhatsApp(phoneNumber, {
+    userText: caption?.trim() || 'Te mandé una foto de un comprobante.',
+    originalMessage: `[Imagen] ${caption || ''}`.trim(),
+    attachments: [{ mimeType: media.mimeType, data: media.base64 }],
+    mediaUrls: { imageUrl, audioUrl: null, audioTranscription: null, fileUrl: null },
+  });
+}
+
+async function handleAudioMessage(phoneNumber, audioId, caption) {
+  await sendWhatsAppMessage(phoneNumber, 'Recibí el audio, dame un segundo que lo escucho…');
+  const media = await downloadWhatsAppMedia(audioId);
+  if (!media) {
+    await sendWhatsAppMessage(phoneNumber, 'Error al descargar el audio. Intentá de nuevo.');
+    return;
+  }
+
+  let audioUrl = null;
+  try {
+    const audioBuffer = Buffer.from(media.base64, 'base64');
+    const ext = media.mimeType === 'audio/ogg' ? 'ogg' : 'audio';
+    const storagePath = storageHandler.generatePath('expenses', `audio.${ext}`);
+    audioUrl = await storageHandler.uploadFile(audioBuffer, storagePath, media.mimeType);
+  } catch (error) {
+    Sentry.captureException(error);
+    logger.error('Error uploading audio file', { error });
+  }
+
+  await runAgentForWhatsApp(phoneNumber, {
+    userText: caption?.trim() || 'Te mandé un audio describiendo un gasto.',
+    originalMessage: `[Audio] ${caption || ''}`.trim(),
+    attachments: [{ mimeType: media.mimeType, data: media.base64 }],
+    mediaUrls: { imageUrl: null, audioUrl, audioTranscription: null, fileUrl: null },
+  });
+}
+
+async function handleDocumentMessage(phoneNumber, documentId, caption, filename) {
+  await sendWhatsAppMessage(phoneNumber, 'Recibí el PDF, dame un segundo que lo reviso…');
+  const media = await downloadWhatsAppMedia(documentId);
+  if (!media) {
+    await sendWhatsAppMessage(phoneNumber, 'Error al descargar el documento. Intentá de nuevo.');
+    return;
+  }
+
+  const pdfBuffer = Buffer.from(media.base64, 'base64');
+  if (pdfBuffer.length > MAX_PDF_SIZE) {
+    await sendWhatsAppMessage(phoneNumber, `El documento es muy grande (${(pdfBuffer.length / 1024 / 1024).toFixed(1)} MB). El máximo es ${MAX_PDF_SIZE / 1024 / 1024} MB.`);
+    return;
+  }
+
+  let pdfParser;
+  try {
+    pdfParser = new PDFParse({ data: pdfBuffer });
+    const doc = await pdfParser.load();
+    if (doc.numPages > MAX_PDF_PAGES) {
+      await pdfParser.destroy();
+      await sendWhatsAppMessage(phoneNumber, `El documento tiene ${doc.numPages} páginas. Solo se aceptan PDFs de hasta ${MAX_PDF_PAGES} páginas.`);
+      return;
+    }
+    await pdfParser.destroy();
+  } catch (error) {
+    if (pdfParser) await pdfParser.destroy().catch(() => {});
+    Sentry.captureException(error);
+    logger.error('Error parsing PDF for page count', { error });
+    await sendWhatsAppMessage(phoneNumber, 'No se pudo leer el PDF. Asegurate de que sea un archivo válido.');
+    return;
+  }
+
+  let fileUrl = null;
+  try {
+    const storagePath = storageHandler.generatePath('expenses', filename || 'document.pdf');
+    fileUrl = await storageHandler.uploadFile(pdfBuffer, storagePath, 'application/pdf');
+  } catch (error) {
+    Sentry.captureException(error);
+    logger.error('Error uploading PDF document', { error });
+  }
+
+  await runAgentForWhatsApp(phoneNumber, {
+    userText: caption?.trim() || `Te mandé un PDF (${filename}).`,
+    originalMessage: `[Documento] ${caption || filename}`,
+    attachments: [{ mimeType: 'application/pdf', data: media.base64 }],
+    mediaUrls: { imageUrl: null, audioUrl: null, audioTranscription: null, fileUrl },
+  });
 }
 
 // ============================================

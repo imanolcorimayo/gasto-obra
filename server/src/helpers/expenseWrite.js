@@ -107,7 +107,9 @@ export async function createExpense(userId, data) {
   return { expenseId: expenseRef.id, paymentId };
 }
 
-const EDITABLE_FIELDS = ['title', 'amount', 'category', 'type', 'description', 'paymentMethod', 'installmentPercent', 'items', 'date', 'vendor', 'recipientName', 'recipientPlatform', 'recipientCuit'];
+// projectId/Name/Tag included so an expense can be MOVED between obras. The caller
+// (tool) must validate the target obra belongs to the user before passing these.
+const EDITABLE_FIELDS = ['title', 'amount', 'category', 'type', 'description', 'paymentMethod', 'installmentPercent', 'items', 'date', 'vendor', 'recipientName', 'recipientPlatform', 'recipientCuit', 'projectId', 'projectName', 'projectTag'];
 
 /** Fetch one expense, but only if it belongs to `userId`. Returns a slim view or null. */
 export async function getExpense(userId, expenseId) {
@@ -115,7 +117,11 @@ export async function getExpense(userId, expenseId) {
   if (!doc.exists) return null;
   const e = doc.data();
   if (e.providerId !== userId) return null; // ownership guard (IDOR)
-  return { id: doc.id, type: e.type || 'expense', title: e.title, amount: e.amount, category: e.category || null, projectId: e.projectId };
+  return {
+    id: doc.id, type: e.type || 'expense', title: e.title, amount: e.amount,
+    category: e.category || null, projectId: e.projectId,
+    vendor: e.vendor || null, recipientName: e.recipientName || null,
+  };
 }
 
 /** Update an owned expense (trusted, no confirm). Only whitelisted fields. */
