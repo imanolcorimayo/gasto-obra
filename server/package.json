@@ -9,7 +9,8 @@
     "start": "node src/webhooks/wp_webhook.js",
     "start:api": "node src/index.js",
     "seed-faq": "node src/scripts/seed-faq.js",
-    "migrate": "node src/scripts/migrate.js"
+    "migrate": "node src/scripts/migrate.js",
+    "agent:repl": "node src/scripts/agent-repl.js"
   },
   "dependencies": {
     "@sentry/node": "^10.42.0",
