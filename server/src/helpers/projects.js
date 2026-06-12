@@ -105,3 +105,39 @@ export async function createProject(userId, { name, clientName, clientPhone, add
   logger.info('Created project via agent', { userId, projectId: ref.id, tag });
   return { ok: true, project: { id: ref.id, ...projectData } };
 }
+
+// Fields the agent may edit on an existing obra (name/tag of the obra itself are
+// left out on purpose — renaming is rarer and tag churn breaks share links).
+const PROJECT_EDITABLE = {
+  clientName: 100, clientPhone: 20, address: 200, description: 500,
+};
+
+/**
+ * Update an owned obra's metadata (client, address, description, budget). Ownership
+ * is enforced (providerId === userId). Only whitelisted fields are written.
+ * Returns { ok, project } with the post-update fields, or { ok:false, error }.
+ */
+export async function updateProject(userId, projectId, fields = {}) {
+  if (!projectId) return { ok: false, error: 'Falta el id de la obra.' };
+  const ref = db.collection(COLLECTIONS.PROJECTS).doc(projectId);
+  const doc = await ref.get();
+  if (!doc.exists) return { ok: false, error: 'No existe esa obra.' };
+  if (doc.data().providerId !== userId) return { ok: false, error: 'Esa obra no es tuya.' };
+
+  const update = {};
+  for (const [k, max] of Object.entries(PROJECT_EDITABLE)) {
+    if (fields[k] !== undefined) {
+      const v = fields[k];
+      update[k] = v === null ? null : String(v).trim().slice(0, max) || null;
+    }
+  }
+  if (fields.budget !== undefined) {
+    const n = Number(fields.budget);
+    update.budget = Number.isFinite(n) ? n : null;
+  }
+  if (Object.keys(update).length === 0) return { ok: false, error: 'No hay cambios para aplicar.' };
+
+  update.updatedAt = admin.firestore.FieldValue.serverTimestamp();
+  await ref.update(update);
+  return { ok: true, project: { id: projectId, ...doc.data(), ...update } };
+}

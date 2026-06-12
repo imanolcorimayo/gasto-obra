@@ -1,7 +1,7 @@
 import { createExpense, updateExpense, deleteExpense, getExpense } from '../helpers/expenseWrite.js';
 import { getProjectSummary, searchProjectExpenses } from '../helpers/expenseSummary.js';
 import { formatMovementConfirmation } from '../helpers/movementConfirmation.js';
-import { createProject } from '../helpers/projects.js';
+import { createProject, updateProject } from '../helpers/projects.js';
 
 // Parse an agent-supplied date ("YYYY-MM-DD") to a Date at local noon, avoiding
 // timezone day-shift. Returns null for anything unparseable.
@@ -77,6 +77,25 @@ export const TOOL_DECLARATIONS = [
             setActive: { type: 'boolean', description: 'dejar esta obra como activa; por defecto true' },
           },
           required: ['name'],
+        },
+      },
+      {
+        name: 'update_project',
+        description:
+          'Completa o corrige datos de una obra existente: cliente (nombre/teléfono), dirección, descripción o presupuesto. ' +
+          'Usala cuando el profesional te pasa esos datos — típicamente justo después de crear la obra, cuando le ofreciste completarlos. ' +
+          'Por defecto actúa sobre la obra activa; pasá projectId para otra.',
+        parameters: {
+          type: 'object',
+          properties: {
+            projectId: { type: 'string', description: 'id de la obra; omitilo para la activa' },
+            clientName: { type: 'string', description: 'nombre del cliente/dueño' },
+            clientPhone: { type: 'string', description: 'teléfono del cliente' },
+            address: { type: 'string', description: 'dirección de la obra' },
+            description: { type: 'string', description: 'descripción/notas de la obra' },
+            budget: { type: 'number', description: 'presupuesto estimado en ARS' },
+          },
+          required: [],
         },
       },
       {
@@ -245,6 +264,29 @@ export function makeDispatcher(ctx) {
           ok: true,
           project: { id: created.project.id, name: created.project.name, tag: created.project.tag },
           active: setActive,
+        };
+      }
+
+      case 'update_project': {
+        const projectId = args.projectId || ctx.activeProject?.id;
+        if (!projectId) return { ok: false, error: 'No hay obra activa. Pedile al profesional que elija una.' };
+        // Authorize against the user's own obras — never trust a raw id.
+        if (!projects.find((p) => p.id === projectId)) {
+          return { ok: false, error: 'No encontré esa obra entre las tuyas.' };
+        }
+        const res = await updateProject(ctx.userId, projectId, {
+          clientName: args.clientName, clientPhone: args.clientPhone,
+          address: args.address, description: args.description, budget: args.budget,
+        });
+        if (!res.ok) return res;
+        // Keep the turn's in-memory copy in sync (name isn't editable here, so the
+        // active-project label stays correct without further work).
+        return {
+          ok: true,
+          project: {
+            id: projectId, name: res.project.name,
+            clientName: res.project.clientName || null, address: res.project.address || null,
+          },
         };
       }
 
