@@ -614,7 +614,15 @@ async function runAgentForWhatsApp(phoneNumber, { userText, originalMessage, att
 
   try {
     const res = await runAgentTurn({ userId: ctx.userId, channel: 'whatsapp', userText, context, attachments });
-    const reply = toWhatsAppMarkdown(res.reply);
+    let reply = toWhatsAppMarkdown(res.reply);
+
+    // Sessions roll over silently after inactivity (no "session ended" message).
+    // Instead, the first reply of a fresh-after-inactivity session carries a faint
+    // footer so the professional knows the prior thread's context is gone. Skipped
+    // for first-ever messages (rolledOver is false) and for the explicit NUEVO path.
+    if (res.rolledOver) {
+      reply += '\n\n_Pasó un rato, así que arranco una conversación nueva (no tengo el contexto anterior)._';
+    }
 
     // A delete that needs confirmation → render the agent's question as Sí/No
     // buttons. Tapping a button sends its title back as text, which routes to the

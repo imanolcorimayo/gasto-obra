@@ -10,6 +10,7 @@ const SESSION_TTL_MS = 10 * 60 * 1000;
  * `forceNew` always opens a fresh session (explicit "new conversation").
  */
 export async function resolveOrCreateSession(userId, channel, now = Date.now(), forceNew = false) {
+  let rolledOver = false; // a prior session existed but had gone stale (inactivity)
   if (!forceNew) {
     const rows = await query(
       'SELECT * FROM agent_session WHERE user_id = ? AND channel = ? ORDER BY updated_ts DESC LIMIT 1',
@@ -17,8 +18,9 @@ export async function resolveOrCreateSession(userId, channel, now = Date.now(), 
     );
     const last = rows[0];
     if (last && now - Number(last.updated_ts) <= SESSION_TTL_MS) {
-      return { session: last, isNew: false };
+      return { session: last, isNew: false, rolledOver: false };
     }
+    if (last) rolledOver = true; // had a previous conversation, just expired
   }
   const res = await query(
     'INSERT INTO agent_session (user_id, channel, created_ts, updated_ts) VALUES (?, ?, ?, ?)',
@@ -27,6 +29,7 @@ export async function resolveOrCreateSession(userId, channel, now = Date.now(), 
   return {
     session: { id: res.insertId, user_id: userId, channel, title: null, created_ts: now, updated_ts: now },
     isNew: true,
+    rolledOver,
   };
 }
 

@@ -19,11 +19,11 @@ import logger from '../../lib/logger.js';
  * @param {object}   opts.context     { today, activeProject, activeProjects, setActiveProject, ... }
  * @param {Array}    [opts.attachments]  Inline media for THIS turn: [{ mimeType, data }] (base64).
  * @param {boolean}  [opts.forceNewSession]  Open a fresh session instead of continuing the live one.
- * @returns {Promise<{ reply, sessionId, isNewSession, timeline, error }>}
+ * @returns {Promise<{ reply, sessionId, isNewSession, rolledOver, timeline, error }>}
  */
 export async function runAgentTurn({ userId, channel, userText, context = {}, attachments = [], forceNewSession = false }) {
   const now = Date.now();
-  const { session, isNew } = await repo.resolveOrCreateSession(userId, channel, now, forceNewSession);
+  const { session, isNew, rolledOver } = await repo.resolveOrCreateSession(userId, channel, now, forceNewSession);
 
   await repo.appendUserMessage(session.id, userText, now);
 
@@ -71,7 +71,7 @@ export async function runAgentTurn({ userId, channel, userText, context = {}, at
     Date.now()
   );
 
-  return { reply, sessionId: session.id, isNewSession: isNew, timeline: result.timeline, error: result.error };
+  return { reply, sessionId: session.id, isNewSession: isNew, rolledOver, timeline: result.timeline, error: result.error };
 }
 
 /**
