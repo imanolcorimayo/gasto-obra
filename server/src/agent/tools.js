@@ -196,7 +196,8 @@ export const TOOLS = [
       'Registra una transacción en la obra activa. Extraé los datos del mensaje del profesional. ' +
       'Tipos: "expense" (gasto/compra para la obra, lo debe el cliente), "payment" (cobro: plata que pagó el cliente), ' +
       '"provider_expense" (gasto propio: lo pagó el profesional de su bolsillo). ' +
-      'Si falta el monto o no se entiende qué es, NO llames esta tool: preguntá primero.',
+      'Si falta el monto o no se entiende qué es, NO llames esta tool: preguntá primero. ' +
+      'Si el resultado trae receiptUploadLink, ofrecéselo como opción para adjuntar la foto del comprobante (opcional, sin insistir).',
     parameters: {
       type: 'object',
       properties: {
@@ -277,11 +278,22 @@ export const TOOLS = [
         action: 'registrado', type, project: project.name, title, amount, category,
         vendor: args.vendor || null, recipient: args.recipient || null, date: args.date || null,
       });
+
+      // If no comprobante rode in with this turn (e.g. text/MCP, not a WhatsApp photo),
+      // offer a one-tap page to attach it. OPTIONAL — surface it as a suggestion, never
+      // a requirement. WhatsApp expenses that already carry the photo skip this.
+      const hasReceipt = Boolean(ctx.mediaUrls?.imageUrl || ctx.mediaUrls?.fileUrl);
+      const appUrl = process.env.APP_URL || 'https://gastoobra.com';
+      const receiptUploadLink = hasReceipt
+        ? undefined
+        : `${appUrl}/gasto/${expenseId}/comprobante?t=${encodeURIComponent(title)}&a=${amount}`;
+
       return {
         ok: true,
         expenseId,
         confirmation,
         warning: warning || undefined,
+        receiptUploadLink,
         registered: { type, title, amount, category, vendor: args.vendor || null, recipient: args.recipient || null, project: project.name },
       };
     },

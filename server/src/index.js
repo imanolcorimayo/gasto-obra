@@ -11,6 +11,7 @@ import { ParseExpense } from './actions/expenses/ParseExpense.js';
 import { DemoParseExpense, DemoParseStatus } from './actions/expenses/DemoParseExpense.js';
 import { UploadEntityImage } from './actions/images/UploadEntityImage.js';
 import { DeleteEntityImage } from './actions/images/DeleteEntityImage.js';
+import { UploadExpenseReceipt } from './actions/images/UploadExpenseReceipt.js';
 import { CreateMaterial, UpdateMaterial, DeleteMaterial } from './actions/materials/MaterialActions.js';
 import { CreateProposal, UpdateProposal, DeleteProposal } from './actions/proposals/ProposalActions.js';
 import redis from './handlers/RedisHandler.js';
@@ -186,6 +187,7 @@ const uploadImage = multer({
   limits: { fileSize: 10 * 1024 * 1024 } // 10 MB max raw
 });
 
+app.post('/api/expenses/:id/receipt', requireAuth, uploadImage.single('image'), UploadExpenseReceipt);
 app.post('/api/items/:id/image', requireAuth, uploadImage.single('image'), UploadEntityImage('item'));
 app.delete('/api/items/:id/image/:imageId', requireAuth, DeleteEntityImage('item'));
 app.post('/api/proposals/:id/image', requireAuth, uploadImage.single('image'), UploadEntityImage('proposal'));
