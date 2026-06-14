@@ -311,8 +311,9 @@ export const TOOLS = [
   {
     name: 'look_up_expenses',
     description:
-      'Busca registros de la obra activa (id, tipo, título, monto, categoría, fecha). Sin filtros trae los más recientes. ' +
-      'Usalo para responder consultas ("¿cuánto gasté en cemento la semana pasada?") o para encontrar el id de un registro a editar/borrar.',
+      'Busca registros de la obra (id, tipo, título, monto, categoría, fecha, comercio, destinatario, medio de pago, descripción, ítems, origen y si tiene comprobante). ' +
+      'Sin filtros trae los más recientes. Usalo para responder consultas ("¿cuánto gasté en cemento la semana pasada?"), ' +
+      'detectar duplicados (comparando comercio/descripción/origen) o encontrar el id de un registro a editar/borrar.',
     parameters: {
       type: 'object',
       properties: {

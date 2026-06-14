@@ -66,5 +66,12 @@ export async function searchProjectExpenses(projectId, f = {}) {
     amount: e.amount,
     category: e.category || null,
     date: e.date?.toDate?.()?.toISOString().slice(0, 10) || null,
+    vendor: e.vendor || null,
+    recipient: e.recipientName || null,
+    paymentMethod: e.paymentMethod || null,
+    description: e.description || null,
+    items: e.items || null,
+    source: e.source || null,        // 'whatsapp' | 'app' | 'mcp' — helps spot duplicates loaded twice
+    hasReceipt: Boolean(e.imageUrl || e.fileUrl),
   }));
 }
