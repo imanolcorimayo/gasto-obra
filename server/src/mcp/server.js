@@ -7,8 +7,7 @@
 //   claude mcp add gasto-obra --env MCP_USER_UID=<your-firebase-uid> -- \
 //     node /home/imanol/projects/wiseutils/gasto-obra/server/src/mcp/server.js
 //
-// Tool exposure: read-only by default. Set MCP_ENABLE_WRITES=true to also expose
-// create_project/update_project/record_expense/edit_expense/delete_expense.
+// Tool exposure: all agent tools except switch_project (stateless — no active obra).
 //
 // Auth model: stdio = the client spawns this as a LOCAL child process, so there
 // is no untrusted network peer. Identity comes from MCP_USER_UID; every tool then
@@ -41,16 +40,13 @@ const { getActiveProjects } = await import('../helpers/projects.js');
 const SERVER_INFO = { name: 'gasto-obra', version: '0.1.0' };
 const DEFAULT_PROTOCOL = '2025-06-18';
 
-// Tool exposure is a deliberate whitelist (defense-in-depth — even if a client
-// names a tool outside the set, we refuse it here, never reaching the dispatcher).
-//   READ_ONLY  always exposed: discovery + reporting, never mutates.
-//   WRITE      exposed only when MCP_ENABLE_WRITES=true. switch_project is
-//              intentionally excluded — MCP is stateless, there is no active obra.
-const READ_ONLY = new Set(['list_projects', 'get_summary', 'look_up_expenses']);
-const WRITE = new Set(['create_project', 'update_project', 'record_expense', 'edit_expense', 'delete_expense']);
-
-const WRITES_ENABLED = process.env.MCP_ENABLE_WRITES === 'true';
-const EXPOSED = new Set([...READ_ONLY, ...(WRITES_ENABLED ? WRITE : [])]);
+// Deliberate whitelist (defense-in-depth — a client naming a tool outside this set
+// is refused here, never reaching the dispatcher). switch_project is excluded
+// because MCP is stateless: the model passes an explicit projectId instead.
+const EXPOSED = new Set([
+  'list_projects', 'get_summary', 'look_up_expenses',          // read
+  'create_project', 'update_project', 'record_expense', 'edit_expense', 'delete_expense', // write
+]);
 
 const uid = process.env.MCP_USER_UID || null;
 if (!uid) {
@@ -83,8 +79,7 @@ async function handleToolCall(id, params) {
 
   if (!EXPOSED.has(name)) {
     // Surface as a tool error (not a protocol error) so the model can react.
-    const why = WRITE.has(name) ? 'escritura deshabilitada (MCP_ENABLE_WRITES)' : 'no disponible por MCP';
-    reply(id, { content: [{ type: 'text', text: `Tool ${why}: ${name}` }], isError: true });
+    reply(id, { content: [{ type: 'text', text: `Tool no disponible por MCP: ${name}` }], isError: true });
     return;
   }
   if (!uid) {
@@ -164,5 +159,5 @@ process.stdin.on('data', (chunk) => {
 process.stdin.on('close', () => process.exit(0));
 
 process.stderr.write(
-  `[mcp] gasto-obra MCP server ready (uid=${uid || 'NONE'}, writes=${WRITES_ENABLED ? 'ON' : 'off'}, tools=${[...EXPOSED].join(',')})\n`
+  `[mcp] gasto-obra MCP server ready (uid=${uid || 'NONE'}, tools=${[...EXPOSED].join(',')})\n`
 );
