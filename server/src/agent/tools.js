@@ -41,15 +41,20 @@ function resolveAmount(args) {
 /**
  * TOOL REGISTRY — the single source of truth for the agent's tools.
  *
- * Each entry is channel-agnostic: { name, description, parameters, handler }.
+ * Each entry: { name, description, parameters, handler, channels? }.
  *   - `parameters`  JSON Schema; the SAME object both Gemini and MCP consume.
  *   - `handler(args, ctx)`  the domain logic; returns a `{ ok, ... }` result.
+ *   - `channels`  OPTIONAL whitelist of channels this tool is exposed on, e.g.
+ *                 ['gemini'] or ['mcp']. Omit to expose on ALL channels (default).
+ *                 Registry membership ≠ exposure: a tool can live here for one
+ *                 channel without bloating another's context (e.g. extra MCP tools
+ *                 that should never enter the Gemini prompt, and vice versa).
  *
  * Consumers derive their own view from this one list — no second place to edit:
- *   - Gemini agent loop → TOOL_DECLARATIONS  (function-calling format)
- *   - MCP server        → toMcpTools()        (inputSchema format)
- * Adding/changing a tool means touching ONLY its entry here; every channel
- * (WhatsApp Gemini loop, in-app, MCP for Claude/ChatGPT) picks it up for free.
+ *   - Gemini agent loop → TOOL_DECLARATIONS  (function-calling format, channel 'gemini')
+ *   - MCP server        → toMcpTools()        (inputSchema format, channel 'mcp')
+ * Adding/changing a tool means touching ONLY its entry here; every channel it's
+ * exposed on (WhatsApp Gemini loop, in-app, MCP for Claude/ChatGPT) picks it up.
  *
  * ── THE CONTEXT CONTRACT (`ctx`) ──────────────────────────────────────────────
  * `ctx` is assembled by each channel adapter and passed to makeDispatcher; a tool
@@ -77,6 +82,8 @@ export const TOOLS = [
 
   {
     name: 'switch_project',
+    // Gemini-only: MCP is stateless (no active obra), so this tool has no meaning there.
+    channels: ['gemini'],
     description:
       'Cambia la obra activa donde se registran los gastos. Pasá el id exacto de una obra existente del profesional.',
     parameters: {
@@ -443,16 +450,23 @@ export const TOOLS = [
 
 // ── Channel-specific views, all derived from the one TOOLS registry ───────────
 
+/** A tool is exposed on a channel when it has no `channels` whitelist, or lists it. */
+const exposedOn = (tool, channel) => !tool.channels || tool.channels.includes(channel);
+
 /** Gemini function-calling format: a single tool block of function declarations. */
 export const TOOL_DECLARATIONS = [
   {
-    functionDeclarations: TOOLS.map(({ name, description, parameters }) => ({ name, description, parameters })),
+    functionDeclarations: TOOLS
+      .filter((t) => exposedOn(t, 'gemini'))
+      .map(({ name, description, parameters }) => ({ name, description, parameters })),
   },
 ];
 
 /** MCP `tools/list` format: [{ name, description, inputSchema }]. */
 export function toMcpTools() {
-  return TOOLS.map(({ name, description, parameters }) => ({ name, description, inputSchema: parameters }));
+  return TOOLS
+    .filter((t) => exposedOn(t, 'mcp'))
+    .map(({ name, description, parameters }) => ({ name, description, inputSchema: parameters }));
 }
 
 const TOOLS_BY_NAME = new Map(TOOLS.map((t) => [t.name, t]));
