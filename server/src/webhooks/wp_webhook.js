@@ -21,6 +21,7 @@ import { normalizePhoneNumber } from '../helpers/phone.js';
 import { getActiveProjects, resolveProject, autoSelectProject } from '../helpers/projects.js';
 import { handleLinkCommand, handleUnlinkCommand, sendHelpMessage, handleAISupport } from '../handlers/commands.js';
 import { runAgentTurn, startFreshSession } from '../agent/core.js';
+import { mcpRouter } from '../mcp/httpRoute.js';
 
 // ============================================
 // Configuration
@@ -367,6 +368,10 @@ app.use((req, res, next) => {
 app.get('/health', (req, res) => {
   res.sendStatus(200);
 });
+
+// Remote MCP endpoint (Streamable HTTP) — reachable through the same tunnel that
+// fronts this webhook. Auth + protocol live in the router; see src/mcp/httpRoute.js.
+app.use('/mcp', mcpRouter);
 
 app.get('/webhook', (req, res) => {
   const mode = req.query['hub.mode'];
