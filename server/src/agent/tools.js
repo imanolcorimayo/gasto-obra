@@ -1,4 +1,4 @@
-import { createExpense, updateExpense, deleteExpense, getExpense } from '../helpers/expenseWrite.js';
+import { createExpense, updateExpense, deleteExpense, getExpense, getExpenseMedia } from '../helpers/expenseWrite.js';
 import { getProjectSummary, searchProjectExpenses } from '../helpers/expenseSummary.js';
 import { formatMovementConfirmation } from '../helpers/movementConfirmation.js';
 import { createProject, updateProject } from '../helpers/projects.js';
@@ -421,6 +421,37 @@ export const TOOLS = [
           })
         : undefined;
       return { ok: true, expenseId: args.expenseId, confirmation, warning: warning || undefined };
+    },
+  },
+
+  {
+    name: 'get_receipt_image',
+    // MCP-only: the client model (Claude) is multimodal and analyzes the image
+    // itself — billed on its side, not our Gemini budget. Never exposed to Gemini,
+    // so WhatsApp's image cost/complexity stays exactly where it is (inbound parse).
+    channels: ['mcp'],
+    description:
+      'Devuelve la imagen del comprobante de un gasto para verla/compararla (ej: confirmar si dos gastos son el mismo). ' +
+      'Pasá el expenseId (lo obtenés de look_up_expenses). Solo imágenes; si el comprobante es un PDF, devuelve el link.',
+    parameters: {
+      type: 'object',
+      properties: { expenseId: { type: 'string' } },
+      required: ['expenseId'],
+    },
+    handler: async (args, ctx) => {
+      const media = await getExpenseMedia(ctx.userId, args.expenseId);
+      if (!media) return { ok: false, error: 'No existe ese registro o no es tuyo.' };
+      if (!media.imageUrl) {
+        return media.fileUrl
+          ? { ok: false, error: 'El comprobante es un PDF, no una imagen.', fileUrl: media.fileUrl }
+          : { ok: false, error: 'Ese gasto no tiene comprobante adjunto.' };
+      }
+      const resp = await fetch(media.imageUrl);
+      if (!resp.ok) return { ok: false, error: 'No pude descargar el comprobante.' };
+      const mimeType = resp.headers.get('content-type') || 'image/jpeg';
+      const data = Buffer.from(await resp.arrayBuffer()).toString('base64');
+      // `image` is rendered as MCP image content by the MCP server (see src/mcp/server.js).
+      return { ok: true, title: media.title, image: { data, mimeType } };
     },
   },
 

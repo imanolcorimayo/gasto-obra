@@ -124,6 +124,15 @@ export async function getExpense(userId, expenseId) {
   };
 }
 
+/** Ownership-guarded comprobante URLs for an expense (for the receipt-image tool). */
+export async function getExpenseMedia(userId, expenseId) {
+  const doc = await db.collection(COLLECTIONS.EXPENSES).doc(expenseId).get();
+  if (!doc.exists) return null;
+  const e = doc.data();
+  if (e.providerId !== userId) return null; // ownership guard (IDOR)
+  return { title: e.title || null, imageUrl: e.imageUrl || null, fileUrl: e.fileUrl || null };
+}
+
 /** Update an owned expense (trusted, no confirm). Only whitelisted fields. */
 export async function updateExpense(userId, expenseId, fields) {
   const ref = db.collection(COLLECTIONS.EXPENSES).doc(expenseId);

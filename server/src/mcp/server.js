@@ -44,7 +44,7 @@ const DEFAULT_PROTOCOL = '2025-06-18';
 // is refused here, never reaching the dispatcher). switch_project is excluded
 // because MCP is stateless: the model passes an explicit projectId instead.
 const EXPOSED = new Set([
-  'list_projects', 'get_summary', 'look_up_expenses',          // read
+  'list_projects', 'get_summary', 'look_up_expenses', 'get_receipt_image', // read
   'create_project', 'update_project', 'record_expense', 'edit_expense', 'delete_expense', // write
 ]);
 
@@ -91,10 +91,17 @@ async function handleToolCall(id, params) {
     const ctx = await buildContext();
     const dispatch = makeDispatcher(ctx);
     const result = await dispatch(name, args);
-    reply(id, {
-      content: [{ type: 'text', text: JSON.stringify(result) }],
-      isError: result?.ok === false,
-    });
+
+    // A tool may return an `image` ({ data, mimeType }) → render it as MCP image
+    // content so the (multimodal) client model can see it; otherwise return JSON text.
+    const content = result?.image
+      ? [
+          ...(result.title ? [{ type: 'text', text: `Comprobante: ${result.title}` }] : []),
+          { type: 'image', data: result.image.data, mimeType: result.image.mimeType },
+        ]
+      : [{ type: 'text', text: JSON.stringify(result) }];
+
+    reply(id, { content, isError: result?.ok === false });
   } catch (err) {
     process.stderr.write(`[mcp] tool ${name} threw: ${err.stack || err.message}\n`);
     reply(id, { content: [{ type: 'text', text: `Error interno: ${err.message}` }], isError: true });
