@@ -34,6 +34,10 @@ server/
 - **Config**: Shared initialization (Firebase, env). Imported by webhooks, scripts, and the future API server.
 - **`src/index.js`**: Future formal API endpoint. Separate from webhooks — will serve authenticated REST endpoints.
 
+### Agent (`src/agent/`)
+- Transport-agnostic Gemini tool-calling chat. `core.js` owns sessions/history/loop; channel adapters resolve the user + build a `ctx`, then call `runAgentTurn`.
+- **`tools.js` is the single tool registry** (`TOOLS = [{ name, description, parameters, handler }]`) and the channel-agnostic seam: Gemini derives `TOOL_DECLARATIONS`, MCP derives `toMcpTools()`, both from the same list. Add/change a tool in ONE place. The `ctx` contract + the rule "a tool reads only `ctx`, never the channel" are documented in the file header — keep that rule so WhatsApp (stateful session) and a future MCP server (stateless) can share the handlers.
+
 ### WhatsApp Webhook (`src/webhooks/wp_webhook.js`)
 - Express server receiving WhatsApp Business API webhooks
 - Account linking via verification codes
