@@ -22,6 +22,7 @@ import { getActiveProjects, resolveProject, autoSelectProject } from '../helpers
 import { handleLinkCommand, handleUnlinkCommand, sendHelpMessage, handleAISupport } from '../handlers/commands.js';
 import { runAgentTurn, startFreshSession } from '../agent/core.js';
 import { mcpRouter } from '../mcp/httpRoute.js';
+import { oauthRouter } from '../mcp/oauth/router.js';
 
 // ============================================
 // Configuration
@@ -372,6 +373,10 @@ app.get('/health', (req, res) => {
 // Remote MCP endpoint (Streamable HTTP) — reachable through the same tunnel that
 // fronts this webhook. Auth + protocol live in the router; see src/mcp/httpRoute.js.
 app.use('/mcp', mcpRouter);
+
+// OAuth 2.1 server for the remote MCP endpoint (discovery metadata at the app root,
+// plus /oauth/*). Lets ChatGPT / Claude connect as a connector. See src/mcp/oauth/.
+app.use(oauthRouter);
 
 app.get('/webhook', (req, res) => {
   const mode = req.query['hub.mode'];
