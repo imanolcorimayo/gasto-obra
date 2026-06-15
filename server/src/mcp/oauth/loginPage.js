@@ -5,8 +5,11 @@
 
 /** @param {{clientName?:string, firebaseApiKey:string, firebaseAuthDomain:string, firebaseProjectId:string, params:object}} opts */
 export function renderLoginPage({ clientName, firebaseApiKey, firebaseAuthDomain, firebaseProjectId, params }) {
-  // params (client_id, redirect_uri, state, code_challenge, ...) round-trip to /approve.
-  const paramsJson = JSON.stringify(params);
+  // params (client_id, redirect_uri, state, code_challenge, ...) are attacker-influenced
+  // query values that round-trip to /approve. They're embedded inside an inline <script>,
+  // so JSON.stringify alone is NOT safe — a value like `</script>...` would break out.
+  // safeJson() neutralizes script-terminating and line-separator sequences.
+  const paramsJson = safeJson(params);
   const app = clientName ? escapeHtml(clientName) : 'una aplicación';
 
   return `<!DOCTYPE html>
@@ -48,9 +51,9 @@ export function renderLoginPage({ clientName, firebaseApiKey, firebaseAuthDomain
 
   const OAUTH = ${paramsJson};
   const app = initializeApp({
-    apiKey: ${JSON.stringify(firebaseApiKey)},
-    authDomain: ${JSON.stringify(firebaseAuthDomain)},
-    projectId: ${JSON.stringify(firebaseProjectId)},
+    apiKey: ${safeJson(firebaseApiKey)},
+    authDomain: ${safeJson(firebaseAuthDomain)},
+    projectId: ${safeJson(firebaseProjectId)},
   });
   const auth = getAuth(app);
   const btn = document.getElementById("login");
@@ -83,4 +86,22 @@ export function renderLoginPage({ clientName, firebaseApiKey, firebaseAuthDomain
 function escapeHtml(s) {
   return String(s).replace(/[&<>"']/g, (c) =>
     ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+
+// JSON safe to embed in an inline <script>: escape the sequences that could close the
+// script element or break the script context (and U+2028/U+2029, invalid in JS strings).
+function safeJson(value) {
+  // Escape the sequences that could terminate the inline <script> (and U+2028/U+2029,
+  // invalid in JS string literals). Built from char codes so the source carries no
+  // literal backslash or separator char — nothing for an editor/tool to mangle.
+  const BS = String.fromCharCode(92);
+  const esc = (c) => BS + 'u' + c.charCodeAt(0).toString(16).padStart(4, '0');
+  const LS = String.fromCharCode(0x2028);
+  const PS = String.fromCharCode(0x2029);
+  return JSON.stringify(value)
+    .split('<').join(esc('<'))
+    .split('>').join(esc('>'))
+    .split('&').join(esc('&'))
+    .split(LS).join(esc(LS))
+    .split(PS).join(esc(PS));
 }

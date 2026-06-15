@@ -45,9 +45,13 @@ export async function createAuthCode({ clientId, userId, redirectUri, codeChalle
 export async function consumeAuthCode(code) {
   const rows = await query('SELECT * FROM oauth_auth_code WHERE code = ?', [code]);
   if (!rows.length) return null;
-  await query('DELETE FROM oauth_auth_code WHERE code = ?', [code]);
+  // Atomic single-use gate: the conditional DELETE is the winner-takes-all. Two
+  // concurrent /token requests can both SELECT the row, but only the one whose DELETE
+  // actually removes it (affectedRows === 1) proceeds — the loser gets null. The
+  // expiry check rides in the same statement so an expired code can never be redeemed.
+  const del = await query('DELETE FROM oauth_auth_code WHERE code = ? AND expires_ts > ?', [code, Date.now()]);
+  if (!del.affectedRows) return null;
   const r = rows[0];
-  if (Number(r.expires_ts) < Date.now()) return null;
   return {
     clientId: r.client_id,
     userId: r.user_id,
