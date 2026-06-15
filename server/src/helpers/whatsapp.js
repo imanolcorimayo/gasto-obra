@@ -5,6 +5,57 @@ import { normalizePhoneNumber } from './phone.js';
 const WP_PHONE_NUMBER_ID = process.env.WHATSAPP_PHONE_NUMBER_ID || process.env.IDENTIFIER_WP_NUMBER;
 const WP_ACCESS_TOKEN = process.env.WHATSAPP_ACCESS_TOKEN || process.env.ACCESS_TOKEN_WP_BUSINESS;
 
+// WhatsApp rejects text bodies over 4096 chars. Replies should be brief, but as a
+// safety net split an over-long message into chunks on the cleanest nearby boundary
+// (blank line → newline → sentence → space), so a rare long answer arrives whole
+// across a couple of bubbles instead of being rejected.
+const WP_TEXT_LIMIT = 3900; // headroom under the 4096 hard cap
+
+function splitForWhatsApp(text, max = WP_TEXT_LIMIT) {
+  if (!text || text.length <= max) return [text || ''];
+  const chunks = [];
+  let rest = text;
+  while (rest.length > max) {
+    const window = rest.slice(0, max);
+    let cut = window.lastIndexOf('\n\n');
+    if (cut < max * 0.5) cut = window.lastIndexOf('\n');
+    if (cut < max * 0.5) cut = window.lastIndexOf('. ');
+    if (cut < max * 0.5) cut = window.lastIndexOf(' ');
+    if (cut <= 0) cut = max;
+    chunks.push(rest.slice(0, cut).trim());
+    rest = rest.slice(cut).trim();
+  }
+  if (rest) chunks.push(rest);
+  return chunks;
+}
+
+async function sendOneWhatsAppText(normalizedTo, body) {
+  const response = await fetch(
+    `https://graph.facebook.com/v21.0/${WP_PHONE_NUMBER_ID}/messages`,
+    {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${WP_ACCESS_TOKEN}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        messaging_product: 'whatsapp',
+        recipient_type: 'individual',
+        to: normalizedTo,
+        type: 'text',
+        text: { preview_url: false, body }
+      })
+    }
+  );
+
+  const result = await response.json();
+  if (!response.ok) {
+    logger.error('Error sending WhatsApp message', { result });
+  } else {
+    logger.info('WhatsApp message sent', { to: normalizedTo });
+  }
+}
+
 export async function sendWhatsAppMessage(to, message) {
   const normalizedTo = normalizePhoneNumber(to);
 
@@ -14,33 +65,9 @@ export async function sendWhatsAppMessage(to, message) {
   }
 
   try {
-    const response = await fetch(
-      `https://graph.facebook.com/v21.0/${WP_PHONE_NUMBER_ID}/messages`,
-      {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${WP_ACCESS_TOKEN}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          messaging_product: 'whatsapp',
-          recipient_type: 'individual',
-          to: normalizedTo,
-          type: 'text',
-          text: {
-            preview_url: false,
-            body: message
-          }
-        })
-      }
-    );
-
-    const result = await response.json();
-
-    if (!response.ok) {
-      logger.error('Error sending WhatsApp message', { result });
-    } else {
-      logger.info('WhatsApp message sent', { to: normalizedTo });
+    // Almost always one chunk; only over-long replies fan out to multiple bubbles.
+    for (const part of splitForWhatsApp(message)) {
+      await sendOneWhatsAppText(normalizedTo, part);
     }
   } catch (error) {
     Sentry.captureException(error);

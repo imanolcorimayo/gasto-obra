@@ -40,7 +40,11 @@ export async function runToolLoop({
   dispatchTool,
   apiKey = process.env.GEMINI_API_KEY,
   temperature = 0.4,
-  maxOutputTokens = 2000,
+  // These flash models THINK, and thinking tokens count against maxOutputTokens. A
+  // tight cap truncated answers mid-word on reasoning-heavy turns (the thinking ate
+  // the budget). Give ample headroom — the persona still keeps the visible reply to
+  // 1–3 lines; this just ensures it's never cut off.
+  maxOutputTokens = 8192,
 }) {
   const timeline = [];
   const workingContents = [...contents];

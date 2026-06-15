@@ -22,5 +22,6 @@ jobs:
             git pull origin main
             cd server
             npm install --production
+            npm run migrate
             pm2 restart gasto-obra-webhook gasto-obra-api
             echo "Deployed: $(git log -1 --format='%h %s')"
