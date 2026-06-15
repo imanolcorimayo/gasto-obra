@@ -2,6 +2,7 @@ import { createExpense, updateExpense, deleteExpense, getExpense, getExpenseMedi
 import { getProjectSummary, searchProjectExpenses } from '../helpers/expenseSummary.js';
 import { formatMovementConfirmation } from '../helpers/movementConfirmation.js';
 import { createProject, updateProject } from '../helpers/projects.js';
+import { logToolCall } from './auditLog.js';
 
 // Parse an agent-supplied date ("YYYY-MM-DD") to a Date at local noon, avoiding
 // timezone day-shift. Returns null for anything unparseable.
@@ -528,6 +529,33 @@ export function makeDispatcher(ctx) {
   return async (name, args = {}) => {
     const tool = TOOLS_BY_NAME.get(name);
     if (!tool) return { ok: false, error: `Tool desconocida: ${name}` };
-    return tool.handler(args, ctx);
+
+    // Session channels (WhatsApp/app) log tool calls against their assistant message
+    // (repo.appendAssistantMessage). Channels with no session — MCP — set
+    // ctx.auditToolCalls so the call lands in tool_call_log instead. Avoids double-logging.
+    if (!ctx.auditToolCalls) return tool.handler(args, ctx);
+
+    const startedAt = Date.now();
+    let result;
+    let thrown;
+    try {
+      result = await tool.handler(args, ctx);
+      return result;
+    } catch (err) {
+      thrown = err;
+      throw err;
+    } finally {
+      // Best-effort, fire-and-forget: never let the audit write delay or break the call.
+      logToolCall({
+        userId: ctx.userId,
+        channel: ctx.source || 'unknown',
+        tool: name,
+        args,
+        result: thrown ? null : result,
+        status: thrown || result?.ok === false ? 'error' : 'ok',
+        errorText: thrown ? thrown.message : result?.ok === false ? result.error : null,
+        durationMs: Date.now() - startedAt,
+      });
+    }
   };
 }

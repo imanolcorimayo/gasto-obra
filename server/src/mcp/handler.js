@@ -24,7 +24,9 @@ async function buildContext(uid) {
   const projects = (await getActiveProjects(uid)).map((p) => ({ id: p.id, name: p.name, tag: p.tag }));
   // No active project and no setActiveProject capability: MCP is stateless, so the
   // model passes an explicit projectId (it discovers ids via list_projects first).
-  return { userId: uid, source: 'mcp', activeProjects: projects, activeProject: null };
+  // auditToolCalls: MCP has no agent_session to log against, so the dispatcher writes
+  // each call to tool_call_log instead (see makeDispatcher / auditLog.js).
+  return { userId: uid, source: 'mcp', activeProjects: projects, activeProject: null, auditToolCalls: true };
 }
 
 /** Execute a tools/call; returns the JSON-RPC `result` payload (content + isError). */
