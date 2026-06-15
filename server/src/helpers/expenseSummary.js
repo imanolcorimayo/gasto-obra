@@ -21,6 +21,11 @@ export async function getProjectSummary(projectId) {
     byCategory[c] = (byCategory[c] || 0) + (e.amount || 0);
   }
 
+  // Scope split (Original vs Agregados) — what the client view shows as a doughnut.
+  // 'addition' = unforeseen/extra work; everything else counts as original.
+  const additionExpenses = clientExpenses.filter((e) => e.scopeType === 'addition');
+  const totalAdditions = sum(additionExpenses);
+
   return {
     count: clientExpenses.length,
     totalExpenses,
@@ -28,6 +33,11 @@ export async function getProjectSummary(projectId) {
     totalProviderExpenses: sum(providerExpenses),
     balance: totalPayments - totalExpenses, // negative = el cliente debe
     byCategory,
+    byScope: {
+      original: totalExpenses - totalAdditions,
+      additions: totalAdditions,
+      additionsCount: additionExpenses.length,
+    },
   };
 }
 
@@ -65,6 +75,8 @@ export async function searchProjectExpenses(projectId, f = {}) {
     title: e.title,
     amount: e.amount,
     category: e.category || null,
+    scopeType: e.scopeType || 'original',
+    itemId: e.itemId || null,
     date: e.date?.toDate?.()?.toISOString().slice(0, 10) || null,
     vendor: e.vendor || null,
     recipient: e.recipientName || null,

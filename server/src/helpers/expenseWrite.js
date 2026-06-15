@@ -35,6 +35,11 @@ export async function createExpense(userId, data) {
     managementFeePercent: data.managementFeePercent || null,
     category: data.category,
     type: data.type || 'expense',
+    // 'original' (estaba en el presupuesto) | 'addition' (agregado/imprevisto). The
+    // client view splits Original vs Agregados off this. Default 'original'.
+    scopeType: data.scopeType === 'addition' ? 'addition' : 'original',
+    // Optional link to a project sub-budget (projectItems). Spend rolls up per item.
+    itemId: data.itemId || null,
     installmentPercent: data.installmentPercent ?? null,
     paymentMethod: data.paymentMethod || null,
     recipientName: data.recipientName || null,
@@ -109,7 +114,7 @@ export async function createExpense(userId, data) {
 
 // projectId/Name/Tag included so an expense can be MOVED between obras. The caller
 // (tool) must validate the target obra belongs to the user before passing these.
-const EDITABLE_FIELDS = ['title', 'amount', 'category', 'type', 'description', 'paymentMethod', 'installmentPercent', 'items', 'date', 'vendor', 'recipientName', 'recipientPlatform', 'recipientCuit', 'projectId', 'projectName', 'projectTag'];
+const EDITABLE_FIELDS = ['title', 'amount', 'category', 'type', 'scopeType', 'itemId', 'description', 'paymentMethod', 'installmentPercent', 'items', 'date', 'vendor', 'recipientName', 'recipientPlatform', 'recipientCuit', 'projectId', 'projectName', 'projectTag'];
 
 /** Fetch one expense, but only if it belongs to `userId`. Returns a slim view or null. */
 export async function getExpense(userId, expenseId) {
@@ -120,6 +125,7 @@ export async function getExpense(userId, expenseId) {
   return {
     id: doc.id, type: e.type || 'expense', title: e.title, amount: e.amount,
     category: e.category || null, projectId: e.projectId,
+    scopeType: e.scopeType || 'original', itemId: e.itemId || null,
     vendor: e.vendor || null, recipientName: e.recipientName || null,
   };
 }

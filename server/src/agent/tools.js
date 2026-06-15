@@ -1,7 +1,8 @@
 import { createExpense, updateExpense, deleteExpense, getExpense, getExpenseMedia } from '../helpers/expenseWrite.js';
 import { getProjectSummary, searchProjectExpenses } from '../helpers/expenseSummary.js';
 import { formatMovementConfirmation } from '../helpers/movementConfirmation.js';
-import { createProject, updateProject } from '../helpers/projects.js';
+import { createProject, updateProject, closeProject, getShareLink } from '../helpers/projects.js';
+import { listItems, createItem, updateItem, addMaterial } from '../helpers/projectItems.js';
 import { logToolCall } from './auditLog.js';
 
 // Parse an agent-supplied date ("YYYY-MM-DD") to a Date at local noon, avoiding
@@ -163,7 +164,9 @@ export const TOOLS = [
         clientPhone: { type: 'string', description: 'teléfono del cliente' },
         address: { type: 'string', description: 'dirección de la obra' },
         description: { type: 'string', description: 'descripción/notas de la obra' },
-        budget: { type: 'number', description: 'presupuesto estimado en ARS' },
+        budget: { type: 'number', description: 'presupuesto total estimado en ARS (para obras chicas; en obras grandes usá ítems/sub-presupuestos con manage_item)' },
+        startDate: { type: 'string', description: 'fecha de inicio de la obra, YYYY-MM-DD' },
+        estimatedEndDate: { type: 'string', description: 'fecha estimada de fin, YYYY-MM-DD' },
       },
       required: [],
     },
@@ -177,6 +180,8 @@ export const TOOLS = [
       const res = await updateProject(ctx.userId, projectId, {
         clientName: args.clientName, clientPhone: args.clientPhone,
         address: args.address, description: args.description, budget: args.budget,
+        startDate: args.startDate !== undefined ? parseDate(args.startDate) : undefined,
+        estimatedEndDate: args.estimatedEndDate !== undefined ? parseDate(args.estimatedEndDate) : undefined,
       });
       if (!res.ok) return res;
       // Keep the turn's in-memory copy in sync (name isn't editable here, so the
@@ -225,6 +230,15 @@ export const TOOLS = [
           type: 'number',
           description: '100 solo si el cliente YA pagó este gasto; si no, 0',
         },
+        scopeType: {
+          type: 'string',
+          enum: ['original', 'addition'],
+          description: '"addition" si es un trabajo adicional/imprevisto que NO estaba en el presupuesto original (el cliente lo ve aparte); "original" o vacío si estaba previsto.',
+        },
+        itemId: {
+          type: 'string',
+          description: 'id de un ítem/sub-presupuesto de la obra al que imputar el gasto (de list_items); omitilo si no aplica.',
+        },
         date: {
           type: 'string',
           description: 'fecha del gasto en formato YYYY-MM-DD. Omitilo para hoy; usalo para registrar gastos de días pasados.',
@@ -258,6 +272,8 @@ export const TOOLS = [
         category,
         description: args.description || '',
         items: args.items || null,
+        scopeType: args.scopeType === 'addition' ? 'addition' : 'original',
+        itemId: args.itemId || null,
         paymentMethod: args.paymentMethod || null,
         vendor: args.vendor || null,
         recipientName: args.recipient || null,
@@ -371,6 +387,8 @@ export const TOOLS = [
         amount: { type: 'number' },
         category: { type: 'string' },
         type: { type: 'string', enum: ['expense', 'payment', 'provider_expense'] },
+        scopeType: { type: 'string', enum: ['original', 'addition'], description: 'marcar como adicional/imprevisto ("addition") o original' },
+        itemId: { type: 'string', description: 'imputar a un ítem/sub-presupuesto de la obra (de list_items)' },
         description: { type: 'string' },
         items: {
           type: 'array',
@@ -393,7 +411,7 @@ export const TOOLS = [
     handler: async (args, ctx) => {
       // Ownership of the EXPENSE enforced inside updateExpense (providerId === userId).
       const patch = {};
-      for (const k of ['title', 'category', 'type', 'description', 'paymentMethod', 'vendor', 'recipientPlatform', 'recipientCuit', 'items']) {
+      for (const k of ['title', 'category', 'type', 'scopeType', 'itemId', 'description', 'paymentMethod', 'vendor', 'recipientPlatform', 'recipientCuit', 'items']) {
         if (args[k] !== undefined) patch[k] = args[k];
       }
       if (args.recipient !== undefined) patch.recipientName = args.recipient;
@@ -439,12 +457,12 @@ export const TOOLS = [
 
   {
     name: 'get_receipt_image',
-    // MCP-only: the client model (Claude) is multimodal and analyzes the image
-    // itself — billed on its side, not our Gemini budget. Never exposed to Gemini,
-    // so WhatsApp's image cost/complexity stays exactly where it is (inbound parse).
-    channels: ['mcp'],
+    // Exposed on all channels. On MCP the client model (Claude) is multimodal and sees
+    // the image natively; on WhatsApp the loop feeds the returned image back into the
+    // Gemini turn (see loop.js) so Gemini can re-read a comprobante to clear up doubts.
+    // Spends vision tokens on WhatsApp — use it to resolve confusion, not routinely.
     description:
-      'Devuelve la imagen del comprobante de un gasto para verla/compararla (ej: confirmar si dos gastos son el mismo). ' +
+      'Devuelve la imagen del comprobante de un gasto para leerla/compararla (ej: aclarar una duda del profesional, o confirmar si dos gastos son el mismo). ' +
       'Pasá el expenseId (lo obtenés de look_up_expenses). Solo imágenes; si el comprobante es un PDF, devuelve el link.',
     parameters: {
       type: 'object',
@@ -489,6 +507,149 @@ export const TOOLS = [
         return { ok: false, needs_confirmation: true, summary: { title: e.title, amount: e.amount, type: e.type } };
       }
       return await deleteExpense(ctx.userId, args.expenseId);
+    },
+  },
+
+  {
+    name: 'close_project',
+    description:
+      'Cierra/archiva una obra terminada: deja de aparecer en la lista de obras activas pero NO se borra nada (los gastos y el resumen quedan). ' +
+      'Requiere confirmación: llamala primero SIN confirm para mostrar qué se va a cerrar, y con confirm=true recién cuando el profesional confirme.',
+    parameters: {
+      type: 'object',
+      properties: {
+        projectId: { type: 'string', description: 'id de la obra a cerrar' },
+        confirm: { type: 'boolean', description: 'true solo después de que el profesional confirmó' },
+      },
+      required: ['projectId'],
+    },
+    handler: async (args, ctx) => {
+      const target = ctx.activeProjects.find((p) => p.id === args.projectId);
+      if (!target) return { ok: false, error: 'No encontré esa obra entre las tuyas.' };
+      if (!args.confirm) return { ok: false, needs_confirmation: true, summary: { name: target.name } };
+      return await closeProject(ctx.userId, args.projectId);
+    },
+  },
+
+  {
+    name: 'get_share_link',
+    description:
+      'Genera el código/enlace de invitación para que el dueño (cliente) siga la obra en vivo. ' +
+      'Devolvé al profesional el texto "invite" tal cual, para que se lo reenvíe al cliente. ' +
+      'Por defecto la obra activa; pasá projectId para otra. Si "alreadyJoined" es true, el cliente ya está conectado.',
+    parameters: {
+      type: 'object',
+      properties: { projectId: { type: 'string', description: 'id de la obra; omitilo para la activa' } },
+      required: [],
+    },
+    handler: async (args, ctx) => {
+      const projectId = args.projectId || ctx.activeProject?.id;
+      if (!projectId) return { ok: false, error: 'No hay obra activa.' };
+      if (!ctx.activeProjects.find((p) => p.id === projectId)) return { ok: false, error: 'No encontré esa obra entre las tuyas.' };
+      const res = await getShareLink(ctx.userId, projectId);
+      if (!res.ok) return res;
+      // The CODE rides under `__deliver`: WhatsApp sends it as its own crystal-clean,
+      // isolated bubble (one long-press to copy/forward), and the loop hides it from
+      // the model so it never recites the code. The model only gets `clientUrl` +
+      // `delivered:true`, so it can give a short instruction but cannot leak the code.
+      // MCP (no adapter) reads __deliver and presents it itself.
+      return {
+        ok: true,
+        project: res.project,
+        alreadyJoined: res.alreadyJoined,
+        delivered: true,
+        clientUrl: res.clientUrl,
+        __deliver: res.shareToken,
+      };
+    },
+  },
+
+  {
+    name: 'list_items',
+    description:
+      'Lista los ítems (sub-presupuestos) de una obra — ej "Baño", "Cocina" — con su presupuesto de mano de obra, rango de materiales, ' +
+      'presupuesto total estimado y lo gastado hasta ahora. Útil en obras grandes que se presupuestan por sección. Por defecto la obra activa.',
+    parameters: {
+      type: 'object',
+      properties: { projectId: { type: 'string', description: 'id de la obra; omitilo para la activa' } },
+      required: [],
+    },
+    handler: async (args, ctx) => {
+      const projectId = args.projectId || ctx.activeProject?.id;
+      if (!projectId) return { ok: false, error: 'No hay obra activa.' };
+      if (!ctx.activeProjects.find((p) => p.id === projectId)) return { ok: false, error: 'No encontré esa obra entre las tuyas.' };
+      return await listItems(ctx.userId, projectId);
+    },
+  },
+
+  {
+    name: 'manage_item',
+    description:
+      'Crea o actualiza un ítem/sub-presupuesto de la obra (ej "Baño": mano de obra $X, materiales entre $min y $max). ' +
+      'SIN itemId crea uno nuevo (solo el nombre es obligatorio); CON itemId actualiza ese. ' +
+      'Sirve para presupuestar obras grandes por sección sin adivinar un total único. Por defecto la obra activa.',
+    parameters: {
+      type: 'object',
+      properties: {
+        itemId: { type: 'string', description: 'id del ítem a actualizar; omitilo para crear uno nuevo' },
+        projectId: { type: 'string', description: 'id de la obra (al crear); omitilo para la activa' },
+        name: { type: 'string', description: 'nombre del ítem (ej "Baño", "Cocina")' },
+        laborBudget: { type: 'number', description: 'presupuesto de mano de obra en ARS' },
+        materialsBudgetMin: { type: 'number', description: 'mínimo estimado de materiales en ARS' },
+        materialsBudgetMax: { type: 'number', description: 'máximo estimado de materiales en ARS' },
+        plannedStartDate: { type: 'string', description: 'inicio planificado, YYYY-MM-DD' },
+        plannedEndDate: { type: 'string', description: 'fin planificado, YYYY-MM-DD' },
+      },
+      required: [],
+    },
+    handler: async (args, ctx) => {
+      const dates = {
+        plannedStartDate: args.plannedStartDate !== undefined ? parseDate(args.plannedStartDate) : undefined,
+        plannedEndDate: args.plannedEndDate !== undefined ? parseDate(args.plannedEndDate) : undefined,
+      };
+      // Update path: ownership of the item is enforced inside updateItem.
+      if (args.itemId) {
+        return await updateItem(ctx.userId, args.itemId, {
+          name: args.name, laborBudget: args.laborBudget,
+          materialsBudgetMin: args.materialsBudgetMin, materialsBudgetMax: args.materialsBudgetMax,
+          ...dates,
+        });
+      }
+      // Create path: authorize the target obra (must be one of the user's own).
+      const projectId = args.projectId || ctx.activeProject?.id;
+      if (!projectId) return { ok: false, error: 'No hay obra activa.' };
+      if (!ctx.activeProjects.find((p) => p.id === projectId)) return { ok: false, error: 'No encontré esa obra entre las tuyas.' };
+      return await createItem(ctx.userId, {
+        projectId, name: args.name, laborBudget: args.laborBudget,
+        materialsBudgetMin: args.materialsBudgetMin, materialsBudgetMax: args.materialsBudgetMax,
+        ...dates,
+      });
+    },
+  },
+
+  {
+    name: 'manage_material',
+    description:
+      'Agrega un material a un ítem de la obra, opcionalmente con una cotización (comercio + monto). ' +
+      'Ej: "para el baño, azulejos cotizados por Cerámica Norte a 200000". Pasá el itemId (de list_items). ' +
+      'Para reorganizar materiales o cotizaciones en detalle, el profesional lo hace desde la web.',
+    parameters: {
+      type: 'object',
+      properties: {
+        itemId: { type: 'string', description: 'id del ítem al que pertenece el material (de list_items)' },
+        name: { type: 'string', description: 'nombre del material (ej "Azulejos", "Cemento")' },
+        vendor: { type: 'string', description: 'comercio que lo cotizó (opcional)' },
+        amount: { type: 'number', description: 'monto cotizado en ARS (opcional)' },
+        notes: { type: 'string', description: 'notas (opcional)' },
+      },
+      required: ['itemId', 'name'],
+    },
+    handler: async (args, ctx) => {
+      // Ownership enforced inside addMaterial (the item's providerId === userId).
+      return await addMaterial(ctx.userId, {
+        itemId: args.itemId, name: args.name,
+        vendor: args.vendor, amount: args.amount, notes: args.notes,
+      });
     },
   },
 ];

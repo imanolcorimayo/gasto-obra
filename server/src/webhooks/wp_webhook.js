@@ -584,6 +584,19 @@ async function prepareExpenseContext(phoneNumber) {
 // Agent Chat (new agentic flow — text)
 // ============================================
 
+// Varied immediate acks for the text agent path, so the bot doesn't repeat the exact
+// same line every message (which reads robotic). Kept generic so any of them fits
+// whatever the agent ends up doing (registrar, buscar, crear, etc.).
+const AGENT_ACKS = [
+  '👷 Dame un segundo, lo reviso…',
+  '👀 Ahí lo miro, un momento…',
+  '⏳ Un segundo y te respondo…',
+  '🔧 Dame un toque que lo veo…',
+  '✍️ Ya lo estoy viendo…',
+  '🧰 Un momento, lo chequeo…',
+];
+const randomAck = () => AGENT_ACKS[Math.floor(Math.random() * AGENT_ACKS.length)];
+
 // The model speaks Markdown; WhatsApp's flavor differs. Normalize so it renders.
 function toWhatsAppMarkdown(s = '') {
   return s
@@ -601,6 +614,16 @@ function toWhatsAppMarkdown(s = '') {
 async function runAgentForWhatsApp(phoneNumber, { userText, originalMessage, attachments = [], mediaUrls = null }) {
   const ctx = await prepareExpenseContext(phoneNumber);
   if (!ctx) return; // unlinked → onboarding already triggered inside
+
+  // Immediate acknowledgement: the agent turn (Gemini loop + tools) can take a few
+  // seconds, so confirm receipt right away instead of leaving the chat silent. Only
+  // fires on the agent path (linked users), never for commands/onboarding. Fire-and-
+  // forget — a failed ack must never block the real reply. Media (image/audio/PDF)
+  // already gets its own tailored ack in the media handler, so skip it there to avoid
+  // double-acking — this generic one is for the text path.
+  if (!attachments.length) {
+    sendWhatsAppMessage(phoneNumber, randomAck()).catch(() => {});
+  }
 
   const activeProjects = ctx.activeProjects.map(p => ({ id: p.id, name: p.name, tag: p.tag }));
   const activeProject = activeProjects.find(p => p.id === ctx.activeProjectId) || null;
@@ -634,11 +657,33 @@ async function runAgentForWhatsApp(phoneNumber, { userText, originalMessage, att
       reply += '\n\n_Pasó un rato, así que arranco una conversación nueva (no tengo el contexto anterior)._';
     }
 
+    // Share invite: the bare code rides under the tool's __deliver. We send it as its
+    // OWN crystal-clean bubble below (one long-press to copy/forward). As a hard
+    // guarantee against duplication, scrub any occurrence of the code out of the
+    // model's reply — even if the model parroted it from older history in this session,
+    // it never reaches the chat from the text bubble. The isolated bubble is the only
+    // place the code ever appears.
+    const shareCode = res.timeline?.find(
+      (t) => t.tool === 'get_share_link' && t.result?.ok
+    )?.result?.__deliver;
+    if (shareCode) {
+      reply = reply
+        .split('\n')
+        .filter((line) => !line.includes(shareCode))
+        .join('\n')
+        .replace(/\n{3,}/g, '\n\n')
+        .trim();
+    }
+
     // A delete that needs confirmation → render the agent's question as Sí/No
     // buttons. Tapping a button sends its title back as text, which routes to the
     // agent (with the just-asked delete in context) to fire delete with confirm.
     const needsDeleteConfirm = res.timeline?.some(
       (t) => t.tool === 'delete_expense' && t.result?.needs_confirmation
+    );
+    // Same pattern for closing/archiving an obra (confirm-gated).
+    const needsCloseConfirm = res.timeline?.some(
+      (t) => t.tool === 'close_project' && t.result?.needs_confirmation
     );
     // Just created an obra → offer a one-tap shortcut into the "completar datos"
     // flow. Tapping sends the title as text; the agent then explains what's useful
@@ -651,6 +696,11 @@ async function runAgentForWhatsApp(phoneNumber, { userText, originalMessage, att
         { id: 'confirm_yes', title: 'Sí, borrar' },
         { id: 'confirm_no', title: 'No' },
       ]);
+    } else if (needsCloseConfirm) {
+      await sendWhatsAppButtons(phoneNumber, reply, [
+        { id: 'confirm_close_yes', title: 'Sí, cerrar' },
+        { id: 'confirm_close_no', title: 'No' },
+      ]);
     } else if (justCreatedProject) {
       await sendWhatsAppButtons(phoneNumber, reply, [
         { id: 'fill_project_data', title: 'Completar datos' },
@@ -658,6 +708,11 @@ async function runAgentForWhatsApp(phoneNumber, { userText, originalMessage, att
     } else {
       await sendWhatsAppMessage(phoneNumber, reply);
     }
+
+    // Now send the code as its OWN message — nothing but the code, so on mobile it's
+    // one long-press to copy or forward to the dueño. WhatsApp has no copy button for
+    // free-form messages, but a fully isolated bubble is the next best thing.
+    if (shareCode) await sendWhatsAppMessage(phoneNumber, shareCode);
   } catch (error) {
     Sentry.captureException(error);
     logger.error('Error in agent turn', { error, phoneNumber });

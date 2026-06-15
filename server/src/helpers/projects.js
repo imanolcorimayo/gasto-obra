@@ -135,9 +135,64 @@ export async function updateProject(userId, projectId, fields = {}) {
     const n = Number(fields.budget);
     update.budget = Number.isFinite(n) ? n : null;
   }
+  // Dates drive the client's timeline. Accept a Date (null to clear).
+  for (const k of ['startDate', 'estimatedEndDate']) {
+    if (fields[k] !== undefined) {
+      update[k] = fields[k] instanceof Date ? admin.firestore.Timestamp.fromDate(fields[k]) : null;
+    }
+  }
   if (Object.keys(update).length === 0) return { ok: false, error: 'No hay cambios para aplicar.' };
 
   update.updatedAt = admin.firestore.FieldValue.serverTimestamp();
   await ref.update(update);
   return { ok: true, project: { id: projectId, ...doc.data(), ...update } };
+}
+
+/**
+ * Close/archive an owned obra (status → 'archived'). It stops showing in the active
+ * list (getActiveProjects filters status==='active') but nothing is deleted. Ownership
+ * enforced. Returns { ok, project:{ id, name } } or { ok:false, error }.
+ */
+export async function closeProject(userId, projectId) {
+  if (!projectId) return { ok: false, error: 'Falta el id de la obra.' };
+  const ref = db.collection(COLLECTIONS.PROJECTS).doc(projectId);
+  const doc = await ref.get();
+  if (!doc.exists) return { ok: false, error: 'No existe esa obra.' };
+  const data = doc.data();
+  if (data.providerId !== userId) return { ok: false, error: 'Esa obra no es tuya.' };
+  if (data.status === 'archived') return { ok: false, error: 'Esa obra ya está cerrada.' };
+
+  await ref.update({ status: 'archived', updatedAt: admin.firestore.FieldValue.serverTimestamp() });
+  return { ok: true, project: { id: projectId, name: data.name } };
+}
+
+/**
+ * Return the share token + ready-to-send invite for an owned obra, so the agent can
+ * hand the professional something to forward to the dueño. The client redeems the
+ * token at /client (Google sign-in + paste code). Ownership enforced.
+ */
+export async function getShareLink(userId, projectId) {
+  if (!projectId) return { ok: false, error: 'Falta el id de la obra.' };
+  const ref = db.collection(COLLECTIONS.PROJECTS).doc(projectId);
+  const doc = await ref.get();
+  if (!doc.exists) return { ok: false, error: 'No existe esa obra.' };
+  const data = doc.data();
+  if (data.providerId !== userId) return { ok: false, error: 'Esa obra no es tuya.' };
+
+  // Older obras may predate shareToken — mint one on demand so the invite always works.
+  let shareToken = data.shareToken;
+  if (!shareToken) {
+    shareToken = crypto.randomUUID();
+    await ref.update({ shareToken });
+  }
+
+  const appUrl = process.env.APP_URL || 'https://gastoobra.com';
+  const clientUrl = `${appUrl}/client`;
+  const invite =
+    `Te invito a seguir los gastos de la obra "${data.name}" en Gasto Obra.\n\n` +
+    `1. Entrá a ${clientUrl}\n` +
+    `2. Ingresá con tu cuenta de Google\n` +
+    `3. Pegá este código de invitación:\n\n${shareToken}`;
+
+  return { ok: true, project: { id: projectId, name: data.name }, shareToken, invite, clientUrl, alreadyJoined: Boolean(data.clientUserId) };
 }

@@ -15,8 +15,9 @@ const DEFAULT_PROTOCOL = '2025-06-18';
 // is refused here, never reaching the dispatcher). switch_project is excluded
 // because MCP is stateless: the model passes an explicit projectId instead.
 export const EXPOSED = new Set([
-  'list_projects', 'get_summary', 'look_up_expenses', 'get_receipt_image', // read
+  'list_projects', 'get_summary', 'look_up_expenses', 'get_receipt_image', 'list_items', // read
   'create_project', 'update_project', 'record_expense', 'edit_expense', 'delete_expense', // write
+  'close_project', 'get_share_link', 'manage_item', 'manage_material', // write (obra config + sub-budgets)
 ]);
 
 /** Build a fresh stateless ctx per call so newly created obras are always visible. */

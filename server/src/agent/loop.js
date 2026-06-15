@@ -78,6 +78,7 @@ export async function runToolLoop({
     workingContents.push({ role: 'model', parts });
 
     const responseParts = [];
+    const imageParts = []; // tool-returned images, fed to the model as real inlineData
     for (const fc of functionCalls) {
       const started = Date.now();
       let result;
@@ -87,17 +88,38 @@ export async function runToolLoop({
         result = { ok: false, error: err.message };
         logger.warn('Agent tool threw', { tool: fc.name, error: err.message });
       }
+
+      // A tool may return an image ({ data, mimeType }) — e.g. get_receipt_image so
+      // Gemini can re-read a comprobante. The bytes can't ride inside a functionResponse
+      // (and would bloat the JSON + the stored timeline), so route them to a separate
+      // inlineData part in this same user turn, and strip the base64 from what we store.
+      let stored = result;
+      if (result && result.image && result.image.data) {
+        imageParts.push({ inlineData: { mimeType: result.image.mimeType || 'image/jpeg', data: result.image.data } });
+        const { data, ...imgMeta } = result.image;
+        stored = { ...result, image: { ...imgMeta, attached: true } };
+      }
+
       timeline.push({
         tool: fc.name,
         status: result && result.ok === false ? 'error' : 'ok',
         durationMs: Date.now() - started,
         args: fc.args || {},
-        result,
+        result: stored,
       });
-      responseParts.push({ functionResponse: { name: fc.name, response: { result } } });
+
+      // Channel-only delivery payload (e.g. a share invite the adapter sends as its
+      // own WhatsApp bubble): it stays in the timeline above for the adapter, but is
+      // hidden from the model here so it can't recite/duplicate it in its reply.
+      let modelView = stored;
+      if (stored && stored.__deliver !== undefined) {
+        modelView = { ...stored };
+        delete modelView.__deliver;
+      }
+      responseParts.push({ functionResponse: { name: fc.name, response: { result: modelView } } });
     }
 
-    workingContents.push({ role: 'user', parts: responseParts });
+    workingContents.push({ role: 'user', parts: [...responseParts, ...imageParts] });
   }
 
   logger.warn('Agent tool loop hit max iterations', { iterations: MAX_ITERATIONS });
