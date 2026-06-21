@@ -15,6 +15,7 @@ import { UploadExpenseReceipt } from './actions/images/UploadExpenseReceipt.js';
 import { CreateMaterial, UpdateMaterial, DeleteMaterial } from './actions/materials/MaterialActions.js';
 import { CreateProposal, UpdateProposal, DeleteProposal } from './actions/proposals/ProposalActions.js';
 import redis from './handlers/RedisHandler.js';
+import { getSnapshotBySlug, bumpView } from './snapshots/repo.js';
 import { joinProjectAsClient } from './helpers/projects.js';
 
 redis.connect();
@@ -167,6 +168,25 @@ app.get('/api/project-preview/:token', async (req, res) => {
     });
   } catch (error) {
     logger.error('Error in /api/project-preview', { error: error.message });
+    res.status(500).json({ error: 'Error interno' });
+  }
+});
+
+// Public endpoint: a frozen, shareable snapshot by slug. Renders from stored JSON
+// only — no auth, no live Firestore read. View bump is best-effort (never blocks).
+app.get('/api/snapshot/:slug', async (req, res) => {
+  try {
+    const { slug } = req.params;
+    if (!slug || !/^[0-9A-Za-z]{6,16}$/.test(slug)) {
+      return res.status(400).json({ error: 'Enlace inválido' });
+    }
+    const snap = await getSnapshotBySlug(slug, Date.now());
+    if (!snap) return res.status(404).json({ error: 'Resumen no encontrado o vencido' });
+
+    bumpView(snap.id).catch((e) => logger.warn('snapshot view bump failed', { error: e.message }));
+    res.json({ type: snap.type, payload: snap.payload, createdTs: Number(snap.created_ts) });
+  } catch (error) {
+    logger.error('Error in /api/snapshot', { error: error.message });
     res.status(500).json({ error: 'Error interno' });
   }
 });

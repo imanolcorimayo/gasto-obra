@@ -7,7 +7,7 @@ import * as Sentry from '@sentry/node';
 import { admin, db, bucket, COLLECTIONS } from '../config/firebase.js';
 import GeminiHandler from '../handlers/GeminiHandler.js';
 import StorageHandler from '../handlers/StorageHandler.js';
-import { sendWhatsAppMessage, sendWhatsAppButtons, downloadWhatsAppMedia } from '../helpers/whatsapp.js';
+import { sendWhatsAppMessage, sendWhatsAppButtons, sendWhatsAppCtaUrl, downloadWhatsAppMedia, markReadWithTyping } from '../helpers/whatsapp.js';
 import { compressImage } from '../helpers/compression.js';
 import { PDFParse } from 'pdf-parse';
 import { stripHtml } from '../helpers/responseFormatter.js';
@@ -21,6 +21,7 @@ import { normalizePhoneNumber } from '../helpers/phone.js';
 import { getActiveProjects, resolveProject, autoSelectProject } from '../helpers/projects.js';
 import { handleLinkCommand, handleUnlinkCommand, sendHelpMessage, handleAISupport } from '../handlers/commands.js';
 import { runAgentTurn, startFreshSession } from '../agent/core.js';
+import { createExpenseSnapshot } from '../helpers/shareSnapshots.js';
 import { mcpRouter } from '../mcp/httpRoute.js';
 import { oauthRouter } from '../mcp/oauth/router.js';
 
@@ -433,6 +434,13 @@ app.post('/webhook', verifyWebhookSignature, async (req, res) => {
       return;
     }
 
+    // Immediate "we're alive" signal for every inbound message: mark it read (visto)
+    // and show the native typing indicator (~25s). Replaces the old text-bubble acks
+    // on every path — same reassurance, no chat clutter. Auto-dismisses when our real
+    // reply lands. Fire-and-forget; never blocks processing. Media handlers re-fire it
+    // before their Gemini turn (that work can outrun the 25s window) — see below.
+    markReadWithTyping(message.id).catch(() => {});
+
     if (message.type === 'text') {
       const messageText = message.text?.body || '';
       logger.info('Text message received', { from, contactName, messageText });
@@ -441,12 +449,12 @@ app.post('/webhook', verifyWebhookSignature, async (req, res) => {
       const caption = message.image?.caption || '';
       const imageId = message.image?.id;
       logger.info('Image message received', { from, contactName, caption });
-      await handleImageMessage(from, imageId, caption);
+      await handleImageMessage(from, imageId, caption, message.id);
     } else if (message.type === 'audio') {
       const caption = message.audio?.caption || '';
       const audioId = message.audio?.id;
       logger.info('Audio message received', { from, contactName });
-      await handleAudioMessage(from, audioId, caption);
+      await handleAudioMessage(from, audioId, caption, message.id);
     } else if (message.type === 'document') {
       const caption = message.document?.caption || '';
       const documentId = message.document?.id;
@@ -457,7 +465,7 @@ app.post('/webhook', verifyWebhookSignature, async (req, res) => {
       if (documentMimeType !== 'application/pdf') {
         await sendWhatsAppMessage(from, 'Solo se aceptan documentos PDF. Para otros formatos, enviá una foto del documento.');
       } else {
-        await handleDocumentMessage(from, documentId, caption, filename);
+        await handleDocumentMessage(from, documentId, caption, filename, message.id);
       }
     } else if (message.type === 'interactive') {
       const buttonId = message.interactive?.button_reply?.id;
@@ -584,19 +592,6 @@ async function prepareExpenseContext(phoneNumber) {
 // Agent Chat (new agentic flow — text)
 // ============================================
 
-// Varied immediate acks for the text agent path, so the bot doesn't repeat the exact
-// same line every message (which reads robotic). Kept generic so any of them fits
-// whatever the agent ends up doing (registrar, buscar, crear, etc.).
-const AGENT_ACKS = [
-  '👷 Dame un segundo, lo reviso…',
-  '👀 Ahí lo miro, un momento…',
-  '⏳ Un segundo y te respondo…',
-  '🔧 Dame un toque que lo veo…',
-  '✍️ Ya lo estoy viendo…',
-  '🧰 Un momento, lo chequeo…',
-];
-const randomAck = () => AGENT_ACKS[Math.floor(Math.random() * AGENT_ACKS.length)];
-
 // The model speaks Markdown; WhatsApp's flavor differs. Normalize so it renders.
 function toWhatsAppMarkdown(s = '') {
   return s
@@ -611,19 +606,29 @@ function toWhatsAppMarkdown(s = '') {
 // and renders the reply. Handles both text and media (image/PDF/audio) — media
 // callers pass `attachments` (inline base64 for the model) + `mediaUrls` (storage
 // links the record_expense tool attaches to the saved expense).
+// Send a snapshot's share link as a one-tap CTA button. With the client's phone on
+// file the button opens WhatsApp straight to them ("Enviar al cliente"); otherwise it
+// opens the contact picker with the message prefilled ("Compartir por WhatsApp"). Falls
+// back to a plain link bubble if the interactive send fails.
+async function deliverShareButton(phoneNumber, waLink, hasPhone) {
+  const sent = await sendWhatsAppCtaUrl(
+    phoneNumber,
+    hasPhone
+      ? 'Tocá el botón para enviárselo a tu cliente 👇'
+      : 'Tocá para compartirlo por WhatsApp 👇',
+    hasPhone ? 'Enviar al cliente' : 'Compartir por WhatsApp',
+    waLink
+  );
+  if (!sent) await sendWhatsAppMessage(phoneNumber, waLink);
+}
+
 async function runAgentForWhatsApp(phoneNumber, { userText, originalMessage, attachments = [], mediaUrls = null }) {
   const ctx = await prepareExpenseContext(phoneNumber);
   if (!ctx) return; // unlinked → onboarding already triggered inside
 
-  // Immediate acknowledgement: the agent turn (Gemini loop + tools) can take a few
-  // seconds, so confirm receipt right away instead of leaving the chat silent. Only
-  // fires on the agent path (linked users), never for commands/onboarding. Fire-and-
-  // forget — a failed ack must never block the real reply. Media (image/audio/PDF)
-  // already gets its own tailored ack in the media handler, so skip it there to avoid
-  // double-acking — this generic one is for the text path.
-  if (!attachments.length) {
-    sendWhatsAppMessage(phoneNumber, randomAck()).catch(() => {});
-  }
+  // Receipt is already acknowledged at the webhook entry via the native read receipt
+  // + typing indicator (see markReadWithTyping). The indicator stays up (~25s) until
+  // this turn's reply lands, so no text-bubble ack is needed on the text path.
 
   const activeProjects = ctx.activeProjects.map(p => ({ id: p.id, name: p.name, tag: p.tag }));
   const activeProject = activeProjects.find(p => p.id === ctx.activeProjectId) || null;
@@ -675,6 +680,23 @@ async function runAgentForWhatsApp(phoneNumber, { userText, originalMessage, att
         .trim();
     }
 
+    // Shareable snapshot (whole-obra summary OR a single expense): same isolated
+    // treatment. The tappable link (a wa.me deep link prefilled for the client, or the
+    // bare view URL) rides under __deliver; we send it as its own CTA button below and
+    // scrub it from the model's text.
+    const shareResult = res.timeline?.find(
+      (t) => (t.tool === 'share_summary' || t.tool === 'share_expense') && t.result?.ok
+    )?.result;
+    const shareLink = shareResult?.__deliver;
+    if (shareLink) {
+      reply = reply
+        .split('\n')
+        .filter((line) => !line.includes(shareLink))
+        .join('\n')
+        .replace(/\n{3,}/g, '\n\n')
+        .trim();
+    }
+
     // A delete that needs confirmation → render the agent's question as Sí/No
     // buttons. Tapping a button sends its title back as text, which routes to the
     // agent (with the just-asked delete in context) to fire delete with confirm.
@@ -713,6 +735,31 @@ async function runAgentForWhatsApp(phoneNumber, { userText, originalMessage, att
     // one long-press to copy or forward to the dueño. WhatsApp has no copy button for
     // free-form messages, but a fully isolated bubble is the next best thing.
     if (shareCode) await sendWhatsAppMessage(phoneNumber, shareCode);
+
+    // Snapshot link as its own CTA button. With the client's phone on file the button
+    // opens WhatsApp to the client with the message prefilled ("Enviar al cliente");
+    // otherwise it opens the view page for the provider to forward ("Ver y compartir").
+    // If the interactive send fails for any reason, fall back to a plain link bubble.
+    if (shareLink) {
+      await deliverShareButton(phoneNumber, shareLink, shareResult.hasClientPhone);
+    }
+
+    // Auto-offer sharing on every freshly registered gasto/cobro: a one-tap button
+    // right under the confirmation. Provider's own expenses are never client-facing,
+    // so skip them. The snapshot is frozen now; unused ones self-expire (90d) and the
+    // daily cron purges them, so a snapshot-per-expense stays cheap. (createExpenseSnapshot
+    // also rejects provider_expense itself — the type check just avoids a wasted call.)
+    for (const t of res.timeline || []) {
+      if (t.tool !== 'record_expense' || !t.result?.ok) continue;
+      if (t.result.registered?.type === 'provider_expense') continue;
+      const snap = await createExpenseSnapshot({
+        userId: ctx.userId,
+        projectId: t.result.projectId,
+        expenseId: t.result.expenseId,
+      });
+      if (!snap.ok) continue;
+      await deliverShareButton(phoneNumber, snap.waLink, snap.hasClientPhone);
+    }
   } catch (error) {
     Sentry.captureException(error);
     logger.error('Error in agent turn', { error, phoneNumber });
@@ -737,9 +784,11 @@ async function handleFreshSession(phoneNumber) {
 // Download the media, store it (so the expense links to its comprobante), then run
 // the agent with the bytes inline + the storage URL. The agent reads the receipt,
 // decides the type (gasto / gasto propio / cobro), and saves directly when confident.
+// No text-bubble ack: receipt is signalled by visto + "escribiendo…" (fired at the
+// webhook entry). Each handler re-fires the typing indicator right before its Gemini
+// turn, since download + upload + vision can outrun the first ~25s window.
 
-async function handleImageMessage(phoneNumber, imageId, caption) {
-  await sendWhatsAppMessage(phoneNumber, 'Recibí la foto, dame un segundo que la leo…');
+async function handleImageMessage(phoneNumber, imageId, caption, messageId) {
   const media = await downloadWhatsAppMedia(imageId);
   if (!media) {
     await sendWhatsAppMessage(phoneNumber, 'Error al descargar la imagen. Intentá de nuevo.');
@@ -758,6 +807,7 @@ async function handleImageMessage(phoneNumber, imageId, caption) {
     logger.error('Error uploading receipt image', { error });
   }
 
+  markReadWithTyping(messageId).catch(() => {}); // refresh "escribiendo…" for the vision turn
   await runAgentForWhatsApp(phoneNumber, {
     userText: caption?.trim() || 'Te mandé una foto de un comprobante.',
     originalMessage: `[Imagen] ${caption || ''}`.trim(),
@@ -766,8 +816,7 @@ async function handleImageMessage(phoneNumber, imageId, caption) {
   });
 }
 
-async function handleAudioMessage(phoneNumber, audioId, caption) {
-  await sendWhatsAppMessage(phoneNumber, 'Recibí el audio, dame un segundo que lo escucho…');
+async function handleAudioMessage(phoneNumber, audioId, caption, messageId) {
   const media = await downloadWhatsAppMedia(audioId);
   if (!media) {
     await sendWhatsAppMessage(phoneNumber, 'Error al descargar el audio. Intentá de nuevo.');
@@ -785,6 +834,7 @@ async function handleAudioMessage(phoneNumber, audioId, caption) {
     logger.error('Error uploading audio file', { error });
   }
 
+  markReadWithTyping(messageId).catch(() => {}); // refresh "escribiendo…" for the transcription turn
   await runAgentForWhatsApp(phoneNumber, {
     userText: caption?.trim() || 'Te mandé un audio describiendo un gasto.',
     originalMessage: `[Audio] ${caption || ''}`.trim(),
@@ -793,8 +843,7 @@ async function handleAudioMessage(phoneNumber, audioId, caption) {
   });
 }
 
-async function handleDocumentMessage(phoneNumber, documentId, caption, filename) {
-  await sendWhatsAppMessage(phoneNumber, 'Recibí el PDF, dame un segundo que lo reviso…');
+async function handleDocumentMessage(phoneNumber, documentId, caption, filename, messageId) {
   const media = await downloadWhatsAppMedia(documentId);
   if (!media) {
     await sendWhatsAppMessage(phoneNumber, 'Error al descargar el documento. Intentá de nuevo.');
@@ -834,6 +883,7 @@ async function handleDocumentMessage(phoneNumber, documentId, caption, filename)
     logger.error('Error uploading PDF document', { error });
   }
 
+  markReadWithTyping(messageId).catch(() => {}); // refresh "escribiendo…" for the PDF-reading turn
   await runAgentForWhatsApp(phoneNumber, {
     userText: caption?.trim() || `Te mandé un PDF (${filename}).`,
     originalMessage: `[Documento] ${caption || filename}`,

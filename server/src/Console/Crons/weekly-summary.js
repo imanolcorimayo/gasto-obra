@@ -7,6 +7,7 @@ import { sendWhatsAppMessage } from '../../helpers/whatsapp.js';
 import { formatAmount } from '../../helpers/responseFormatter.js';
 import { normalizePhoneNumber } from '../../helpers/phone.js';
 import logger from '../../../lib/logger.js';
+import { purgeExpiredSnapshots } from '../../snapshots/repo.js';
 
 const APP_URL = process.env.APP_URL || 'https://gastoobra.com';
 const PROVIDER_WINDOW_MS = 24 * 60 * 60 * 1000; // 24h
@@ -287,7 +288,18 @@ async function sendWeeklySummaries() {
 
 // Run
 sendWeeklySummaries()
-  .then(() => process.exit(0))
+  .then(async () => {
+    // Housekeeping: drop expired/revoked share snapshots so the auto-share-per-expense
+    // table stays bounded. Best-effort — a failure here must not fail the cron.
+    try {
+      const removed = await purgeExpiredSnapshots();
+      if (removed) logger.info('Purged expired share snapshots', { removed });
+    } catch (error) {
+      Sentry.captureException(error);
+      logger.error('Error purging expired snapshots', { error });
+    }
+    process.exit(0);
+  })
   .catch((error) => {
     Sentry.captureException(error);
     logger.error('Fatal error in weekly summary', { error });

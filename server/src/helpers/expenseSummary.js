@@ -42,6 +42,65 @@ export async function getProjectSummary(projectId) {
 }
 
 /**
+ * Frozen-snapshot math for a date window. Like getProjectSummary but bounded to
+ * [from, to] and returning the actual movements in range (no cap) so a shared
+ * snapshot can render specific lines, not just totals. All filtering in memory.
+ * Provider's own expenses ('provider_expense') are excluded — a client snapshot
+ * shows only what's billable to / paid by the client.
+ *
+ * @param {string} projectId
+ * @param {Date} from inclusive lower bound
+ * @param {Date} to   inclusive upper bound
+ */
+export async function getPeriodSummary(projectId, from, to) {
+  const snap = await db.collection(COLLECTIONS.EXPENSES).where('projectId', '==', projectId).get();
+  const all = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+
+  const dateMs = (e) => e.date?.toMillis?.() ?? e.createdAt?.toMillis?.() ?? 0;
+  const inRange = all.filter((e) => {
+    const t = dateMs(e);
+    return t >= from.getTime() && t <= to.getTime();
+  });
+
+  const sum = (arr) => arr.reduce((s, e) => s + (e.amount || 0), 0);
+  const clientExpenses = inRange.filter((e) => !e.type || e.type === 'expense');
+  const payments = inRange.filter((e) => e.type === 'payment');
+  const totalExpenses = sum(clientExpenses);
+  const totalPayments = sum(payments);
+
+  const byCategory = {};
+  for (const e of clientExpenses) {
+    const c = e.category || 'otros';
+    byCategory[c] = (byCategory[c] || 0) + (e.amount || 0);
+  }
+
+  // Client-facing movement list (newest first): gastos + cobros, never provider_expense.
+  const movements = inRange
+    .filter((e) => (e.type || 'expense') !== 'provider_expense')
+    .sort((a, b) => dateMs(b) - dateMs(a))
+    .map((e) => ({
+      type: e.type || 'expense',
+      title: e.title || null,
+      amount: e.amount || 0,
+      category: e.category || null,
+      vendor: e.vendor || null,
+      date: e.date?.toDate?.()?.toISOString().slice(0, 10)
+        || e.createdAt?.toDate?.()?.toISOString().slice(0, 10) || null,
+      hasReceipt: Boolean(e.imageUrl || e.fileUrl),
+    }));
+
+  return {
+    count: clientExpenses.length,
+    paymentsCount: payments.length,
+    totalExpenses,
+    totalPayments,
+    balance: totalPayments - totalExpenses, // negative = el cliente debe
+    byCategory,
+    movements,
+  };
+}
+
+/**
  * Search a project's expenses with optional filters. All filtering is in memory
  * (one project's expenses fit easily), so no Firestore composite indexes needed.
  *

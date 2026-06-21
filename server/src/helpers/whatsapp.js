@@ -75,6 +75,43 @@ export async function sendWhatsAppMessage(to, message) {
   }
 }
 
+// Mark an inbound message as read (blue ticks) and show the native "typing…"
+// indicator in one call. This is the lightweight alternative to a text ack: it
+// reassures the sender that we received their message and are working on it,
+// without cluttering the chat with a bubble. The indicator lasts ~25s on Meta's
+// side and auto-dismisses the moment we send our real reply. Requires the inbound
+// message id (wamid), not the phone number. Fire-and-forget — a failed indicator
+// must never block the actual reply, so this swallows its own errors.
+export async function markReadWithTyping(messageId) {
+  if (!WP_PHONE_NUMBER_ID || !WP_ACCESS_TOKEN || !messageId) return;
+
+  try {
+    const response = await fetch(
+      `https://graph.facebook.com/v21.0/${WP_PHONE_NUMBER_ID}/messages`,
+      {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${WP_ACCESS_TOKEN}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          messaging_product: 'whatsapp',
+          status: 'read',
+          message_id: messageId,
+          typing_indicator: { type: 'text' }
+        })
+      }
+    );
+
+    if (!response.ok) {
+      logger.error('Error marking message read / typing', { result: await response.json() });
+    }
+  } catch (error) {
+    Sentry.captureException(error);
+    logger.error('Error marking message read / typing', { error });
+  }
+}
+
 export async function sendWhatsAppButtons(to, body, buttons) {
   const normalizedTo = normalizePhoneNumber(to);
 
@@ -135,6 +172,57 @@ export async function sendWhatsAppButtons(to, body, buttons) {
   } catch (error) {
     Sentry.captureException(error);
     logger.error('Error sending WhatsApp buttons', { error });
+  }
+}
+
+// A single call-to-action URL button (interactive `cta_url`). Unlike reply buttons,
+// tapping opens the URL directly — here a wa.me deep link that composes the prefilled
+// message to the client, or the bare view URL. It's a free-form session message (no
+// template), so it only works inside the 24h window — fine, since the provider just
+// messaged us. Returns true on success so the caller can fall back to a plain bubble.
+export async function sendWhatsAppCtaUrl(to, body, displayText, url) {
+  const normalizedTo = normalizePhoneNumber(to);
+
+  if (!WP_PHONE_NUMBER_ID || !WP_ACCESS_TOKEN) {
+    logger.warn('WhatsApp credentials not configured, skipping cta_url send', { to: normalizedTo });
+    return false;
+  }
+
+  try {
+    const response = await fetch(
+      `https://graph.facebook.com/v21.0/${WP_PHONE_NUMBER_ID}/messages`,
+      {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${WP_ACCESS_TOKEN}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          messaging_product: 'whatsapp',
+          recipient_type: 'individual',
+          to: normalizedTo,
+          type: 'interactive',
+          interactive: {
+            type: 'cta_url',
+            body: { text: body },
+            action: { name: 'cta_url', parameters: { display_text: displayText, url } }
+          }
+        })
+      }
+    );
+
+    const result = await response.json();
+
+    if (!response.ok) {
+      logger.error('Error sending WhatsApp cta_url', { result });
+      return false;
+    }
+    logger.info('WhatsApp cta_url sent', { to: normalizedTo });
+    return true;
+  } catch (error) {
+    Sentry.captureException(error);
+    logger.error('Error sending WhatsApp cta_url', { error });
+    return false;
   }
 }
 

@@ -18,6 +18,7 @@ export const EXPOSED = new Set([
   'list_projects', 'get_summary', 'look_up_expenses', 'get_receipt_image', 'list_items', // read
   'create_project', 'update_project', 'record_expense', 'edit_expense', 'delete_expense', // write
   'close_project', 'get_share_link', 'manage_item', 'manage_material', // write (obra config + sub-budgets)
+  'share_summary', 'share_expense', // write (frozen client-facing snapshots + share link)
 ]);
 
 /** Build a fresh stateless ctx per call so newly created obras are always visible. */

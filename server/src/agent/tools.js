@@ -3,6 +3,7 @@ import { getProjectSummary, searchProjectExpenses } from '../helpers/expenseSumm
 import { formatMovementConfirmation } from '../helpers/movementConfirmation.js';
 import { createProject, updateProject, closeProject, getShareLink } from '../helpers/projects.js';
 import { listItems, createItem, updateItem, addMaterial } from '../helpers/projectItems.js';
+import { createSummarySnapshot, createExpenseSnapshot } from '../helpers/shareSnapshots.js';
 import { logToolCall } from './auditLog.js';
 
 // Parse an agent-supplied date ("YYYY-MM-DD") to a Date at local noon, avoiding
@@ -308,6 +309,7 @@ export const TOOLS = [
       return {
         ok: true,
         expenseId,
+        projectId: project.id, // lets the WhatsApp channel auto-offer a share button
         confirmation,
         warning: warning || undefined,
         receiptUploadLink,
@@ -560,6 +562,83 @@ export const TOOLS = [
         delivered: true,
         clientUrl: res.clientUrl,
         __deliver: res.shareToken,
+      };
+    },
+  },
+
+  {
+    name: 'share_summary',
+    description:
+      'Genera un RESUMEN congelado y compartible de la obra y devuelve un enlace corto listo para que el profesional ' +
+      'se lo mande al dueño/cliente por WhatsApp. Muestra el estado de TODA la obra (total gastado, lo que pagó el ' +
+      'cliente, saldo) más los últimos movimientos; los números son acumulados, no de un período. Queda "fotografiado": ' +
+      'no cambia aunque después se editen gastos. Funciona aunque el cliente nunca se haya sumado a la obra. ' +
+      'Es para MOSTRARLE algo al cliente; si el profesional quiere verlo él mismo, usá get_summary.',
+    parameters: {
+      type: 'object',
+      properties: {
+        projectId: { type: 'string', description: 'id de la obra; omitilo para la activa' },
+      },
+      required: [],
+    },
+    handler: async (args, ctx) => {
+      const projectId = args.projectId || ctx.activeProject?.id;
+      if (!projectId) return { ok: false, error: 'No hay obra activa.' };
+      if (!ctx.activeProjects.find((p) => p.id === projectId)) return { ok: false, error: 'No encontré esa obra entre las tuyas.' };
+
+      const res = await createSummarySnapshot({ userId: ctx.userId, projectId });
+      if (!res.ok) return res;
+
+      // The tappable link rides under __deliver so WhatsApp sends it as its OWN clean
+      // bubble (and the loop hides it from the model): the wa.me link with a prefilled
+      // message to the client when we have their phone, else the plain view URL for the
+      // professional to forward manually. MCP (no adapter) reads __deliver itself.
+      return {
+        ok: true,
+        project: res.project,
+        hasClientPhone: res.hasClientPhone,
+        delivered: true,
+        viewUrl: res.viewUrl,
+        __deliver: res.waLink || res.viewUrl,
+      };
+    },
+  },
+
+  {
+    name: 'share_expense',
+    description:
+      'Genera el detalle congelado y compartible de UN gasto puntual (con su comprobante si lo tiene) y devuelve un ' +
+      'enlace corto listo para que el profesional se lo mande al dueño/cliente por WhatsApp. Usalo cuando quiere ' +
+      'compartir un gasto específico, NO el resumen de toda la obra (para eso está share_summary). Necesitás el id ' +
+      'del gasto: si no lo tenés, buscalo primero con look_up_expenses. Queda "fotografiado": no cambia aunque ' +
+      'después se edite. No se comparten gastos propios del profesional.',
+    parameters: {
+      type: 'object',
+      properties: {
+        expenseId: { type: 'string', description: 'id del gasto a compartir (de look_up_expenses)' },
+        projectId: { type: 'string', description: 'id de la obra; omitilo para la activa' },
+      },
+      required: ['expenseId'],
+    },
+    handler: async (args, ctx) => {
+      const projectId = args.projectId || ctx.activeProject?.id;
+      if (!projectId) return { ok: false, error: 'No hay obra activa.' };
+      if (!ctx.activeProjects.find((p) => p.id === projectId)) return { ok: false, error: 'No encontré esa obra entre las tuyas.' };
+      if (!args.expenseId) return { ok: false, error: 'Necesito el id del gasto a compartir.' };
+
+      const res = await createExpenseSnapshot({ userId: ctx.userId, projectId, expenseId: args.expenseId });
+      if (!res.ok) return res;
+
+      // Same __deliver pattern as share_summary: the tappable link (wa.me deep link with
+      // the prefilled single-expense message, or the bare view URL) rides under __deliver
+      // so WhatsApp sends it as its own bubble/button and the model never reprints it.
+      return {
+        ok: true,
+        project: res.project,
+        hasClientPhone: res.hasClientPhone,
+        delivered: true,
+        viewUrl: res.viewUrl,
+        __deliver: res.waLink || res.viewUrl,
       };
     },
   },
