@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia';
 import { ProjectSchema } from '~/utils/odm/schemas/projectSchema';
+import { getCurrentUser } from '~/utils/firebase';
 import type { Project } from '~/interfaces';
 
 interface ProjectState {
@@ -213,26 +214,41 @@ export const useProjectStore = defineStore('project', {
       }
     },
 
+    // Server-mediated join: the API validates the seat (open / already yours /
+    // taken by someone else) before any write, so we get a clean message
+    // instead of a raw Firestore permission error.
     async joinAsClient(projectId: string, clientUserId: string) {
       this.error = null;
 
       try {
-        const result = await getSchema().joinProject(projectId, clientUserId);
-
-        if (result.success) {
-          if (this.currentProject?.id === projectId) {
-            this.currentProject = { ...this.currentProject, clientUserId };
-            // Add to clientProjects so the nav tab appears immediately
-            const alreadyIn = this.clientProjects.some(p => p.id === projectId);
-            if (!alreadyIn) {
-              this.clientProjects.push(this.currentProject as Project);
-            }
-          }
-          return { success: true };
-        } else {
-          this.error = result.error || 'Error al unirse como cliente';
+        const config = useRuntimeConfig();
+        const user = getCurrentUser();
+        if (!user) {
+          this.error = 'Usuario no autenticado';
           return { success: false, error: this.error };
         }
+
+        const token = await user.getIdToken();
+        const res = await fetch(`${config.public.apiBase}/api/projects/${projectId}/join`, {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        const data = await res.json().catch(() => ({}));
+
+        if (!res.ok) {
+          this.error = data.error || 'Error al unirse como cliente';
+          return { success: false, error: this.error, code: data.code };
+        }
+
+        if (this.currentProject?.id === projectId) {
+          this.currentProject = { ...this.currentProject, clientUserId };
+          // Add to clientProjects so the nav tab appears immediately
+          const alreadyIn = this.clientProjects.some(p => p.id === projectId);
+          if (!alreadyIn) {
+            this.clientProjects.push(this.currentProject as Project);
+          }
+        }
+        return { success: true };
       } catch (error) {
         console.error('Error joining as client:', error);
         this.error = 'Error al unirse como cliente';

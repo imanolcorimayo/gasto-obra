@@ -196,3 +196,34 @@ export async function getShareLink(userId, projectId) {
 
   return { ok: true, project: { id: projectId, name: data.name }, shareToken, invite, clientUrl, alreadyJoined: Boolean(data.clientUserId) };
 }
+
+/**
+ * Claim the cliente seat on an obra for `userId` (the dueño redeeming a share link).
+ * Server-mediated so the validation happens before any write — the only place that
+ * decides who may join. Returns a `code` on failure so the caller maps it to a message:
+ *   not_found  → the obra is gone
+ *   is_provider→ the professional can't join their own obra as cliente
+ *   taken      → another cliente already joined
+ * Joining when already joined by the same user is an idempotent success.
+ */
+export async function joinProjectAsClient(userId, projectId) {
+  if (!projectId) return { ok: false, code: 'not_found', error: 'No existe esa obra.' };
+  const ref = db.collection(COLLECTIONS.PROJECTS).doc(projectId);
+  const doc = await ref.get();
+  if (!doc.exists) return { ok: false, code: 'not_found', error: 'No existe esa obra.' };
+  const data = doc.data();
+
+  if (data.clientUserId === userId) {
+    return { ok: true, alreadyJoined: true, project: { id: doc.id, name: data.name } };
+  }
+  if (data.providerId === userId) {
+    return { ok: false, code: 'is_provider', error: 'Sos el profesional de esta obra, no podés unirte como cliente.' };
+  }
+  if (data.clientUserId) {
+    return { ok: false, code: 'taken', error: 'Ya se unió un cliente a esta obra.' };
+  }
+
+  await ref.update({ clientUserId: userId, updatedAt: admin.firestore.FieldValue.serverTimestamp() });
+  logger.info('Client joined project', { userId, projectId });
+  return { ok: true, project: { id: doc.id, name: data.name } };
+}

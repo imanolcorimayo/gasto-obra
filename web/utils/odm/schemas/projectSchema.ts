@@ -1,6 +1,5 @@
 import { Schema } from '../schema';
-import type { SchemaDefinition, CreateResult, FetchResult, UpdateResult } from '../types';
-import { doc, updateDoc, serverTimestamp } from 'firebase/firestore';
+import type { SchemaDefinition, CreateResult, FetchResult } from '../types';
 
 export class ProjectSchema extends Schema {
   protected collectionName = 'projects';
@@ -123,22 +122,5 @@ export class ProjectSchema extends Schema {
       where: [{ field: 'clientUserId', operator: '==', value: clientUserId }],
       orderBy: [{ field: 'createdAt', direction: 'desc' }]
     });
-  }
-
-  // Direct update without pre-read — needed for client join flow where the
-  // user can't read the project yet (not a participant) but can update
-  // clientUserId per Firestore rules.
-  async joinProject(projectId: string, clientUserId: string): Promise<UpdateResult> {
-    try {
-      const docRef = doc(this.getCollectionRef(), projectId);
-      await updateDoc(docRef, {
-        clientUserId,
-        updatedAt: serverTimestamp()
-      });
-      return { success: true };
-    } catch (error) {
-      console.error('Error joining project:', error);
-      return { success: false, error: `Error al unirse al proyecto: ${error}` };
-    }
   }
 }

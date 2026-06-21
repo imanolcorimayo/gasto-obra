@@ -22,6 +22,23 @@
         <p class="text-go-text-muted text-sm mt-1">El link puede ser inválido o el proyecto ya no está disponible.</p>
       </div>
 
+      <!-- Seat already taken — a cliente joined this obra already -->
+      <div v-else-if="project.joined" class="text-center py-16">
+        <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="mx-auto text-go-text-muted/30 mb-4"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        <h2 class="font-display text-xl font-semibold text-go-text-secondary">Ya se unió un cliente a esta obra</h2>
+        <p class="text-go-text-muted text-sm mt-1">Cada obra admite un solo cliente.</p>
+        <button
+          @click="handleJoin"
+          :disabled="isJoining"
+          class="btn-secondary inline-flex items-center gap-2 mt-5"
+        >
+          <span v-if="isJoining" class="w-4 h-4 border-2 border-go-primary border-t-transparent rounded-full animate-spin"></span>
+          <MdiGoogle v-else class="text-lg" />
+          ¿Sos vos el cliente? Iniciar sesión
+        </button>
+        <p v-if="joinError" class="text-go-danger text-xs mt-2">{{ joinError }}</p>
+      </div>
+
       <!-- Project preview -->
       <template v-else>
         <div class="bg-go-surface border border-go-border rounded-go-xl p-6 text-center">
@@ -153,9 +170,8 @@ async function handleJoin() {
     }
     if (!user) return;
 
-    // Try to join directly — the update rule allows setting clientUserId
-    // if it's currently null. If already joined, this will fail gracefully
-    // (the rule also allows the current client to read).
+    // Server validates the seat and joins (or confirms you already joined),
+    // so we can trust the result directly — no Firestore fallback needed.
     const result = await projectStore.joinAsClient(projectId.value, user.uid);
     if (result.success) {
       useToast('success', 'Te uniste como cliente');
@@ -163,13 +179,7 @@ async function handleJoin() {
       return;
     }
 
-    // Join failed — might be already joined, try reading the project
-    const fullProject = await projectStore.fetchProject(projectId.value);
-    if (fullProject?.clientUserId === user.uid) {
-      router.push(`/client/project/${projectId.value}`);
-      return;
-    }
-
+    // Seat taken, you're the professional, or another error — show the reason.
     joinError.value = result.error || 'Error al unirse';
   } catch (error) {
     console.error('Error joining:', error);

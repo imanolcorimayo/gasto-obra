@@ -15,6 +15,7 @@ import { UploadExpenseReceipt } from './actions/images/UploadExpenseReceipt.js';
 import { CreateMaterial, UpdateMaterial, DeleteMaterial } from './actions/materials/MaterialActions.js';
 import { CreateProposal, UpdateProposal, DeleteProposal } from './actions/proposals/ProposalActions.js';
 import redis from './handlers/RedisHandler.js';
+import { joinProjectAsClient } from './helpers/projects.js';
 
 redis.connect();
 
@@ -161,6 +162,8 @@ app.get('/api/project-preview/:token', async (req, res) => {
       startDate: data.startDate?.toDate?.()?.toISOString() || null,
       estimatedEndDate: data.estimatedEndDate?.toDate?.()?.toISOString() || null,
       providerName,
+      // Seat already taken — the page hides the join CTA and shows "ya se unió".
+      joined: Boolean(data.clientUserId),
     });
   } catch (error) {
     logger.error('Error in /api/project-preview', { error: error.message });
@@ -205,6 +208,22 @@ app.delete('/api/materials/:id', requireAuth, DeleteMaterial);
 app.post('/api/proposals', requireAuth, CreateProposal);
 app.patch('/api/proposals/:id', requireAuth, UpdateProposal);
 app.delete('/api/proposals/:id', requireAuth, DeleteProposal);
+
+// Client join: server validates the seat before any write, so a doomed join
+// returns a clean message instead of a raw Firestore permission error.
+app.post('/api/projects/:projectId/join', requireAuth, async (req, res) => {
+  try {
+    const result = await joinProjectAsClient(req.uid, req.params.projectId);
+    if (!result.ok) {
+      const status = result.code === 'not_found' ? 404 : result.code === 'taken' ? 409 : 403;
+      return res.status(status).json({ error: result.error, code: result.code });
+    }
+    res.json({ id: req.params.projectId, alreadyJoined: Boolean(result.alreadyJoined) });
+  } catch (error) {
+    logger.error('Error in /api/projects/:projectId/join', { error: error.message });
+    res.status(500).json({ error: 'Error interno' });
+  }
+});
 
 // ============================================
 // Start Server
