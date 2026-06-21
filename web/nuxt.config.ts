@@ -20,7 +20,10 @@ export default defineNuxtConfig({
   ],
 
   pwa: {
-    registerType: "prompt",
+    // autoUpdate: a new deploy's service worker activates on the next load instead of
+    // waiting behind a prompt that no UI ever shows (which left returning visitors stuck
+    // on the stale app-shell until every tab closed).
+    registerType: "autoUpdate",
     manifest: {
       name: "Gasto Obra",
       short_name: "Gasto Obra",
@@ -55,7 +58,10 @@ export default defineNuxtConfig({
     },
     workbox: {
       globPatterns: ["**/*.{js,css,html,svg,png,webp,woff2}"],
-      navigateFallbackDenylist: [/^\/api\//, /^\/view\//],
+      // Public, shareable pages must never be served the cached app-shell — the client
+      // opening a /v/ link isn't a PWA user; let those navigations hit the network so they
+      // always get fresh markup. (/api/ and /view/ are likewise SW-bypassed.)
+      navigateFallbackDenylist: [/^\/api\//, /^\/view\//, /^\/v\//],
     },
     devOptions: { enabled: false },
   },
