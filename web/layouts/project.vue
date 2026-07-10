@@ -159,8 +159,8 @@ const sidebarNavItems = computed(() => {
 
 function isActive(key) {
   const path = route.path;
-  if (key === 'resumen') return path.endsWith('/resumen') || /\/projects\/[^/]+\/?$/.test(path);
-  if (key === 'gastos')  return path.endsWith('/gastos');
+  if (key === 'resumen') return path.endsWith('/resumen');
+  if (key === 'gastos')  return path.endsWith('/gastos') || /\/projects\/[^/]+\/?$/.test(path);
   return false;
 }
 

@@ -4,7 +4,7 @@ definePageMeta({
 });
 
 const route = useRoute();
-await navigateTo(`/projects/${route.params.id}/resumen`, { redirectCode: 302 });
+await navigateTo(`/projects/${route.params.id}/gastos`, { redirectCode: 302 });
 </script>
 
 <template>
