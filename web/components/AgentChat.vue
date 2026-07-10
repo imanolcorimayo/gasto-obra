@@ -243,8 +243,11 @@ function autoGrow(e) {
 
 // Escape HTML, then apply the light markdown subset the model emits.
 function renderMarkdown(text = '') {
+  // Quotes included: the linkifier below interpolates matched URLs into an href
+  // attribute, so a stray " must never survive to break out of it.
   const escaped = text
-    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
   return escaped
     .replace(/\*\*(.+?)\*\*/gs, '<strong>$1</strong>')
     .replace(/(^|\s)\*([^*\n]+)\*(?=\s|[.,;:!?]|$)/g, '$1<strong>$2</strong>')
