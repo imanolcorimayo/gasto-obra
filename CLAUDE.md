@@ -2,6 +2,28 @@
 
 Expense reporting system for apartment renovation projects. Service providers report daily expenses via WhatsApp, apartment owners view them through a web dashboard. Monorepo with two packages:
 
+## Purpose (directional, not strict)
+
+What Gasto Obra IS — every feature should serve one of these:
+
+- **Zero-friction capture from the field**: a WhatsApp photo/message from the ferretería IS the registration. Protect this above all.
+- **Simple expense/income registering**: own business expenses or on behalf of a client; materiales/insumos or mano de obra.
+- **Financial clarity**: makes it obvious how the provider's business is doing.
+- **Client communication & trust**: the receipt trail (respaldo) and transparency are the product; the dashboard is just the view.
+- **Collaboration**: work with more technicians/businesses (attributing money to people).
+- **AI-first**: most of the work is handled by AI assistants (WhatsApp agent, MCP), not forms.
+
+What Gasto Obra is NOT:
+
+- Not a job/obra organization tool (no tasks, progress %, work planning).
+- Not a calendar.
+- Not a quoting/presupuesto builder — budget is one number to compare spend against, not itemized estimates.
+- Not accounting/tax software — no ARCA/AFIP compliance, IVA, invoicing.
+- Not an inventory/materials manager (no material lists, deliveries, proposals).
+- Not payroll — colaboradores attributes money, it doesn't manage people.
+
+Evidence basis (July 2026): real usage is WhatsApp receipt photos + payments + client share. The items/installments/deliveries/mgmt-fee cluster saw zero sustained real adoption and added friction.
+
 - **`/web`** - Nuxt 3 (Vue 3) frontend with Firebase, Pinia, Tailwind CSS
 - **`/server`** - Node.js backend: WhatsApp chatbot (Express) + daily summary cron script
 
