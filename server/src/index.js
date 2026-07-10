@@ -8,6 +8,7 @@ import { requireAuth } from './middleware/auth.js';
 import { GetProjectCategories } from './actions/categories/GetProjectCategories.js';
 import { SendContactEmail } from './actions/contact/SendContactEmail.js';
 import { ParseExpense } from './actions/expenses/ParseExpense.js';
+import { AgentChat } from './actions/agent/AgentChat.js';
 import { DemoParseExpense, DemoParseStatus } from './actions/expenses/DemoParseExpense.js';
 import { UploadExpenseReceipt } from './actions/images/UploadExpenseReceipt.js';
 import redis from './handlers/RedisHandler.js';
@@ -198,6 +199,8 @@ app.post('/api/demo-parse', DemoParseExpense);
 
 app.get('/api/projects/:projectId/categories', requireAuth, GetProjectCategories);
 app.post('/api/parse-expense', requireAuth, ParseExpense);
+// In-app agent chat: the web sibling of the WhatsApp bot (same core, 'app' channel).
+app.post('/api/agent/chat', requireAuth, AgentChat);
 
 // Image uploads (multipart) — server validates project participation,
 // resizes with sharp, uploads to Storage, updates Firestore.

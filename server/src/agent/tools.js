@@ -293,10 +293,12 @@ export const TOOLS = [
 
       // If no comprobante rode in with this turn (e.g. text/MCP, not a WhatsApp photo),
       // offer a one-tap page to attach it. OPTIONAL — surface it as a suggestion, never
-      // a requirement. WhatsApp expenses that already carry the photo skip this.
+      // a requirement. Expenses that already carry the photo skip this, and so does
+      // the in-app chat ('app'): there the user attaches the receipt right in the
+      // composer, so a jump-out upload link is just noise.
       const hasReceipt = Boolean(ctx.mediaUrls?.imageUrl || ctx.mediaUrls?.fileUrl);
       const appUrl = process.env.APP_URL || 'https://gastoobra.com';
-      const receiptUploadLink = hasReceipt
+      const receiptUploadLink = hasReceipt || ctx.source === 'app'
         ? undefined
         : `${appUrl}/gasto/${expenseId}/comprobante?t=${encodeURIComponent(title)}&a=${amount}`;
 

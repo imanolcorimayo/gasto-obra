@@ -177,12 +177,12 @@
       </div>
     </div>
 
-    <!-- AI input modal -->
-    <ExpenseAIInput
+    <!-- Agent chat (same brain as WhatsApp) -->
+    <AgentChat
       :show="showAIInput"
       :project-id="project?.id"
       @close="showAIInput = false"
-      @parsed="handleAIParsed"
+      @refresh="handleAgentRefresh"
       @skip="handleAISkip"
     />
 
@@ -340,26 +340,10 @@ onMounted(async () => {
 
 function openAIInput() { showAIInput.value = true; }
 
-function handleAIParsed(result) {
-  showAIInput.value = false;
-  const p = result.parsed || {};
-  const prefill = {
-    title: p.title || '',
-    totalAmount: p.totalAmount || (p.items?.length ? p.items.reduce((s, i) => s + (i.amount || 0), 0) : ''),
-    category: p.category || 'materiales',
-    items: p.items?.length ? p.items.map(i => ({ name: i.name, amount: i.amount })) : [],
-    paymentMethod: p.paymentMethod || null,
-    vendor: p.vendor || p.vendorName || '',
-    installmentPercent: parseInt(p.installmentPercent, 10) || 0,
-    applyManagementFee: p.applyManagementFee || false,
-    imageUrl: result.imageUrl || null,
-    fileUrl: result.fileUrl || null,
-    aiParsed: true
-  };
-  const type = p.transactionType === 'payment' ? 'payment'
-    : p.transactionType === 'provider_expense' ? 'provider_expense'
-    : 'expense';
-  openCreateModal(type, prefill);
+// The agent registers directly (trusted + edit-after, same as WhatsApp) — after
+// any write tool ran, re-fetch so the table reflects it while the chat stays open.
+function handleAgentRefresh() {
+  if (project.value) expenseStore.fetchByProjectId(project.value.id);
 }
 
 function handleAISkip(type) {
