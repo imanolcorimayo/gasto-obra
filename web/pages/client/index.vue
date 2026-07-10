@@ -49,10 +49,8 @@
           base-path="/client/project"
           :total-spent="projectTotals[project.id]?.total || 0"
           :expense-count="projectTotals[project.id]?.count || 0"
-          :total-budget="projectBudgets[project.id] ?? (typeof project.budget === 'number' ? project.budget : 0)"
-          :labor-spent="projectTotals[project.id]?.laborTotal || 0"
-          :labor-budget="projectLaborBudgets[project.id] || 0"
-          :is-loading="!projectTotals[project.id] || !(project.id in projectBudgets)"
+          :total-budget="typeof project.budget === 'number' ? project.budget : 0"
+          :is-loading="!projectTotals[project.id]"
         />
       </div>
     </div>
@@ -78,8 +76,6 @@ const projectStore = useProjectStore();
 const isLoading = ref(true);
 const projects = ref([]);
 const projectTotals = ref({});
-const projectBudgets = ref({});
-const projectLaborBudgets = ref({});
 const showJoinModal = ref(false);
 
 useHead({
@@ -102,49 +98,17 @@ onMounted(async () => {
       collection(db, 'expenses'),
       where('projectId', '==', project.id)
     );
-    const laborExpensesQuery = query(
-      collection(db, 'expenses'),
-      where('projectId', '==', project.id),
-      where('category', '==', 'mano de obra')
-    );
-    const itemsQuery = query(
-      collection(db, 'projectItems'),
-      where('projectId', '==', project.id)
-    );
 
     try {
-      const [expensesAgg, laborAgg, itemsAgg] = await Promise.all([
-        getAggregateFromServer(expensesQuery, { total: sum('amount'), count: count() }),
-        getAggregateFromServer(laborExpensesQuery, { total: sum('amount') }),
-        getAggregateFromServer(itemsQuery, {
-          itemCount: count(),
-          labor: sum('laborBudget'),
-          matMin: sum('materialsBudgetMin'),
-          matMax: sum('materialsBudgetMax')
-        })
-      ]);
-
+      const expensesAgg = await getAggregateFromServer(expensesQuery, { total: sum('amount'), count: count() });
       const e = expensesAgg.data();
-      const l = laborAgg.data();
       projectTotals.value[project.id] = {
         total: e.total || 0,
-        count: e.count || 0,
-        laborTotal: l.total || 0
+        count: e.count || 0
       };
-
-      const i = itemsAgg.data();
-      if ((i.itemCount || 0) > 0) {
-        const matMidpoint = ((i.matMin || 0) + (i.matMax || 0)) / 2;
-        projectBudgets.value[project.id] = (i.labor || 0) + matMidpoint;
-        projectLaborBudgets.value[project.id] = i.labor || 0;
-      } else {
-        projectBudgets.value[project.id] = typeof project.budget === 'number' ? project.budget : 0;
-        projectLaborBudgets.value[project.id] = 0;
-      }
     } catch (error) {
       console.error(`Error fetching totals for client project ${project.id}:`, error);
-      projectBudgets.value[project.id] = typeof project.budget === 'number' ? project.budget : 0;
-      projectLaborBudgets.value[project.id] = 0;
+      projectTotals.value[project.id] = { total: 0, count: 0 };
     }
   }));
 });

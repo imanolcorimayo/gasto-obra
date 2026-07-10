@@ -30,9 +30,6 @@ const COLLECTIONS = {
   CATEGORIES: 'categories',
   RECIPIENTS: 'recipients',
   VENDORS: 'vendors',
-  PROJECT_ITEMS: 'projectItems',
-  PROJECT_MATERIALS: 'projectMaterials',
-  PROJECT_MATERIAL_PROPOSALS: 'projectMaterialProposals',
   FAQ: 'faq',
   SUPPORT_QUERIES: 'supportQueries',
   DEMO_SUBMISSIONS: 'demoSubmissions'

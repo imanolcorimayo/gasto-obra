@@ -135,7 +135,6 @@ export async function searchProjectExpenses(projectId, f = {}) {
     amount: e.amount,
     category: e.category || null,
     scopeType: e.scopeType || 'original',
-    itemId: e.itemId || null,
     date: e.date?.toDate?.()?.toISOString().slice(0, 10) || null,
     vendor: e.vendor || null,
     recipient: e.recipientName || null,

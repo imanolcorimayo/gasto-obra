@@ -258,10 +258,6 @@
             <span class="text-xs text-go-text-muted">Categoría</span>
             <span class="text-sm text-go-text">{{ getCategoryLabel(expense.category, categories) }}</span>
           </div>
-          <div v-if="assignedItemName" class="flex items-center justify-between py-1.5 border-b border-go-border-subtle">
-            <span class="text-xs text-go-text-muted">Item de la obra</span>
-            <span class="text-sm text-go-text font-medium">{{ assignedItemName }}</span>
-          </div>
           <div v-if="expense.paymentMethod" class="flex items-center justify-between py-1.5 border-b border-go-border-subtle">
             <span class="text-xs text-go-text-muted">Medio de pago</span>
             <span class="text-sm text-go-text">{{ getPaymentMethodLabel(expense.paymentMethod) }}</span>
@@ -351,13 +347,7 @@ const props = defineProps({
   expense: { type: Object, default: null },
   expenses: { type: Array, default: () => [] },
   categories: { type: Array, default: () => [] },
-  items: { type: Array, default: () => [] },
   editable: { type: Boolean, default: false }
-});
-
-const assignedItemName = computed(() => {
-  if (!props.expense?.itemId) return null;
-  return props.items.find(i => i.id === props.expense.itemId)?.name || null;
 });
 
 defineEmits(['close', 'edit', 'viewExpense']);

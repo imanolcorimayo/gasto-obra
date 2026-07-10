@@ -16,10 +16,9 @@ service firebase.storage {
       allow write: if false;
     }
 
-    // ── Project images (items, proposals) ────────────────────
-    // Path: projects/{projectId}/items/{itemId}/{imageId}(_thumb).jpg
-    //       projects/{projectId}/proposals/{proposalId}/{imageId}(_thumb).jpg
-    // Server uploads via Admin SDK after validating project participation.
+    // ── Project images ────────────────────────────────────────
+    // Path: projects/{projectId}/... — legacy images from the removed
+    // items/proposals feature remain stored here; kept readable.
     // Read: download token URLs bypass rules, so unauthenticated clients
     // with a share link can still see images. Authenticated users can also
     // read directly.

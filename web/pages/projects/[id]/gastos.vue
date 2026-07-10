@@ -102,7 +102,6 @@
             :expenses="expenseStore.expenses"
             :editable="true"
             :categories="resolvedCategories"
-            :items="itemStore.items"
             :loading="expenseStore.isLoading"
             @edit="openEditModal"
             @add-installment="handleAddInstallment"
@@ -206,7 +205,6 @@
       :expense="detailExpense"
       :expenses="expenseStore.expenses"
       :categories="resolvedCategories"
-      :items="itemStore.items"
       :editable="true"
       @close="showDetailModal = false"
       @edit="handleDetailEdit"
@@ -219,7 +217,6 @@
       :expense="editingExpense"
       :projects="projectStore.projects"
       :categories="resolvedCategories"
-      :items="itemStore.items"
       :is-saving="isEditingExpense"
       :is-deleting="isDeletingExpense"
       :management-fee-percent="managementFeePercent"
@@ -242,8 +239,6 @@ import { useVendorStore } from '~/stores/vendor';
 import { useDeliveryStore } from '~/stores/delivery';
 import { useWhatsappStore } from '~/stores/whatsapp';
 import { useProviderStore } from '~/stores/provider';
-import { useProjectItemStore } from '~/stores/projectItem';
-import { useProjectMaterialStore } from '~/stores/projectMaterial';
 import { formatPrice } from '~/utils';
 
 definePageMeta({
@@ -260,8 +255,6 @@ const vendorStore = useVendorStore();
 const deliveryStore = useDeliveryStore();
 const whatsappStore = useWhatsappStore();
 const providerStore = useProviderStore();
-const itemStore = useProjectItemStore();
-const materialStore = useProjectMaterialStore();
 
 const managementFeePercent = ref(0);
 const isLoading = ref(true);
@@ -331,9 +324,7 @@ onMounted(async () => {
       recipientStore.fetchAll(),
       deliveryStore.fetchByProjectId(id),
       whatsappStore.fetchLinkedAccount(),
-      providerStore.fetchOrCreate(),
-      itemStore.fetchByProjectId(id),
-      materialStore.fetchByProjectId(id)
+      providerStore.fetchOrCreate()
     ]);
     managementFeePercent.value = providerStore.managementFeePercent;
     if (projectStore.projects.length === 0) {

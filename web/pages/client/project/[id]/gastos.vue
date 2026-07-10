@@ -128,7 +128,6 @@
                 :key="expense.id"
                 :expense="expense"
                 :categories="resolvedCategories"
-                :items="itemStore.items"
                 @view-detail="openDetailModal"
               />
             </div>
@@ -143,7 +142,6 @@
       :expense="detailExpense"
       :expenses="allClientExpenses"
       :categories="resolvedCategories"
-      :items="itemStore.items"
       :editable="false"
       @close="showDetailModal = false"
       @view-expense="handleDetailViewExpense"
@@ -158,8 +156,6 @@ import MdiChevronDown from '~icons/mdi/chevron-down';
 import { useProjectStore } from '~/stores/project';
 import { useExpenseStore } from '~/stores/expense';
 import { useCategoryStore } from '~/stores/category';
-import { useProjectItemStore } from '~/stores/projectItem';
-import { useProjectMaterialStore } from '~/stores/projectMaterial';
 import { formatPrice, getCategoryLabel } from '~/utils';
 import { getCurrentUserAsync } from '~/utils/firebase';
 
@@ -172,8 +168,6 @@ const route = useRoute();
 const projectStore = useProjectStore();
 const expenseStore = useExpenseStore();
 const categoryStore = useCategoryStore();
-const itemStore = useProjectItemStore();
-const materialStore = useProjectMaterialStore();
 
 const isLoading = ref(true);
 const project = ref(null);
@@ -345,9 +339,7 @@ onMounted(async () => {
     project.value = result;
     await Promise.all([
       expenseStore.fetchByProjectIdPublic(id),
-      categoryStore.fetchForProjectFromAPI(id),
-      itemStore.fetchByProjectIdPublic(id),
-      materialStore.fetchByProjectIdPublic(id)
+      categoryStore.fetchForProjectFromAPI(id)
     ]);
   }
   isLoading.value = false;

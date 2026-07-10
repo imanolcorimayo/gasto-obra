@@ -85,8 +85,6 @@ const props = defineProps({
   totalSpent: { type: Number, default: 0 },
   expenseCount: { type: Number, default: 0 },
   totalBudget: { type: Number, default: 0 },
-  laborSpent: { type: Number, default: 0 },
-  laborBudget: { type: Number, default: 0 },
   isLoading: { type: Boolean, default: false },
   basePath: { type: String, default: '/projects' }
 });
@@ -121,12 +119,8 @@ const statusPillClasses = computed(() => {
 
 const hasBudget = computed(() => props.totalBudget > 0);
 
-// Avance reflects labor progress (mano de obra spent / labor budget). Falls back to total spend % when there's no labor budget.
+// Avance = total spend as a fraction of the project budget.
 const progressPercent = computed(() => {
-  if (props.laborBudget > 0) {
-    const pct = Math.round((props.laborSpent / props.laborBudget) * 100);
-    return Math.max(0, Math.min(100, pct));
-  }
   if (!hasBudget.value) return 0;
   const pct = Math.round((props.totalSpent / props.totalBudget) * 100);
   return Math.max(0, Math.min(100, pct));

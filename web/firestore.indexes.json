@@ -26,23 +26,6 @@
       ]
     },
     {
-      "collectionGroup": "projectCertifications",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "providerId", "order": "ASCENDING" },
-        { "fieldPath": "projectId", "order": "ASCENDING" },
-        { "fieldPath": "number", "order": "DESCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "projectCertifications",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "projectId", "order": "ASCENDING" },
-        { "fieldPath": "number", "order": "DESCENDING" }
-      ]
-    },
-    {
       "collectionGroup": "expenses",
       "queryScope": "COLLECTION",
       "fields": [
@@ -101,101 +84,6 @@
       "fields": [
         { "fieldPath": "projectId", "order": "ASCENDING" },
         { "fieldPath": "date", "order": "ASCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "projectItems",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "providerId", "order": "ASCENDING" },
-        { "fieldPath": "projectId", "order": "ASCENDING" },
-        { "fieldPath": "plannedStartDate", "order": "ASCENDING" },
-        { "fieldPath": "createdAt", "order": "ASCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "projectItems",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "projectId", "order": "ASCENDING" },
-        { "fieldPath": "plannedStartDate", "order": "ASCENDING" },
-        { "fieldPath": "createdAt", "order": "ASCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "projectItems",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "projectId", "order": "ASCENDING" },
-        { "fieldPath": "providerId", "order": "ASCENDING" },
-        { "fieldPath": "laborBudget", "order": "ASCENDING" },
-        { "fieldPath": "materialsBudgetMax", "order": "ASCENDING" },
-        { "fieldPath": "materialsBudgetMin", "order": "ASCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "projectItems",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "projectId", "order": "ASCENDING" },
-        { "fieldPath": "laborBudget", "order": "ASCENDING" },
-        { "fieldPath": "materialsBudgetMax", "order": "ASCENDING" },
-        { "fieldPath": "materialsBudgetMin", "order": "ASCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "projectMaterials",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "providerId", "order": "ASCENDING" },
-        { "fieldPath": "projectId", "order": "ASCENDING" },
-        { "fieldPath": "createdAt", "order": "ASCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "projectMaterials",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "projectId", "order": "ASCENDING" },
-        { "fieldPath": "createdAt", "order": "ASCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "projectMaterialProposals",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "providerId", "order": "ASCENDING" },
-        { "fieldPath": "projectId", "order": "ASCENDING" },
-        { "fieldPath": "createdAt", "order": "ASCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "projectMaterialProposals",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "projectId", "order": "ASCENDING" },
-        { "fieldPath": "createdAt", "order": "ASCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "projectTasks",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "providerId", "order": "ASCENDING" },
-        { "fieldPath": "projectId", "order": "ASCENDING" },
-        { "fieldPath": "itemId", "order": "ASCENDING" },
-        { "fieldPath": "order", "order": "ASCENDING" },
-        { "fieldPath": "createdAt", "order": "ASCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "projectTasks",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "projectId", "order": "ASCENDING" },
-        { "fieldPath": "itemId", "order": "ASCENDING" },
-        { "fieldPath": "order", "order": "ASCENDING" },
-        { "fieldPath": "createdAt", "order": "ASCENDING" }
       ]
     },
     {

@@ -2,7 +2,6 @@ import { createExpense, updateExpense, deleteExpense, getExpense, getExpenseMedi
 import { getProjectSummary, searchProjectExpenses } from '../helpers/expenseSummary.js';
 import { formatMovementConfirmation } from '../helpers/movementConfirmation.js';
 import { createProject, updateProject, closeProject, getShareLink } from '../helpers/projects.js';
-import { listItems, createItem, updateItem, addMaterial } from '../helpers/projectItems.js';
 import { createSummarySnapshot, createExpenseSnapshot } from '../helpers/shareSnapshots.js';
 import { logToolCall } from './auditLog.js';
 
@@ -165,7 +164,7 @@ export const TOOLS = [
         clientPhone: { type: 'string', description: 'teléfono del cliente' },
         address: { type: 'string', description: 'dirección de la obra' },
         description: { type: 'string', description: 'descripción/notas de la obra' },
-        budget: { type: 'number', description: 'presupuesto total estimado en ARS (para obras chicas; en obras grandes usá ítems/sub-presupuestos con manage_item)' },
+        budget: { type: 'number', description: 'presupuesto total estimado en ARS' },
         startDate: { type: 'string', description: 'fecha de inicio de la obra, YYYY-MM-DD' },
         estimatedEndDate: { type: 'string', description: 'fecha estimada de fin, YYYY-MM-DD' },
       },
@@ -236,10 +235,6 @@ export const TOOLS = [
           enum: ['original', 'addition'],
           description: '"addition" si es un trabajo adicional/imprevisto que NO estaba en el presupuesto original (el cliente lo ve aparte); "original" o vacío si estaba previsto.',
         },
-        itemId: {
-          type: 'string',
-          description: 'id de un ítem/sub-presupuesto de la obra al que imputar el gasto (de list_items); omitilo si no aplica.',
-        },
         date: {
           type: 'string',
           description: 'fecha del gasto en formato YYYY-MM-DD. Omitilo para hoy; usalo para registrar gastos de días pasados.',
@@ -274,7 +269,6 @@ export const TOOLS = [
         description: args.description || '',
         items: args.items || null,
         scopeType: args.scopeType === 'addition' ? 'addition' : 'original',
-        itemId: args.itemId || null,
         paymentMethod: args.paymentMethod || null,
         vendor: args.vendor || null,
         recipientName: args.recipient || null,
@@ -390,7 +384,6 @@ export const TOOLS = [
         category: { type: 'string' },
         type: { type: 'string', enum: ['expense', 'payment', 'provider_expense'] },
         scopeType: { type: 'string', enum: ['original', 'addition'], description: 'marcar como adicional/imprevisto ("addition") o original' },
-        itemId: { type: 'string', description: 'imputar a un ítem/sub-presupuesto de la obra (de list_items)' },
         description: { type: 'string' },
         items: {
           type: 'array',
@@ -413,7 +406,7 @@ export const TOOLS = [
     handler: async (args, ctx) => {
       // Ownership of the EXPENSE enforced inside updateExpense (providerId === userId).
       const patch = {};
-      for (const k of ['title', 'category', 'type', 'scopeType', 'itemId', 'description', 'paymentMethod', 'vendor', 'recipientPlatform', 'recipientCuit', 'items']) {
+      for (const k of ['title', 'category', 'type', 'scopeType', 'description', 'paymentMethod', 'vendor', 'recipientPlatform', 'recipientCuit', 'items']) {
         if (args[k] !== undefined) patch[k] = args[k];
       }
       if (args.recipient !== undefined) patch.recipientName = args.recipient;
@@ -643,94 +636,6 @@ export const TOOLS = [
     },
   },
 
-  {
-    name: 'list_items',
-    description:
-      'Lista los ítems (sub-presupuestos) de una obra — ej "Baño", "Cocina" — con su presupuesto de mano de obra, rango de materiales, ' +
-      'presupuesto total estimado y lo gastado hasta ahora. Útil en obras grandes que se presupuestan por sección. Por defecto la obra activa.',
-    parameters: {
-      type: 'object',
-      properties: { projectId: { type: 'string', description: 'id de la obra; omitilo para la activa' } },
-      required: [],
-    },
-    handler: async (args, ctx) => {
-      const projectId = args.projectId || ctx.activeProject?.id;
-      if (!projectId) return { ok: false, error: 'No hay obra activa.' };
-      if (!ctx.activeProjects.find((p) => p.id === projectId)) return { ok: false, error: 'No encontré esa obra entre las tuyas.' };
-      return await listItems(ctx.userId, projectId);
-    },
-  },
-
-  {
-    name: 'manage_item',
-    description:
-      'Crea o actualiza un ítem/sub-presupuesto de la obra (ej "Baño": mano de obra $X, materiales entre $min y $max). ' +
-      'SIN itemId crea uno nuevo (solo el nombre es obligatorio); CON itemId actualiza ese. ' +
-      'Sirve para presupuestar obras grandes por sección sin adivinar un total único. Por defecto la obra activa.',
-    parameters: {
-      type: 'object',
-      properties: {
-        itemId: { type: 'string', description: 'id del ítem a actualizar; omitilo para crear uno nuevo' },
-        projectId: { type: 'string', description: 'id de la obra (al crear); omitilo para la activa' },
-        name: { type: 'string', description: 'nombre del ítem (ej "Baño", "Cocina")' },
-        laborBudget: { type: 'number', description: 'presupuesto de mano de obra en ARS' },
-        materialsBudgetMin: { type: 'number', description: 'mínimo estimado de materiales en ARS' },
-        materialsBudgetMax: { type: 'number', description: 'máximo estimado de materiales en ARS' },
-        plannedStartDate: { type: 'string', description: 'inicio planificado, YYYY-MM-DD' },
-        plannedEndDate: { type: 'string', description: 'fin planificado, YYYY-MM-DD' },
-      },
-      required: [],
-    },
-    handler: async (args, ctx) => {
-      const dates = {
-        plannedStartDate: args.plannedStartDate !== undefined ? parseDate(args.plannedStartDate) : undefined,
-        plannedEndDate: args.plannedEndDate !== undefined ? parseDate(args.plannedEndDate) : undefined,
-      };
-      // Update path: ownership of the item is enforced inside updateItem.
-      if (args.itemId) {
-        return await updateItem(ctx.userId, args.itemId, {
-          name: args.name, laborBudget: args.laborBudget,
-          materialsBudgetMin: args.materialsBudgetMin, materialsBudgetMax: args.materialsBudgetMax,
-          ...dates,
-        });
-      }
-      // Create path: authorize the target obra (must be one of the user's own).
-      const projectId = args.projectId || ctx.activeProject?.id;
-      if (!projectId) return { ok: false, error: 'No hay obra activa.' };
-      if (!ctx.activeProjects.find((p) => p.id === projectId)) return { ok: false, error: 'No encontré esa obra entre las tuyas.' };
-      return await createItem(ctx.userId, {
-        projectId, name: args.name, laborBudget: args.laborBudget,
-        materialsBudgetMin: args.materialsBudgetMin, materialsBudgetMax: args.materialsBudgetMax,
-        ...dates,
-      });
-    },
-  },
-
-  {
-    name: 'manage_material',
-    description:
-      'Agrega un material a un ítem de la obra, opcionalmente con una cotización (comercio + monto). ' +
-      'Ej: "para el baño, azulejos cotizados por Cerámica Norte a 200000". Pasá el itemId (de list_items). ' +
-      'Para reorganizar materiales o cotizaciones en detalle, el profesional lo hace desde la web.',
-    parameters: {
-      type: 'object',
-      properties: {
-        itemId: { type: 'string', description: 'id del ítem al que pertenece el material (de list_items)' },
-        name: { type: 'string', description: 'nombre del material (ej "Azulejos", "Cemento")' },
-        vendor: { type: 'string', description: 'comercio que lo cotizó (opcional)' },
-        amount: { type: 'number', description: 'monto cotizado en ARS (opcional)' },
-        notes: { type: 'string', description: 'notas (opcional)' },
-      },
-      required: ['itemId', 'name'],
-    },
-    handler: async (args, ctx) => {
-      // Ownership enforced inside addMaterial (the item's providerId === userId).
-      return await addMaterial(ctx.userId, {
-        itemId: args.itemId, name: args.name,
-        vendor: args.vendor, amount: args.amount, notes: args.notes,
-      });
-    },
-  },
 ];
 
 // ── Channel-specific views, all derived from the one TOOLS registry ───────────

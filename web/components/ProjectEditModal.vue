@@ -15,7 +15,6 @@
           :initial-data="formData"
           submit-label="Guardar"
           :is-submitting="isSaving"
-          :has-items="hasItems"
           @submit="handleSave"
           @cancel="$emit('close')"
         />
@@ -72,7 +71,6 @@
 <script setup>
 import MdiClose from '~icons/mdi/close';
 import { useCategoryStore } from '~/stores/category';
-import { useProjectItemStore } from '~/stores/projectItem';
 
 const props = defineProps({
   show: { type: Boolean, default: false },
@@ -83,12 +81,9 @@ const emit = defineEmits(['close', 'save']);
 const isSaving = ref(false);
 
 const categoryStore = useCategoryStore();
-const itemStore = useProjectItemStore();
 const useProjectCategories = ref(false);
 const projectCategories = ref([]);
 const isSavingCategories = ref(false);
-
-const hasItems = computed(() => itemStore.items.length > 0);
 
 const categoriesValid = computed(() => {
   return projectCategories.value.length > 0 &&

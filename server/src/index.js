@@ -9,11 +9,7 @@ import { GetProjectCategories } from './actions/categories/GetProjectCategories.
 import { SendContactEmail } from './actions/contact/SendContactEmail.js';
 import { ParseExpense } from './actions/expenses/ParseExpense.js';
 import { DemoParseExpense, DemoParseStatus } from './actions/expenses/DemoParseExpense.js';
-import { UploadEntityImage } from './actions/images/UploadEntityImage.js';
-import { DeleteEntityImage } from './actions/images/DeleteEntityImage.js';
 import { UploadExpenseReceipt } from './actions/images/UploadExpenseReceipt.js';
-import { CreateMaterial, UpdateMaterial, DeleteMaterial } from './actions/materials/MaterialActions.js';
-import { CreateProposal, UpdateProposal, DeleteProposal } from './actions/proposals/ProposalActions.js';
 import redis from './handlers/RedisHandler.js';
 import { getSnapshotBySlug, bumpView } from './snapshots/repo.js';
 import { joinProjectAsClient } from './helpers/projects.js';
@@ -211,23 +207,6 @@ const uploadImage = multer({
 });
 
 app.post('/api/expenses/:id/receipt', requireAuth, uploadImage.single('image'), UploadExpenseReceipt);
-app.post('/api/items/:id/image', requireAuth, uploadImage.single('image'), UploadEntityImage('item'));
-app.delete('/api/items/:id/image/:imageId', requireAuth, DeleteEntityImage('item'));
-app.post('/api/proposals/:id/image', requireAuth, uploadImage.single('image'), UploadEntityImage('proposal'));
-app.delete('/api/proposals/:id/image/:imageId', requireAuth, DeleteEntityImage('proposal'));
-app.post('/api/tasks/:id/image', requireAuth, uploadImage.single('image'), UploadEntityImage('task'));
-app.delete('/api/tasks/:id/image/:imageId', requireAuth, DeleteEntityImage('task'));
-
-// Materials + proposals CRUD (server-mediated so clients can write without
-// needing complex Firestore rules). Server validates the caller's role
-// (provider or client) and enforces ownership on update/delete.
-app.post('/api/materials', requireAuth, CreateMaterial);
-app.patch('/api/materials/:id', requireAuth, UpdateMaterial);
-app.delete('/api/materials/:id', requireAuth, DeleteMaterial);
-
-app.post('/api/proposals', requireAuth, CreateProposal);
-app.patch('/api/proposals/:id', requireAuth, UpdateProposal);
-app.delete('/api/proposals/:id', requireAuth, DeleteProposal);
 
 // Client join: server validates the seat before any write, so a doomed join
 // returns a clean message instead of a raw Firestore permission error.

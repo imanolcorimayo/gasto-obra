@@ -250,31 +250,6 @@ export const useExpenseStore = defineStore('expense', {
       }
     },
 
-    async batchUpdateItemId(assignments: Array<{ expenseId: string; itemId: string | null }>) {
-      this.error = null;
-
-      try {
-        const result = await getSchema().batchUpdateItemId(assignments);
-
-        if (result.success) {
-          for (const { expenseId, itemId } of assignments) {
-            const index = this.expenses.findIndex(e => e.id === expenseId);
-            if (index !== -1) {
-              this.expenses[index] = { ...this.expenses[index], itemId };
-            }
-          }
-          return { success: true };
-        } else {
-          this.error = result.error || 'Error al asignar items';
-          return { success: false, error: this.error };
-        }
-      } catch (error) {
-        console.error('Error batch updating itemId:', error);
-        this.error = 'Error al asignar items';
-        return { success: false, error: this.error };
-      }
-    },
-
     clearState() {
       this.expenses = [];
       this.isLoading = false;

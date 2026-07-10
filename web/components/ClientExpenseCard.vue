@@ -79,14 +79,6 @@
           <span v-if="expense.items && expense.items.length > 1" class="text-go-text-muted text-[11px]">
             {{ expense.items.length }} items
           </span>
-
-          <span
-            v-if="itemName"
-            class="text-[11px] font-medium px-1.5 py-0.5 rounded-go-sm bg-go-primary/10 text-go-primary truncate max-w-[140px]"
-            :title="itemName"
-          >
-            {{ itemName }}
-          </span>
         </div>
       </div>
     </div>
@@ -101,13 +93,7 @@ import { formatPrice, getCategoryStyles, getCategoryLabel, getScopeTypeStyles } 
 
 const props = defineProps({
   expense: { type: Object, required: true },
-  categories: { type: Array, default: () => [] },
-  items: { type: Array, default: () => [] }
-});
-
-const itemName = computed(() => {
-  if (!props.expense.itemId) return null;
-  return props.items.find(i => i.id === props.expense.itemId)?.name || null;
+  categories: { type: Array, default: () => [] }
 });
 
 defineEmits(['viewDetail']);
