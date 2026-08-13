@@ -12,8 +12,9 @@ import logger from '../../lib/logger.js';
 // last user turn (the caller's job) so the cached prefix stays byte-stable.
 
 const AGENT_MODELS = [
-  process.env.GEMINI_AGENT_MODEL || 'gemini-3.5-flash', // paid tier, primary
-  'gemini-2.5-flash',                                   // fallback
+  process.env.GEMINI_AGENT_MODEL || 'gemini-3.6-flash', // paid tier, primary
+  'gemini-3.5-flash',                                   // fallback 1
+  'gemini-2.5-flash',                                   // fallback 2
 ];
 const MAX_ITERATIONS = 12;
 const BASE_URL = 'https://generativelanguage.googleapis.com/v1beta/models';

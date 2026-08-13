@@ -2,9 +2,11 @@ import * as Sentry from '@sentry/node';
 import logger from '../../lib/logger.js';
 
 const MODELS = [
-  'gemini-2.5-flash-lite',          // Stable — primary
-  'gemini-3.1-flash-lite',          // GA — fallback 1
+  'gemini-3.6-flash',               // GA — primary
+  'gemini-3.5-flash',               // GA — fallback 1
   'gemini-2.5-flash',               // Stable — fallback 2
+  'gemini-3.1-flash-lite',          // GA — fallback 3 (cheap, quota cushion)
+  'gemini-2.5-flash-lite',          // Stable — fallback 4 (cheap, quota cushion)
 ];
 
 function vendorSlug(name) {
