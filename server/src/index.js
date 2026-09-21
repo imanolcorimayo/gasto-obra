@@ -18,6 +18,13 @@ import { joinProjectAsClient } from './helpers/projects.js';
 redis.connect();
 
 const app = express();
+
+// Behind Cloudflare -> nginx (2 hops). Without this, req.ip is the proxy socket
+// (127.0.0.1) and every client collapses into a single rate-limit bucket.
+// Express walks X-Forwarded-For right-to-left skipping the 2 trusted hops, so a
+// client-supplied XFF entry sits further left and can never win.
+app.set('trust proxy', 2);
+
 const PORT = process.env.API_PORT || 4002;
 const APP_URL = process.env.APP_URL || 'https://gastoobra.com';
 
@@ -29,6 +36,8 @@ const RATE_LIMIT = 60;
 const RATE_WINDOW = 60 * 1000;
 
 function rateLimit(req, res, next) {
+  if (req.path === '/health') return next();
+
   const ip = req.ip;
   const now = Date.now();
   const entry = rateLimits.get(ip);
