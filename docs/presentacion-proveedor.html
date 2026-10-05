@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Santiago Contreras — Así vas a seguir tu obra</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Red+Hat+Display:wght@400;500;600;700&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet">
+<style>
+  /* Mockup: provider "presentation link" — what a potential client opens from WhatsApp. */
+  :root {
+    --bg: #F5F0E8; --surface: #FFFFFF; --surface-alt: #EDE8DF;
+    --border: #CFC7BA; --text: #1C1915; --text-2: #4A443D; --muted: #6B6259;
+    --primary: #92520B; --primary-muted: rgba(146,82,11,.10);
+    --secondary: #3D6B45; --secondary-muted: rgba(61,107,69,.10);
+    --cat-materiales: #5A8FB8; --cat-mano: #A86B5E; --cat-herramientas: #D4793D; --cat-transporte: #BFA63D;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { overflow-x: hidden; }
+  body { background: #E4DED3; font-family: 'Red Hat Display', system-ui, sans-serif; color: var(--text); -webkit-font-smoothing: antialiased; }
+  .phone { overflow-x: hidden; max-width: 430px; margin: 0 auto; background: var(--bg); min-height: 100vh; padding-bottom: 40px; }
+  h1, h2, .num { font-family: 'Space Grotesk', sans-serif; }
+
+  .demo-flag { background: var(--text); color: #F0EBE1; font-size: 11px; text-align: center; padding: 6px; letter-spacing: .02em; }
+
+  /* Provider header: identity + track record, nothing else */
+  .hero { padding: 20px; background: var(--surface); border-bottom: 1px solid var(--border); }
+  .who { display: flex; align-items: center; gap: 12px; }
+  .who-text { flex: 1; min-width: 0; }
+  .avatar { width: 48px; height: 48px; border-radius: 14px; background: var(--primary); color: #fff; display: grid; place-items: center; font: 700 18px 'Space Grotesk'; flex-shrink: 0; }
+  .who-name { font-weight: 700; font-size: 17px; }
+  .who-sub { color: var(--muted); font-size: 13px; margin-top: 1px; }
+  .info { width: 32px; height: 32px; border-radius: 50%; border: 1px solid var(--border); background: var(--surface); color: var(--muted); font: 700 14px Georgia, serif; font-style: italic; cursor: pointer; flex-shrink: 0; }
+  .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 16px; }
+  .stat { background: var(--bg); border: 1px solid var(--border); border-radius: 12px; padding: 10px; text-align: center; }
+  .stat .num { font-size: 20px; }
+  .stat .lbl { font-size: 12px; color: var(--muted); margin-top: 1px; }
+  .tag { font: 600 11px 'Red Hat Display'; color: var(--muted); background: var(--surface-alt); padding: 2px 7px; border-radius: 999px; vertical-align: 2px; margin-left: 4px; }
+
+  .section { padding: 16px 16px 0; }
+
+  /* Sample obra */
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; overflow: hidden; }
+  .obra-head { padding: 16px; }
+  .obra-name { font-weight: 700; font-size: 17px; }
+  .obra-meta { font-size: 13px; color: var(--muted); margin-top: 2px; }
+  .budget { margin-top: 14px; }
+  .budget-row { display: flex; justify-content: space-between; align-items: baseline; font-size: 13px; color: var(--text-2); }
+  .budget-row .num { font-size: 22px; color: var(--text); }
+  .bar { height: 8px; background: var(--surface-alt); border-radius: 999px; margin-top: 8px; overflow: hidden; display: flex; }
+  .bar span { display: block; height: 100%; }
+  .legend { display: flex; flex-wrap: wrap; gap: 6px 14px; margin-top: 10px; font-size: 12px; color: var(--text-2); }
+  .legend i { display: inline-block; width: 8px; height: 8px; border-radius: 2px; margin-right: 5px; }
+
+  .list { display: grid; gap: 8px; padding: 12px 16px 0; }
+  .exp { display: flex; gap: 12px; background: var(--surface); border: 1px solid var(--border); border-left: 3px solid var(--primary); border-radius: 10px; padding: 12px 14px; }
+  .exp[data-ticket] { cursor: pointer; }
+  .exp.pay { border-left-color: var(--secondary); }
+  .thumb { width: 48px; height: 48px; border-radius: 6px; background: #FBF8F2; border: 1px solid var(--border); flex-shrink: 0; position: relative; overflow: hidden; }
+  .thumb::before { content: ''; position: absolute; inset: 7px 7px auto; height: 3px; background: #CFC7BA; box-shadow: 0 7px 0 #E0DBD2, 0 14px 0 #E0DBD2, 0 21px 0 #E0DBD2, 0 29px 0 #B8AFA2; border-radius: 2px; }
+  .thumb.text { background: var(--surface-alt); }
+  .thumb.text::before { inset: 15px 13px auto; height: 2px; background: #8B847A; box-shadow: 0 6px 0 #8B847A, 0 12px 0 #8B847A; }
+  .exp-main { flex: 1; min-width: 0; }
+  .exp-top { display: flex; align-items: center; gap: 8px; }
+  .exp-title { flex: 1; min-width: 0; font-weight: 500; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .pill-pay { font-size: 12px; font-weight: 600; padding: 2px 6px; border-radius: 6px; background: rgba(61,107,69,.2); color: var(--secondary); flex-shrink: 0; }
+  .exp-amt { font: 700 16px 'Space Grotesk'; color: var(--primary); white-space: nowrap; flex-shrink: 0; }
+  .exp.pay .exp-amt { color: var(--secondary); }
+  .chip { font-size: 12px; font-weight: 500; padding: 2px 6px; border-radius: 6px; }
+  .exp-sub { display: flex; align-items: center; gap: 8px; margin-top: 6px; font-size: 11px; color: var(--muted); }
+
+  .powered { text-align: center; font-size: 12px; color: var(--muted); padding: 20px 20px 0; }
+  .powered b { color: var(--primary); }
+
+  /* Receipt photo viewer — the app shows the provider's real photo full-screen */
+  .modal { position: fixed; inset: 0; background: rgba(15,13,11,.92); display: none; align-items: center; justify-content: center; z-index: 10; padding: 24px; cursor: pointer; }
+  .modal.open { display: flex; }
+  .photo { background: linear-gradient(160deg, #FFFDF8, #EFE9DD); width: 100%; max-width: 300px; padding: 22px 18px 26px; transform: rotate(-2deg); box-shadow: 0 20px 50px rgba(0,0,0,.5); font: 13px/1.6 ui-monospace, monospace; color: #3A352F; filter: contrast(.95) blur(.2px); }
+  .photo .t-c { text-align: center; font-weight: 700; }
+  .photo .t-r { display: flex; justify-content: space-between; }
+  .photo hr { border: 0; border-top: 1px dashed #B8AFA2; margin: 8px 0; }
+  .sheet-wrap { position: fixed; inset: 0; background: rgba(28,25,21,.5); display: none; align-items: flex-end; justify-content: center; z-index: 10; }
+  .sheet-wrap.open { display: flex; }
+  .sheet { background: var(--surface); width: 100%; max-width: 430px; border-radius: 20px 20px 0 0; padding: 12px 20px 28px; }
+  .grab { width: 40px; height: 4px; background: var(--border); border-radius: 4px; margin: 0 auto 16px; }
+  .sheet h2 { font-size: 19px; }
+  .sheet p { color: var(--text-2); font-size: 15px; line-height: 1.5; margin-top: 8px; }
+  .modal-hint { position: fixed; bottom: 24px; left: 0; right: 0; text-align: center; color: rgba(255,255,255,.6); font-size: 13px; }
+</style>
+</head>
+<body>
+<div class="phone">
+  <div class="demo-flag">MOCKUP · datos de ejemplo</div>
+
+  <header class="hero">
+    <div class="who">
+      <div class="avatar">SC</div>
+      <div class="who-text">
+        <div class="who-name">Santiago Contreras</div>
+        <div class="who-sub">Remodelaciones · Córdoba</div>
+      </div>
+      <button class="info" id="info" aria-label="Cómo funciona">i</button>
+    </div>
+    <div class="stats">
+      <div class="stat"><div class="num">8</div><div class="lbl">obras</div></div>
+      <div class="stat"><div class="num">317</div><div class="lbl">gastos</div></div>
+      <div class="stat"><div class="num">94%</div><div class="lbl">con ticket</div></div>
+    </div>
+  </header>
+
+  <section class="section">
+    <div class="card">
+      <div class="obra-head">
+        <div class="obra-name">Depto 2 ambientes · Nueva Córdoba <span class="tag">ejemplo</span></div>
+        <div class="obra-meta">Actualizado hoy 15:21 · 42 gastos</div>
+        <div class="budget">
+          <div class="budget-row"><span class="num">$ 4.640.000</span><span>de $ 8.000.000</span></div>
+          <div class="bar">
+            <span style="width:34%;background:var(--cat-materiales)"></span>
+            <span style="width:16%;background:var(--cat-mano)"></span>
+            <span style="width:5%;background:var(--cat-herramientas)"></span>
+            <span style="width:3%;background:var(--cat-transporte)"></span>
+          </div>
+          <div class="legend">
+            <span><i style="background:var(--cat-materiales)"></i>Materiales</span>
+            <span><i style="background:var(--cat-mano)"></i>Mano de obra</span>
+            <span><i style="background:var(--cat-herramientas)"></i>Herramientas</span>
+            <span><i style="background:var(--cat-transporte)"></i>Transporte</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="list">
+    <div class="exp" data-ticket="ferreteria">
+      <div class="thumb"></div>
+      <div class="exp-main">
+        <div class="exp-top"><span class="exp-title">Insumos de ferretería</span><span class="exp-amt">$ 5.200</span></div>
+        <div class="exp-sub"><span class="chip" style="background:rgba(90,143,184,.14);color:#3E6C91">Materiales</span><span>hoy 15:21</span></div>
+      </div>
+    </div>
+    <div class="exp" data-ticket="weber">
+      <div class="thumb"></div>
+      <div class="exp-main">
+        <div class="exp-top"><span class="exp-title">Weber revoque fino a la cal</span><span class="exp-amt">$ 21.400</span></div>
+        <div class="exp-sub"><span class="chip" style="background:rgba(90,143,184,.14);color:#3E6C91">Materiales</span><span>hoy 15:01</span></div>
+      </div>
+    </div>
+    <div class="exp">
+      <div class="thumb text"></div>
+      <div class="exp-main">
+        <div class="exp-top"><span class="exp-title">Colocación de cerámicos</span><span class="exp-amt">$ 480.000</span></div>
+        <div class="exp-sub"><span class="chip" style="background:rgba(168,107,94,.14);color:#8A5144">Mano de obra</span><span>vie 18:40</span></div>
+      </div>
+    </div>
+    <div class="exp" data-ticket="ceramicos">
+      <div class="thumb"></div>
+      <div class="exp-main">
+        <div class="exp-top"><span class="exp-title">Cerámicos 60x60 · 18 m²</span><span class="exp-amt">$ 342.000</span></div>
+        <div class="exp-sub"><span class="chip" style="background:rgba(90,143,184,.14);color:#3E6C91">Materiales</span><span>vie 12:30</span></div>
+      </div>
+    </div>
+    <div class="exp" data-ticket="flete">
+      <div class="thumb"></div>
+      <div class="exp-main">
+        <div class="exp-top"><span class="exp-title">Flete de cerámicos</span><span class="exp-amt">$ 25.000</span></div>
+        <div class="exp-sub"><span class="chip" style="background:rgba(191,166,61,.18);color:#7C6A1E">Transporte</span><span>jue 09:10</span></div>
+      </div>
+    </div>
+    <div class="exp pay">
+      <div class="thumb text"></div>
+      <div class="exp-main">
+        <div class="exp-top"><span class="exp-title">Adelanto de obra</span><span class="pill-pay">Pago</span><span class="exp-amt">+$ 2.000.000</span></div>
+        <div class="exp-sub"><span>mié 10:05</span></div>
+      </div>
+    </div>
+  </section>
+
+
+  <div class="powered">Transparencia respaldada por <b>Gasto Obra</b></div>
+</div>
+
+<div class="sheet-wrap" id="sheet">
+  <div class="sheet">
+    <div class="grab"></div>
+    <h2>Así vas a seguir tu obra</h2>
+    <p>Cada compra y pago de tu obra queda registrado al momento, con la foto del ticket. Lo ves desde tu celular cuando quieras.</p>
+  </div>
+</div>
+
+<div class="modal" id="modal">
+  <div class="photo" id="ticket"></div>
+  <div class="modal-hint">Tocá para cerrar</div>
+</div>
+
+<script>
+  // Fake receipts for the mockup: tapping an expense opens its "photo".
+  const tickets = {
+    weber: ['CORRALÓN EL MOLINO', 'Av. Colón 2150 · Córdoba', [['Weber revoque fino x25kg', '2 u'], ['Precio unit.', '$ 10.700']], '$ 21.400'],
+    ferreteria: ['FERRETERÍA SAN MARTÍN', 'Bv. San Juan 840 · Córdoba', [['Tarugos 8mm x50', '$ 1.900'], ['Tornillos 6x40 x100', '$ 2.300'], ['Cinta papel 48mm', '$ 1.000']], '$ 5.200'],
+    ceramicos: ['CERÁMICOS DEL CENTRO', 'Av. Vélez Sarsfield 1320 · Córdoba', [['Porcelanato 60x60 gris', '18 m²'], ['Precio m²', '$ 19.000']], '$ 342.000'],
+    flete: ['FLETES CÓRDOBA', 'Corralón → Obra', [['Traslado cerámicos', '1 viaje'], ['Medio', 'Efectivo']], '$ 25.000'],
+  };
+  const modal = document.getElementById('modal');
+  const ticket = document.getElementById('ticket');
+  document.querySelectorAll('.exp[data-ticket]').forEach(el => el.addEventListener('click', () => {
+    const [name, addr, rows, total] = tickets[el.dataset.ticket];
+    ticket.innerHTML = `<div class="t-c">${name}</div><div class="t-c" style="font-weight:400">${addr}</div><hr>`
+      + rows.map(([a, b]) => `<div class="t-r"><span>${a}</span><span>${b}</span></div>`).join('')
+      + `<hr><div class="t-r t-c"><span>TOTAL</span><span>${total}</span></div>`;
+    modal.classList.add('open');
+  }));
+  modal.onclick = () => modal.classList.remove('open');
+  const sheet = document.getElementById('sheet');
+  document.getElementById('info').onclick = () => sheet.classList.add('open');
+  sheet.onclick = e => { if (e.target === sheet) sheet.classList.remove('open'); };
+</script>
+</body>
+</html>
