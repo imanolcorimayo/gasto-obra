@@ -5,6 +5,7 @@ const IGNORED_ERRORS = [
   'Unable to preload CSS',
   'Load failed',
   'Importing a module script failed',
+  'Failed to obtain primary lease', // Firestore multi-tab: benign, only one tab holds the lease
 ];
 
 if (!import.meta.dev) {
