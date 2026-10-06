@@ -394,6 +394,8 @@ require __DIR__ . '/../includes/header.php';
                     const bubble = m.role === 'user' ? 'self-end bg-[#DCF3D0] rounded-tr-sm' : 'self-start bg-white rounded-tl-sm';
                     const acts = m.actions.length ? `<div class="self-start text-xs text-gray-500 px-1 pb-1">${m.actions.map(a => a.ok
                         ? `<span class="mr-2.5">✓ ${esc(a.label)}</span>`
+                        : a.asked
+                        ? `<span class="mr-2.5">? pidió confirmar antes de que ${esc(a.label.replace(/^(\S+)ó /, '$1e '))}</span>`
                         : `<span class="mr-2.5 text-red-700">✕ ${esc(a.label)} falló${a.error ? ': ' + esc(a.error) : ''}</span>`).join('')}</div>` : '';
                     return `${sep}<div class="max-w-[82%] ${bubble} rounded-xl px-2.5 pt-2 pb-1.5 text-[13.5px] leading-snug whitespace-pre-wrap break-words shadow-sm">${media}${fmt(m.content || '')}<span class="block text-right text-[10.5px] text-gray-500 mt-0.5">${d.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })}</span></div>${acts}`;
                 }).join('') || '<p class="text-sm text-gray-500 text-center mt-8">Sin mensajes.</p>';

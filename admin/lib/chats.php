@@ -1,6 +1,10 @@
 <?php
 // Bot conversations from MySQL (agent_session / agent_message / tool_call).
 // A session = one user + channel, closed after 10 min without messages.
+//
+// Destructive tools (delete_expense) answer the first call with needs_confirmation and
+// status 'error' by design; that's the bot asking "¿confirmás?", not a failure.
+const REAL_ERROR = "t.status = 'error' AND (t.result IS NULL OR t.result NOT LIKE '%\"needs_confirmation\":true%')";
 
 // Tool names → what the bot did, in the user's words.
 const BOT_ACTIONS = [
@@ -22,7 +26,7 @@ function chats_for_user(string $uid, int $limit = 30): array {
         SELECT s.id, s.channel, s.title, s.created_ts, s.updated_ts,
           (SELECT COUNT(*) FROM agent_message m WHERE m.session_id = s.id) AS msgs,
           (SELECT GROUP_CONCAT(DISTINCT t.tool_name) FROM tool_call t JOIN agent_message m ON m.id = t.message_id WHERE m.session_id = s.id) AS tools,
-          (SELECT COUNT(*) FROM tool_call t JOIN agent_message m ON m.id = t.message_id WHERE m.session_id = s.id AND t.status = 'error') AS errors
+          (SELECT COUNT(*) FROM tool_call t JOIN agent_message m ON m.id = t.message_id WHERE m.session_id = s.id AND " . REAL_ERROR . ") AS errors
         FROM agent_session s
         WHERE s.user_id = ?
         ORDER BY s.updated_ts DESC
@@ -38,7 +42,7 @@ function chats_for_user(string $uid, int $limit = 30): array {
     $totals = $st->fetch();
 
     $st = $db->prepare("
-        SELECT t.tool_name, COUNT(*) AS n, SUM(t.status = 'error') AS errors
+        SELECT t.tool_name, SUM(t.result IS NULL OR t.result NOT LIKE '%\"needs_confirmation\":true%') AS n, SUM(" . REAL_ERROR . ") AS errors
         FROM tool_call t JOIN agent_message m ON m.id = t.message_id JOIN agent_session s ON s.id = m.session_id
         WHERE s.user_id = ?
         GROUP BY t.tool_name ORDER BY n DESC");
@@ -76,7 +80,7 @@ function chat_session(string $uid, int $sessionId): ?array {
         (function () use ($db, $sql, $ids) { $s = $db->prepare($sql); $s->execute($ids); return $s->fetchAll(); })(),
         function ($acc, $r) { $acc[$r['message_id']][] = $r; return $acc; }, []
     );
-    $tools = $byMsg("SELECT message_id, tool_name, status, error_text FROM tool_call WHERE message_id IN ($in) ORDER BY id");
+    $tools = $byMsg("SELECT message_id, tool_name, status, error_text, result LIKE '%\"needs_confirmation\":true%' AS asked FROM tool_call WHERE message_id IN ($in) ORDER BY id");
     $media = $byMsg("SELECT message_id, kind FROM agent_message_media WHERE message_id IN ($in) ORDER BY id");
 
     return [
@@ -85,7 +89,12 @@ function chat_session(string $uid, int $sessionId): ?array {
             'role' => $m['role'],
             'content' => $m['content'],
             'at' => (int) $m['created_ts'],
-            'actions' => array_map(fn($t) => ['label' => bot_action($t['tool_name']), 'ok' => $t['status'] === 'ok', 'error' => $t['error_text']], $tools[$m['id']] ?? []),
+            'actions' => array_map(fn($t) => [
+                'label' => bot_action($t['tool_name']),
+                'ok' => $t['status'] === 'ok',
+                'asked' => (bool) $t['asked'],
+                'error' => $t['error_text'],
+            ], $tools[$m['id']] ?? []),
             'media' => array_column($media[$m['id']] ?? [], 'kind'),
         ], $messages),
     ];
