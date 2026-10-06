@@ -40,3 +40,6 @@ docs/*.mp4
 
 # Admin config
 admin/config.php
+
+# Admin Firebase token cache
+.cache/

@@ -4,7 +4,7 @@ import express from 'express';
 import multer from 'multer';
 import { db, COLLECTIONS } from './config/firebase.js';
 import logger from '../lib/logger.js';
-import { requireAuth, requireAdminToken } from './middleware/auth.js';
+import { requireAuth } from './middleware/auth.js';
 import { GetProjectCategories } from './actions/categories/GetProjectCategories.js';
 import { SendContactEmail } from './actions/contact/SendContactEmail.js';
 import { ParseExpense } from './actions/expenses/ParseExpense.js';
@@ -14,7 +14,6 @@ import { UploadExpenseReceipt } from './actions/images/UploadExpenseReceipt.js';
 import redis from './handlers/RedisHandler.js';
 import { getSnapshotBySlug, bumpView } from './snapshots/repo.js';
 import { joinProjectAsClient } from './helpers/projects.js';
-import { getUsageSummary, getUserDetail } from './helpers/usageReport.js';
 
 redis.connect();
 
@@ -233,27 +232,6 @@ app.post('/api/projects/:projectId/join', requireAuth, async (req, res) => {
     res.json({ id: req.params.projectId, alreadyJoined: Boolean(result.alreadyJoined) });
   } catch (error) {
     logger.error('Error in /api/projects/:projectId/join', { error: error.message });
-    res.status(500).json({ error: 'Error interno' });
-  }
-});
-
-// Admin (internal dashboard, server-to-server only)
-app.get('/api/admin/usage', requireAdminToken, async (req, res) => {
-  try {
-    res.json(await getUsageSummary());
-  } catch (error) {
-    logger.error('Error in /api/admin/usage', { error: error.message });
-    res.status(500).json({ error: 'Error interno' });
-  }
-});
-
-app.get('/api/admin/usage/:uid', requireAdminToken, async (req, res) => {
-  try {
-    const detail = await getUserDetail(req.params.uid);
-    if (!detail) return res.status(404).json({ error: 'Usuario no encontrado' });
-    res.json(detail);
-  } catch (error) {
-    logger.error('Error in /api/admin/usage/:uid', { error: error.message });
     res.status(500).json({ error: 'Error interno' });
   }
 });

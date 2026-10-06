@@ -1,7 +1,11 @@
 <?php
-// Accounts by recency + 30-day trend vs the previous 30 days. Data: GET /api/admin/usage.
-$res = api_get('/api/admin/usage');
-$data = $res['data'];
+// Accounts by recency + 30-day trend vs the previous 30 days. Data: Firebase via lib/usage.php.
+try {
+    $data = usage_summary();
+} catch (Throwable $e) {
+    $data = null;
+    $error = $e->getMessage();
+}
 
 $page_title = 'Usuarios';
 require __DIR__ . '/../includes/header.php';
@@ -12,7 +16,7 @@ require __DIR__ . '/../includes/header.php';
 </div>
 
 <?php if (!$data): ?>
-    <div class="bg-red-50 text-red-700 border border-red-200 rounded-lg p-4">No se pudo cargar la API: <?= h($res['error']) ?></div>
+    <div class="bg-red-50 text-red-700 border border-red-200 rounded-lg p-4">No se pudieron cargar los datos: <?= h($error) ?></div>
 <?php else: ?>
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         <?php foreach ([
@@ -75,7 +79,7 @@ require __DIR__ . '/../includes/header.php';
                             <?php elseif ($u['pendingCodes']): ?>
                                 <span class="text-amber-600">sin vincular (<?= (int) $u['pendingCodes'] ?> cód.)</span>
                             <?php else: ?>
-                                <span class="text-gray-300">—</span>
+                                <span class="text-gray-300">-</span>
                             <?php endif; ?>
                         </td>
                     </tr>

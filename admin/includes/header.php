@@ -12,7 +12,7 @@ if ($current === '/') $current = '/usuarios';
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="robots" content="noindex, nofollow">
-    <title><?= h($page_title ?? 'Admin') ?> — Gasto Obra Admin</title>
+    <title><?= h($page_title ?? 'Admin') ?> · Gasto Obra Admin</title>
     <script src="/assets/js/tailwind.js"></script>
     <script>
         // Single brand accent (web --go-primary); everything else is neutral gray.

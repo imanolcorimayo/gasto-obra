@@ -3,7 +3,7 @@
  *
  * Walks Firebase Auth users, then groups projects/expenses by providerId so
  * you see real activity (not just accounts) without opening anyone's session.
- * Data comes from helpers/usageReport.js (shared with GET /api/admin/usage).
+ * Data comes from helpers/usageReport.js.
  *
  * Usage: node src/scripts/usage-report.js [--uid <uid>]
  *
@@ -16,8 +16,8 @@ const uidArg = process.argv.indexOf('--uid');
 const ONLY_UID = uidArg !== -1 ? process.argv[uidArg + 1] : null;
 
 const ars = n => '$' + Math.round(n || 0).toLocaleString('es-AR');
-const when = s => (s ? s.slice(0, 16).replace('T', ' ') : '—');
-const day = s => (s ? s.slice(0, 10) : '—');
+const when = s => (s ? s.slice(0, 16).replace('T', ' ') : '-');
+const day = s => (s ? s.slice(0, 10) : '-');
 
 // --- Detail mode -----------------------------------------------------------
 if (ONLY_UID) {
@@ -29,21 +29,21 @@ if (ONLY_UID) {
   console.log(`\n${u.name || '(sin nombre)'} <${u.email || 'sin email'}>  ${u.uid}`);
   console.log(`Alta: ${when(u.createdAt)}  |  Último login: ${when(u.lastLoginAt)}`);
   console.log('TELÉFONOS');
-  if (!u.phones.length) console.log('  — ninguno vinculado');
+  if (!u.phones.length) console.log(' , ninguno vinculado');
   u.phones.forEach(p => {
-    console.log(`  ${p.phone}  ${p.origin}  |  WhatsApp: ${p.contactName || '—'}  |  vinculado ${when(p.linkedAt)}`);
+    console.log(`  ${p.phone}  ${p.origin}  |  WhatsApp: ${p.contactName || '-'}  |  vinculado ${when(p.linkedAt)}`);
   });
   console.log(`  Códigos pendientes sin usar: ${u.pendingCodes}\n`);
 
   console.log('OBRAS');
   u.projects.forEach(p => {
-    console.log(`  ${p.name} [${p.status}] creada ${when(p.createdAt)} — ${p.expenses} gastos, ${ars(p.total)}`);
+    console.log(`  ${p.name} [${p.status}] creada ${when(p.createdAt)}, ${p.expenses} gastos, ${ars(p.total)}`);
   });
 
   console.log('\nÚLTIMOS 20 GASTOS');
   u.lastExpenses.forEach(e => {
     const media = e.media.join('+');
-    console.log(`  ${when(e.createdAt)}  ${e.type}  ${ars(e.amount).padStart(12)}  ${e.category || '—'}  [${e.source}${media ? ' ' + media : ''}]  ${e.title || ''}`);
+    console.log(`  ${when(e.createdAt)}  ${e.type}  ${ars(e.amount).padStart(12)}  ${e.category || '-'}  [${e.source}${media ? ' ' + media : ''}]  ${e.title || ''}`);
   });
   console.log();
   process.exit(0);
@@ -61,7 +61,7 @@ const rows = users.map(u => ({
   'Gastos 30d': String(u.expenses30d),
   Origen: u.origins.length
     ? u.origins.join(', ')
-    : (u.pendingCodes ? `sin vincular (${u.pendingCodes} cód.)` : '—'),
+    : (u.pendingCodes ? `sin vincular (${u.pendingCodes} cód.)` : '-'),
   uid: u.uid,
 }));
 

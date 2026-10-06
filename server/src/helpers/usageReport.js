@@ -1,9 +1,9 @@
 /**
  * Read-only usage data: who signed up and what they actually did.
  *
- * Shared by the CLI (scripts/usage-report.js) and the admin API
- * (GET /api/admin/usage). Returns plain JSON-safe objects; formatting is the
- * caller's job.
+ * Backs the CLI (scripts/usage-report.js). The PHP admin mirrors this logic
+ * in admin/lib/usage.php, reading Firebase directly. Returns plain JSON-safe
+ * objects; formatting is the caller's job.
  */
 
 import { admin, db, COLLECTIONS } from '../config/firebase.js';
@@ -23,9 +23,9 @@ export function phoneOrigin(raw) {
       if (rest.startsWith('9')) rest = rest.slice(1);
       for (const len of [4, 3, 2]) {
         const area = Number(rest.slice(0, len));
-        if (AR_AREAS[area]) return `Argentina — ${AR_AREAS[area]} (${area})`;
+        if (AR_AREAS[area]) return `Argentina, ${AR_AREAS[area]} (${area})`;
       }
-      return `Argentina — área ${rest.slice(0, 3)}?`;
+      return `Argentina, área ${rest.slice(0, 3)}?`;
     }
     return COUNTRIES[cc];
   }

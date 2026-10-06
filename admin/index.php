@@ -2,7 +2,10 @@
 // Front controller: auth → route → page. Only this file is executable (see docs/nginx).
 $config = require __DIR__ . '/config.php';
 require __DIR__ . '/lib/helpers.php';
-require __DIR__ . '/lib/api.php';
+require __DIR__ . '/lib/firebase.php';
+require __DIR__ . '/lib/usage.php';
+require __DIR__ . '/lib/db.php';
+require __DIR__ . '/lib/chats.php';
 
 // Basic HTTP auth
 $users = $config['users'] ?? [];
@@ -23,6 +26,17 @@ if ($path === '/' || $path === '/usuarios') {
 } elseif (preg_match('#^/usuarios/([A-Za-z0-9]{10,40})$#', $path, $m)) {
     $uid = $m[1];
     require __DIR__ . '/pages/usuario.php';
+} elseif (preg_match('#^/usuarios/([A-Za-z0-9]{10,40})/chat/(\d+)$#', $path, $m)) {
+    // JSON transcript for the chat side panel; only sessions owned by that uid.
+    header('Content-Type: application/json; charset=utf-8');
+    try {
+        $chat = chat_session($m[1], (int) $m[2]);
+        if (!$chat) http_response_code(404);
+        echo json_encode($chat ?? ['error' => 'Conversación no encontrada'], JSON_UNESCAPED_UNICODE);
+    } catch (Throwable $e) {
+        http_response_code(500);
+        echo json_encode(['error' => $e->getMessage()], JSON_UNESCAPED_UNICODE);
+    }
 } elseif ($path === '/documentos') {
     require __DIR__ . '/pages/docs.php';
 } else {
